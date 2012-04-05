@@ -2,30 +2,59 @@
 // $Id: particle_solver.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
 //
 #include "particle_solver.h"
+#include "rigid_body.h"
 
-void MD_solver_position_Euler(Particle *p, const CTime &jikan){
+void MD_solver_position_Euler(Particle *p, const CTime &jikan)
+{
+  quaternion dqdt;
 #pragma omp parallel for schedule(dynamic, 1)
-    for(int n=0; n<Particle_Number; n++){
-	for(int d=0; d<DIM; d++){
-	    p[n].x[d] += jikan.dt_md * p[n].v[d];
-	    p[n].x[d] = fmod(p[n].x[d]+L_particle[d] , L_particle[d]);
-	    
-	    assert(p[n].x[d] >= 0);
-	    assert(p[n].x[d] < L[d]);
-	}
+  for(int n = 0; n < Particle_Number; n++) {
+    for(int d = 0; d < DIM; d++) {
+      p[n].x[d] += jikan.dt_md * p[n].v[d];
+      p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
+
+      assert(p[n].x[d] >= 0);
+      assert(p[n].x[d] < L[d]);
     }
+
+    // Update orientation quaternion
+    qtn_init(p[n].q_old, p[n].q);
+    qdot(dqdt, p[n].q, p[n].omega, SPACE_FRAME);
+    qtn_add(p[n].q, dqdt, jikan.dt_md);
+    qtn_normalize(p[n].q);
+  }
+
 }
-void MD_solver_position_AB2(Particle *p, const CTime &jikan){
+
+void MD_solver_position_AB2(Particle *p, const CTime &jikan)
+{
+  quaternion dqdt;
+  double w[DIM];
+  double w_old[DIM];
+
 #pragma omp parallel for schedule(dynamic, 1)
-    for(int n=0; n<Particle_Number; n++){
-	for(int d=0; d<DIM; d++){
-	    p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
-	    p[n].x[d] = fmod(p[n].x[d]+L_particle[d] , L_particle[d]);
-	    
-	    assert(p[n].x[d] >= 0);
-	    assert(p[n].x[d] < L[d]);
-	}
+  for(int n = 0; n < Particle_Number; n++) {
+    for(int d = 0; d < DIM; d++) {
+      p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
+      p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
+
+      assert(p[n].x[d] >= 0);
+      assert(p[n].x[d] < L[d]);
     }
+
+    // Update orientation quaternion
+    // AB2 (~Simo-Wong) method to estimate angular velocity during inteval
+    rigid_body_rotation(w, p[n].omega, p[n].q, SPACE2BODY);
+    rigid_body_rotation(w_old, p[n].omega_old, p[n].q_old, SPACE2BODY);
+    for(int d = 0; d < DIM; d++){
+      w[d] = 3.0*w[d] - w_old[d];
+    }
+    
+    qtn_init(p[n].q_old, p[n].q);
+    qdot(dqdt, p[n].q, w, BODY_FRAME);
+    qtn_add(p[n].q, dqdt, jikan.hdt_md);
+    qtn_normalize(p[n].q);
+  }
 }
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
   Force(p);

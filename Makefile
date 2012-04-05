@@ -9,14 +9,14 @@ CXX    = g++
 ##CCOPT  = -O2 -static
 CCOPT  = -O2 
 LINKS  = -lm -lplatform -lstdc++
-MKL_PATH = /opt/intel/mkl/10.1.1.019/lib/em64t
-MKL_INCLUDE_PATH = /opt/intel/mkl/10.1.1.019/include
-GOURMET_HOME_PATH = /usr/local/OCTA2005/GOURMET_2005
-GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
+#MKL_PATH = /opt/intel/mkl/10.1.1.019/lib/em64t
+#MKL_INCLUDE_PATH = /opt/intel/mkl/10.1.1.019/include
+GOURMET_HOME_PATH = /users/john/Work_PostDoc/OCTA2010/GOURMET_2010
+GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/macosx
 GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
 OSTYPE = $(shell uname)
-#ENV = GCC
-ENV = ICC_MKL_OMP
+ENV = GCC
+#ENV = ICC_MKL_OMP
 #ENV = MINGW
 
 ## options for GCC/CYGWIN
@@ -52,7 +52,7 @@ ifeq ($(ENV), ICC)
       ARCH   = linux 
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axSSSE3 -w0
+      CCOPT  = -O3 -xT -axT -w0
       LINKS  = -lm -lplatform -lcxaguard -lstdc++
 endif
 
@@ -61,8 +61,8 @@ ifeq ($(ENV), ICC_MKL_OMP)
       ARCH   = linux 
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axSSSE3 -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
-      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm 
+      CCOPT  = -O3 -xT -axT -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
+      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
 endif
 
 CFLAGS 	= $(CCOPT) -L$(GOURMET_LIB_PATH) -I$(GOURMET_INCLUDE_PATH) # -lrfftw -lfftw
@@ -89,6 +89,7 @@ OBJS  	= mt19937ar.o\
 	init_fluid.o\
 	init_particle.o\
 	input.o\
+	rigid_body.o\
 	sp_3d_ns.o
 
 TARGET 	= kapsel
@@ -116,8 +117,8 @@ $(TARGET): $(OBJS)
 ## Clean
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(TARGET).x
-	rm -f *~ *.bak *.x
+	rm -f $(OBJS) $(TARGET) $(TARGET).exe
+	rm -f *~ *.bak
 
 depend:
 	makedepend -- $(CFLAGS) -- *.cxx *.c *.h
