@@ -71,29 +71,19 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
       {
 	p[n].v_old[d] = p[n].v[d];
 	p[n].v[d] += ( dmy * 
-		       ( p[n].f_hydro[d] + p[n].fr[d] + p[n].fv[d] )
+		       ( p[n].f_hydro[d] + p[n].fr[d] )
 		       );
 	
 	p[n].fr_previous[d] = p[n].fr[d];
 	p[n].fr[d] = 0.0;
-	p[n].fv_previous[d] = p[n].fv[d];
-	p[n].fv[d] = 0.0;
-	//p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 	p[n].f_hydro[d] = 0.0;
       }
       {
 	p[n].omega_old[d] = p[n].omega[d];
-	p[n].omega[d] += ( dmy_rot 
-			   * ( p[n].torque_hydro[d] 
-			       + p[n].torquer[d] 
-			       + p[n].torquev[d] )
-			   );
+	p[n].omega[d] += ( dmy_rot * p[n].torque_hydro[d]);
 	
-	p[n].torquer_previous[d] = p[n].torquer[d];
-	p[n].torquer[d] = 0.0;
-	p[n].torquev_previous[d] = p[n].torquev[d];
-	p[n].torquev[d] = 0.0;
-	//p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
       }
     }
@@ -114,31 +104,21 @@ void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
       {
 	p[n].v_old[d] = p[n].v[d];
 	p[n].v[d] += ( dmy * 
-		       ( p[n].f_hydro[d] + p[n].fv[d] 
-			 + 0.5*(p[n].fr[d] + p[n].fr_previous[d] )
+		       ( p[n].f_hydro[d] +
+			 0.5*(p[n].fr[d] + p[n].fr_previous[d] )
 			 )
 		       );
 	
 	p[n].fr_previous[d] = p[n].fr[d];
 	p[n].fr[d] = 0.0;
-	p[n].fv_previous[d] = p[n].fv[d];
-	p[n].fv[d] = 0.0;
-	//p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 	p[n].f_hydro[d] = 0.0;
       }
       {
 	p[n].omega_old[d] = p[n].omega[d];
-	p[n].omega[d] += ( dmy_rot 
-			   * ( p[n].torque_hydro[d] 
-			       + 0.5 * (p[n].torquer[d] + p[n].torquer[d] )
-			       + p[n].torquev[d] )
-			   );
+	p[n].omega[d] += ( dmy_rot * p[n].torque_hydro[d] );
 	
-	p[n].torquer_previous[d] = p[n].torquer[d];
-	p[n].torquer[d] = 0.0;
-	p[n].torquev_previous[d] = p[n].torquev[d];
-	p[n].torquev[d] = 0.0;
-	//p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
       }
     }
@@ -160,30 +140,19 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 		p[n].v_old[d] = p[n].v[d];
 		p[n].v[d] += 
 		    dmy * (2.*p[n].f_hydro[d]
-			   + 3.* p[n].fv[d] - p[n].fv_previous[d] // AB2
 			   + p[n].fr[d] + p[n].fr_previous[d] // CN
 			);
 		
 		p[n].fr_previous[d] = p[n].fr[d];
 		p[n].fr[d] = 0.0;
-		p[n].fv_previous[d] = p[n].fv[d];
-		p[n].fv[d] = 0.0;
-		//p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+		p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 		p[n].f_hydro[d] = 0.0;
 	    }
 	    {
 		p[n].omega_old[d] = p[n].omega[d];
-		p[n].omega[d] += dmy_rot 
-		    *( 2.* p[n].torque_hydro[d]
-		       + 3.* p[n].torquev[d] -  p[n].torquev_previous[d] // AB2
-		       + p[n].torquer[d] + p[n].torquer_previous[d] // CN
-			);
+		p[n].omega[d] += dmy_rot * ( 2.* p[n].torque_hydro[d]);
 		
-		p[n].torquer_previous[d] = p[n].torquer[d];
-		p[n].torquer[d] = 0.0;
-		p[n].torquev_previous[d] = p[n].torquev[d];
-		p[n].torquev[d] = 0.0;
-		//p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+		p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 		p[n].torque_hydro[d] = 0.0;
 	    }
 	}
@@ -265,31 +234,21 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
 	    {
 		p[n].v_old[d] = p[n].v[d];
 		p[n].v[d] += ( dmy * 
-			       ( p[n].f_hydro[d] + p[n].fr[d] + p[n].fv[d]) 
+			       ( p[n].f_hydro[d] + p[n].fr[d]) 
 		    );
 		
 		p[n].momentum_depend_fr[d] = jikan.dt_md*p[n].fr[d];
 		
 		p[n].fr_previous[d] = p[n].fr[d];
 		p[n].fr[d] = 0.0;
-		p[n].fv_previous[d] = p[n].fv[d];
-		p[n].fv[d] = 0.0;
-		//p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+		p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 		p[n].f_hydro[d] = 0.0;
 	    }
 	    {
 		p[n].omega_old[d] = p[n].omega[d];
-		p[n].omega[d] += ( dmy_rot 
-				   * ( p[n].torque_hydro[d] 
-				       + p[n].torquer[d]
-				       + p[n].torquev[d] )
-		    );
+		p[n].omega[d] += ( dmy_rot * p[n].torque_hydro[d] );
 		
-		p[n].torquer_previous[d] = p[n].torquer[d];
-		p[n].torquer[d] = 0.0;
-		p[n].torquev_previous[d] = p[n].torquev[d];
-		p[n].torquev[d] = 0.0;
-		//p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+		p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 		p[n].torque_hydro[d] = 0.0;
 	    }
 	}
@@ -311,7 +270,6 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
 		p[n].v_old[d] = p[n].v[d];
 		p[n].v[d] += 
 		    dmy * (2.*p[n].f_hydro[d]
-			   + 3.* p[n].fv[d] - p[n].fv_previous[d] // AB2
 			   + p[n].fr[d] + p[n].fr_previous[d] // CN
 			);
 
@@ -319,24 +277,14 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
 		
 		p[n].fr_previous[d] = p[n].fr[d];
 		p[n].fr[d] = 0.0;
-		p[n].fv_previous[d] = p[n].fv[d];
-		p[n].fv[d] = 0.0;
-		//p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+		p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 		p[n].f_hydro[d] = 0.0;
 	    }
 	    {
 		p[n].omega_old[d] = p[n].omega[d];
-		p[n].omega[d] += dmy_rot 
-		    *( 2.* p[n].torque_hydro[d]
-		       + 3.* p[n].torquev[d] -  p[n].torquev_previous[d] // AB2
-		       + p[n].torquer[d] + p[n].torquer_previous[d] // CN
-			);
+		p[n].omega[d] += dmy_rot * ( 2.* p[n].torque_hydro[d]);
 		
-		p[n].torquer_previous[d] = p[n].torquer[d];
-		p[n].torquer[d] = 0.0;
-		p[n].torquev_previous[d] = p[n].torquev[d];
-		p[n].torquev[d] = 0.0;
-		//p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+		p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 		p[n].torque_hydro[d] = 0.0;
 	    }
 	}

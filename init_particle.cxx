@@ -10,7 +10,8 @@ void Init_Particle(Particle *p){
 		  ,NP_domain_exponential, Sekibun_cell_exponential
 		  );
 
-  if(ROTATION){
+  int orientation_flag = 0;
+  if(ROTATION) {
     Angular2v = Angular2v_rot_on;
   }else{
     Angular2v = Angular2v_rot_off;
@@ -152,8 +153,6 @@ void Init_Particle(Particle *p){
 	  for(int d=0; d< DIM; d++){
 	    p[n].fr[d] = 0.0;
 	    p[n].fr_previous[d] = 0.0;
-	    p[n].fv[d] = 0.0;
-	    p[n].fv_previous[d] = 0.0;
 	  }
 	}
 	  const double save_A_R_cutoff = A_R_cutoff;
@@ -209,8 +208,6 @@ void Init_Particle(Particle *p){
 	for(int d=0; d< DIM; d++){
 	  p[n].fr[d] = 0.0;
 	  p[n].fr_previous[d] = 0.0;
-	  p[n].fv[d] = 0.0;
-	  p[n].fv_previous[d] = 0.0;
 	}
       }
       {
@@ -235,21 +232,44 @@ void Init_Particle(Particle *p){
       char dmy[256];
       sprintf(dmy,"switch.INIT_distribution.user_specify.Particles[%d]",i);
       Location target(dmy);
-      sprintf(dmy,"user_specify.Particles[%d]",i);
-      ufin->get(target.sub("R.x"),p[i].x[0]);
-      ufin->get(target.sub("R.y"),p[i].x[1]);
-      ufin->get(target.sub("R.z"),p[i].x[2]);
-      ufout->put(target.sub("R.x"),p[i].x[0]);
-      ufout->put(target.sub("R.y"),p[i].x[1]);
-      ufout->put(target.sub("R.z"),p[i].x[2]);
-      ufin->get(target.sub("v.x"),p[i].v[0]);
-      ufin->get(target.sub("v.y"),p[i].v[1]);
-      ufin->get(target.sub("v.z"),p[i].v[2]);
-      ufout->put(target.sub("v.x"),p[i].v[0]);
-      ufout->put(target.sub("v.y"),p[i].v[1]);
-      ufout->put(target.sub("v.z"),p[i].v[2]);
-      fprintf(stderr,"# %d-th particle position (p_x, p_y, p_z)=(%g, %g, %g)\n",i,p[i].x[0],p[i].x[1],p[i].x[2]);
-      fprintf(stderr,"# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n",i,p[i].v[0],p[i].v[1],p[i].v[2]);
+      sprintf(dmy, "user_specify.Particles[%d]", i);
+      ufin->get(target.sub("R.x"), p[i].x[0]);
+      ufin->get(target.sub("R.y"), p[i].x[1]);
+      ufin->get(target.sub("R.z"), p[i].x[2]);
+      ufout->put(target.sub("R.x"), p[i].x[0]);
+      ufout->put(target.sub("R.y"), p[i].x[1]);
+      ufout->put(target.sub("R.z"), p[i].x[2]);
+
+      ufin->get(target.sub("v.x"), p[i].v[0]);
+      ufin->get(target.sub("v.y"), p[i].v[1]);
+      ufin->get(target.sub("v.z"), p[i].v[2]);
+      ufout->put(target.sub("v.x"), p[i].v[0]);
+      ufout->put(target.sub("v.y"), p[i].v[1]);
+      ufout->put(target.sub("v.z"), p[i].v[2]);
+
+      fprintf(stderr, "# %d-th particle position (p_x, p_y, p_z)=(%g, %g, %g)\n", 
+	      i, p[i].x[0], p[i].x[1], p[i].x[2]);
+      fprintf(stderr, "# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n", 
+	      i, p[i].v[0], p[i].v[1], p[i].v[2]);
+
+      if(ROTATION){
+	double q0,q1,q2,q3;
+	double phi, nv[DIM];
+	orientation_flag = 1;
+	ufin->get(target.sub("q.q0"), q0);
+	ufin->get(target.sub("q.q1"), q1);
+	ufin->get(target.sub("q.q2"), q2);
+	ufin->get(target.sub("q.q3"), q3);
+	ufout->put(target.sub("q.q0"), q0);
+	ufout->put(target.sub("q.q1"), q1);
+	ufout->put(target.sub("q.q2"), q2);
+	ufout->put(target.sub("q.q3"), q3);
+	qtn_init(p[i].q, q0, q1, q2, q3);
+	qtn_isnormal(p[i].q);
+	qtn_rv(phi, nv, p[i].q);
+	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
+      }
+
     }
     fprintf(stderr,"############################\n");
     if(!RESUMED){
@@ -292,26 +312,22 @@ void Init_Particle(Particle *p){
 	p[i].v[d] = 0.e0 * RA();
 	p[i].v_old[d] = 0.e0;
 	p[i].f_hydro[d] = 0.0;
-	//p[i].f_hydro_previous[d] = 0.0;
+	p[i].f_hydro_previous[d] = 0.0;
 	p[i].f_hydro1[d] = 0.0;
 	p[i].fr[d] = 0.0;
 	p[i].fr_previous[d] = 0.0;
-	p[i].fv[d] = 0.0;
-	p[i].fv_previous[d] = 0.0;
 
-	p[i].f_collison[d] = 0.0;
-	p[i].f_collison_previous[d] = 0.0;
 	
 	p[i].omega[d] = 0.0e0 *RA();
 	p[i].omega_old[d] = 0.0;
 	p[i].torque_hydro[d] = 0.0;
-	//p[i].torque_hydro_previous[d] = 0.0;
+	p[i].torque_hydro_previous[d] = 0.0;
 	p[i].torque_hydro1[d] = 0.0;
-	p[i].torquer[d] = 0.0;
-	p[i].torquer_previous[d] = 0.0;
-	p[i].torquev[d] = 0.0;
-	p[i].torquev_previous[d] = 0.0;
       }
+      if(orientation_flag == 0){
+	qtn_init(p[i].q, 1, 0, 0, 0);
+      }
+
     }
     offset += Particle_Numbers[j]; 
   }

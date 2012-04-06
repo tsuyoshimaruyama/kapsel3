@@ -362,7 +362,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double **u, const CTime &ji
 	    dmy_phi= Phi(dmyR, RADIUS);
 
 	    Hydro_force[r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]] -=
-		(p[n].momentum_depend_fr[0] + p[n].momentum_depend_restrain[0])*
+		(p[n].momentum_depend_fr[0])*
 		(r_mesh[1] + sign*L_particle[1])*dmy_phi/volume[n];//viscocity
 
 	}

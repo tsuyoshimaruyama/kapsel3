@@ -328,25 +328,35 @@ void Output_avs(AVS_parameters &Avs_parameters
 }
 
 void Output_udf(UDFManager *ufout
-		,AVS_parameters &Avs_parameters
-		,double **zeta
-		,double *uk_dc
-		,const Particle *p
-		,const CTime &time
-		){
+                , AVS_parameters &Avs_parameters
+                , double **zeta
+                , double *uk_dc
+                , const Particle *p
+                , const CTime &time
+		)
+{
   ufout->newRecord();
-  ufout->put("E",1.0);
-  ufout->put("t",time.ts);
-  for(int j=0;j<Particle_Number;j++){
+  ufout->put("E", 1.0);
+  ufout->put("t", time.ts);
+  for(int j = 0; j < Particle_Number; j++) {
     char str[256];
-    sprintf(str,"Particles[%d]",j);
+    sprintf(str, "Particles[%d]", j);
     Location target(str);
-    ufout->put(target.sub("R.x"),p[j].x[0]);
-    ufout->put(target.sub("R.y"),p[j].x[1]);
-    ufout->put(target.sub("R.z"),p[j].x[2]);
-    ufout->put(target.sub("v.x"),p[j].v[0]);
-    ufout->put(target.sub("v.y"),p[j].v[1]);
-    ufout->put(target.sub("v.z"),p[j].v[2]);
+    ufout->put(target.sub("R.x"), p[j].x[0]);
+    ufout->put(target.sub("R.y"), p[j].x[1]);
+    ufout->put(target.sub("R.z"), p[j].x[2]);
+    ufout->put(target.sub("v.x"), p[j].v[0]);
+    ufout->put(target.sub("v.y"), p[j].v[1]);
+    ufout->put(target.sub("v.z"), p[j].v[2]);
+
+    qtn_isnormal(p[j].q);
+    ufout->put(target.sub("q.q0"), qtn_q0(p[j].q));
+    ufout->put(target.sub("q.q1"), qtn_q1(p[j].q));
+    ufout->put(target.sub("q.q2"), qtn_q2(p[j].q));
+    ufout->put(target.sub("q.q2"), qtn_q3(p[j].q));
+    ufout->put(target.sub("omega.x"), p[j].omega[0]);
+    ufout->put(target.sub("omega.y"), p[j].omega[1]);
+    ufout->put(target.sub("omega.z"), p[j].omega[2]);
   }
 }
 
