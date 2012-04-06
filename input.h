@@ -44,10 +44,10 @@ enum PT {spherical_particle
 extern SW_time SW_TIME;
 //////  
 extern EQ SW_EQ;
-extern char *EQ_name[];
+extern const char *EQ_name[];
 //////  
 extern PT SW_PT;
-extern char *PT_name[];
+extern const char *PT_name[];
 //////  material parameters
 extern double RHO;
 extern double IRHO;

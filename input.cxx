@@ -11,22 +11,22 @@ int Fixed_particle = 0;
 
 //////
 EQ SW_EQ;
-char *EQ_name[]={"Navier_Stokes"
-		 ,"Shear_Navier_Stokes"
-		 ,"Shear_Navier_Stokes_Lees_Edwards"
-		 ,"Electrolyte"
+const char *EQ_name[]={"Navier_Stokes"
+		       ,"Shear_Navier_Stokes"
+		       ,"Shear_Navier_Stokes_Lees_Edwards"
+		       ,"Electrolyte"
 };
 //////
 PT SW_PT;
-char *PT_name[]={"spherical_particle"
-		 ,"chain"
+const char *PT_name[]={"spherical_particle"
+		       ,"chain"
 };
 //////
 SW_time SW_TIME;
 //////
 int SW_AVS;
 char Out_dir[128];
-char Out_name[128];;
+char Out_name[128];
 int BINARY;
 //////
 int SW_UDF;
@@ -1084,7 +1084,7 @@ void Gourmet_file_io(const char *infile
 	{
 	    target.down("FIX_CELL");
 	    {
-		char *xyz[DIM]={"x","y","z"};
+	        const char *xyz[DIM]={"x","y","z"};
 		for(int d=0;d<DIM;d++){
 		    ufin->get(target.sub(xyz[d]),str);
 		    ufout->put(target.sub(xyz[d]),str);

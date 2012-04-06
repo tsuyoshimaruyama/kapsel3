@@ -437,7 +437,7 @@ void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
     if(FIX_CELL){
 	fprintf(fp,"# time-dependent average pressure gradient ASSIGNED in");
 	for(int d=0;d<DIM;d++){
-	  char *xyz[DIM]={"x","y","z"};
+	  const char *xyz[DIM]={"x","y","z"};
 	  if(FIX_CELLxyz[d]){
 	    fprintf(fp," %s-",xyz[d]);
 	  }

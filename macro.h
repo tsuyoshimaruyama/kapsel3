@@ -55,7 +55,7 @@ inline void SRA(const int &SW_seed, const unsigned int &seed){
       fprintf(stderr, "# rand_seed= time(NULL)\n");
    }else if(SW_seed == GIVEN_SEED){
       srand(seed);
-      fprintf(stderr, "# rand_seed= %lu\n",seed);
+      fprintf(stderr, "# rand_seed= %u\n",seed);
     }else {
       fprintf(stderr, "SRA(): invalid SW_seed.\n");
       exit_job(EXIT_FAILURE);
