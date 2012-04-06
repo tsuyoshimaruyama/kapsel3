@@ -353,7 +353,7 @@ void Output_udf(UDFManager *ufout
     ufout->put(target.sub("q.q0"), qtn_q0(p[j].q));
     ufout->put(target.sub("q.q1"), qtn_q1(p[j].q));
     ufout->put(target.sub("q.q2"), qtn_q2(p[j].q));
-    ufout->put(target.sub("q.q2"), qtn_q3(p[j].q));
+    ufout->put(target.sub("q.q3"), qtn_q3(p[j].q));
     ufout->put(target.sub("omega.x"), p[j].omega[0]);
     ufout->put(target.sub("omega.y"), p[j].omega[1]);
     ufout->put(target.sub("omega.z"), p[j].omega[2]);

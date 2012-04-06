@@ -205,8 +205,6 @@ class sParticle:{
       f_hydro:Vector3d ,
       f_hydro_previous:Vector3d ,
       f_hydro1:Vector3d ,
-      f_osmotic:Vector3d ,
-      f_osmotic1:Vector3d ,
       fr:Vector3d ,
       fr_previous:Vector3d ,
       omega:Vector3d ,
