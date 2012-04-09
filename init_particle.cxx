@@ -557,10 +557,12 @@ void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
 	fprintf(fp, "#for AVS (filetype is ascii)\n");
       }
       fprintf(fp, "#directory:%s\n", Out_dir);
-      fprintf(fp, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
-	      ,Avs_parameters.out_fld
-	      ,Avs_parameters.out_cod
-	      ,Avs_parameters.out_pfx);
+      if(SW_AVSFLUID){
+	fprintf(fp, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
+		,Avs_parameters.out_fld
+		,Avs_parameters.out_cod
+		,Avs_parameters.out_pfx);
+      }
       if(Particle_Number > 0){
 	fprintf(fp, "# (particle data)->\t{%s, %s*.cod, %s*.dat}\n"
 		,Avs_parameters.out_pfld

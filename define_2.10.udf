@@ -181,6 +181,7 @@ output: {
       Out_dir: string "directory name"
       Out_name: string "prefix name for data file"
       FileType: select {"BINARY","ASCII"} "output data type"
+      AVS_fluid: select {"ON", "OFF"}
    }
    UDF: select {"ON","OFF"}
 }

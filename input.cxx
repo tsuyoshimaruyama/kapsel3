@@ -25,6 +25,7 @@ const char *PT_name[]={"spherical_particle"
 SW_time SW_TIME;
 //////
 int SW_AVS;
+int SW_AVSFLUID;
 char Out_dir[128];
 char Out_name[128];
 int BINARY;
@@ -1156,6 +1157,18 @@ void Gourmet_file_io(const char *infile
 			fprintf(stderr, "invalid FileType %s\n",str.c_str()); 
 			exit_job(EXIT_FAILURE);
 		    }
+		    ufin->get(target.sub("AVS_fluid"), str);
+		    ufout->put(target.sub("AVS_fluid"), str);
+		    ufres->put(target.sub("AVS_fluid"), str);
+		    if(str == "ON"){
+		      SW_AVSFLUID = 1;
+		    } else if (str == "OFF") {
+		      SW_AVSFLUID = 0;
+		    } else {
+		      fprintf(stderr, "invalid AVS_fluid switch %s\n", str.c_str());
+		      exit_job(EXIT_FAILURE);
+		    }
+
 		}
 		target.up();
 	    }else if(str == "OFF"){
