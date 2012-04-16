@@ -200,8 +200,8 @@ inline double qtn_sqnorm(const quaternion &q){
 /*!
   \brief Check normal quaternion
  */
-inline void qtn_isnormal(const quaternion &q){
-  assert(ABS(qtn_norm(q) - 1.0) <= QTOL);
+inline void qtn_isnormal(const quaternion &q, const double tol=QTOL){
+  assert(ABS(qtn_norm(q) - 1.0) <= tol);
 }
 
 /*!
@@ -329,7 +329,6 @@ inline void qtn_rv(double &phi, double v[DIM], const quaternion &q){
   \brief Compute rotation matrix given rotation quaternion
  */
 inline void qtn_rm(double R[DIM][DIM], const quaternion &q){
-  qtn_isnormal(q);
 
   R[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
   R[0][1] = 2.0 * q.v[0] * q.v[1] - 2.0 * q.s * q.v[2];

@@ -5,7 +5,7 @@
 
 class Vector3d:{x: float, y: float, z: float}
 class Quaternion:{q0: float, q1: float, q2: float, q3: float}
-class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion}
+class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d}
 
 constitutive_eq: {
    type: select {'Navier_Stokes','Shear_Navier_Stokes','Electrolyte'}
