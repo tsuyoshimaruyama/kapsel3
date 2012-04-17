@@ -112,6 +112,121 @@ void Make_rho_field(double *phi
   nlattice = Ns;
   Make_rho_field_primitive(phi, p, DX, NP_domain,Sekibun_cell,nlattice);
 }
+
+//
+inline int janus_geometry(const Particle &p, const double normal[DIM]){
+  double body_normal[DIM];
+  rigid_body_rotation(body_normal, normal, p.q, SPACE2BODY);
+  double &cos_theta = body_normal[2];
+  return ((cos_theta >= 0.0) ? 1 : -1);
+}
+inline void janus_add_phi(double &phi, const double dmy_phi){
+  if(phi = 0.0 || SGN(phi) * SGN(dmy_phi) > 0){
+    phi += dmy_phi;
+  }else if(ABS(dmy_phi) < 0.5){
+    phi -= dmy_phi;
+  }else{
+    phi = -phi + dmy_phi;
+  }
+}
+
+void Make_phi_janus_particle(double *phi, Particle *p){
+  int *nlattice;
+  nlattice = Ns;
+  double xp[DIM];
+  int x_int[DIM];
+  double residue[DIM];
+  int im;
+  int r_mesh[DIM];
+  double r[DIM];
+  double x[DIM];
+  double dmy_r;
+  double dmy_phi;
+
+  for(int n = 0; n < Particle_Number; n++){
+    for(int d = 0; n < Particle_Number; d+=){
+      xp[d] = p[n].x[d];
+    }
+    
+    sw_in_cell = Particle_cell(xp, DX, x_int, residue);
+    sw_in_cell = 1;
+
+    for(int mesh = 0; mesh < NP_domain, mesh++){
+      Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell,
+		     nlattice, DX, r_mesh, r);
+      dmy_r = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+      dmy_phi = Phi(dmy_r);
+      for(int d = 0; d < DIM; d++){
+	r[d] /= dmy_r;
+      }
+      dmy_phi *= (double) * janus_geometry(p[n], r);
+      im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+      janus_add_phi(phi[im], dmy_phi);
+    }//mesh
+  }//Particle Number
+
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+	im = (i * NY * NZ_) + (j * NZ_) + k;
+	if(ABS(phi[im]) > 1.0){
+	  phi[im] = (phi[im] > 0.0 ? 1.0 : -1.0);
+	}
+      }
+    }
+  }
+}
+
+void Make_phi_janus_particle_OBL(double *phi, Particle *p){
+  int *nlattice;
+  nlattice = Ns;
+  double xp[DIM];
+  int x_int[DIM];
+  double residue[DIM];
+  int im;
+  int r_mesh[DIM];
+  double r[DIM];
+  double x[DIM];
+  double dmy_r;
+  double dmy_phi;
+  int sign
+
+  for(int n = 0; n < Particle_Number; n++){
+    for(int d = 0; n < Particle_Number; d+=){
+      xp[d] = p[n].x[d];
+    }
+    
+    sw_in_cell = Particle_cell(xp, DX, x_int, residue);
+    sw_in_cell = 1;
+
+    for(int mesh = 0; mesh < NP_domain, mesh++){
+      sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, 
+					     residue, sw_in_cell, nlattice, 
+					     DX, r_mesh, r);
+      dmy_r = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+      dmy_phi = Phi(dmy_r);
+      for(int d = 0; d < DIM; d++){
+	r[d] /= dmy_r;
+      }
+      dmy_phi *= (double) * janus_geometry(p[n], r);
+      im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+      janus_add_phi(phi[im], dmy_phi);
+    }//mesh
+  }//Particle Number
+
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+	im = (i * NY * NZ_) + (j * NZ_) + k;
+	if(ABS(phi[im]) > 1.0){
+	  phi[im] = (phi[im] > 0.0 ? 1.0 : -1.0);
+	}
+      }
+    }
+  }
+}
+
+
 inline void Make_phi_u_primitive(double *phi
 				 ,double **up
 				 ,Particle *p
