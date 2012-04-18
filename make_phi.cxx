@@ -142,16 +142,17 @@ void Make_phi_janus_particle(double *phi, Particle *p){
   double x[DIM];
   double dmy_r;
   double dmy_phi;
+  int sw_in_cell;
 
   for(int n = 0; n < Particle_Number; n++){
-    for(int d = 0; n < Particle_Number; d+=){
+    for(int d = 0; n < Particle_Number; d++){
       xp[d] = p[n].x[d];
     }
     
     sw_in_cell = Particle_cell(xp, DX, x_int, residue);
     sw_in_cell = 1;
 
-    for(int mesh = 0; mesh < NP_domain, mesh++){
+    for(int mesh = 0; mesh < NP_domain; mesh++){
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell,
 		     nlattice, DX, r_mesh, r);
       dmy_r = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
@@ -159,7 +160,8 @@ void Make_phi_janus_particle(double *phi, Particle *p){
       for(int d = 0; d < DIM; d++){
 	r[d] /= dmy_r;
       }
-      dmy_phi *= (double) * janus_geometry(p[n], r);
+
+      dmy_phi *= (double) janus_geometry(p[n], r);
       im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
       janus_add_phi(phi[im], dmy_phi);
     }//mesh
@@ -189,17 +191,18 @@ void Make_phi_janus_particle_OBL(double *phi, Particle *p){
   double x[DIM];
   double dmy_r;
   double dmy_phi;
-  int sign
+  int sign;
+  int sw_in_cell;
 
   for(int n = 0; n < Particle_Number; n++){
-    for(int d = 0; n < Particle_Number; d+=){
+    for(int d = 0; n < Particle_Number; d++){
       xp[d] = p[n].x[d];
     }
     
     sw_in_cell = Particle_cell(xp, DX, x_int, residue);
     sw_in_cell = 1;
 
-    for(int mesh = 0; mesh < NP_domain, mesh++){
+    for(int mesh = 0; mesh < NP_domain; mesh++){
       sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, 
 					     residue, sw_in_cell, nlattice, 
 					     DX, r_mesh, r);
@@ -208,7 +211,7 @@ void Make_phi_janus_particle_OBL(double *phi, Particle *p){
       for(int d = 0; d < DIM; d++){
 	r[d] /= dmy_r;
       }
-      dmy_phi *= (double) * janus_geometry(p[n], r);
+      dmy_phi *= (double) janus_geometry(p[n], r);
       im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
       janus_add_phi(phi[im], dmy_phi);
     }//mesh
