@@ -265,9 +265,20 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("q.q2"), q2);
 	ufout->put(target.sub("q.q3"), q3);
 	qtn_init(p[i].q, q0, q1, q2, q3);
+
+	ufin->get(target.sub("omega.x"), p[i].omega[0]);
+	ufin->get(target.sub("omega.y"), p[i].omega[1]);
+	ufin->get(target.sub("omega.z"), p[i].omega[2]);
+	ufout->put(target.sub("omega.x"), p[i].omega[0]);
+	ufout->put(target.sub("omega.y"), p[i].omega[1]);
+	ufout->put(target.sub("omega.z"), p[i].omega[2]);
+
 	qtn_isnormal(p[i].q);
 	qtn_rv(phi, nv, p[i].q);
-	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
+	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 
+		i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
+	fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)",
+		i, p[i].omega[0], p[i].omega[1], p[i].omega[2]);
       }
 
     }

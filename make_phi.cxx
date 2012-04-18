@@ -145,7 +145,7 @@ void Make_phi_janus_particle(double *phi, Particle *p){
   int sw_in_cell;
 
   for(int n = 0; n < Particle_Number; n++){
-    for(int d = 0; n < Particle_Number; d++){
+    for(int d = 0; d < DIM; d++){
       xp[d] = p[n].x[d];
     }
     
@@ -195,7 +195,7 @@ void Make_phi_janus_particle_OBL(double *phi, Particle *p){
   int sw_in_cell;
 
   for(int n = 0; n < Particle_Number; n++){
-    for(int d = 0; n < Particle_Number; d++){
+    for(int d = 0; d < DIM; d++){
       xp[d] = p[n].x[d];
     }
     
