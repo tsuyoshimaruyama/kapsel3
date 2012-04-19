@@ -117,7 +117,7 @@ void Make_rho_field(double *phi
 inline double janus_geometry(const Particle &p, const double normal[DIM]){
   double body_normal[DIM];
   rigid_body_rotation(body_normal, normal, p.q, SPACE2BODY);
-  double &cos_theta = body_normal[2];
+  double &cos_theta = body_normal[SW_JANUS_AXIS];
   return ((cos_theta >= 0.0) ? 1.0 : -1.0);
 }
 

@@ -1,0 +1,123 @@
+#
+# $Id: Makefile,v 2.00 2009/08/04 $
+#
+
+## default options
+#MKL_PATH = /opt/intel/mkl/10.1.1.019/lib/em64t
+#MKL_INCLUDE_PATH = /opt/intel/mkl/10.1.1.019/include
+
+ENV=DESK
+#ENV=WORKSTATION
+#ENV=HOME
+#ENV=AIR
+#ENV=CLUSTER
+#ENV=CLUSTER_MKL_OMP
+
+## options for 
+ifeq ($(ENV), DESK)
+      ARCH   = macosx
+      CC     = gcc
+      CXX    = g++
+      CCOPT  = -O3 
+      LINKS  = -lm -lplatform -lstdc++
+      GOURMET_HOME_PATH = /Users/john/Work_PostDoc/OCTA2010/GOURMET_2010
+endif
+
+ifeq ($(ENV), WORKSTATION)
+      ARCH   = linux_64
+      CC     = gcc
+      CXX    = g++
+      COPT   = -O3 -static
+      LINKS  = -lm -lplatform -lstdc++
+      GOURMET_HOME_PATH = /home/john/Work/OCTA2010/GOURMET_2010
+endif
+
+## options for ICC/LINUX
+ifeq ($(ENV), CLUSTER)
+      ARCH   = linux_64
+      CC     = icc 
+      CXX    = icpc 
+      CCOPT  = -O3 -static -xT -axT -w0
+      LINKS  = -lm -lplatform -lcxaguard -lstdc++
+endif
+
+## options for GCC+MKL+OMP/LINUX
+ifeq ($(ENV), CLUSTER_MKL_OMP)
+      ARCH   = linux_64 
+      CC     = icc 
+      CXX    = icpc 
+      CCOPT  = -O3 -xT -axT -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
+      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
+endif
+
+GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
+GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
+CFLAGS 	= $(CCOPT) -L$(GOURMET_LIB_PATH) -I$(GOURMET_INCLUDE_PATH) # -lrfftw -lfftw
+
+OBJS  	= mt19937ar.o\
+	operate_electrolyte.o\
+	fluct.o\
+	alloc.o\
+	solute_rhs.o\
+	fftsg.o\
+	fftsg3d.o\
+	avs_output.o\
+	avs_output_p.o\
+	resume.o\
+	make_phi.o\
+	fluid_solver.o\
+	particle_solver.o\
+	md_force.o\
+	profile.o\
+	interaction.o\
+	operate_omega.o\
+	fft_wrapper.o\
+	f_particle.o\
+	init_fluid.o\
+	init_particle.o\
+	input.o\
+	rigid_body.o\
+	sp_3d_ns.o
+
+TARGET     = kapsel
+XYZ        = get_xyz
+QUATERNION = quaternion
+RIGID_BODY = rigid_body
+
+## Implicit rules
+
+.SUFFIXES: .c .cxx .o .out
+
+## Build rules
+
+all: $(TARGET) $(XYZ) $(QUATERNION) $(RIGID_BODY)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(OBJS) -o $(TARGET).x $(CFLAGS) $(LINKS)
+
+$(XYZ): get_xyz.o alloc.o
+	$(CXX) alloc.o get_xyz.o -o $(XYZ).x $(CFLAGS) $(LINKS)
+
+$(QUATERNION): quaternion_test.o
+	$(CXX) quaternion_test.o -o $(QUATERNION).x
+
+$(RIGID_BODY): rigid_body_test.o rigid_body.o
+	$(CXX) rigid_body.o rigid_body_test.o -o $(RIGID_BODY).x
+
+## Compile
+
+.cxx.o: 
+	$(CXX) -c $< $(CFLAGS) -o $@
+
+.c.o: 
+	$(CC) -c $< $(CFLAGS) -o $@
+
+## Clean
+
+clean:
+	rm -f *.o *.x
+	rm -f *~ *.bak
+
+depend:
+	makedepend -- $(CFLAGS) -- *.cxx *.c *.h
+

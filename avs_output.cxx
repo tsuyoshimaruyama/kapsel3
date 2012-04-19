@@ -271,10 +271,14 @@ void Output_avs(AVS_parameters &Avs_parameters
       Reset_phi(phi);
       if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
 	Make_phi_particle_OBL(phi, p);
-	Make_phi_janus_particle_OBL(phi, up[0], p); // +1/-1 janus polarity
+	if(SW_JANUS){
+	  Make_phi_janus_particle_OBL(phi, up[0], p); // +1/-1 janus polarity
+	}
       } else {
 	Make_phi_particle(phi, p);
-	Make_phi_janus_particle(phi, up[0], p); // +1/-1 janus polarity
+	if(SW_JANUS){
+	  Make_phi_janus_particle(phi, up[0], p); // +1/-1 janus polarity
+	}
       }
   }
   

@@ -26,6 +26,9 @@ SW_time SW_TIME;
 //////
 int SW_AVS;
 int SW_AVSFLUID;
+int SW_JANUS;
+int SW_JANUS_AXIS;
+int SW_JANUS_REACT;
 char Out_dir[128];
 char Out_name[128];
 int BINARY;
@@ -768,6 +771,29 @@ void Gourmet_file_io(const char *infile
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
 	    }
+	}
+
+	ufin->get(target.sub("janus_axis"), str);
+	ufout->put(target.sub("janus_axis"), str.c_str());
+	ufres->put(target.sub("janus_axis"), str.c_str());
+	if(str == "none"){
+	  SW_JANUS = 0;
+	  SW_JANUS_AXIS = -1;
+	}else if(str == "X"){
+	  SW_JANUS = 1;
+	  SW_JANUS_AXIS = 0;
+	}else if(str == "Y"){
+	  SW_JANUS = 1;
+	  SW_JANUS_AXIS = 1;
+	}else if(str == "Z"){
+	  SW_JANUS = 1;
+	  SW_JANUS_AXIS = 2;
+	}else{
+	  fprintf(stderr, "Invalid Janus Axis: %s\n", str.c_str());
+	  exit_job(EXIT_FAILURE);
+	}
+	if(SW_JANUS){
+	  fprintf(stderr, "JANUS Axis: %d\n", SW_JANUS_AXIS);
 	}
     }
     

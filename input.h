@@ -88,6 +88,8 @@ extern double LJ_dia;
 /////// avs output;
 extern int SW_AVS;
 extern int SW_AVSFLUID;
+extern int SW_JANUS;
+extern int SW_JANUS_AXIS;
 extern char Out_dir[];
 extern char Out_name[];
 extern int BINARY;

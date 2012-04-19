@@ -83,6 +83,7 @@ constitutive_eq: {
 
 object_type: {
    type: select {'spherical_particle','chain'}
+   janus_axis: select {'none', 'X', 'Y', 'Z'} "janus axis in body-fixed frame"
 
    spherical_particle: { 
       Particle_spec[]:{
