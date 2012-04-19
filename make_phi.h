@@ -17,10 +17,14 @@ extern int **Sekibun_cell;
 extern int **Sekibun_cell_interface;
 
 void Make_phi_u_advection(double *phi, double **up, Particle *p);
+
 void Make_phi_janus_particle(double *phi,
+			     double *id_phi,
 			     Particle *p);
 void Make_phi_janus_particle_OBL(double *phi,
-			     Particle *p);
+				 double *id_phi,
+				 Particle *p);
+
 void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius = RADIUS
