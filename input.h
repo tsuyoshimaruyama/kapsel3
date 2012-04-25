@@ -41,6 +41,11 @@ enum EQ {Navier_Stokes
 enum PT {spherical_particle
 	 ,chain
 };
+enum JAX {x_axis, y_axis, z_axis, no_axis};
+enum JP {swimmer,
+	 rotator,
+	 tumbler,
+         no_propulsion};
 //////  
 extern SW_time SW_TIME;
 //////  
@@ -88,8 +93,13 @@ extern double LJ_dia;
 /////// avs output;
 extern int SW_AVS;
 extern int SW_AVSFLUID;
+
 extern int SW_JANUS;
-extern int SW_JANUS_AXIS;
+extern JAX *janus_axis;
+extern JP *janus_propulsion;
+extern double **janus_force;
+extern double **janus_torque;
+
 extern char Out_dir[];
 extern char Out_name[];
 extern int BINARY;

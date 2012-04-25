@@ -116,8 +116,23 @@ void Make_rho_field(double *phi
 //
 inline double janus_geometry(const Particle &p, const double normal[DIM]){
   double body_normal[DIM];
+  double cos_theta;
+
   rigid_body_rotation(body_normal, normal, p.q, SPACE2BODY);
-  double &cos_theta = body_normal[SW_JANUS_AXIS];
+  if(janus_axis[p.spec] == x_axis){
+    cos_theta = body_normal[0];
+  }else if(janus_axis[p.spec] == y_axis){
+    cos_theta = body_normal[1];
+  }else if(janus_axis[p.spec] == z_axis){
+    cos_theta = body_normal[2];
+  }
+  else if(janus_axis[p.spec] == no_axis){
+    cos_theta = 1.0;
+  }else{
+    fprintf(stderr, "Error: %d not a janus particle\n", p.spec);
+    exit_job(EXIT_FAILURE);
+  }
+
   return ((cos_theta >= 0.0) ? 1.0 : -1.0);
 }
 
@@ -133,13 +148,14 @@ void Make_phi_janus_particle(double *phi, double *id_phi, Particle *p){
   Reset_phi(id_phi, -1.0);
 
   for(int n = 0; n < Particle_Number; n++){
+    
     for(int d = 0; d < DIM; d++){
       xp[d] = p[n].x[d];
     }
     
     sw_in_cell = Particle_cell(xp, DX, x_int, residue);
     sw_in_cell = 1;
-
+    
     for(int mesh = 0; mesh < NP_domain; mesh++){
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell,
 		     nlattice, DX, r_mesh, r);
@@ -148,13 +164,13 @@ void Make_phi_janus_particle(double *phi, double *id_phi, Particle *p){
 	r[d] /= dmy_r;
       }
       im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-
+      
       //New mesh point or closer particle
       if(id_phi[im] < 0 || dmy_r < id_phi[im]){
 	phi[im] = janus_geometry(p[n], r) * ABS(phi[im]);
 	id_phi[im] = dmy_r;
       }
-
+      
     }//mesh
   }//Particle Number
 }
@@ -177,7 +193,7 @@ void Make_phi_janus_particle_OBL(double *phi, double *id_phi, Particle *p){
     
     sw_in_cell = Particle_cell(xp, DX, x_int, residue);
     sw_in_cell = 1;
-
+    
     for(int mesh = 0; mesh < NP_domain; mesh++){
       sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, 
 					     residue, sw_in_cell, nlattice, 
@@ -187,16 +203,15 @@ void Make_phi_janus_particle_OBL(double *phi, double *id_phi, Particle *p){
 	r[d] /= dmy_r;
       }
       im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-
+      
       //New mesh point or closer particle
       if(id_phi[im] < 0 || dmy_r < id_phi[im]){
 	phi[im] = janus_geometry(p[n], r) * ABS(phi[im]);
 	id_phi[im] = dmy_r;
       }
-
+      
     }//mesh
   }//Particle Number
-
 }
 
 

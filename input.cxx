@@ -16,19 +16,21 @@ const char *EQ_name[]={"Navier_Stokes"
 		       ,"Shear_Navier_Stokes_Lees_Edwards"
 		       ,"Electrolyte"
 };
+
+
 //////
 PT SW_PT;
 const char *PT_name[]={"spherical_particle"
 		       ,"chain"
 };
 //////
+const char *JAX_name[]={"X", "Y", "Z", "NONE"};
+const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "OFF"};
+//////
 SW_time SW_TIME;
 //////
 int SW_AVS;
 int SW_AVSFLUID;
-int SW_JANUS;
-int SW_JANUS_AXIS;
-int SW_JANUS_REACT;
 char Out_dir[128];
 char Out_name[128];
 int BINARY;
@@ -126,6 +128,13 @@ int *Beads_Numbers;
 int *Chain_Numbers;
 int GTS;
 int Num_snap;
+//per species janus specifications
+int SW_JANUS;
+JAX *janus_axis;           
+JP *janus_propulsion;  
+double **janus_force;      
+double **janus_torque;
+
 
 //
 double NU;
@@ -748,6 +757,13 @@ void Gourmet_file_io(const char *infile
 		    
 		    Surface_charge = alloc_1d_double(Component_Number);
 		    Surface_charge_e = alloc_1d_double(Component_Number);
+
+
+		    janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
+		    janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
+		    janus_force = alloc_2d_double(Component_Number, DIM);
+		    janus_torque = alloc_2d_double(Component_Number, DIM);
+
 		}
 	    }
 	}else if(str == PT_name[chain]){
@@ -770,49 +786,13 @@ void Gourmet_file_io(const char *infile
 		
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
+
+		janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
+		janus_propulsion = NULL;
+		janus_force = NULL;
+		janus_torque = NULL;
+		
 	    }
-	}
-
-	ufin->get(target.sub("janus_axis"), str);
-	ufout->put(target.sub("janus_axis"), str);
-	ufres->put(target.sub("janus_axis"), str);
-	if(str == "none"){
-	  SW_JANUS = 0;
-	  SW_JANUS_AXIS = -1;
-	}else if(str == "X"){
-	  SW_JANUS = 1;
-	  SW_JANUS_AXIS = 0;
-	}else if(str == "Y"){
-	  SW_JANUS = 1;
-	  SW_JANUS_AXIS = 1;
-	}else if(str == "Z"){
-	  SW_JANUS = 1;
-	  SW_JANUS_AXIS = 2;
-	}else{
-	  fprintf(stderr, "Invalid Janus Axis: %s\n", str.c_str());
-	  exit_job(EXIT_FAILURE);
-	}
-	if(SW_JANUS){
-	  fprintf(stderr, "JANUS Axis: %d\n", SW_JANUS_AXIS);
-	}
-
-	if(SW_JANUS && SW_PT != chain){
-	  ufin->get(target.sub("janus_propulsion"), str);
-	  ufout->put(target.sub("janus_propulsion"), str);
-	  ufres->put(target.sub("janus_propulsion"), str);
-	  
-	  if(str == "OFF"){
-	    SW_JANUS_PROPULSION = no_propulsion;
-	  }else if(str == "SWIMMER"){
-	    SW_JANUS_PROPULSION = swimmer;
-	  }else if(str == "ROTATOR"){
-	    SW_JANUS_PROPULSION = rotator;
-	  }else if(str == "TUMBLER"){
-	    SW_JANUS_PROPULSION = tumbler;
-	  }else{
-	    fprintf(stderr, "Error: Unknown propulsion mechanism\n");
-	    exit_job(EXIT_FAILURE);
-	  }
 	}
     }
     
@@ -820,71 +800,146 @@ void Gourmet_file_io(const char *infile
 	{
 	    fprintf(stderr, "#\n");
 	    if(SW_PT == spherical_particle){
+	        int d = 1;
+	        fprintf(stderr, "#%d:species",d++);
+		fprintf(stderr, " %d:number_of_particle[i]",d++);
+		fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		if(SW_EQ == Electrolyte){
-		    int d=1;
-		    fprintf(stderr, "#%d:species",d++);
-		    fprintf(stderr, " %d:number_of_particle[i]",d++);
-		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
-		    fprintf(stderr, " %d:Surface_charge[i]",d++);
-		}else {
-		    int d=1;
-		    fprintf(stderr, "#%d:species",d++);
-		    fprintf(stderr, " %d:number_of_particle[i]",d++);
-		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		  fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
+		fprintf(stderr, " %d:janus_axis[i]",d++);
+		fprintf(stderr, " %d:janus_propulsion[i]", d++);
+		fprintf(stderr, " %d:janus_force_x[i]",d++);
+		fprintf(stderr, " %d:janus_force_y[i]",d++);
+		fprintf(stderr, " %d:janus_force_z[i]",d++);
+		fprintf(stderr, " %d:janus_torque_x[i]",d++);
+		fprintf(stderr, " %d:janus_torque_y[i]",d++);
+		fprintf(stderr, " %d:janus_torque_z[i]",d++);
 	    }else if(SW_PT == chain){
+	        int d=1;
+		fprintf(stderr, "#%d:species",d++);
+		fprintf(stderr, " %d:total_number_of_particle[i]",d++);
+		fprintf(stderr, " %d:number_of_beads[i]",d++);
+		fprintf(stderr, " %d:number_of_chain[i]",d++);
+		fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		if(SW_EQ == Electrolyte){
-		    int d=1;
-		    fprintf(stderr, "#%d:species",d++);
-		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
-		    fprintf(stderr, " %d:number_of_beads[i]",d++);
-		    fprintf(stderr, " %d:number_of_chain[i]",d++);
-		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		    fprintf(stderr, " %d:Surface_charge[i]",d++);
-		}else {
-		    int d=1;
-		    fprintf(stderr, "#%d:species",d++);
-		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
-		    fprintf(stderr, " %d:number_of_beads[i]",d++);
-		    fprintf(stderr, " %d:number_of_chain[i]",d++);
-		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		}
+		fprintf(stderr, "%d:janus_axis[i]",d++);
 	    }
 	    fprintf(stderr, "\n");
 	}
 	
+	SW_JANUS = 0;
 	if(SW_PT == spherical_particle){
 	    for(int i=0; i<Component_Number; i++){
 		char str[256];
 		sprintf(str,"object_type.spherical_particle.Particle_spec[%d]",i);
 		Location target(str);
 		{
+                    string str_in;
 		    ufin->get(target.sub("Particle_number"),Particle_Numbers[i]);
 		    ufin->get(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufin->get(target.sub("Surface_charge"),Surface_charge[i]);
+
+		    ufin->get(target.sub("janus_axis"), str_in);
+		    if(str_in == JAX_name[no_axis]){
+		      janus_axis[i] = no_axis;
+		    }else if(str_in == JAX_name[x_axis]){
+		      janus_axis[i] = x_axis;
+		      SW_JANUS = 1;
+		    }else if(str_in == JAX_name[y_axis]){
+		      janus_axis[i] = y_axis;
+		      SW_JANUS = 1;
+		    }else if(str_in == JAX_name[z_axis]){
+		      janus_axis[i] = z_axis;
+		      SW_JANUS = 1;
+		    }else{
+		      fprintf(stderr, "ERROR: Unknown axis specification\n");
+		      exit_job(EXIT_FAILURE);
+		    }
+
+		    ufin->get(target.sub("janus_propulsion"), str_in);
+		    if(str_in == JP_name[no_propulsion]){
+		      janus_propulsion[i] = no_propulsion;
+		    }else if(str_in == JP_name[swimmer]){
+		      janus_propulsion[i] = swimmer;
+		    }else if(str_in == JP_name[rotator]){
+		      janus_propulsion[i] = rotator;
+		    }else if(str_in == JP_name[tumbler]){
+		      janus_propulsion[i] = tumbler;
+		    }else{
+		      fprintf(stderr, "ERROR: Unknown propulsion mechanism\n");
+		      exit_job(EXIT_FAILURE);
+		    }
+
+		    if(janus_propulsion[i] == swimmer || janus_propulsion[i] == tumbler){
+		      ufin->get(target.sub("janus_force.x"), janus_force[i][0]);
+		      ufin->get(target.sub("janus_force.y"), janus_force[i][1]);
+		      ufin->get(target.sub("janus_force.z"), janus_force[i][2]);
+		    }else{
+		      for(int d = 0; d < DIM; d++){
+			janus_force[i][d] = 0.0;
+		      }
+		    }
+
+		    if(janus_propulsion[i] == rotator || janus_propulsion[i] == tumbler){
+		      ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
+		      ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
+		      ufin->get(target.sub("janus_torque.z"), janus_torque[i][2]);
+		    }else{
+		      for(int d = 0; d < DIM; d++){
+			janus_torque[i][d] = 0.0;
+		      }
+		    }
 		}
 		{
 		    ufout->put(target.sub("Particle_number"),Particle_Numbers[i]);
 		    ufout->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufout->put(target.sub("Surface_charge"),Surface_charge[i]);
+		    ufout->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
+		    ufout->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
+		    ufout->put(target.sub("janus_force.x"), janus_force[i][0]);
+		    ufout->put(target.sub("janus_force.y"), janus_force[i][1]);
+		    ufout->put(target.sub("janus_force.z"), janus_force[i][2]);
+		    ufout->put(target.sub("janus_torque.x"), janus_torque[i][0]);
+		    ufout->put(target.sub("janus_torque.y"), janus_torque[i][1]);
+		    ufout->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		}
 		{
 		    ufres->put(target.sub("Particle_number"),Particle_Numbers[i]);
 		    ufres->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufres->put(target.sub("Surface_charge"),Surface_charge[i]);
+		    ufres->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
+		    ufres->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
+		    ufres->put(target.sub("janus_force.x"), janus_force[i][0]);
+		    ufres->put(target.sub("janus_force.y"), janus_force[i][1]);
+		    ufres->put(target.sub("janus_force.z"), janus_force[i][2]);
+		    ufres->put(target.sub("janus_torque.x"), janus_torque[i][0]);
+		    ufres->put(target.sub("janus_torque.y"), janus_torque[i][1]);
+		    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
+
 		}
 		if(SW_EQ == Electrolyte){
-		    fprintf(stderr, "#%d %d %g %g\n"
+		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]
 			    ,Surface_charge[i]
+			    ,JAX_name[janus_axis[i]]
+			    ,JP_name[janus_propulsion[i]]
+			    ,janus_force[i][0], janus_force[i][1], janus_force[i][2]
+			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %f\n"
+		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
-			    ,MASS_RATIOS[i]);
+			    ,MASS_RATIOS[i]
+			    ,JAX_name[janus_axis[i]]
+			    ,JP_name[janus_propulsion[i]]
+			    ,janus_force[i][0], janus_force[i][1], janus_force[i][2]
+			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]);
 		}
 		
 		fprintf(stderr, "#\n");
@@ -896,42 +951,69 @@ void Gourmet_file_io(const char *infile
 		sprintf(str,"object_type.chain.Chain_spec[%d]",i);
 		Location target(str);
 		{
+		    
 		    ufin->get(target.sub("Beads_number"),Beads_Numbers[i]);
 		    ufin->get(target.sub("Chain_number"),Chain_Numbers[i]);
 		    ufin->get(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufin->get(target.sub("Surface_charge"),Surface_charge[i]);
+
+		    string str_in;
+		    ufin->get(target.sub("janus_axis"), str_in);
+		    if(str_in == JAX_name[no_axis]){
+		      janus_axis[i] = no_axis;
+		    }else if(str_in == JAX_name[x_axis]){
+		      janus_axis[i] = x_axis;
+		      SW_JANUS = 1;
+		    }else if(str_in == JAX_name[y_axis]){
+		      janus_axis[i] = y_axis;
+		      SW_JANUS = 1;
+		    }else if(str_in == JAX_name[z_axis]){
+		      janus_axis[i] = z_axis;
+		      SW_JANUS = 1;
+		    }else{
+		      fprintf(stderr, "ERROR: Unknown axis specification\n");
+		      exit_job(EXIT_FAILURE);
+		    }
 		}
 		{
 		    ufout->put(target.sub("Beads_number"),Beads_Numbers[i]);
 		    ufout->put(target.sub("Chain_number"),Chain_Numbers[i]);
 		    ufout->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufout->put(target.sub("Surface_charge"),Surface_charge[i]);
+
+		    ufout->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
 		}
 		{
 		    ufres->put(target.sub("Beads_number"),Beads_Numbers[i]);
 		    ufres->put(target.sub("Chain_number"),Chain_Numbers[i]);
 		    ufres->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
 		    ufres->put(target.sub("Surface_charge"),Surface_charge[i]);
+
+		    ufres->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
+
 		}
 		
 		Particle_Numbers[i] = Beads_Numbers[i]*Chain_Numbers[i];
 		
 		if(SW_EQ == Electrolyte){
-		    fprintf(stderr, "#%d %d %d %d %g %g\n"
+		    fprintf(stderr, "#%d %d %d %d %g %g %s\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,Beads_Numbers[i]
 			    ,Chain_Numbers[i]
 			    ,MASS_RATIOS[i]
 			    ,Surface_charge[i]
+			    ,JAX_name[janus_axis[i]]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %d %d %f\n"
+		    fprintf(stderr, "#%d %d %d %d %f %s\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,Beads_Numbers[i]
 			    ,Chain_Numbers[i]
-			    ,MASS_RATIOS[i]);
+			    ,MASS_RATIOS[i]
+			    ,JAX_name[janus_axis[i]]
+			);
 		}
 	    }
 	    fprintf(stderr, "#\n");
