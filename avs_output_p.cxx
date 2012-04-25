@@ -106,7 +106,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
   //Precompute orientation matrix
   for(int n = 0; n < Particle_Number; n++){
     qtn_isnormal(p[n].q);
-    qtn_rm(p[n].QR, p[n].q);
+    rqtn_rm(p[n].QR, p[n].q);
   }
 
   if(BINARY) {

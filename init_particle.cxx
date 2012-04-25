@@ -274,7 +274,7 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("omega.z"), p[i].omega[2]);
 
 	qtn_isnormal(p[i].q);
-	qtn_rv(phi, nv, p[i].q);
+	rqtn_rv(phi, nv, p[i].q);
 	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 
 		i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
 	fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)",

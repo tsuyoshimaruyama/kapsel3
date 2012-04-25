@@ -125,13 +125,6 @@ void rigid_body_rotation(double rotated[DIM],
 
   qtn_vector(rotated, q_dmy);
 }
-inline void rigid_body_rotation(double rotated[DIM], 
-				const quaternion &q, 
-				const COORD_TRANS &transform){
-  double original[DIM];
-  v_copy(original, rotated);
-  rigid_body_rotation(rotated, original, q, transform);
-}
 
 // Perform rigid body rotation
 // (rotation matrix)
@@ -148,15 +141,6 @@ void rigid_body_rotation(double rotated[DIM],
     exit_job(EXIT_FAILURE);
   }
 }
-inline void rigid_body_rotation(double rotated[DIM],
-				const double QR[DIM][DIM],
-				const COORD_TRANS &transform){
-  double original[DIM];
-  v_copy(original, rotated);
-  rigid_body_rotation(rotated, original, QR, transform);
-}
-
-
 
 //
 // time derivative of orientation quaternion

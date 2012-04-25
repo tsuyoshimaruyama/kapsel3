@@ -262,7 +262,7 @@ inline int qtn_cmp(const quaternion &qa, const quaternion &qb,
 /*!
   \brief Compute rotation quaternion given angle and (normal) axis vector
  */
-inline void rv_qtn(quaternion &q, const double &phi, const double n[DIM]){
+inline void rv_rqtn(quaternion &q, const double &phi, const double n[DIM]){
   double ds;
   double dni;
   
@@ -285,7 +285,7 @@ inline void rv_qtn(quaternion &q, const double &phi, const double n[DIM]){
   \brief Compute rotation quaternion given rotation vector
   \details Rotation angle is given directly by the magnitude of the vector
  */
-inline void rv_qtn(quaternion &q, const double v[DIM]){
+inline void rv_rqtn(quaternion &q, const double v[DIM]){
   double phi;
   double ds;
   double dni;
@@ -302,9 +302,9 @@ inline void rv_qtn(quaternion &q, const double v[DIM]){
 }
 
 /*!
-  \brief Compute rotation angle and (normal) vector for quaternion
+  \brief Compute rotation angle and (normal) vector for rotation quaternion
  */
-inline void qtn_rv(double &phi, double v[DIM], const quaternion &q){
+inline void rqtn_rv(double &phi, double v[DIM], const quaternion &q){
   double ds;
 
   qtn_isnormal(q);
@@ -326,9 +326,21 @@ inline void qtn_rv(double &phi, double v[DIM], const quaternion &q){
 }
 
 /*!
+  \brief Compute random rotation quaternion (see Numerical Recipes)
+ */
+inline void random_rqtn(quaternion &q){
+  double u0, u1, u2, u3, scale;
+  RA_circle(u0, u1);
+  RA_circle(u2, u3);
+  scale = sqrt((1.0 - u0*u0 - u1*u1)/(u2*u2 + u3*u3));
+  qtn_init(q, u3*scale, u0, u1, u2*scale);
+  qtn_isnormal(q);
+}
+
+/*!
   \brief Compute rotation matrix given rotation quaternion
  */
-inline void qtn_rm(double R[DIM][DIM], const quaternion &q){
+inline void rqtn_rm(double R[DIM][DIM], const quaternion &q){
 
   R[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
   R[0][1] = 2.0 * q.v[0] * q.v[1] - 2.0 * q.s * q.v[2];
@@ -343,10 +355,11 @@ inline void qtn_rm(double R[DIM][DIM], const quaternion &q){
   R[2][2] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[1] * q.v[1];
 }
 
+
 /*!
   \brief Compute transpose of rotation matrix given rotation quaternion
  */
-inline void qtn_rmt(double R_T[DIM][DIM], const quaternion &q){
+inline void rqtn_rmt(double R_T[DIM][DIM], const quaternion &q){
   qtn_isnormal(q);
 
   R_T[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
@@ -365,7 +378,7 @@ inline void qtn_rmt(double R_T[DIM][DIM], const quaternion &q){
 /*!
   \brief Compute rotation rate matrix E given quaternion
  */
-inline void qtn_rm_e(double E[DIM][DIM+1], const quaternion &q){
+inline void rqtn_rm_e(double E[DIM][DIM+1], const quaternion &q){
   qtn_isnormal(q);
 
   E[0][0] = -q.v[0];
@@ -386,7 +399,7 @@ inline void qtn_rm_e(double E[DIM][DIM+1], const quaternion &q){
 /*!
   \brief Compute transpose of rotation rate matrix E given quaternion
  */
-inline void qtn_rm_et(double E_T[DIM+1][DIM], const quaternion &q){
+inline void rqtn_rm_et(double E_T[DIM+1][DIM], const quaternion &q){
   qtn_isnormal(q);
 
   E_T[0][0] = -q.v[0];
@@ -409,7 +422,7 @@ inline void qtn_rm_et(double E_T[DIM+1][DIM], const quaternion &q){
 /*!
   \brief Compute rotation matrix G given quaternion
  */
-inline void qtn_rm_g(double gmatrix[DIM][DIM+1], const quaternion &q){
+inline void rqtn_rm_g(double gmatrix[DIM][DIM+1], const quaternion &q){
   qtn_isnormal(q);
 
   gmatrix[0][0] = -q.v[0];
@@ -431,7 +444,7 @@ inline void qtn_rm_g(double gmatrix[DIM][DIM+1], const quaternion &q){
 /*!
   \brief Compute transpose of rotation matrix G given quaternion
  */
-inline void qtn_rm_gt(double gmatrix[DIM+1][DIM], const quaternion &q){
+inline void rqtn_rm_gt(double gmatrix[DIM+1][DIM], const quaternion &q){
   qtn_isnormal(q);
 
   gmatrix[0][0] = -q.v[0];

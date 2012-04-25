@@ -23,8 +23,8 @@ int main(int argc, char**argv){
 			 {0.0, 1.0, 0.0},
 			 {0.0, 0.0, 1.0}};
 
-  rv_qtn(q0, phi, n); //orientation - quaternion repr.
-  qtn_rm(R0, q0);     //orientation - so(3)
+  rv_rqtn(q0, phi, n); //orientation - quaternion repr.
+  rqtn_rm(R0, q0);     //orientation - so(3)
 
   double Ip[DIM] = {2.0, 2.0, 8.0}; // principles intertia moments (body axes)
   double I[DIM][DIM] = {{Ip[0], 0.0, 0.0}, // inertia tensor (body axes)
@@ -55,7 +55,7 @@ int main(int argc, char**argv){
   v_copy(w, w0);
   v_copy(w2, w0);
   qtn_init(q, q0);
-  qtn_rm(Rt, q);
+  rqtn_rm(Rt, q);
   M_copy(Rt2, Rt);
   o_qr.precision(8);
   o_rr.precision(8);
@@ -78,7 +78,7 @@ int main(int argc, char**argv){
 	 << Rt2[0][2] << spc << Rt2[1][2] << spc << Rt2[2][2] << endl;
 
     printf("%d\n", steps);
-    qtn_rm(Rt, q);
+    rqtn_rm(Rt, q);
 
   }
   o_qr.close();

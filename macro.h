@@ -67,7 +67,33 @@ inline double RA(){// uniform in [-1, 1]
 inline double RAx(const double &x){ // uniform in [0, x)
     return (double)rand()/RAND_MAX * x;
 }
+inline void RA_circle(double &a, double &b){//random point inside unit circle
+  int inside = 0;
+  do{
+    a = RA();
+    b = RA();
+    if(a*a + b*b <= 1){
+      inside = 1;
+    }
+  }while(!inside);
+}
+inline void RA_on_circle(double &a, double &b){
+  RA_circle(a, b);
+  double norm = 1.0/sqrt(a*a + b*b);
+  a = a * norm;
+  b = b * norm;
+}
+inline void RA_on_sphere(double &a, double &b, double &c){//random point inside sphere
+  double u0, u1, norm, dmy;
 
+  RA_circle(u0,u1);
+  norm = u0*u0 + u1*u1;
+  dmy = sqrt(1.0 - norm);
+
+  a = 2.0 * u0 * dmy;
+  b = 2.0 * u1 * dmy;
+  c = 1.0 - 2.0 * norm;
+}
 /////////////////////// macro for simple arithmetics
 inline double POW6(const double x){
   double dmy = x*x*x;

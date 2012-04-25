@@ -153,8 +153,8 @@ int main(int argc, char**argv){
   qtn_init(qg1, 0.851671, -0.302921, -0.0873818, 0.41864);
   
   
-  rv_qtn(qc1, rv);
-  rv_qtn(qc2, phi, rn);
+  rv_rqtn(qc1, rv);
+  rv_rqtn(qc2, phi, rn);
   qtn_scalar(phi, qc1);
   qtn_vector(rv, qc1);
   printf("Rotation : %.5f %.5f %.5f %.5f\n",
@@ -206,12 +206,12 @@ int main(int argc, char**argv){
 			      {0.0873818,-0.302921,0.851671}};
 
 
-  qtn_rm(QR_C, qc1);
-  qtn_rmt(QRT_C, qc1);
-  qtn_rm_e(QE_C, qc1);
-  qtn_rm_et(QET_C, qc1);
-  qtn_rm_g(QG_C, qc1);
-  qtn_rm_gt(QGT_C, qc1);
+  rqtn_rm(QR_C, qc1);
+  rqtn_rmt(QRT_C, qc1);
+  rqtn_rm_e(QE_C, qc1);
+  rqtn_rm_et(QET_C, qc1);
+  rqtn_rm_g(QG_C, qc1);
+  rqtn_rm_gt(QGT_C, qc1);
 
   // Make sure matrices are propertly computed
   if(mat_cmp(&QR_C[0][0], &QR_G[0][0], DIM, DIM)){//QR

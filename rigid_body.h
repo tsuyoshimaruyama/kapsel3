@@ -275,11 +275,23 @@ inline void v_M_prod(double xA[DIM],
   v_M_prod(xA, x, A, alpha);
 }
 
+/*!
+  \brief Compute random rotation matrix
+ */
+inline void random_rotation(double QR[DIM][DIM]){
+  quaternion dmy_q;
+  random_rqtn(dmy_q);
+  rqtn_rm(QR, dmy_q);
+  M_isValidRotation(QR);
+}
+
+
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
 // Vector Transformation: Space <--> Body Coordinate Frames
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
+
 
 /*!
   \brief Transform between body/space and space/body frames given the
@@ -289,13 +301,18 @@ void rigid_body_rotation(double rotated[DIM],
 				const double original[DIM], 
 				const quaternion &q, 
 				const COORD_TRANS &transform);
+
 /*!
   \brief Transform between body/space and space/body frames given the
   current orientation QUATERNION (in place)
  */
 inline void rigid_body_rotation(double rotated[DIM], 
 				const quaternion &q, 
-				const COORD_TRANS &transform);
+				const COORD_TRANS &transform){
+  double original[DIM];
+  v_copy(original, rotated);
+  rigid_body_rotation(rotated, original, q, transform);
+}
 
 
 /*!
@@ -312,7 +329,11 @@ void rigid_body_rotation(double rotated[DIM],
  */
 inline void rigid_body_rotation(double rotated[DIM], 
 				const double QR[DIM][DIM], 
-				const COORD_TRANS &transform);
+				const COORD_TRANS &transform){
+  double original[DIM];
+  v_copy(original, rotated);
+  rigid_body_rotation(rotated, original, QR, transform);
+}
 
 //////////////////////////////////////////////////
 //

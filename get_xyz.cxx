@@ -180,7 +180,7 @@ int main(int argc, char* argv[])
 	ufin -> get(target.sub("omega.z"), w[2]);
 	qtn_init(q, q0 ,q1, q2, q3);
 	qtn_isnormal(q, QTOL_LARGE);
-	qtn_rm(QR, q);
+	rqtn_rm(QR, q);
 
 	write_xyz(outfile, t, r, QR, v, w, ntotal, id);
       }
