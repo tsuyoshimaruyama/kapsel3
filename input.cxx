@@ -774,8 +774,8 @@ void Gourmet_file_io(const char *infile
 	}
 
 	ufin->get(target.sub("janus_axis"), str);
-	ufout->put(target.sub("janus_axis"), str.c_str());
-	ufres->put(target.sub("janus_axis"), str.c_str());
+	ufout->put(target.sub("janus_axis"), str);
+	ufres->put(target.sub("janus_axis"), str);
 	if(str == "none"){
 	  SW_JANUS = 0;
 	  SW_JANUS_AXIS = -1;
@@ -794,6 +794,25 @@ void Gourmet_file_io(const char *infile
 	}
 	if(SW_JANUS){
 	  fprintf(stderr, "JANUS Axis: %d\n", SW_JANUS_AXIS);
+	}
+
+	if(SW_JANUS && SW_PT != chain){
+	  ufin->get(target.sub("janus_propulsion"), str);
+	  ufout->put(target.sub("janus_propulsion"), str);
+	  ufres->put(target.sub("janus_propulsion"), str);
+	  
+	  if(str == "OFF"){
+	    SW_JANUS_PROPULSION = no_propulsion;
+	  }else if(str == "SWIMMER"){
+	    SW_JANUS_PROPULSION = swimmer;
+	  }else if(str == "ROTATOR"){
+	    SW_JANUS_PROPULSION = rotator;
+	  }else if(str == "TUMBLER"){
+	    SW_JANUS_PROPULSION = tumbler;
+	  }else{
+	    fprintf(stderr, "Error: Unknown propulsion mechanism\n");
+	    exit_job(EXIT_FAILURE);
+	  }
 	}
     }
     

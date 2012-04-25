@@ -84,6 +84,15 @@ constitutive_eq: {
 object_type: {
    type: select {'spherical_particle','chain'}
    janus_axis: select {'none', 'X', 'Y', 'Z'} "janus axis in body-fixed frame"
+   janus_propulsion: select {'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER'} "Self-propulsion mechanism"
+   propulsion_force: {
+     direction: Vector3d "self-propulsion direction in principle-axes body coordinates"
+     magnitude: double "magnitude of self-propulsion force"
+   }
+   propulsion_torque: {
+     direction: Vector3d "self-rotating direction in principle-axes body coordinates "
+     magnitude: double "magnitude of self-rotating torque"
+   }  
 
    spherical_particle: { 
       Particle_spec[]:{
