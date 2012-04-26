@@ -10,7 +10,6 @@ void Init_Particle(Particle *p){
 		  ,NP_domain_exponential, Sekibun_cell_exponential
 		  );
 
-  int orientation_flag = 0;
   if(ROTATION) {
     Angular2v = Angular2v_rot_on;
   }else{
@@ -252,10 +251,9 @@ void Init_Particle(Particle *p){
       fprintf(stderr, "# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n", 
 	      i, p[i].v[0], p[i].v[1], p[i].v[2]);
 
-      if(ROTATION){
+      if(ROTATION && ORIENTATION == user_dir){
 	double q0,q1,q2,q3;
 	double phi, nv[DIM];
-	orientation_flag = 1;
 	ufin->get(target.sub("q.q0"), q0);
 	ufin->get(target.sub("q.q1"), q1);
 	ufin->get(target.sub("q.q2"), q2);
@@ -311,6 +309,30 @@ void Init_Particle(Particle *p){
       }
     }
   }
+  
+  //set orientation
+  if(ROTATION && ORIENTATION != user_dir){
+    if(ORIENTATION == random_dir){
+      for(int i = 0; i < Particle_Number; i++){
+	random_rqtn(p[i].q);
+	qtn_isnormal(p[i].q);
+      }
+    }else if(ORIENTATION == space_dir){
+      for(int i = 0; i < Particle_Number; i++){
+	qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
+	qtn_isnormal(p[i].q);
+      }
+    }else{
+      fprintf(stderr, "Error: wrong ORIENTATION\n");
+      exit_job(EXIT_FAILURE);
+    }
+  }
+  if(!ROTATION){
+    for(int i = 0; i < Particle_Number; i++){
+      qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
+      qtn_isnormal(p[i].q);
+    }
+  }
 
   // species, velocity, angular velocity
   int offset = 0;
@@ -335,10 +357,6 @@ void Init_Particle(Particle *p){
 	p[i].torque_hydro_previous[d] = 0.0;
 	p[i].torque_hydro1[d] = 0.0;
       }
-      if(orientation_flag == 0){
-	qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
-      }
-
     }
     offset += Particle_Numbers[j];
   }

@@ -30,6 +30,11 @@ enum Particle_IC {
   ,BCC
   ,user_specify
 };
+enum Particle_IO {
+  random_dir,
+  space_dir,
+  user_dir
+};
 enum SW_time {
     AUTO, MANUAL
 };
@@ -147,6 +152,7 @@ extern int ROTATION;
 extern int STOKES;
 extern int LJ_truncate;
 extern Particle_IC DISTRIBUTION;
+extern Particle_IO ORIENTATION;
 extern int N_iteration_init_distribution;
 extern int FIX_CELL;
 extern int FIX_CELLxyz[DIM];

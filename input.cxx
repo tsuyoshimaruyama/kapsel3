@@ -79,6 +79,7 @@ int ROTATION;
 int STOKES;
 int LJ_truncate;
 Particle_IC DISTRIBUTION;
+Particle_IO ORIENTATION;
 int N_iteration_init_distribution;
 int FIX_CELL;
 int FIX_CELLxyz[DIM];
@@ -1206,6 +1207,25 @@ void Gourmet_file_io(const char *infile
 		cerr << str << endl;
 		fprintf(stderr, "invalid DISTRIBUTION\n"); 
 		exit_job(EXIT_FAILURE);
+	    }
+	}
+
+	{
+            Location target("switch");
+	    string str;
+	    ufin->get(target.sub("INIT_orientation"), str);
+	    ufout->put(target.sub("INIT_orientation"), str);
+	    ufres->put(target.sub("INIT_orientation"), str);
+	    if(str == "user_specify"){
+	      ORIENTATION = user_dir;
+	    }else if(str == "random"){
+	      ORIENTATION = random_dir;
+	    }else if(str == "space_align"){
+	      ORIENTATION = space_dir;
+	    }else{
+	      cerr << str << endl;
+	      fprintf(stderr, "invalid ORIENTATION\n");
+	      exit_job(EXIT_FAILURE);
 	    }
 	}
 	

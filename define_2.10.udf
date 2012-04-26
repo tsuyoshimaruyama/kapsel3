@@ -155,6 +155,7 @@ switch: {
          Particles[]: Particle
       }
    }
+   INIT_orientation: select {'user_specify', 'random', 'space_align'}
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"

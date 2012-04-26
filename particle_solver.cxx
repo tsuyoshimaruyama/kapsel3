@@ -4,26 +4,30 @@
 #include "particle_solver.h"
 
 inline void MD_solver_orientation_Euler(Particle &p, const double &dt){
-  quaternion dqdt;
-  qtn_init(p.q_old, p.q);
-  qdot(dqdt, p.q, p.omega, SPACE_FRAME);
-  qtn_add(p.q, dqdt, dt);
-  qtn_normalize(p.q);
+  if(ROTATION){
+    quaternion dqdt;
+    qtn_init(p.q_old, p.q);
+    qdot(dqdt, p.q, p.omega, SPACE_FRAME);
+    qtn_add(p.q, dqdt, dt);
+    qtn_normalize(p.q);
+  }
 }
 inline void MD_solver_orientation_AB2(Particle &p, const double &dt){
-  double wb[DIM];
-  double wb_old[DIM];
-  rigid_body_rotation(wb, p.omega, p.q, SPACE2BODY);
-  rigid_body_rotation(wb_old, p.omega_old, p.q_old, SPACE2BODY);
-  for(int d = 0; d < DIM; d++){
-    wb[d] = 3.0*wb[d] - wb_old[d];
+  if(ROTATION){
+    double wb[DIM];
+    double wb_old[DIM];
+    rigid_body_rotation(wb, p.omega, p.q, SPACE2BODY);
+    rigid_body_rotation(wb_old, p.omega_old, p.q_old, SPACE2BODY);
+    for(int d = 0; d < DIM; d++){
+      wb[d] = 3.0*wb[d] - wb_old[d];
+    }
+    
+    quaternion dqdt;
+    qtn_init(p.q_old, p.q);
+    qdot(dqdt, p.q, wb, BODY_FRAME);
+    qtn_add(p.q, dqdt, dt);
+    qtn_normalize(p.q);
   }
-
-  quaternion dqdt;
-  qtn_init(p.q_old, p.q);
-  qdot(dqdt, p.q, wb, BODY_FRAME);
-  qtn_add(p.q, dqdt, dt);
-  qtn_normalize(p.q);
 }
 
 void MD_solver_position_Euler(Particle *p, const CTime &jikan)
