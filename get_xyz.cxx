@@ -9,7 +9,10 @@
 #define MAXBUFFER 100
 #define NDIM 3
 using namespace std;
-enum ID_OPTION {POSITION, ORIENTATION, VELOCITY, OMEGA, POSVEL,ANGULAR_POSVEL, ALL, INVALID};
+enum ID_OPTION_P {POSITION, ORIENTATION, ALL_POS, NO_POS};
+enum ID_OPTION_V {VELOCITY, OMEGA, ALL_VEL, NO_VEL};
+enum ID_OPTION_F {FORCE, TORQUE, ALL_FRC, NO_FRC};
+enum OPTION {in_pos = 1, in_vel = 2, in_frc = 3, in_fin = 4, in_fout = 5};
 
 void newframe(ofstream &outfile,
 	      double &t,
@@ -17,29 +20,42 @@ void newframe(ofstream &outfile,
 
 void write_xyz(ofstream &outfile, 
 	       double &t,
+	       const int &pid,
+	       const int &sid,
 	       double r[NDIM], 
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
 	       double w[NDIM],
+	       double frc[NDIM],
+	       double tau[NDIM],
 	       int &ntot,
-	       ID_OPTION &flag
+	       ID_OPTION_P &pflag,
+	       ID_OPTION_V &vflag,
+	       ID_OPTION_F &fflag
 	       );
 
-void init_xyz(ofstream &outfile, char *fname, ID_OPTION &flag);
+void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag);
 
 void close_xyz(ofstream &outfile);
 
 
 inline void wrong_invocation(){
-  cout << "Usage: get_xyz -OPT UDFfile XYZfile" << endl;
+  cout << "Usage: get_xyz -OPT_pos -OPT_vel -OPT_frc UDFfile XYZfile" << endl;
   cout << "Options:" << endl;
+  cout << "OPT_pos:" << endl;
   cout << "  -r\t positions" << endl;
   cout << "  -q\t orientations" << endl;
-  cout << "  -v\t velocites" << endl;
+  cout << "  -rq\t all pos/orientation info" << endl;
+  cout << endl;
+  cout << "OPT_vel:" << endl;
+  cout << "  -v\t linear velocities" << endl;
   cout << "  -w\t angular velocities" << endl;
-  cout << "  -rv\t positions + velocities" << endl;
-  cout << "  -qw\t orientation + angular velocity" << endl;
-  cout << "  -all\t all info" << endl;
+  cout << "  -vw\t all velocity infro" << endl;
+  cout << endl;
+  cout << "OPT_frc:" << endl;
+  cout << "  -f\t hydrodynamic forces" << endl;
+  cout << "  -t\t hydrodynamic torques" << endl;
+  cout << "  -ft\t all force/torque info" << endl;
   exit(1);
 }
 
@@ -47,52 +63,73 @@ int main(int argc, char* argv[])
 {
   
   //check invocation
-  ID_OPTION id = INVALID;
-  if(argc != 4){
+  ID_OPTION_P idp = NO_POS;
+  ID_OPTION_V idv = NO_VEL;
+  ID_OPTION_F idf = NO_FRC;
+  
+  if(argc != 6){
     wrong_invocation();
   }
-  if(strcmp(argv[1], "-r") == 0){
-    id = POSITION;
+  if(strcmp(argv[in_pos], "-r") == 0){
+    idp = POSITION;
     cout << "Print position" << endl;
-  }
-  if(strcmp(argv[1], "-q") == 0){
-    id = ORIENTATION;
+  }else if(strcmp(argv[in_pos], "-q") == 0){
+    idp = ORIENTATION;
     cout << "Print orientation" << endl;
-  }
-  if(strcmp(argv[1], "-v") == 0){
-    id = VELOCITY;
-    cout << "Print velocity" << endl;
-  }
-  if(strcmp(argv[1], "-w") == 0){
-    id = OMEGA;
-    cout << "Print angular velocity" << endl;
-  }
-  if(strcmp(argv[1], "-rv") == 0){
-    id = POSVEL;
-    cout << "Print linear coordinates" << endl;
-  }
-  if(strcmp(argv[1], "-qw") == 0){
-    id = ANGULAR_POSVEL;
-    cout << "Print angular coordinates" << endl;
-  }
-  if(strcmp(argv[1], "-all") == 0){
-    id = ALL;
-    cout << "Print all coordinates" << endl;
-  }
-  if(id == INVALID) {
+  }else if(strcmp(argv[in_pos], "-rq") == 0){
+    idp = ALL_POS;
+    cout << "Print all position info" << endl;
+  }else if(strcmp(argv[in_pos], "-n")){
+    idp = NO_POS;
+    cout << "Skipping position info" << endl;
+  }else{
     wrong_invocation();
+  }
+
+  if(strcmp(argv[in_vel], "-v") == 0){
+    idv = VELOCITY;
+    cout << "Print velocity" << endl;
+  }else if(strcmp(argv[in_vel], "-w") == 0){
+    idv = OMEGA;
+    cout << "Print angular velocity" << endl;
+  }else if(strcmp(argv[in_vel], "-vw") == 0){
+    idv = ALL_VEL;
+    cout << "Print all velocity info" << endl;
+  }else if(strcmp(argv[in_vel], "-n") == 0){
+    idv = NO_VEL;
+    cout << "Skipping velocity info" << endl;
+  }else{
+    wrong_invocation();
+  }
+
+  if(strcmp(argv[in_frc], "-f") == 0){
+    idf = FORCE;
+    cout << "Print hydrodynamic force" << endl;
+  }else if(strcmp(argv[in_frc], "-t") == 0){
+    idf = TORQUE;
+    cout << "Print hydrodynamic torque" << endl;
+  }else if(strcmp(argv[in_frc], "-ft") == 0){
+    idf = ALL_FRC;
+    cout << "Print hydrodynamic force info" << endl;
+  }else if(strcmp(argv[in_frc], "-n") == 0){
+    idf = NO_FRC;
+    cout << "Skipping force info" << endl;
+  }else{
+    wrong_invocation();
+  }
+
+  if(idp == NO_POS && idv == NO_VEL && idf == NO_FRC){
+    cout << "Nothing to do" << endl;
+    exit(0);
   }
 
   //make sure udf file exists
   UDFManager *ufin;
-  if(file_check(argv[2])){
-    //    cout << "Reading UDF file: "<< argv[2] << endl;
-    ufin = new UDFManager(argv[2]);
+  if(file_check(argv[in_fin])){
+    ufin = new UDFManager(argv[in_fin]);
   }
   ofstream outfile;
-  //  cout << "Writing XYZ file: " << argv[3] << endl;
-  //outfile.open(argv[3]);
-  init_xyz(outfile, argv[3], id);
+  init_xyz(outfile, argv[in_fout], idp, idv, idf);
   
 
   int nx, ny, nz;
@@ -100,6 +137,7 @@ int main(int argc, char* argv[])
   int ntotal;
   int nspec;
   int *pnum;
+  int *spec_id;
   const string sep = "\t\t";  
 
   {
@@ -135,6 +173,15 @@ int main(int argc, char* argv[])
       nmax = MAX(nmax, pnum[i]);
       ntotal += pnum[i];
     }
+    spec_id = (int*) malloc(sizeof(int) * ntotal);
+    int sum = 0;
+    for(int i = 0; i < nspec; i++){
+      for(int j = 0; j < pnum[j]; j++){
+	spec_id[sum] = i + 1;
+	sum++;
+      }
+    }
+    assert(sum == ntotal);
   }
   {
     //frame data
@@ -149,6 +196,8 @@ int main(int argc, char* argv[])
     double v[NDIM];
     double w[NDIM];
     double QR[NDIM][NDIM];
+    double frc[NDIM];
+    double tau[NDIM];
     quaternion q;
     double t;
     double q0,q1,q2,q3;
@@ -164,25 +213,47 @@ int main(int argc, char* argv[])
 	sprintf(str, "Particles[%d]", j);
 	Location target(str);
 
-	ufin -> get(target.sub("R.x"), r[0]);
-	ufin -> get(target.sub("R.y"), r[1]);
-	ufin -> get(target.sub("R.z"), r[2]);
-	ufin -> get(target.sub("v.x"), v[0]);
-	ufin -> get(target.sub("v.y"), v[1]);
-	ufin -> get(target.sub("v.z"), v[2]);
+	if(idp == POSITION || idp == ALL_POS){
+	  ufin -> get(target.sub("R.x"), r[0]);
+	  ufin -> get(target.sub("R.y"), r[1]);
+	  ufin -> get(target.sub("R.z"), r[2]);
+	}
+	
+	if(idp == ORIENTATION || idp == ALL_POS){
+	  ufin -> get(target.sub("q.q0"), q0);
+	  ufin -> get(target.sub("q.q1"), q1);
+	  ufin -> get(target.sub("q.q2"), q2);
+	  ufin -> get(target.sub("q.q3"), q3);
+	  qtn_init(q, q0 ,q1, q2, q3);
+	  qtn_isnormal(q, QTOL_LARGE);
+	  rqtn_rm(QR, q);
+	}
 
-	ufin -> get(target.sub("q.q0"), q0);
-	ufin -> get(target.sub("q.q1"), q1);
-	ufin -> get(target.sub("q.q2"), q2);
-	ufin -> get(target.sub("q.q3"), q3);
-	ufin -> get(target.sub("omega.x"), w[0]);
-	ufin -> get(target.sub("omega.y"), w[1]);
-	ufin -> get(target.sub("omega.z"), w[2]);
-	qtn_init(q, q0 ,q1, q2, q3);
-	qtn_isnormal(q, QTOL_LARGE);
-	rqtn_rm(QR, q);
+	if(idv == VELOCITY || idv == ALL_VEL){
+	  ufin -> get(target.sub("v.x"), v[0]);
+	  ufin -> get(target.sub("v.y"), v[1]);
+	  ufin -> get(target.sub("v.z"), v[2]);
+	}
 
-	write_xyz(outfile, t, r, QR, v, w, ntotal, id);
+	if(idv == OMEGA || idv == ALL_VEL){
+	  ufin -> get(target.sub("omega.x"), w[0]);
+	  ufin -> get(target.sub("omega.y"), w[1]);
+	  ufin -> get(target.sub("omega.z"), w[2]);
+	}
+
+	if(idf == FORCE || idf == ALL_FRC){
+	  ufin -> get(target.sub("f_hydro.x"), frc[0]);
+	  ufin -> get(target.sub("f_hydro.y"), frc[1]);
+	  ufin -> get(target.sub("f_hydro.z"), frc[2]);
+	}
+
+	if(idf == TORQUE || idf == ALL_FRC){
+	  ufin -> get(target.sub("torque_hydro.x"), tau[0]);
+	  ufin -> get(target.sub("torque_hydro.y"), tau[1]);
+	  ufin -> get(target.sub("torque_hydro.z"), tau[2]);
+	}
+
+	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, w, frc, tau, ntotal, idp, idv, idf);
       }
     }
   }
@@ -200,72 +271,92 @@ void newframe(ofstream &outfile,
 
 void write_xyz(ofstream &outfile, 
 	       double &t,
+	       const int &pid,
+	       const int &sid,
 	       double r[NDIM], 
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
 	       double w[NDIM],
+	       double frc[NDIM],
+	       double tau[NDIM],
 	       int &ntot,
-	       ID_OPTION &flag){
+	       ID_OPTION_P &pflag,
+	       ID_OPTION_V &vflag,
+	       ID_OPTION_F &fflag){
   char str[4096];
   char dmy_str[256];
   
 
   sprintf(str, "%f ", t);
-  if(flag == POSITION || flag == POSVEL || flag == ALL){
+  sprintf(str, "%d %d ", sid, pid);
+  if(pflag == POSITION || pflag == ALL_POS){
     sprintf(dmy_str, "%.6g  %.6g  %.6g ", r[0], r[1], r[2]);
     strcat(str, dmy_str);
   }
-  if(flag == VELOCITY || flag == POSVEL || flag == ALL){
+  if(vflag == VELOCITY || vflag == ALL_VEL){
     sprintf(dmy_str, "%.6g  %.6g  %.6g ", v[0], v[1], v[2]);
     strcat(str, dmy_str);
-    
   }
-  if(flag == ORIENTATION || flag == ANGULAR_POSVEL || flag == ALL){
+
+  if(pflag == ORIENTATION || pflag == ALL_POS){
     sprintf(dmy_str, "%.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g ", 
 	    QR[0][0], QR[1][0], QR[2][0],
 	    QR[0][1], QR[1][1], QR[2][1],
 	    QR[0][2], QR[1][2], QR[2][2]);
     strcat(str, dmy_str);
   }
-  if(flag == OMEGA || flag == ANGULAR_POSVEL || flag == ALL){
+  if(vflag == OMEGA || vflag == ALL_VEL){
     sprintf(dmy_str, "%.6g %.6g %.6g ", w[0], w[1], w[2]);
     strcat(str, dmy_str);
   }
-  if(flag != POSITION && flag != ORIENTATION && flag != VELOCITY
-     && flag != OMEGA && flag != POSVEL && flag != ANGULAR_POSVEL 
-     && flag != ALL){
-    cout << "Wrong flag!" << endl;
+
+  if(fflag == FORCE || fflag == ALL_FRC){
+    sprintf(dmy_str, "%.6g %.6g %.6g ", frc[0], frc[1], frc[2]);
+    strcat(str, dmy_str);
+  }
+  if(fflag == TORQUE || fflag == ALL_FRC){
+    sprintf(dmy_str, "%.6g %.6g %.6g", tau[0], tau[1], tau[2]);
+  }
+
+  if(pflag != POSITION && pflag != ORIENTATION && pflag != ALL_POS){
+    cout << "Wrong position flag!" << endl;
     exit(1);
   }
+  if(vflag != VELOCITY && vflag != OMEGA && vflag != ALL_VEL){
+    cout << "Wrong velocity flag!" << endl;
+    exit(1);
+  }
+  if(fflag != FORCE && fflag != TORQUE && fflag != ALL_FRC){
+    cout << "Wrong  force flag!" << endl;
+    exit(1);
+  }
+
   outfile << str << endl;
 }
 
-void init_xyz(ofstream &outfile, char *fname, ID_OPTION &flag){
+void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag){
 
   outfile.open(fname);
   char str[256];    
   sprintf(str, "## ");
-  if(flag == POSITION || flag == POSVEL || flag == ALL){
+  if(pflag == POSITION || pflag == ALL_POS){
     strcat(str, "r_x, r_y, r_z ");
-    
   }
-  if(flag == VELOCITY || flag == POSVEL || flag == ALL){
+  if(vflag == VELOCITY || vflag == ALL_VEL){
     strcat(str, "v_x, v_y, v_z ");
 
   }
-  if(flag == ORIENTATION || flag == ANGULAR_POSVEL || flag == ALL){
+  if(pflag == ORIENTATION || pflag == ALL_POS){
     strcat(str, "e1_x e1_y e1_z e2_x e2_y e2_z e3_x e3_y e3_z ");
-
   }
-  if(flag == OMEGA || flag == ANGULAR_POSVEL || flag == ALL){
-    strcat(str, "w_x, w_y, w_z");
-
+  if(vflag == OMEGA || vflag == ALL_VEL){
+    strcat(str, "w_x, w_y, w_z ");
   }
-  if(flag != POSITION && flag != ORIENTATION && flag != VELOCITY
-     && flag != OMEGA && flag != POSVEL && flag != ANGULAR_POSVEL 
-     && flag != ALL){
-    cout << "Wrong flag!" << endl;
-    exit(1);
+  if(fflag == FORCE || fflag == ALL_FRC){
+    strcat(str, "F_x, F_y, F_z ");
+  }
+  if(fflag == TORQUE || fflag == ALL_FRC){
+    strcat(str, "N_x, N_y, N_z");
   }
   outfile << str << endl;
 

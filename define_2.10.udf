@@ -83,22 +83,15 @@ constitutive_eq: {
 
 object_type: {
    type: select {'spherical_particle','chain'}
-   janus_axis: select {'none', 'X', 'Y', 'Z'} "janus axis in body-fixed frame"
-   janus_propulsion: select {'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER'} "Self-propulsion mechanism"
-   propulsion_force: {
-     direction: Vector3d "self-propulsion direction in principle-axes body coordinates"
-     magnitude: double "magnitude of self-propulsion force"
-   }
-   propulsion_torque: {
-     direction: Vector3d "self-rotating direction in principle-axes body coordinates "
-     magnitude: double "magnitude of self-rotating torque"
-   }  
-
    spherical_particle: { 
       Particle_spec[]:{
          Particle_number: int "number of colloidal particles"
          MASS_RATIO: double "mass density ratio colloid/solvent"
          Surface_charge: double "surface charge of colloid"
+	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
+	 janus_propulsion: select{'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER'}
+	 janus_force: Vector3d "self-propulsion force"
+	 janus_torque: Vector3d "self-propulsion torque"
       }
    }//end spherical_particle
 
@@ -108,6 +101,7 @@ object_type: {
          Chain_number: int "number of chains"
          MASS_RATIO: double "mass density ratio chain/solvent"
          Surface_charge: double "surface charge of colloid"
+	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
       }
    }//end chain
 }//end object_type
@@ -199,13 +193,11 @@ output: {
 \end{global_def}
 
 \begin{def}
+class outParticle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d, 
+      		   f_hydro:Vector3d, torque_hydro:Vector3d}
 E: float "total kinetic energy of the system"
 t: float "total time"
-//class Vector3d:{x: float y: float z: float}
-//class Particle:{ R:Vector3d,  v:Vector3d}      
-//class tensor:{xy: float yz: float zx: float xx: float yy: float}
-//class nspec:{ Concentration: float, Concentration_rhs0: float, Rho_ion: float}
-Particles[]: Particle
+Particles[]: outParticle
 \end{def}
 
 \begin{def}
