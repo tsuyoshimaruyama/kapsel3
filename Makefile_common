@@ -37,8 +37,9 @@ ifeq ($(ENV), CLUSTER)
       ARCH   = linux_64
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -static -xT -axT -w0
+      CCOPT  = -O3 -static -xSSSE3 -axSSSE3 -w0
       LINKS  = -lm -lplatform -lcxaguard -lstdc++
+      GOURMET_HOME_PATH = /home/john/OCTA2010/GOURMET_2010
 endif
 
 ## options for GCC+MKL+OMP/LINUX
@@ -46,8 +47,9 @@ ifeq ($(ENV), CLUSTER_MKL_OMP)
       ARCH   = linux_64 
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xT -axT -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
+      CCOPT  = -O3 -xSSSE3 -axSSSE3 -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
       LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
+      GOURMET_HOME_PATH = /home/john/OCTA2010/GOURMET_2010
 endif
 
 GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)

@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
     spec_id = (int*) malloc(sizeof(int) * ntotal);
     int sum = 0;
     for(int i = 0; i < nspec; i++){
-      for(int j = 0; j < pnum[j]; j++){
+      for(int j = 0; j < pnum[i]; j++){
 	spec_id[sum] = i + 1;
 	sum++;
       }
@@ -287,35 +287,34 @@ void write_xyz(ofstream &outfile,
   char dmy_str[256];
   
 
-  sprintf(str, "%f ", t);
-  sprintf(str, "%d %d ", sid, pid);
+  sprintf(str, "%d %d ", pid, sid);
   if(pflag == POSITION || pflag == ALL_POS){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g ", r[0], r[1], r[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", r[0], r[1], r[2]);
     strcat(str, dmy_str);
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g ", v[0], v[1], v[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", v[0], v[1], v[2]);
     strcat(str, dmy_str);
   }
 
   if(pflag == ORIENTATION || pflag == ALL_POS){
-    sprintf(dmy_str, "%.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g ", 
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", 
 	    QR[0][0], QR[1][0], QR[2][0],
 	    QR[0][1], QR[1][1], QR[2][1],
 	    QR[0][2], QR[1][2], QR[2][2]);
     strcat(str, dmy_str);
   }
   if(vflag == OMEGA || vflag == ALL_VEL){
-    sprintf(dmy_str, "%.6g %.6g %.6g ", w[0], w[1], w[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", w[0], w[1], w[2]);
     strcat(str, dmy_str);
   }
 
   if(fflag == FORCE || fflag == ALL_FRC){
-    sprintf(dmy_str, "%.6g %.6g %.6g ", frc[0], frc[1], frc[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", frc[0], frc[1], frc[2]);
     strcat(str, dmy_str);
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
-    sprintf(dmy_str, "%.6g %.6g %.6g", tau[0], tau[1], tau[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g", tau[0], tau[1], tau[2]);
   }
 
   if(pflag != POSITION && pflag != ORIENTATION && pflag != ALL_POS){
@@ -338,7 +337,7 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
 
   outfile.open(fname);
   char str[256];    
-  sprintf(str, "## ");
+  sprintf(str, "## p_id spec_id ");
   if(pflag == POSITION || pflag == ALL_POS){
     strcat(str, "r_x, r_y, r_z ");
   }

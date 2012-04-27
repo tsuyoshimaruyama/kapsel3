@@ -364,12 +364,12 @@ void Output_udf(UDFManager *ufout
     ufout->put(target.sub("omega.y"), p[j].omega[1]);
     ufout->put(target.sub("omega.z"), p[j].omega[2]);
 
-    ufout->put(target.sub("f_hydro.x"), p[j].f_hydro[0]);
-    ufout->put(target.sub("f_hydro.y"), p[j].f_hydro[1]);
-    ufout->put(target.sub("f_hydro.y"), p[j].f_hydro[2]);
-    ufout->put(target.sub("torque_hydro.x"), p[j].torque_hydro[0]);
-    ufout->put(target.sub("torque_hydro.y"), p[j].torque_hydro[1]);
-    ufout->put(target.sub("torque_hydro.y"), p[j].torque_hydro[2]);
+    ufout->put(target.sub("f_hydro.x"), p[j].f_hydro_previous[0]);
+    ufout->put(target.sub("f_hydro.y"), p[j].f_hydro_previous[1]);
+    ufout->put(target.sub("f_hydro.z"), p[j].f_hydro_previous[2]);
+    ufout->put(target.sub("torque_hydro.x"), p[j].torque_hydro_previous[0]);
+    ufout->put(target.sub("torque_hydro.y"), p[j].torque_hydro_previous[1]);
+    ufout->put(target.sub("torque_hydro.z"), p[j].torque_hydro_previous[2]);
   }
 }
 
