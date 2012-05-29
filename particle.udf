@@ -78,12 +78,14 @@ object_type:{
   [
   {//species 1
    1,				//Particle Number
-   1.00000000000000,		//MASS_RATION
+   1.00000000000000,		//MASS_RATIO
    0.0,				//Surface_charge
    "Z", 			//Janus_axis
-   "SWIMMER", 			//Propulsion mechanism
+   "SLIP", 			//Propulsion mechanism
    {1.0, 0.0, 0.0}, 		//Propulsion force
    {0.0, 0.0, 0.0}		//Propulsion torque
+   1.0	      			//slip coeff
+   0.0				//slip mode
   }
   ]
  }

@@ -1,4 +1,4 @@
-#ifned LAD3_H
+#ifndef LAD3_H
 #define LAD3_H
 
 static double QRTOL=1.0e-12;

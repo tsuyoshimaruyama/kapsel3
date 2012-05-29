@@ -50,6 +50,7 @@ enum JAX {x_axis, y_axis, z_axis, no_axis};
 enum JP {swimmer,
 	 rotator,
 	 tumbler,
+	 slip,
          no_propulsion};
 //////  
 extern SW_time SW_TIME;
@@ -104,6 +105,8 @@ extern JAX *janus_axis;
 extern JP *janus_propulsion;
 extern double **janus_force;
 extern double **janus_torque;
+extern double *janus_slip_vel;
+extern double *janus_slip_mode;
 
 extern char Out_dir[];
 extern char Out_name[];

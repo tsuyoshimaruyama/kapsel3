@@ -18,7 +18,7 @@ ifeq ($(ENV), DESK)
       ARCH   = macosx
       CC     = gcc
       CXX    = g++
-      CCOPT  = -O3 
+      CCOPT  = -g -p
       LINKS  = -lm -lplatform -lstdc++
       GOURMET_HOME_PATH = /Users/john/Work_PostDoc/OCTA2010/GOURMET_2010
 endif

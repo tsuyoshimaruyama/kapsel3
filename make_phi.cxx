@@ -383,6 +383,96 @@ inline void Make_phi_u_primitive_OBL(double *phi
 	}
     }
 }
+
+void Make_u_slip_particle(const double *phi,
+			  double const* const* u,
+			  double **up,
+			  const Particle *p
+			  ){
+  const double dx = DX;
+  const int np_domain = NP_domain;
+  int const * const * sekibun_cell = Sekibun_cell;
+  const int * Nlattice = Ns;
+  const double radius = RADIUS;
+
+  double xp[DIM], vp[DIM], omega_p[DIM];
+  int x_int[DIM];
+  double residue[DIM];
+  int sw_in_cell;
+  int r_mesh[DIM];
+  double r[DIM];
+  double x[DIM];
+  double dmy_r;
+  double dmy_phi;
+  double v_rot[DIM];
+
+  double n_r[DIM], n_theta[DIM], n_tau[DIM];
+  double delta_v[DIM];
+  double slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip;
+#pragma omp parallel for schedule(dynamic, 1) \
+  private(xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy_r, dmy_phi, \
+  v_rot, n_r, n_theta, n_tau, delta_v, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau)
+  for(int n = 0; n < Particle_Number; n++){
+
+    if(janus_propulsion[p[n].spec] == slip){
+      slip_vel = janus_slip_vel[p[n].spec];
+      slip_mode = janus_slip_mode[p[n].spec];
+      
+      for(int d = 0; d < DIM; d++){
+	xp[d] = p[n].x[d];
+	vp[d] = p[n].v[d];
+	omega_p[d] = p[n].omega[d];
+      }
+      
+      sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+      sw_in_cell = 1;
+      
+      for(int mesh = 0; mesh < np_domain; mesh++){
+	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	
+	for(int d = 0; d < DIM; d++){
+	  x[d] = r_mesh[d] * dx;
+	}
+	dmy_r = Distance(x, xp);
+	dmy_phi = 1.0 - Phi(dmy_r, radius);
+	dmy_xi = ABS(dmy_r - radius);
+
+	if(dmy_xi < HXI && dmy_phi > 0.0){ // use phi or dmy_phi ???
+	  Angular2v(omega_p, r, v_rot);
+	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	  
+	  for(int d = 0; d < DIM; d++){
+	    delta_v[d] = (vp[d] + v_rot[d]) - u[d][im];
+	  }
+
+	  //Blake squirmer's slip velocity profile
+	  dmy_slip = slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta))
+	    + (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
+	  for(int d = 0; d < DIM; d++){
+	    up[d][im] += (dmy_slip * n_theta[d] * dmy_phi);
+	  }
+	}
+	
+      }//mesh
+    }//slip particle?
+
+  }//Particle_number
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+	int im = (i * NY * NZ_) + (j * NZ_) + k;
+	if(up[0][im] != up[0][im] ||
+	   up[1][im] != up[1][im] ||
+	   up[2][im] != up[2][im]){
+	  fprintf(stderr, "NAN!!! %d %d %d -> %d\n",
+		  i, j, k, im);
+	}
+      }
+    }
+  }
+}
+
 void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius

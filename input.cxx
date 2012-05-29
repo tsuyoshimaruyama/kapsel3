@@ -25,7 +25,7 @@ const char *PT_name[]={"spherical_particle"
 };
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
-const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "OFF"};
+const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "SLIP", "OFF"};
 //////
 SW_time SW_TIME;
 //////
@@ -135,6 +135,8 @@ JAX *janus_axis;
 JP *janus_propulsion;  
 double **janus_force;      
 double **janus_torque;
+double *janus_slip_vel;
+double *janus_slip_mode;
 
 
 //
@@ -357,6 +359,10 @@ inline void Set_global_parameters(void){
 	double dmy = (double)Particle_Number * 4./3.*M_PI * Ivolume;
 	VF = dmy * POW3(RADIUS);
 	VF_LJ = dmy * POW3(radius_dmy);
+    }
+    //
+    for(int i = 0; i < Component_Number; i++){
+      janus_slip_mode[i] /= 2.0;
     }
 }
 
@@ -764,6 +770,8 @@ void Gourmet_file_io(const char *infile
 		    janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
 		    janus_force = alloc_2d_double(Component_Number, DIM);
 		    janus_torque = alloc_2d_double(Component_Number, DIM);
+		    janus_slip_vel = alloc_1d_double(Component_Number);
+		    janus_slip_mode = alloc_1d_double(Component_Number);
 
 		}
 	    }
@@ -792,7 +800,8 @@ void Gourmet_file_io(const char *infile
 		janus_propulsion = NULL;
 		janus_force = NULL;
 		janus_torque = NULL;
-		
+		janus_slip_vel = NULL;
+		janus_slip_mode = NULL;
 	    }
 	}
     }
@@ -869,6 +878,8 @@ void Gourmet_file_io(const char *infile
 		      janus_propulsion[i] = rotator;
 		    }else if(str_in == JP_name[tumbler]){
 		      janus_propulsion[i] = tumbler;
+		    }else if(str_in == JP_name[slip]){
+		      janus_propulsion[i] = slip;
 		    }else{
 		      fprintf(stderr, "ERROR: Unknown propulsion mechanism\n");
 		      exit_job(EXIT_FAILURE);
@@ -893,6 +904,14 @@ void Gourmet_file_io(const char *infile
 			janus_torque[i][d] = 0.0;
 		      }
 		    }
+
+		    if(janus_propulsion[i] == slip){
+		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]);
+		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]);
+		    }else{
+		      janus_slip_vel[i] = 0.0;
+		      janus_slip_mode[i] = 0.0;
+		    }
 		}
 		{
 		    ufout->put(target.sub("Particle_number"),Particle_Numbers[i]);
@@ -906,6 +925,8 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("janus_torque.x"), janus_torque[i][0]);
 		    ufout->put(target.sub("janus_torque.y"), janus_torque[i][1]);
 		    ufout->put(target.sub("janus_torque.z"), janus_torque[i][2]);
+		    ufout->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
+		    ufout->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
 		}
 		{
 		    ufres->put(target.sub("Particle_number"),Particle_Numbers[i]);
@@ -919,10 +940,12 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.x"), janus_torque[i][0]);
 		    ufres->put(target.sub("janus_torque.y"), janus_torque[i][1]);
 		    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
+		    ufres->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
+		    ufres->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
 
 		}
 		if(SW_EQ == Electrolyte){
-		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f\n"
+		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]
@@ -931,16 +954,21 @@ void Gourmet_file_io(const char *infile
 			    ,JP_name[janus_propulsion[i]]
 			    ,janus_force[i][0], janus_force[i][1], janus_force[i][2]
 			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
+			    ,janus_slip_vel[i]
+			    ,janus_slip_mode[i]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f\n"
+		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]
 			    ,JAX_name[janus_axis[i]]
 			    ,JP_name[janus_propulsion[i]]
 			    ,janus_force[i][0], janus_force[i][1], janus_force[i][2]
-			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]);
+			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
+			    ,janus_slip_vel[i]
+			    ,janus_slip_mode[i]
+			    );
 		}
 		
 		fprintf(stderr, "#\n");
@@ -975,6 +1003,7 @@ void Gourmet_file_io(const char *infile
 		      fprintf(stderr, "ERROR: Unknown axis specification\n");
 		      exit_job(EXIT_FAILURE);
 		    }
+
 		}
 		{
 		    ufout->put(target.sub("Beads_number"),Beads_Numbers[i]);
@@ -983,6 +1012,15 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("Surface_charge"),Surface_charge[i]);
 
 		    ufout->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
+		    ufout->put(target.sub("janus_propulsion"), JP_name[no_propulsion]);
+		    ufout->put(target.sub("janus_force.x"), 0.0);
+		    ufout->put(target.sub("janus_force.y"), 0.0);
+		    ufout->put(target.sub("janus_force.z"), 0.0);
+		    ufout->put(target.sub("janus_torque.x"), 0.0);
+		    ufout->put(target.sub("janus_torque.y"), 0.0);
+		    ufout->put(target.sub("janus_torque.z"), 0.0);
+		    ufout->put(target.sub("janus_slip_vel"), 0.0);
+		    ufout->put(target.sub("janus_slip_mode"), 0.0);
 		}
 		{
 		    ufres->put(target.sub("Beads_number"),Beads_Numbers[i]);
@@ -991,6 +1029,15 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("Surface_charge"),Surface_charge[i]);
 
 		    ufres->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
+		    ufres->put(target.sub("janus_propulsion"), JP_name[no_propulsion]);
+		    ufres->put(target.sub("janus_force.x"), 0.0);
+		    ufres->put(target.sub("janus_force.y"), 0.0);
+		    ufres->put(target.sub("janus_force.z"), 0.0);
+		    ufres->put(target.sub("janus_torque.x"), 0.0);
+		    ufres->put(target.sub("janus_torque.y"), 0.0);
+		    ufres->put(target.sub("janus_torque.z"), 0.0);
+		    ufres->put(target.sub("janus_slip_vel"), 0.0);
+		    ufres->put(target.sub("janus_slip_mode"), 0.0);
 
 		}
 		
