@@ -158,11 +158,17 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters){
 inline void Binary_write(FILE *fout
 			 ,AVS_parameters &Avs_parameters
 			 ,double *a
+			 ,double *phi=NULL
 			 ){
+  int Pdomain = (phi == NULL ? 0 : 1);
+  int im;
   for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
     for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	float dmy= (float)a[(i*NY*NZ_)+(j*NZ_)+k];
+	int im = (i * NY * NZ_) + (j * NZ_) + k;
+	float dmy= (float)a[im];
+	if(Pdomain)
+	  dmy*= (1. - ABS(phi[im]));
 	fwrite(&dmy,sizeof(float),1,fout);
       }
     }
@@ -292,9 +298,9 @@ void Output_avs(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   if(BINARY){
-    Binary_write(fout, Avs_parameters, u[0]);
-    Binary_write(fout, Avs_parameters, u[1]);
-    Binary_write(fout, Avs_parameters, u[2]);
+    Binary_write(fout, Avs_parameters, u[0], phi);
+    Binary_write(fout, Avs_parameters, u[1], phi);
+    Binary_write(fout, Avs_parameters, u[2], phi);
     Binary_write(fout, Avs_parameters, phi);
     Binary_write(fout, Avs_parameters, Pressure);
     {
@@ -313,10 +319,11 @@ void Output_avs(AVS_parameters &Avs_parameters
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
 	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 		int im=(i*NY*NZ_)+(j*NZ_)+k;
+		double dmy = (1.0 - phi[im]);
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,u[0][im]
-		  ,u[1][im]
-		  ,u[2][im]
+		  ,u[0][im]*dmy
+		  ,u[1][im]*dmy
+		  ,u[2][im]*dmy
 		  ,phi[im]
 		  ,Pressure[im]
 		  ,strain[1][im]
