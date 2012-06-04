@@ -379,7 +379,11 @@ int main(int argc, char *argv[]){
   cerr << "#  " << endl;
   cerr << "###########################" << endl;
 #endif  
+  clock_t global_start, block_start, end_time;
+  double global_time, block_time;
 
+  global_start = clock();
+  block_start = clock();
   if(argc> 0){
     file_get(argc, argv);
     Gourmet_file_io(In_udf,Out_udf,Sum_udf,Def_udf,Ctrl_udf,Res_udf);
@@ -456,11 +460,16 @@ int main(int argc, char *argv[]){
     Electrolyte_free_energy(INIT,stderr,particles,Concentration,jikan);
   }
 
+  end_time = clock();
+  block_time = ((double) (end_time - block_start))/CLOCKS_PER_SEC;
+  fprintf(stderr, "# Initialization time (s): %12.3f\n", block_time);
+  block_start = clock();
   //////////////////////////////////////////////////////////
   int resumed_ts = 0;
   if(RESUMED) resumed_ts = last_ts;
   for(jikan.ts = resumed_ts; jikan.ts <= MSTEP; jikan.ts++){
     int resumed_and_1st_loop = 0;
+
     if(RESUMED && (jikan.ts == resumed_ts)){
       resumed_and_1st_loop = 1;
     }
@@ -489,7 +498,21 @@ int main(int argc, char *argv[]){
 	if(SW_EQ == Electrolyte){
 	    Electrolyte_free_energy(SHOW,stderr,particles, Concentration,jikan);
 	}
+	if(jikan.ts != resumed_ts){
+	  end_time = clock();
+	  block_time = ((double) (end_time - block_start))/CLOCKS_PER_SEC;
+	  global_time = ((double) (end_time - global_start))/CLOCKS_PER_SEC;
+	  fprintf(stderr, "# Step: %9d/%9d\t  Block time (m): %8.3f\t Global time (m): %8.3f/%8.3f\n", 
+		  jikan.ts,
+		  MSTEP,
+		  block_time/60.0,
+		  global_time/60.0,
+		  ((double)(MSTEP - jikan.ts + 1))/((double)GTS) * block_time/60.0);
+	  fflush(stderr);
+	  block_start = clock();
+	}
       }
+
     }
 
     Time_evolution(zeta, uk_dc, f_particle, particles, jikan);
@@ -545,6 +568,15 @@ int main(int argc, char *argv[]){
     delete ufres;
     fprintf(stderr,"#%s end.\n",Res_udf);
   }
+  global_time = ((double) (end_time - global_start))/CLOCKS_PER_SEC;
+  fprintf(stderr, "#Simulation has ended!\n");
+  fprintf(stderr, "#Total Running Time (s): %10.2f\n", global_time);
+  fprintf(stderr, "#                   (m): %10.2f\n", global_time/60.0);
+  fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
+  global_time /= (double)(MSTEP - resumed_ts + 1);
+  fprintf(stderr, "#Average Step Time  (s): %10.2f\n", global_time);
+  fprintf(stderr, "#                   (m): %10.2f\n", global_time/60.0);
+  fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
   delete [] particles;
   return EXIT_SUCCESS;
 }

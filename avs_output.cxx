@@ -155,20 +155,36 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters){
   }
 
 }
+inline void Binary_write(FILE *fout, 
+			 AVS_parameters &Avs_parameters,
+			 double *a,
+			 double *phi,
+			 double *ap){
+  int im;
+  double dmy_phi;
+  float dmy;
+  for(int k = Avs_parameters.kstart; k <= Avs_parameters.kend; k++){
+    for(int j = Avs_parameters.jstart; j <= Avs_parameters.jend; j++){
+      for(int i = Avs_parameters.istart; i <= Avs_parameters.iend; i++){
+	im = (i * NY * NZ_) + (j * NZ_) + k;
+	dmy_phi = ABS(phi[im]);
+	dmy = (float) (dmy_phi < 1.0 ? (a[im] - dmy_phi * ap[im])/(1.0 - dmy_phi) : 0.0);
+	fwrite(&dmy, sizeof(float), 1, fout);
+      }
+    }
+  }
+}
+
 inline void Binary_write(FILE *fout
 			 ,AVS_parameters &Avs_parameters
 			 ,double *a
-			 ,double *phi=NULL
 			 ){
-  int Pdomain = (phi == NULL ? 0 : 1);
   int im;
   for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
     for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	int im = (i * NY * NZ_) + (j * NZ_) + k;
+	im = (i * NY * NZ_) + (j * NZ_) + k;
 	float dmy= (float)a[im];
-	if(Pdomain)
-	  dmy*= (1. - ABS(phi[im]));
 	fwrite(&dmy,sizeof(float),1,fout);
       }
     }
@@ -274,16 +290,16 @@ void Output_avs(AVS_parameters &Avs_parameters
 
   A_k2a(Pressure);
   {
-      Reset_phi(phi);
+      Reset_phi_u(phi, up);
       if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-	Make_phi_particle_OBL(phi, p);
+	Make_phi_u_particle_OBL(phi, up, p);
 	if(SW_JANUS){
-	  Make_phi_janus_particle_OBL(phi, up[0], p); // +1/-1 janus polarity
+	  Make_phi_janus_particle_OBL(phi, work_v1, p); // +1/-1 janus polarity
 	}
       } else {
-	Make_phi_particle(phi, p);
+	Make_phi_u_particle(phi, up, p);
 	if(SW_JANUS){
-	  Make_phi_janus_particle(phi, up[0], p); // +1/-1 janus polarity
+	  Make_phi_janus_particle(phi, work_v1, p); // +1/-1 janus polarity
 	}
       }
   }
@@ -298,9 +314,9 @@ void Output_avs(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   if(BINARY){
-    Binary_write(fout, Avs_parameters, u[0], phi);
-    Binary_write(fout, Avs_parameters, u[1], phi);
-    Binary_write(fout, Avs_parameters, u[2], phi);
+    Binary_write(fout, Avs_parameters, u[0], phi, up);
+    Binary_write(fout, Avs_parameters, u[1], phi, up);
+    Binary_write(fout, Avs_parameters, u[2], phi, up);
     Binary_write(fout, Avs_parameters, phi);
     Binary_write(fout, Avs_parameters, Pressure);
     {
@@ -319,11 +335,12 @@ void Output_avs(AVS_parameters &Avs_parameters
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
 	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 		int im=(i*NY*NZ_)+(j*NZ_)+k;
-		double dmy = (1.0 - phi[im]);
+		double dmy_phi = ABS(phi[im]);
+		double dmy_f = (dmy_phi < 1.0 ? 1.0 / (1.0 - dmy_phi) : 0.0);
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,u[0][im]*dmy
-		  ,u[1][im]*dmy
-		  ,u[2][im]*dmy
+		  ,dmy_f * (u[0][im] - dmy_phi * up[0][im]);
+		  ,dmy_f * (u[1][im] - dmy_phi * up[1][im])
+		  ,dmy_f * (u[2][im] - dmy_phi * up[2][im])
 		  ,phi[im]
 		  ,Pressure[im]
 		  ,strain[1][im]

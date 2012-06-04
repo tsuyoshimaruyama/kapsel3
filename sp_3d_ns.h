@@ -12,6 +12,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <time.h>
 #include "macro.h"
 #include "input.h"
 #include "variable.h"
