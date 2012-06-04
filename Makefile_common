@@ -81,10 +81,16 @@ OBJS  	= mt19937ar.o\
 	rigid_body.o\
 	sp_3d_ns.o
 
+AVSOBJS	= alloc.o\
+	tricubic_utils.o\
+	libtricubic.o\
+	avs_process.o
+
 TARGET     = kapsel
 XYZ        = get_xyz
 QUATERNION = quaternion
 RIGID_BODY = rigid_body
+AVS	   = pavs
 
 ## Implicit rules
 
@@ -92,13 +98,16 @@ RIGID_BODY = rigid_body
 
 ## Build rules
 
-all: $(TARGET) $(XYZ) $(QUATERNION) $(RIGID_BODY)
+all: $(TARGET) $(XYZ) $(QUATERNION) $(RIGID_BODY) $(AVS)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(OBJS) -o $(TARGET).x $(CFLAGS) $(LINKS)
 
 $(XYZ): get_xyz.o alloc.o
 	$(CXX) alloc.o get_xyz.o -o $(XYZ).x $(CFLAGS) $(LINKS)
+
+$(AVS): $(AVSOBJS)
+	$(CXX) $(AVSOBJS) -o $(AVS).x $(CFLAGS) $(LINKS)
 
 $(QUATERNION): quaternion_test.o
 	$(CXX) quaternion_test.o -o $(QUATERNION).x
