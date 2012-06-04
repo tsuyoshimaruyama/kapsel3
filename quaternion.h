@@ -57,6 +57,13 @@ inline void qtn_init(quaternion &q, const double &a0, const double &a1,
   q.v[2] = a3;
 }
 
+inline void qtn_init(quaternion &q, const double v4[4]){
+  q.s = v4[0];
+  q.v[0] = v4[1];
+  q.v[1] = v4[2];
+  q.v[2] = v4[3];
+}
+
 /*!
  \brief Initialize by specyfying scalar, vector parts
  */
@@ -355,6 +362,65 @@ inline void rqtn_rm(double R[DIM][DIM], const quaternion &q){
   R[2][2] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[1] * q.v[1];
 }
 
+/*!
+  \brief Compute rotation quaternion given rotation matrix
+ */
+inline void rm_rqtn(quaternion &q, const double R[DIM][DIM]){
+  double qq[4];
+  qq[0] = 1.0 + R[0][0] + R[1][1] + R[2][2];
+  qq[1] = 1.0 + R[0][0] - R[1][1] - R[2][2];
+  qq[2] = 1.0 - R[0][0] + R[1][1] - R[2][2];
+  qq[3] = 1.0 - R[0][0] - R[1][1] + R[2][2];
+
+  double dmy;
+  double mm = ABS(qq[0]);
+  int i = 0;
+  for(int d = 1; d < 4; d++){
+    dmy = ABS(qq[d]);
+    if(dmy > mm){
+      mm = dmy;
+      i = d;
+    }
+  }
+  switch (i){
+  case 0:
+    qq[0] = sqrt(qq[0]) / 2.0;
+    dmy = 1.0/(4.0 * qq[0]);
+
+    qq[1] = (R[2][1] - R[1][2]) * dmy;
+    qq[2] = (R[0][2] - R[2][0]) * dmy;
+    qq[3] = (R[1][0] - R[0][1]) * dmy;
+    break;
+  case 1:
+    qq[1] = sqrt(qq[1]) / 2.0;
+    dmy = 1.0/(4.0 * qq[1]);
+
+    qq[2] = (R[1][0] + R[0][1]) * dmy;
+    qq[3] = (R[0][2] + R[2][0]) * dmy;
+
+    qq[0] = (R[2][1] - R[1][2]) * dmy;
+    break;
+  case 2:
+    qq[2] = sqrt(qq[2]) / 2.0;
+    dmy = 1.0/(4.0 * qq[2]);
+
+    qq[3] = (R[2][1] + R[1][2]) * dmy;
+    qq[1] = (R[1][0] + R[0][1]) * dmy;
+
+    qq[0] = (R[0][2] - R[2][0]) * dmy;
+    break;
+  case 3:
+    qq[3] = sqrt(qq[3]) / 2.0;
+    dmy = 1.0/(4.0 * qq[3]);
+
+    qq[1] = (R[2][0] + R[0][2]) * dmy;
+    qq[2] = (R[2][1] + R[1][2]) * dmy;
+
+    qq[0] = (R[1][0] - R[0][1]) * dmy;
+    break;
+  }
+  qtn_init(q, qq);
+}
 
 /*!
   \brief Compute transpose of rotation matrix given rotation quaternion

@@ -10,6 +10,8 @@
 #include "macro.h"
 #include "parameter_define.h"
 #include "tricubic.h"
+#include "rigid_body.h"
+#include "quaternion.h"
 enum V_OPTION {relative_velocity, total_velocity};
 enum JAX {x_axis, y_axis, z_axis};
 enum INTERPOLATION {cubic_interpol};
@@ -24,6 +26,14 @@ int fluid_veclen;
 int particle_veclen;
 const int post_veclen = 3;
 const char *Label = "ux uy uz";
+
+double ex[DIM] = {1.0, 0.0, 0.0};
+double ey[DIM] = {0.0, 1.0, 0.0};
+double ez[DIM] = {0.0, 0.0, 1.0};
+double *e1;
+double *e2;
+double *e3;
+
 //
 FILE *fluid_field;
 FILE *post_field;
@@ -56,6 +66,9 @@ int &HCZ = HCs[2];
 int Nspec;                 // number of species
 int Nparticles;            // total number of particles
 double **u, **post_u;      //
+double B1_real;
+double B1_app;
+double B2;
 double A0;
 double r0[DIM]; 
 double v0[DIM];
@@ -63,6 +76,7 @@ double w0[DIM];
 double f0[DIM];
 double t0[DIM];
 double Q0[DIM][DIM];
+quaternion q0;
 INTERPOLATION SW_INTERPOL = cubic_interpol;
 
 inline void PBC_ip(int &ip, const int &Ns){
@@ -157,6 +171,11 @@ inline void read_p(const int &pid){
   read_pid(pid, f0, particle_data);
   read_pid(pid, t0, particle_data);
   read_pid(pid, Q0, particle_data);
+  rm_rqtn(q0, Q0);
+
+  double jax[DIM];
+  rigid_body_rotation(jax, e3, q0, BODY2SPACE);
+  B1_app = 3.0/2.0 * (jax[0]*v0[0] + jax[1]*v0[1] + jax[2]*v0[2]);
 }
 
 void clear_avs_frame(){
@@ -320,7 +339,7 @@ void initialize_avs(){
 void wrong_invocation(){
   exit_job(EXIT_FAILURE);
 }
-void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis){
+void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis, double *&sp_slip, double *&sp_slipmode){
   { // particle size
     Location target("constitutive_eq");
     string str;
@@ -359,6 +378,8 @@ void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis){
 
     Nspec = ufin->size("object_type.spherical_particle.Particle_spec[]");
     sp_axis = (JAX*) malloc(sizeof(JAX) * Nspec);
+    sp_slip = (double*) malloc(sizeof(double) * Nspec);
+    sp_slipmode = (double*) malloc(sizeof(double) * Nspec);
     int * dmy_num = (int*)malloc(sizeof(int) * Nspec);
     Nparticles = 0;
     for(int i = 0; i < Nspec; i++){
@@ -379,6 +400,12 @@ void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis){
       }else{
 	fprintf(stderr, "Error: Unknown axis specification\n");
 	exit_job(EXIT_FAILURE);
+      }
+
+      ufin->get(target.sub("janus_propulsion"), str2);
+      if(str2 == "SLIP"){
+	ufin->get(target.sub("janus_slip_vel"), sp_slip[i]);
+	ufin->get(target.sub("janus_slip_mode"), sp_slipmode[i]);
       }
     }
     p_spec = (int*)malloc(sizeof(int) * Nparticles);
