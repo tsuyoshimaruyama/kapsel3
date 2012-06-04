@@ -314,9 +314,9 @@ void Output_avs(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   if(BINARY){
-    Binary_write(fout, Avs_parameters, u[0], phi, up);
-    Binary_write(fout, Avs_parameters, u[1], phi, up);
-    Binary_write(fout, Avs_parameters, u[2], phi, up);
+    Binary_write(fout, Avs_parameters, u[0], phi, up[0]);
+    Binary_write(fout, Avs_parameters, u[1], phi, up[1]);
+    Binary_write(fout, Avs_parameters, u[2], phi, up[2]);
     Binary_write(fout, Avs_parameters, phi);
     Binary_write(fout, Avs_parameters, Pressure);
     {
@@ -338,7 +338,7 @@ void Output_avs(AVS_parameters &Avs_parameters
 		double dmy_phi = ABS(phi[im]);
 		double dmy_f = (dmy_phi < 1.0 ? 1.0 / (1.0 - dmy_phi) : 0.0);
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,dmy_f * (u[0][im] - dmy_phi * up[0][im]);
+		  ,dmy_f * (u[0][im] - dmy_phi * up[0][im])
 		  ,dmy_f * (u[1][im] - dmy_phi * up[1][im])
 		  ,dmy_f * (u[2][im] - dmy_phi * up[2][im])
 		  ,phi[im]
