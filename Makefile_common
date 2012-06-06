@@ -84,6 +84,7 @@ OBJS  	= mt19937ar.o\
 AVSOBJS	= alloc.o\
 	tricubic_utils.o\
 	libtricubic.o\
+	rigid_body.o\
 	avs_process.o
 
 TARGET     = kapsel

@@ -2,10 +2,8 @@
 void process_avs_frame(const V_OPTION &vflag, const int &frame);
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
 	    const double &B1, const double &B2);
-void get_image_yz(const int &frame);
-void get_image_xz(const int &frame);
-void get_image_xy(const int &frame);
-void get_image_xyz(const int &frame);
+void get_image(const int &frame, const int &iso);
+void get_image_rotate(const int &frame, const int &npi);
 int main(int argc, char* argv[]){
   int pid;                // id of centered particle
   int *p_spec;            // species id for all particles
@@ -50,7 +48,9 @@ int main(int argc, char* argv[]){
     read_u();
     read_p(pid);
     process_avs_frame(vflag, i);
-    get_image_yz(i);
+    get_image(i, 0);
+    get_image(i, 1);
+    get_image(i, 2);
     clear_avs_frame();
   }
   fclose(fluid_field);
@@ -197,7 +197,9 @@ void process_avs_frame(const V_OPTION &vflag, const int &frame){
   }
   double jax[DIM];
   rigid_body_rotation(jax, e3, q0, BODY2SPACE);
-  fprintf(stderr, "# %d: e.z = %.3g\n", frame, jax[0]*e3[0] + jax[1]*e3[1] + jax[2]*e3[2]);
+  fprintf(stderr, "# %d: B= %7.5g %7.5g %7.5g\n", 
+	  frame, 
+	  B1_app, B1_real, B2);
   
   binary_write(u[0], post_data);
   binary_write(u[1], post_data);
@@ -211,9 +213,9 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
   double nd1[DIM], nd2[DIM], nd3[DIM];
   double ar, ar2, ar3;
 
-  if(rdist >= A0){
+  if(rdist > A){
     cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
-    ar = A0/rdist;
+    ar = (A)/rdist;
     ar2 = ar*ar;
     ar3 = ar*ar2;
 
@@ -228,33 +230,82 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
     }
   }else{
     for(int d = 0; d < DIM; d++){
-      ww[d] = v0[d];
+      ww[d] = 0.0;
     }
   }
 }
-void get_image_yz(const int &frame){
-  double rp[DIM], sp[DIM], cp[DIM], vv[DIM], ww[DIM], ww2[DIM],dmy;
+
+void point_id(const int &iso, const int &ii, const int &jj, const int &kk, int *ei){
+  switch(iso){
+  case 0:
+    ei[0] = ii;
+    ei[1] = jj;
+    ei[2] = kk;
+    break;
+  case 1:
+    ei[0] = jj;
+    ei[1] = ii;
+    ei[2] = kk;
+    break;
+  case 2:
+    ei[0] = jj;
+    ei[1] = kk;
+    ei[2] = ii;
+    break;
+  }
+}
+void get_image(const int &frame, const int &iso){
+  double rp[DIM], sp[DIM], cp[DIM], vv[DIM], ww[DIM], dmy;
   int ei[DIM], edge[DIM];
-  int im, fdomain;
+  int Nj, Nk;
   int interpol_pid[8][DIM];
   double interpol_pval[8];
   double interpol_coeff[64];
 
   char dmy_path[256];
-  FILE *tot_vel, *rel_vel;
-  sprintf(dmy_path, "%s/plots/yz_vtot_%d.dat", AVS_dir, frame);
-  tot_vel = filecheckopen(dmy_path, "w");
-  sprintf(dmy_path, "%s/plots/yz_vrel_%d.dat", AVS_dir, frame);
-  rel_vel = filecheckopen(dmy_path, "w");
+  FILE *fstream;
 
-  int i = 0;
-  ei[0] = i;
-  for(int j = -HCY; j <= HCY; j++){
-    ei[1] = j;
-    for(int k = -HCZ; k<= HCZ; k++){
-      ei[2] = k;
+  double *eu, *ev, *ew;
 
-      im = ((i + HCX) * CY * CZ) + ((j + HCY) * CZ) + (k + HCZ);
+  switch(iso){
+  case 0:
+    sprintf(dmy_path, "%s/plots/yz_%d.dat", AVS_dir, frame);
+    eu = ey;
+    ev = ex;
+    ew = ez;
+
+    Nj = HCY;
+    Nk = HCZ;
+    break;
+  case 1:
+    sprintf(dmy_path, "%s/plots/xz_%d.dat", AVS_dir, frame);
+    eu = ex;
+    ev = ey;
+    ew = ez;
+
+    Nj = HCX;
+    Nk = HCZ;
+    break;
+  case 2:
+    sprintf(dmy_path, "%s/plots/xy_%d.dat", AVS_dir, frame);
+    eu = ex;
+    ev = ez;
+    ew = ey;
+
+    Nj = HCX;
+    Nk = HCY;
+    break;
+  }
+  fstream = filecheckopen(dmy_path, "w");
+  double v01 = v_inner_prod(v0, ev);
+  double v02 = v_inner_prod(v0, eu);
+  double v03 = v_inner_prod(v0, ew);
+  double fdomain;
+
+  int ii = 0;
+  for(int jj = -Nj; jj <= Nj; jj++){
+    for(int kk = -Nk; kk <= Nk; kk++){
+      point_id(iso, ii, jj, kk, ei);
 
       dmy = 0.0;
       for(int d = 0; d < DIM; d++){
@@ -267,32 +318,104 @@ void get_image_yz(const int &frame){
 	dmy += rp[d]*rp[d];
       }
       dmy = sqrt(dmy);
-      fdomain = (dmy < A0 - DX ? 0.0 : 1.0);
       for(int d = 0; d < DIM; d++){
 	rp[d] = (dmy > 0 ? rp[d] / dmy : 0.0);
       }
       v_gold(ww, rp, dmy, B1_real, B2);
-      v_gold(ww2, rp, dmy, B1_app, B2);
 
-      for(int d = 0; d < DIM; d++){
-	init_interpol(interpol_pid, interpol_pval, interpol_coeff, u[d], edge);
-	vv[d] = interpol(interpol_pid, interpol_pval, interpol_coeff, cp);
+      if(dmy > A){
+	for(int d = 0; d < DIM; d++){
+	  init_interpol(interpol_pid, interpol_pval, interpol_coeff, u[d], edge);
+	  vv[d] = interpol(interpol_pid, interpol_pval, interpol_coeff, cp);
+	}
+	fdomain = 1.0;
+      }else{
+	for(int d = 0; d < DIM; d++){
+	  vv[d] = 0.0;
+	}
+	fdomain = 0.0;
       }
 
-      fprintf(tot_vel, "%3d %3d %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f\n",
-	      j, k,
-	      vv[0], vv[1], vv[2],
-	      ww[0], ww[1], ww[2],
-	      ww2[0], ww2[1], ww2[2]);
-      fprintf(rel_vel, "%3d %3d %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f\n",
-	      j, k,
-	      fdomain*(vv[0] - v0[0]), fdomain*(vv[1] - v0[1]), fdomain*(vv[2] - v0[2]),
-	      fdomain*(ww[0] - v0[0]), fdomain*(ww[1] - v0[1]), fdomain*(ww[2] - v0[2]),
-	      fdomain*(ww2[0] - v0[0]), fdomain*(ww2[1] - v0[1]), fdomain*(ww2[2] - v0[2]));
+      double vv1 = v_inner_prod(vv, ev);
+      double vv2 = v_inner_prod(vv, eu);
+      double vv3 = v_inner_prod(vv, ew);
+
+      double ww1 = v_inner_prod(ww, ev);
+      double ww2 = v_inner_prod(ww, eu);
+      double ww3 = v_inner_prod(ww, ew);
+
+      fprintf(fstream, 
+	      "%3d %3d %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f\n",
+	      jj, kk, dmy, vv1, vv2, vv3, ww1, ww2, ww3,
+	      fdomain*v01, fdomain*v02, fdomain*v03);
     }
   }
-  fclose(tot_vel);
-  fclose(rel_vel);
+  fclose(fstream);
+}
+
+void get_image_rotate(const int &frame, const int &npi){
+  double rp[DIM], sp[DIM], cp[DIM], vv[DIM], ww[DIM], dmy;
+  int edge[DIM];
+  int interpol_pid[8][DIM];
+  double ei[DIM];
+  double interpol_pval[8];
+  double interpol_coeff[64];
+  double theta, cs, sn;
+
+  char dmy_path[256];
+  FILE *fstream;
+  sprintf(dmy_path, "%s/plots/wz-PI%d_%d.dat", AVS_dir, npi, frame);
+  fstream = filecheckopen(dmy_path, "w");
+  theta = M_PI / (double)npi;
+  cs = cos(theta);
+  sn = sin(theta);
+
+  double eu[DIM] = {cs, sn, 0.0};
+  double ev[DIM] = {-sn, cs, 0.0};
+  double ew[DIM] = {0.0, 0.0, 1.0};
+
+  int HN_UV = min(HCX, min(HCY, HCZ));
+  for(int jj = -HN_UV; jj <= HN_UV; jj++){
+    ei[0] = (double)jj * cs;
+    ei[1] = (double)jj * sn;
+    for(int kk = -HN_UV; kk <= HN_UV; kk++){
+      ei[2] = (double) kk;
+
+      dmy = 0.0;
+      for(int d = 0; d < DIM; d++){
+	rp[d] = ei[d] * DX;
+	sp[d] = r0[d] + rp[d];
+	sp[d] = fmod(sp[d] + lbox[d], lbox[d]);
+	edge[d] = (int)(sp[d]/DX);
+	cp[d] = sp[d] - edge[d]*DX;
+
+	dmy += rp[d]*rp[d];
+      }
+      dmy = sqrt(dmy);
+      for(int d = 0; d < DIM; d++){
+	rp[d] = (dmy > 0 ? rp[d] / dmy : 0.0);
+      }
+      v_gold(ww, rp, dmy, B1_real, B2);
+
+      if(dmy > A){
+	for(int d = 0; d < DIM; d++){
+	  init_interpol(interpol_pid, interpol_pval, interpol_coeff, u[d], edge);
+	  vv[d] = interpol(interpol_pid, interpol_pval, interpol_coeff, cp);
+	}
+      }else{
+	for(int d = 0; d < DIM; d++){
+	  vv[d] = 0.0;
+	}
+      }
+
+      fprintf(fstream, "%3d %3d %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f %8.5f\n",
+	      jj, kk, dmy,
+	      v_inner_prod(vv, ev), v_inner_prod(vv, eu), v_inner_prod(vv, ew),
+	      v_inner_prod(ww, ev), v_inner_prod(ww, eu), v_inner_prod(ww, ew),
+	      v_inner_prod(v0, ev), v_inner_prod(v0, eu), v_inner_prod(v0, ew));
+    }
+  }
+  fclose(fstream);
 }
 
 

@@ -314,9 +314,12 @@ void Output_avs(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   if(BINARY){
-    Binary_write(fout, Avs_parameters, u[0], phi, up[0]);
-    Binary_write(fout, Avs_parameters, u[1], phi, up[1]);
-    Binary_write(fout, Avs_parameters, u[2], phi, up[2]);
+    //    Binary_write(fout, Avs_parameters, u[0], phi, up[0]);
+    //    Binary_write(fout, Avs_parameters, u[1], phi, up[1]);
+    //    Binary_write(fout, Avs_parameters, u[2], phi, up[2]);
+    Binary_write(fout, Avs_parameters, u[0]);
+    Binary_write(fout, Avs_parameters, u[1]);
+    Binary_write(fout, Avs_parameters, u[2]);
     Binary_write(fout, Avs_parameters, phi);
     Binary_write(fout, Avs_parameters, Pressure);
     {

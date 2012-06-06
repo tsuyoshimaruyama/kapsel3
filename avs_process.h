@@ -69,7 +69,6 @@ double **u, **post_u;      //
 double B1_real;
 double B1_app;
 double B2;
-double A0;
 double r0[DIM]; 
 double v0[DIM];
 double w0[DIM];
@@ -79,6 +78,14 @@ double Q0[DIM][DIM];
 quaternion q0;
 INTERPOLATION SW_INTERPOL = cubic_interpol;
 
+inline double H(const double x){
+  return x > 0 ? exp(-SQ(DX/x)) : 0;
+}
+inline double Phi(const double &x, const double radius){
+  double HXI = A_XI / 2.0;
+  double dmy = H(radius + HXI - x);
+  return dmy / (dmy + H(x - radius + HXI));
+}
 inline void PBC_ip(int &ip, const int &Ns){
   ip = (ip + Ns) % Ns;
   assert(ip >= 0 && ip < Ns);
@@ -162,6 +169,7 @@ inline void read_u(){
   read_ux(u[2], fluid_data);
 }
 inline void read_p(const int &pid){
+  double A0;
   float dmy;
 
   read_pid(pid, r0, particle_cod);
@@ -223,7 +231,7 @@ void setup_avs_frame(){
   sprintf(particle_path, "%s/%s", AVS_dir, dmy_particle);
   fluid_cod = filecheckopen(fluid_path, "r");                 //particle coordinate file
   particle_cod = filecheckopen(particle_path, "r");
-  fprintf(stderr, "# %32s  ", particle_path);
+  //  fprintf(stderr, "# %32s  ", particle_path);
 
 
   //INPUT field data file
@@ -234,7 +242,7 @@ void setup_avs_frame(){
   getline(&line, &len, fluid_field);//EOT
   sprintf(fluid_path, "%s/%s", AVS_dir, dmy_fluid);
   fluid_data = filecheckopen(fluid_path, "r");                //fluid data file
-  fprintf(stderr, "%32s  ", fluid_path);
+  //  fprintf(stderr, "%32s  ", fluid_path);
 
   for(int i = 0; i < particle_veclen; i++){
     getline(&line, &len, particle_field);
@@ -243,7 +251,7 @@ void setup_avs_frame(){
   getline(&line, &len, particle_field);//EOT
   sprintf(particle_path, "%s/%s", AVS_dir, dmy_particle);
   particle_data = filecheckopen(particle_path, "r");          //particle data file
-  fprintf(stderr, "%32s  ", particle_path);
+  //  fprintf(stderr, "%32s  ", particle_path);
 
   //OUTPUT field data file
   int data_size = sizeof(float)*CX*CY*CZ;
@@ -257,7 +265,7 @@ void setup_avs_frame(){
   fprintf(post_field, "EOT\n");
   sprintf(post_path, "%s/%s", AVS_dir, dmy_post);
   post_data = filecheckopen(post_path, "w");                  //fluid post data file 
-  fprintf(stderr, "%42s\n", post_path);
+  //  fprintf(stderr, "%42s\n", post_path);
 }
 
 void initialize_avs(){
@@ -337,6 +345,11 @@ void initialize_avs(){
 }
 
 void wrong_invocation(){
+  fprintf(stderr, "usage: pavs -p PID -l Ns -i UDF [-v]\n");
+  fprintf(stderr, "       -p PID\t ID (1...N) of centered particle\n");
+  fprintf(stderr, "       -l Ns \t Box size length\n");
+  fprintf(stderr, "       -i UDF\t Input file\n");
+  fprintf(stderr, "       -v    \t Gives relative velocity (co-moving frame)\n");
   exit_job(EXIT_FAILURE);
 }
 void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis, double *&sp_slip, double *&sp_slipmode){
