@@ -14,7 +14,7 @@
 #include "quaternion.h"
 enum V_OPTION {relative_velocity, total_velocity};
 enum JAX {x_axis, y_axis, z_axis};
-enum INTERPOLATION {cubic_interpol};
+enum INTERPOLATION {cubic_interpol, trilinear_interpol};
 char AVS_dir[128];      // Main AVS directory
 char Out_dir[128];      // AVS fluid directory
 char Out_name[128];     // AVS fluid filename
@@ -70,13 +70,16 @@ double B1_real;
 double B1_app;
 double B2;
 double r0[DIM]; 
+int r0_int[DIM];
+double res0[DIM];
 double v0[DIM];
 double w0[DIM];
 double f0[DIM];
 double t0[DIM];
 double Q0[DIM][DIM];
 quaternion q0;
-INTERPOLATION SW_INTERPOL = cubic_interpol;
+INTERPOLATION SW_INTERPOL;
+
 
 inline double H(const double x){
   return x > 0 ? exp(-SQ(DX/x)) : 0;
@@ -184,6 +187,8 @@ inline void read_p(const int &pid){
   double jax[DIM];
   rigid_body_rotation(jax, e3, q0, BODY2SPACE);
   B1_app = 3.0/2.0 * (jax[0]*v0[0] + jax[1]*v0[1] + jax[2]*v0[2]);
+
+  Particle_cell(r0, DX, r0_int, res0);
 }
 
 void clear_avs_frame(){
@@ -474,6 +479,7 @@ void initialize(int argc, char *argv[],
   int pset, lset, fset, vset;
   pset = lset = fset = vset = 0;
   vflag = total_velocity;
+  SW_INTERPOL = cubic_interpol;
   for(int i = 1; i < argc; i++){
     if(strcmp(argv[i], "-p") == 0){
       if(i+1 == argc || argv[i+1][0] == '-'){
@@ -517,6 +523,9 @@ void initialize(int argc, char *argv[],
       fset = 1;
     }else if(strcmp(argv[i], "-v") == 0){
       vflag = relative_velocity;
+    }else if(strcmp(argv[i], "-nc") == 0){
+      fprintf(stderr, "### LINEAR INTERPOLATION\n");
+      SW_INTERPOL = trilinear_interpol;
     }
   }
 
@@ -544,4 +553,173 @@ void initialize(int argc, char *argv[],
 
 }
 
+
+inline void Particle_cell(const double *xp,
+			 const double &dx,
+			 int *x_int,
+			 double *residue){
+  const double idx = 1.0/dx;
+  {
+    for(int d = 0; d < DIM; d++){
+      assert(xp[d] >= 0 && xp[d] < lbox[0]);
+    }
+    for(int d = 0; d < DIM; d++){
+      double dmy = (xp[d] * idx);
+      x_int[d] = (int) dmy;
+
+      residue[d] = (dmy - (double)x_int[d]) * dx;
+    }
+  }
+}
+inline double trilinear_eval(const double pval[8], double &x, double &y, double &z){
+  double pint = (pval[0] * (1.0 - x) * (1.0 - y) * (1.0 -z))
+    + (pval[1] * x * (1.0 - y) * (1.0 - z))
+    + (pval[2] * (1.0 - x) * y * (1.0 - z))
+    + (pval[3] * x * y * (1.0 - z))
+    + (pval[4] * (1.0 - x) * (1.0 - y) * z)
+    + (pval[5] * x * (1.0 - y) * z)
+    + (pval[6] * (1.0 - x) * y * z)
+    + (pval[7] * x * y * z);
+  return pint;
+}
+void init_interpol(int pid[8][DIM], double pval[8], double pcoeff[64], const double *field, const int*p0){
+  const int ei[8][DIM] = 
+    {{0, 0, 0}, 
+     {1, 0, 0},
+     {0, 1, 0},
+     {1, 1, 0},
+     {0, 0, 1},
+     {1, 0, 1},
+     {0, 1, 1},
+     {1, 1, 1}};
+  double pdx[8], pdy[8], pdz[8];
+  double pdxdy[8], pdxdz[8], pdydz[8], pdxdydz[8];
+  int im;
+
+  //get function values at cube edges
+  for(int l = 0; l < 8; l++){
+    for(int d = 0; d < DIM; d++){
+      pid[l][d] = p0[d] + ei[l][d];
+    }
+    PBC_ip(pid[l]);
+    pval[l] = field[linear_id(pid[l][0], pid[l][1], pid[l][2])];
+  }
+  for(int l = 0; l < 64; l++){
+    pcoeff[l] = 0.0;
+  }
+
+  //Use finite difference approximations for partial derivatives
+  //Assuming unit cube (using scaled coordinates)
+  if(SW_INTERPOL == cubic_interpol){
+    for(int l = 0; l < 8; l++){
+      pdx[l] = pdy[l] = pdz[l] = pdxdy[l] = pdxdz[l] = pdydz[l] = pdxdydz[l] = 0.0;
+      int &x = pid[l][0];
+      int &y = pid[l][1];
+      int &z = pid[l][2];
+
+      for(int i = -1; i <= 1; i = i + 2){
+	int dmy_xi = x + i; PBC_ip(dmy_xi, NX);
+	int dmy_yi = y + i; PBC_ip(dmy_yi, NY);
+	int dmy_zi = z + i; PBC_ip(dmy_zi, NZ);
+
+	pdx[l] += i * field[linear_id(dmy_xi, y, z)];
+	pdy[l] += i * field[linear_id(x, dmy_yi, z)];
+	pdz[l] += i * field[linear_id(x, y, dmy_zi)];
+
+	for(int j = -1; j <= 1; j = j + 2){
+	  int dmy_yj = y + j; PBC_ip(dmy_yj, NY);
+	  int dmy_zj = z + j; PBC_ip(dmy_zj, NZ);
+
+	  pdxdy[l] += i * j * field[linear_id(dmy_xi, dmy_yj, z)];
+	  pdxdz[l] += i * j * field[linear_id(dmy_xi, y, dmy_zj)];
+	  pdydz[l] += i * j * field[linear_id(x, dmy_yi, dmy_zj)];
+
+	  for(int k = -1; k <= 1; k = k + 2){
+	    int dmy_zk = z + k; PBC_ip(dmy_zk, NZ);
+
+	    pdxdydz[l] += i * j * k * field[linear_id(dmy_xi, dmy_yj, dmy_zk)];
+	  }//k
+	}//j
+      }//i
+      pdx[l] /= 2.0;
+      pdy[l] /= 2.0;
+      pdz[l] /= 2.0;
+      pdxdy[l] /= 4.0;
+      pdxdz[l] /= 4.0;
+      pdydz[l] /= 4.0;
+      pdxdydz[l] /= 8.0;
+    }//l
+    tricubic_get_coeff(pcoeff, pval, pdx, pdy, pdz, pdxdy, pdxdz, pdydz, pdxdydz);
+  }
+}
+
+inline double interpol(const int pid[8][DIM], const double pval[8], double pcoeff[64],
+		       const double *r){
+  //scaled distance from edge to r
+  double x = r[0] / DX;
+  double y = r[1] / DX;
+  double z = r[2] / DX;
+  assert(x >= 0 && y >= 0 && z >= 0);
+  assert(x <= 1 && y <= 1 && z <= 1);
+  if(SW_INTERPOL == trilinear_interpol){
+    return trilinear_eval(pval, x, y, z);
+  }else if (SW_INTERPOL == cubic_interpol){
+    return tricubic_eval(pcoeff, x, y, z);
+  }
+}
+
+void process_avs_frame(const V_OPTION &vflag, const int &frame){
+  double rp[DIM], sp[DIM], cp[DIM];
+  int ei[DIM], edge[DIM];
+  int im;
+  
+  int interpol_pid[8][DIM];
+  double interpol_pval[8];
+  double interpol_coeff[64];
+
+  for(int i = -HCX; i <= HCX; i++){
+    ei[0] = i;
+    for(int j = -HCY; j <= HCY; j++){
+      ei[1] = j;
+      for(int k = -HCZ; k <= HCZ; k++){
+	ei[2] = k;
+
+	im = ((i + HCX) * CY * CZ) + ((j + HCY) * CZ) + (k + HCZ);
+
+	for(int d = 0; d < DIM; d++){
+	  rp[d] = (double)ei[d] * DX;     //particle frame
+	  sp[d] = r0[d] + rp[d];          //global frame
+	  sp[d] = fmod(sp[d] + lbox[d], lbox[d]);
+	  edge[d] = (int)(sp[d]/DX);
+	  cp[d] = sp[d] - edge[d]*DX;
+
+	  if(!(edge[d] >= 0 && edge[d] < Ns[d] && cp[d] >= 0)){
+	    fprintf(stderr, "rp  : %f\n", rp[d]);
+	    fprintf(stderr, "sp  : %f\n", sp[d]);
+	    fprintf(stderr, "edge: %d\n", edge[d]);
+	    fprintf(stderr, "cp  : %g\n", cp[d]);
+	    assert(false);
+	  }
+	}
+
+	for(int d = 0; d < DIM; d++){
+	  init_interpol(interpol_pid, interpol_pval, interpol_coeff, u[d], edge);
+	  post_u[d][im] = interpol(interpol_pid, interpol_pval, interpol_coeff, cp);
+	  if(vflag == relative_velocity){
+	    post_u[d][im] -= v0[d];
+	  }
+	}
+      }
+    }
+  }
+  double jax[DIM];
+  rigid_body_rotation(jax, e3, q0, BODY2SPACE);
+  fprintf(stderr, "# %d: B= %7.5g %7.5g %7.5g\n", 
+	  frame, 
+	  B1_app, B1_real, B2);
+  
+  binary_write(u[0], post_data);
+  binary_write(u[1], post_data);
+  binary_write(u[2], post_data);
+}
 #endif
