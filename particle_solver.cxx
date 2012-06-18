@@ -12,6 +12,7 @@ inline void MD_solver_orientation_Euler(Particle &p, const double &dt){
     qtn_normalize(p.q);
   }
 }
+
 inline void MD_solver_orientation_AB2(Particle &p, const double &dt){
   if(ROTATION){
     double wb[DIM];
@@ -25,6 +26,21 @@ inline void MD_solver_orientation_AB2(Particle &p, const double &dt){
     quaternion dqdt;
     qtn_init(p.q_old, p.q);
     qdot(dqdt, p.q, wb, BODY_FRAME);
+    qtn_add(p.q, dqdt, dt);
+    qtn_normalize(p.q);
+  }
+}
+
+inline void MD_solver_orientation_SB2(Particle &p, const double &dt){
+  if(ROTATION){
+    double wb[DIM];
+    for(int d = 0; d < DIM; d++){
+      wb[d] = p.omega[d] + dt/2.0 * IMOI[p.spec]*torque_hydro[d];
+    }
+    
+    quaternion dqdt;
+    qtn_init(p.q_old, p.q);
+    qdot(dqdt, p.q, wb, SPACE_FRAME);
     qtn_add(p.q, dqdt, dt);
     qtn_normalize(p.q);
   }

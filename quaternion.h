@@ -18,6 +18,10 @@
 
 static double QTOL=1.0e-15;
 static double QTOL_LARGE=1.0e-5;
+double M_eps = 1.0e-15;
+double M_eps2 = sqrt(M_eps);
+double M_eps4 = sqrt(M_eps2);
+double M_eps6 = pow(M_eps2, 1.0/3.0);
 
 typedef struct quaternion {
   double s; //scalar part
@@ -266,25 +270,43 @@ inline int qtn_cmp(const quaternion &qa, const quaternion &qb,
   return (dmax <= tol ? 1 : 0);
 }
 
+inline double sinc(const double &x){
+  double sincx;
+  if(ABS(x) > M_eps6){
+    sincx = sin(x)/x;
+  }else{
+    double x2 = x*x;
+    sincx = 1.0;
+    if(ABS(x) > M_eps){
+      sincx -= x2/6.0;
+      if(ABS(x) > M_eps2){
+	sincx += x2*x2/120.0;
+	if(ABS(x) > M_eps4){
+	  sincx -= x2*x2*x2/5040.0;
+	}
+      }
+    }
+  }
+  return sincx;
+}
 /*!
   \brief Compute rotation quaternion given angle and (normal) axis vector
  */
 inline void rv_rqtn(quaternion &q, const double &phi, const double n[DIM]){
-  double ds;
-  double dni;
+  double sinc_phi,dn;
   
-  dni = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
-  assert(dni > 0.0);
-  if(ABS(dni - 1.0) > QTOL){
-    printf("Warning: n must be normal vector, |n|= %.15f\n", dni);
+  dn = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
+  if(ABS(dn - 1.0) > QTOL){
+    printf("Error: n must be normal vector, |n|= %.15f\n", dn);
+    exit_job(EXIT_FAILURE);
   }
-  dni = 1.0/dni;
 
-  ds = sin(0.5*phi);
-  q.s = cos(0.5*phi);
+  sinc_phi = sinc(phi/2.0);
+  q.s = cos(phi/2.0);
   for(int i = 0; i < DIM; i++){
-    q.v[i] = ds * n[i] * dni;
+    q.v[i] = sinc_phi*(phi/2.0 * n[i]);
   }
+  qtn_normalize(q);
 }
 
 
@@ -294,35 +316,54 @@ inline void rv_rqtn(quaternion &q, const double &phi, const double n[DIM]){
  */
 inline void rv_rqtn(quaternion &q, const double v[DIM]){
   double phi;
-  double ds;
-  double dni;
+  double sinc_phi;
 
   phi = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-  assert(phi > 0.0);
-  dni = 1.0/phi;
 
-  ds = sin(0.5*phi);
-  q.s = cos(0.5*phi);
+  sinc_phi = sinc(phi/2.0);
+  q.s = cos(phi/2.0);
   for(int i = 0; i < DIM; i++){
-    q.v[i] = ds * v[i] * dni;
+    q.v[i] = sinc_phi*(v[i]/2.0);
   }
+  qtn_normalize(q);
 }
 
 /*!
-  \brief Compute rotation angle and (normal) vector for rotation quaternion
+  \brief Compute rotation angle and (normal) vector from rotation quaternion
  */
 inline void rqtn_rv(double &phi, double v[DIM], const quaternion &q){
-  double ds;
 
   qtn_isnormal(q);
   phi = 2.0*asin(qtn_norm_v(q));
   qtn_vector(v, q);
 
-  ds =  sin(0.5*phi);
-  if(ds != 0.0){
+  double ds =  sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+  if(ds > M_eps){
     ds = 1.0/ds;
     for(int i = 0; i < DIM; i++){
       v[i] *= ds;
+    }
+  }else{
+    phi = 0.0;
+    v[0] = 0.0;
+    v[1] = 0.0;
+    v[2] = 1.0;
+  }
+}
+
+/*!
+  \brief Computes rotation vector from rotation quaternion
+ */
+inline void rqtn_vr(double v[DIM], const quaternion &q){
+  qtn_isnormal(q);
+  qtn_vector(v, q);
+
+  double phi = 2.0*asin(qtn_norm_v(q));
+  double ds = sqrt(v[0]*v[0] + v[1]*v[2] + v[2]*v[2]);
+  if(ds > M_eps){
+    ds = 1.0/ds;
+    for(int i = 0; i < DIM; i++){
+      v[i] *= (ds * phi);
     }
   }else{
     phi = 0.0;
