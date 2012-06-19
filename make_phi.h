@@ -164,6 +164,26 @@ inline int Relative_coord_check_stepover_Y(const int *cell
     return sign;
 }
 
+
+inline void Janus_direction(double *polar_axis, const Particle &p){
+  double ex[DIM] = {1.0, 0.0, 0.0};
+  double ey[DIM] = {0.0, 1.0, 0.0};
+  double ez[DIM] = {0.0, 0.0, 1.0};
+  double *e3;
+  int dmy_axis = janus_axis[p.spec];
+
+  if(dmy_axis == z_axis){
+    e3 = ez;
+  }else if(dmy_axis == y_axis){
+    e3 = ey;
+  }else if(dmy_axis == x_axis){
+    e3 = ex;
+  }else{
+    fprintf(stderr, "Error: Invalid Janus axis for Janus_direction");
+    exit_job(EXIT_FAILURE);
+  }
+  rigid_body_rotation(polar_axis, e3, p.q, BODY2SPACE);
+}
 inline void Spherical_coord(const double *x, double *r, double *theta, double *phi, 
 			    double &norm_r, double &theta_angle, double &phi_angle, const Particle &p){
   double ex[DIM] = {1.0, 0.0, 0.0};
