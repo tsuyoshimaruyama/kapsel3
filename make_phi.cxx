@@ -410,12 +410,12 @@ void Make_u_slip_particle(const double *phi,
   double delta_v[DIM];
   double slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip;
 
-  double polar_axis[DIM], dmy_dot;
-  double dmy_cs, dmy_cs2, dmy_cs3;
+  double polar_axis[DIM];
+  double dmy_cs, slip_scale;
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy_r, dmy_phi, \
-  v_rot, n_r, n_theta, n_tau, delta_v, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau)
+	  v_rot, n_r, n_theta, n_tau, delta_v, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_cs)
   for(int n = 0; n < Particle_Number; n++){
 
     if(janus_propulsion[p[n].spec] == slip){
@@ -431,7 +431,7 @@ void Make_u_slip_particle(const double *phi,
       sw_in_cell = Particle_cell(xp, dx, x_int, residue);
       sw_in_cell = 1;
 
-      dmy_cs = dmy_cs2 = dmy_cs3 = 0.0;
+      dmy_cs = 0.0;
       Janus_direction(polar_axis, p[n]);
       for(int mesh = 0; mesh < np_domain; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
@@ -447,43 +447,42 @@ void Make_u_slip_particle(const double *phi,
 	if(dmy_xi < HXI && dmy_phi > 0.0){ // use phi or dmy_phi ???
 	  Angular2v(omega_p, r, v_rot);
 	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	  dmy_cs -= slip_vel * sin(dmy_theta) * sin(dmy_theta) * dmy_phi;
+	}	
+      }//raw mesh
+
+      // normalized slip velocity
+      slip_scale = (-8.0*M_PI/3.0*slip_vel*(RADIUS+HXI)*(RADIUS+HXI)) / (DX*DX*dmy_cs);
+      fprintf(stderr, "%10.8g \n", slip_scale);
+      for(int mesh = 0; mesh < np_domain; mesh++){
+	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+
+	for(int d = 0; d < DIM; d++){
+	  x[d] = r_mesh[d] * dx;
+	}
+	dmy_r = Distance(x,xp);
+	dmy_phi = 1.0 - Phi(dmy_r, radius);
+	dmy_xi = ABS(dmy_r - radius);
+
+	if(dmy_xi < HXI && dmy_phi > 0.0){
+	  Angular2v(omega_p, r, v_rot);
+	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 
 	  for(int d = 0; d < DIM; d++){
-	    delta_v[d] = (vp[d] + v_rot[d]) - u[d][im];
+	    delta_v[d] = slip_scale*(vp[d] + v_rot[d]) - u[d][im];
 	  }
-
-	  //Blake squirmer's slip velocity profile
-	  dmy_slip = slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta))
+	  dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
 	    + (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
-
-	  dmy_dot = n_theta[0] * polar_axis[0] + n_theta[1] * polar_axis[1] + n_theta[2] * polar_axis[2];
-	  dmy_cs += slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta)) * (-sin(dmy_theta)) * dmy_phi;
-	  dmy_cs2 += slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta)) * dmy_dot * dmy_phi;
-	  dmy_cs3 += dmy_slip * dmy_dot * dmy_phi;
 	  for(int d = 0; d < DIM; d++){
 	    up[d][im] += (dmy_slip * n_theta[d] * dmy_phi);
 	  }
 	}
-	
-      }//mesh
+      }//normalized mesh
     }//slip particle?
 
-    fprintf(stderr, "%6.4g %6.4g %6.4g %6.4g\n",
-	    -8.0*M_PI/3.0*slip_vel*(RADIUS+DX)*(RADIUS+DX), dmy_cs, dmy_cs2, dmy_cs3);
   }//Particle_number
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < NZ; k++){
-	int im = (i * NY * NZ_) + (j * NZ_) + k;
-	if(up[0][im] != up[0][im] ||
-	   up[1][im] != up[1][im] ||
-	   up[2][im] != up[2][im]){
-	  fprintf(stderr, "NAN!!! %d %d %d -> %d\n",
-		  i, j, k, im);
-	}
-      }
-    }
-  }
+
 }
 
 void Make_phi_particle(double *phi

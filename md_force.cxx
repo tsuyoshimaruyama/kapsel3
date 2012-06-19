@@ -201,19 +201,23 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
     double dmy_phi;
     double v_rot[DIM];
 
-    double n_r[DIM], n_theta[DIM], n_tau[DIM];
+    double n_r[DIM], n_theta[DIM], n_tau[DIM], polar_axis[DIM];
     double dmy_xi, slip_vel, slip_mode, dmy_theta, dmy_tau;
+    double dmy_cs, slip_scale;
     int slip_bnd;
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,dmyR,dmy_phi,v_rot, \
-    n_r, n_theta, n_tau, slip_bnd, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau) 
+	  n_r, n_theta, n_tau, slip_bnd, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_cs) 
     for(int n = 0; n < Particle_Number ; n++){
 
         slip_bnd = (janus_propulsion[p[n].spec] == slip ? 1 : 0);
-	if(slip_bnd)
+	if(slip_bnd){
 	  slip_vel = janus_slip_vel[p[n].spec];
           slip_mode = janus_slip_mode[p[n].spec];
+	}else{
+	  slip_vel = slip_mode = 0.0;
+	}
 
 	//double xp[DIM],vp[DIM],omega_p[DIM];
 	//int x_int[DIM];
@@ -223,23 +227,20 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    vp[d] = p[n].v[d];
 	    omega_p[d] = p[n].omega[d];
 	}
-	//int sw_in_cell 
+
 	sw_in_cell 
 	    = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
 	sw_in_cell = 1;
-	//double force[DIM];
-	//double torque[DIM];
 	for(int d=0; d < DIM; d++){
 	    force[d] = 0.0;
 	    torque[d] = 0.0;
 	}
-	//int r_mesh[DIM];
-	//double r[DIM];
+
+	dmy_cs = 0.0;
+	Janus_direction(polar_axis, p[n]);
 	for(int mesh=0; mesh < NP_domain; mesh++){
 	    Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
-	    ////double dmy_fp[DIM];
 	    double x[DIM];
-	    //dmyR = 0;
 	    for(int d=0;d<DIM;d++){
 		x[d] = r_mesh[d] * DX;
 		//dmyR += SQ(r[d]);
@@ -248,14 +249,10 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    dmyR = Distance(x, xp); // vesion2.00 needs this value
 	    dmy_xi = ABS(dmyR - RADIUS);
 	    dmy_phi= Phi(dmyR, RADIUS);
-	    //double dmyR = Distance(x, xp);
-	    //double dmy_phi= Phi(dmyR, RADIUS);
-	    //double v_rot[DIM];
 	    Angular2v(omega_p, r, v_rot);
 	   
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 	    for(int d=0; d < DIM; d++ ){ 
-		//dmy_fp[d] = fp[d][r_mesh[0]][r_mesh[1]][r_mesh[2]]*dmy_phi;
 		dmy_fp[d] = ((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;
 		force[d] += dmy_fp[d];
 	    }
@@ -267,24 +264,48 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 
 	    if(slip_bnd && dmy_xi < HXI && dmy_phi < 1.0){
 	      Spherical_coord(r, n_r, n_theta, n_tau, dmyR, dmy_theta, dmy_tau, p[n]);
-	      
+	      dmy_cs -= slip_vel * sin(dmy_theta) * sin(dmy_theta) * (1.0 - dmy_phi);
+	    }//slip boundary
+	}// mesh
+
+	//normalized slip vel
+	if(slip_bnd){
+	  slip_scale = (-8.0*M_PI/3.0*slip_vel*(RADIUS+HXI)*(RADIUS+HXI)) / (DX*DX*dmy_cs);
+	  for(int mesh = 0; mesh < NP_domain; mesh++){
+	    Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
+	    double x[DIM];
+	    for(int d = 0; d < DIM; d++){
+	      x[d] = r_mesh[d] * DX;
+	    }
+	    dmyR = Distance(x, xp);
+	    dmy_xi = ABS(dmyR - RADIUS);
+	    dmy_phi = Phi(dmyR, RADIUS);
+	    Angular2v(omega_p, r, v_rot);
+	    
+	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	    if(dmy_xi < HXI && dmy_phi < 1.0){
+	      Spherical_coord(r, n_r, n_theta, n_tau, dmyR, dmy_theta, dmy_tau, p[n]);
+	      dmy_cs -= slip_vel * sin(dmy_theta) * sin(dmy_theta) * (1.0 - dmy_theta);
+
 	      for(int d = 0; d < DIM; d++){
-		dmy_fp[d] = ((vp[d] + v_rot[d]) - u[d][im]);
+		dmy_fp[d] = (slip_scale*(vp[d] + v_rot[d]) - u[d][im]);
 	      }
-	      double dmy_slip = slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta))
-		+ (dmy_fp[0]*n_theta[0] + dmy_fp[1]*n_theta[1] + dmy_fp[2]*n_theta[2]);
+	      double dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode*sin(2.0*dmy_theta))
+		+ (dmy_fp[0] * n_theta[0] + dmy_fp[1] * n_theta[1] + dmy_fp[2] * n_theta[2]);
 	      for(int d = 0; d < DIM; d++){
 		dmy_fp[d] = (dmy_slip * n_theta[d])*(1.0 - dmy_phi);
 		force[d] += dmy_fp[d];
 	      }
 
-	      { //slip torque
+	      {// slip torque
 		torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
 		torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
 		torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
 	      }
-	    }//slip boundary
-	}
+	    }
+	  }// mesh
+	}// slip_bnd
+
 	for(int d=0; d < DIM; d++ ){ 
 	    p[n].f_hydro[d] = (dmy * force[d] * p[n].eff_mass_ratio);
 	}
