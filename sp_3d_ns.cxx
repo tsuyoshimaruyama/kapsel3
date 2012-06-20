@@ -56,7 +56,7 @@ void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Par
 
 void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
     
-    // Update of Fluid Velocity Filed	
+    // Update of Fluid Velocity Field	
     Time_evolution_noparticle(zeta, uk_dc, f, p, jikan);
     
     if(Particle_Number >= 0){
@@ -82,8 +82,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    }
 	}
 	
-	if(SW_EQ == Electrolyte 
-	    ){
+	if(SW_EQ == Electrolyte){
 	    double * rescale_factor = new double[N_spec];
 	    Rescale_solute(rescale_factor
 			   ,Total_solute
@@ -121,6 +120,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	
 	{// Calculation of hydrodynamic force
 	    Reset_phi_u(phi, up);
+	    Make_u_slip_particle(u, up, p, jikan);
+	    Add_f_particle(u, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	}
 
@@ -139,7 +140,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	{
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
-	    Make_u_slip_particle(phi, u, up, p);
 	    Make_f_particle_dt_sole(f, u, up, phi);
 	    Add_f_particle(u, f);
 	}
@@ -433,10 +433,11 @@ int main(int argc, char *argv[]){
   {
     Reset_phi_u(phi,up);
     Make_phi_u_particle(phi, up, particles);
-    Make_u_slip_particle(phi, u, up, particles);
     Zeta_k2u(zeta, uk_dc, u);
     Make_f_particle_dt_sole(f_particle, u, up, phi);
     Add_f_particle(u, f_particle);
+    Make_u_slip_particle(u, up, particles, jikan);
+    Add_f_particle(u, up);
     U2zeta_k(zeta, uk_dc, u);
 
     if(1){

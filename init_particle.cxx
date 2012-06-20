@@ -349,13 +349,16 @@ void Init_Particle(Particle *p){
 	p[i].f_hydro1[d] = 0.0;
 	p[i].fr[d] = 0.0;
 	p[i].fr_previous[d] = 0.0;
-
+	p[i].f_slip[d] = 0.0;
+	p[i].f_slip_previous[d] = 0.0;
 	
 	p[i].omega[d] = 0.0e0 * RA();
 	p[i].omega_old[d] = 0.0;
 	p[i].torque_hydro[d] = 0.0;
 	p[i].torque_hydro_previous[d] = 0.0;
 	p[i].torque_hydro1[d] = 0.0;
+	p[i].torque_slip[d] = 0.0;
+	p[i].torque_slip_previous[d] = 0.0;
       }
     }
     offset += Particle_Numbers[j];

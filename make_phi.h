@@ -9,6 +9,7 @@
 #include "variable.h"
 #include "profile.h"
 #include "rigid_body.h"
+#include "operate_omega.h"
 
 extern void (*Angular2v)(const double *omega, const double *r, double *v);
 extern int NP_domain;
@@ -29,7 +30,7 @@ void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius = RADIUS
 		       );
-void Make_u_slip_particle(const double *phi, double const* const* u, double **up, const Particle *p);
+void Make_u_slip_particle(double const* const* u, double **up, Particle *p, const CTime &jikan);
 void Make_phi_u_particle(double *phi, double **up, Particle *p);
 void Make_phi_particle_OBL(double *phi
 			   ,Particle *p

@@ -197,7 +197,7 @@ output: {
 
 \begin{def}
 class outParticle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d, 
-      		   f_hydro:Vector3d, torque_hydro:Vector3d}
+      		   f_hydro:Vector3d, torque_hydro:Vector3d, f_slip:Vector3d, torque_slip:Vector3d}
 E: float "total kinetic energy of the system"
 t: float "total time"
 Particles[]: outParticle
@@ -211,6 +211,8 @@ class sParticle:{
       f_hydro:Vector3d ,
       f_hydro_previous:Vector3d ,
       f_hydro1:Vector3d ,
+      f_slip:Vector3d ,
+      f_slip_previsou:Vector3d,
       fr:Vector3d ,
       fr_previous:Vector3d ,
       omega:Vector3d ,
@@ -218,6 +220,8 @@ class sParticle:{
       torque_hydro:Vector3d ,
       torque_hydro_previous:Vector3d ,
       torque_hydro1:Vector3d ,
+      torque_slip:Vector3d,
+      torque_slip_previous:Vector3d,
       q:Quaternion,
       q_old:Quaternion
 }      

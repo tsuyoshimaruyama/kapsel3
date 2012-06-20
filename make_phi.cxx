@@ -384,16 +384,18 @@ inline void Make_phi_u_primitive_OBL(double *phi
     }
 }
 
-void Make_u_slip_particle(const double *phi,
-			  double const* const* u,
+void Make_u_slip_particle(double const* const* u,
 			  double **up,
-			  const Particle *p
-			  ){
+			  Particle *p,
+			  const CTime &jikan){
   const double dx = DX;
   const int np_domain = NP_domain;
   int const * const * sekibun_cell = Sekibun_cell;
   const int * Nlattice = Ns;
   const double radius = RADIUS;
+  static const double dmy0 = -DX3*RHO;
+  double dmy = dmy0 / jikan.dt_fluid;
+  //////
 
   double xp[DIM], vp[DIM], omega_p[DIM];
   int x_int[DIM];
@@ -409,16 +411,23 @@ void Make_u_slip_particle(const double *phi,
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double delta_v[DIM];
   double slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip;
-
-  double polar_axis[DIM];
+  double polar_axis[DIM], force[DIM], torque[DIM], dmy_fp[DIM];
   double dmy_cs, slip_scale;
 
+  int slip_flag = 0;
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy_r, dmy_phi, \
-	  v_rot, n_r, n_theta, n_tau, delta_v, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_cs)
+	  v_rot, n_r, n_theta, n_tau, delta_v, slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip, \
+	  polar_axis, force, torque, dmy_fp, dmy_cs, slip_scale)
   for(int n = 0; n < Particle_Number; n++){
 
+    for(int d = 0; d < DIM; d++){
+      force[d] = 0.0;
+      torque[d] = 0.0;
+    }
+
     if(janus_propulsion[p[n].spec] == slip){
+      slip_flag = 1;
       slip_vel = janus_slip_vel[p[n].spec];
       slip_mode = janus_slip_mode[p[n].spec];
       
@@ -433,6 +442,7 @@ void Make_u_slip_particle(const double *phi,
 
       dmy_cs = 0.0;
       Janus_direction(polar_axis, p[n]);
+      // precompute momentum flux along janus axis
       for(int mesh = 0; mesh < np_domain; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
 	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
@@ -444,8 +454,7 @@ void Make_u_slip_particle(const double *phi,
 	dmy_phi = 1.0 - Phi(dmy_r, radius);
 	dmy_xi = ABS(dmy_r - radius);
 
-	if(dmy_xi < HXI && dmy_phi > 0.0){ // use phi or dmy_phi ???
-	  Angular2v(omega_p, r, v_rot);
+	if(dmy_xi < HXI && dmy_phi > 0.0){
 	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	  dmy_cs -= slip_vel * sin(dmy_theta) * sin(dmy_theta) * dmy_phi;
 	}	
@@ -454,6 +463,7 @@ void Make_u_slip_particle(const double *phi,
       // normalized slip velocity
       slip_scale = (-8.0*M_PI/3.0*slip_vel*(RADIUS+HXI)*(RADIUS+HXI)) / (DX*DX*dmy_cs);
       fprintf(stderr, "%10.8g \n", slip_scale);
+      slip_scale = 1.0;
       for(int mesh = 0; mesh < np_domain; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
 	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
@@ -475,14 +485,33 @@ void Make_u_slip_particle(const double *phi,
 	  dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
 	    + (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
 	  for(int d = 0; d < DIM; d++){
-	    up[d][im] += (dmy_slip * n_theta[d] * dmy_phi);
+	    dmy_fp[d] = (dmy_slip * n_theta[d] * dmy_phi);
+	    up[d][im] += dmy_fp[d];
+	    force[d] += dmy_fp[d];
 	  }
-	}
+
+	  {//torque
+	    torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
+	    torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
+	    torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
+	  }
+	}//interface domain
       }//normalized mesh
     }//slip particle?
 
+    for(int d = 0; d < DIM; d++){
+      p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio);
+    }
+    if(ROTATION){
+      for(int d = 0; d < DIM; d++){
+	p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio);
+      }
+    }
   }//Particle_number
 
+  if(slip_flag){
+    Solenoidal_u(up);
+  }
 }
 
 void Make_phi_particle(double *phi

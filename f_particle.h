@@ -30,14 +30,14 @@ inline void Make_f_particle_dt_nonsole(double **f
   {
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for(int i=0; i<NX; i++){
-     for(int j=0; j<NY; j++){
-	  for(int k=0; k<NZ; k++){
+      for(int j=0; j<NY; j++){
+	for(int k=0; k<NZ; k++){
 	  im=(i*NY*NZ_)+(j*NZ_)+k;
 	  f[0][im] = up[0][im] - phi[im] * u[0][im];
 	  f[1][im] = up[1][im] - phi[im] * u[1][im];
 	  f[2][im] = up[2][im] - phi[im] * u[2][im];
-	  }
-     }
+	}
+      }
     }	
   }
 }

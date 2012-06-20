@@ -397,6 +397,13 @@ void Output_udf(UDFManager *ufout
     ufout->put(target.sub("torque_hydro.x"), p[j].torque_hydro_previous[0]);
     ufout->put(target.sub("torque_hydro.y"), p[j].torque_hydro_previous[1]);
     ufout->put(target.sub("torque_hydro.z"), p[j].torque_hydro_previous[2]);
+
+    ufout->put(target.sub("f_slip.x"), p[j].f_slip_previous[0]);
+    ufout->put(target.sub("f_slip.y"), p[j].f_slip_previous[1]);
+    ufout->put(target.sub("f_slip.z"), p[j].f_slip_previous[2]);
+    ufout->put(target.sub("torque_slip.x"), p[j].torque_slip_previous[0]);
+    ufout->put(target.sub("torque_slip.y"), p[j].torque_slip_previous[1]);
+    ufout->put(target.sub("torque_slip.z"), p[j].torque_slip_previous[2]);
   }
 }
 

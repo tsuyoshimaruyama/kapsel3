@@ -101,13 +101,17 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
       {
 	p[n].v_old[d] = p[n].v[d];
 	p[n].v[d] += ( dmy *
-		       ( p[n].f_hydro[d] + p[n].fr[d] + self_force[d])
+		       ( p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d])
 		       );
 
 	p[n].fr_previous[d] = p[n].fr[d];
 	p[n].fr[d] = 0.0;
+
 	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 	p[n].f_hydro[d] = 0.0;
+
+	p[n].f_slip_previous[d] = p[n].f_slip[d];
+	p[n].f_slip[d] = 0.0;
       }
       {
 	p[n].omega_old[d] = p[n].omega[d];
@@ -115,6 +119,9 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
 
 	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
+
+	p[n].torque_slip_previous[d] = p[n].torque_slip[d];
+	p[n].torque_slip[d] = 0.0;
       }
     }
   }
@@ -179,6 +186,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 	p[n].v_old[d] = p[n].v[d];
 	p[n].v[d] +=
 	  dmy * (2.*p[n].f_hydro[d]
+		 + 2.*p[n].f_slip[d]
 		 + p[n].fr[d] + p[n].fr_previous[d] // CN
 		 + 2.0 * self_force[d]
 		 );
@@ -187,6 +195,8 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 	p[n].fr[d] = 0.0;
 	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 	p[n].f_hydro[d] = 0.0;
+	p[n].f_slip_previous[d] = p[n].f_slip[d];
+	p[n].f_slip[d] = 0.0;
       }
       {
 	p[n].omega_old[d] = p[n].omega[d];
@@ -194,6 +204,9 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 
 	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
+
+	p[n].torque_slip_previous[d] = p[n].torque_slip[d];
+	p[n].torque_slip[d] = 0.0;
       }
     }
   }
