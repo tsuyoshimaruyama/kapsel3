@@ -414,6 +414,8 @@ void Make_u_slip_particle(double const* const* u,
   double polar_axis[DIM], force[DIM], torque[DIM], dmy_fp[DIM];
   double dmy_cs, slip_scale;
 
+  double MS[DIM][DIM], QS[DIM];
+
   int slip_flag = 0;
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy_r, dmy_phi, \
@@ -424,6 +426,8 @@ void Make_u_slip_particle(double const* const* u,
     for(int d = 0; d < DIM; d++){
       force[d] = 0.0;
       torque[d] = 0.0;
+      QS[d] = 0.0;
+      MS[d][0] = MS[d][1] = MS[d][2] = 0.0;
     }
 
     if(janus_propulsion[p[n].spec] == slip){
@@ -442,6 +446,8 @@ void Make_u_slip_particle(double const* const* u,
 
       dmy_cs = 0.0;
       Janus_direction(polar_axis, p[n]);
+      double dmy_v[DIM];
+      dmy_v[0] = dmy_v[1] = dmy_v[2] = 0.0;
       // precompute momentum flux along janus axis
       for(int mesh = 0; mesh < np_domain; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
@@ -457,13 +463,24 @@ void Make_u_slip_particle(double const* const* u,
 	if(dmy_xi < HXI && dmy_phi > 0.0){
 	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	  dmy_cs -= slip_vel * sin(dmy_theta) * sin(dmy_theta) * dmy_phi;
+	  for(int i = 0; i < DIM; i++){
+	    for(int j = 0; j < DIM; j++){
+	      MS[i][j] = dmy_phi * n_theta[i] * n_theta[j];
+	    }
+	  }
 	}	
       }//raw mesh
+      fprintf(stderr, "%10.8g   %10.8g   %10.8g   %10.8g   %10.8g   %10.8g\n",
+	      MS[0][0] * p[n].v[0] + MS[0][1] * p[n].v[1] + MS[0][2] * p[n].v[2],
+	      MS[1][0] * p[n].v[0] + MS[1][1] * p[n].v[1] + MS[1][2] * p[n].v[2],
+	      MS[2][0] * p[n].v[0] + MS[2][1] * p[n].v[1] + MS[2][2] * p[n].v[2],
+	      dmy_v[0], dmy_v[1], dmy_v[2]);
+      MS[0][0] += 1.0;
+      MS[1][1] += 1.0;
+      MS[2][2] += 1.0;
 
       // normalized slip velocity
-      slip_scale = (-8.0*M_PI/3.0*slip_vel*(RADIUS+HXI)*(RADIUS+HXI)) / (DX*DX*dmy_cs);
-      fprintf(stderr, "%10.8g \n", slip_scale);
-      slip_scale = 1.0;
+      slip_scale = (-8.0*M_PI/3.0*slip_vel*RADIUS*RADIUS) / (DX*DX*dmy_cs);
       for(int mesh = 0; mesh < np_domain; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
 	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
@@ -480,13 +497,12 @@ void Make_u_slip_particle(double const* const* u,
 	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 
 	  for(int d = 0; d < DIM; d++){
-	    delta_v[d] = slip_scale*(vp[d] + v_rot[d]) - u[d][im];
+	    delta_v[d] = (vp[d] + v_rot[d]) - u[d][im];
 	  }
 	  dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
 	    + (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
 	  for(int d = 0; d < DIM; d++){
 	    dmy_fp[d] = (dmy_slip * n_theta[d] * dmy_phi);
-	    up[d][im] += dmy_fp[d];
 	    force[d] += dmy_fp[d];
 	  }
 
@@ -499,18 +515,50 @@ void Make_u_slip_particle(double const* const* u,
       }//normalized mesh
     }//slip particle?
 
+    M_inv(MS);
+    M_v_prod(force, MS);
     for(int d = 0; d < DIM; d++){
+      vp[d] += jikan.hdt_md * IMASS[p[n].spec] * 2.0 * force[d];
+      p[n].v[d] += jikan.hdt_md * IMASS[p[n].spec] * 2.0 * force[d];
+      p[n].f_slip_previous = p[n].f_slip[d];
       p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio);
     }
     if(ROTATION){
       for(int d = 0; d < DIM; d++){
+	p[n].torque_slip_previous[d] = p[n].torque_slip[d];
 	p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio);
       }
     }
+
+    for(int mesh = 0; mesh < np_domain; mesh++){
+      Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+      int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+
+      for(int d = 0; d < DIM; d++){
+	x[d] = r_mesh[d] * dx;
+      }
+      dmy_r = Distance(x,xp);
+      dmy_phi = 1.0 - Phi(dmy_r, radius);
+      dmy_xi = ABS(dmy_r - radius);
+
+      if(dmy_xi < HXI && dmy_phi > 0.0){
+	for(int d = 0; d < DIM; d++){
+	  delta_v[d] = (vp[d] + v_rot[d]) - u[d][im];
+	  dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
+	    + (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
+	}
+	for(int d = 0; d < DIM; d++){
+	  dmy_fp[d] = (dmy_slip * n_theta[d] * dmy_phi);
+	  up[d][im] += dmy_fp[d];
+	}
+      }
+    //    fprintf(stderr, "slip: %10.8g %10.8g %10.8g %10.8g\n",
+    //	    slip_scale, force[0], force[1], force[2]);
   }//Particle_number
 
-  if(slip_flag){
-    Solenoidal_u(up);
+  //  if(slip_flag){
+  //    Solenoidal_u(up);
+  //  }
   }
 }
 
