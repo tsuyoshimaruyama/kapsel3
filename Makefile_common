@@ -79,6 +79,7 @@ OBJS  	= mt19937ar.o\
 	init_particle.o\
 	input.o\
 	rigid_body.o\
+	operate_surface.o\
 	sp_3d_ns.o
 
 AVSOBJS	= alloc.o\

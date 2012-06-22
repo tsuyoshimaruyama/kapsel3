@@ -28,6 +28,7 @@
 #include "init_particle.h"
 #include "operate_omega.h"
 #include "operate_electrolyte.h"
+#include "operate_surface.h"
 
 enum Count_SW {INIT, ADD, MEAN, SNAP_MEAN, SHOW};
 

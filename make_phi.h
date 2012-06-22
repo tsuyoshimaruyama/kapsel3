@@ -30,7 +30,6 @@ void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius = RADIUS
 		       );
-void Make_u_slip_particle(double const* const* u, double **up, Particle *p, const CTime &jikan);
 void Make_phi_u_particle(double *phi, double **up, Particle *p);
 void Make_phi_particle_OBL(double *phi
 			   ,Particle *p
