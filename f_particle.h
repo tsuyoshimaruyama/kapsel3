@@ -33,12 +33,31 @@ inline void Make_f_particle_dt_nonsole(double **f
       for(int j=0; j<NY; j++){
 	for(int k=0; k<NZ; k++){
 	  im=(i*NY*NZ_)+(j*NZ_)+k;
+	  f[0][im] = up[0][im] - phi[im] * u[0][im];
+	  f[1][im] = up[1][im] - phi[im] * u[1][im];
+	  f[2][im] = up[2][im] - phi[im] * u[2][im];
+	}
+      }
+    }	
+  }
+}
+inline void Update_f_particle_dt_nonsole(double **f,
+					 double **u,
+					 double **up,
+					 double *phi){
+  int im;
+  {
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ; k++){
+	  im = (i * NY * NZ_) + (j * NZ_) + k;
 	  f[0][im] += up[0][im] - phi[im] * u[0][im];
 	  f[1][im] += up[1][im] - phi[im] * u[1][im];
 	  f[2][im] += up[2][im] - phi[im] * u[2][im];
 	}
       }
-    }	
+    }
   }
 }
 inline void Make_f_particle_dt_sole(double **f
@@ -51,6 +70,15 @@ inline void Make_f_particle_dt_sole(double **f
   {
     // f = up - phi *u
      Solenoidal_u(f); // div f = 0
+  }
+}
+inline void Update_f_particle_dt_sole(double **f,
+				      double **u,
+				      double **up,
+				      double *phi){
+  Update_f_particle_dt_nonsole(f, u, up, phi);
+  {
+    Solenoidal_u(f);
   }
 }
 inline void Add_f_particle(double **u, double **f, const int dim=DIM){

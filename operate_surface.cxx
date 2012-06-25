@@ -1,6 +1,6 @@
 #include "operate_surface.h"
-void Make_f_slip_particle(double const* const* u,
-			  double **up,
+void Make_f_slip_particle(double **up,
+			  double const* const* u,
 			  Particle *p){
   //////////////////////////////////
   const double dx = DX;
@@ -17,16 +17,16 @@ void Make_f_slip_particle(double const* const* u,
   double dmy_r, dmy_phi;
   int sw_in_cell, pspec;
 
-  double SM[DIM][DIM], Vv[DIM], Sv[DIM];
+  double SM[DIM][DIM], SMI[DIM][DIM], Vv[DIM], Sv[DIM];
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double polar_axis[DIM], force[DIM], torque[DIM];
   double slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip;
-  double dmy_cs, slip_scale, cmass, slip_debug;
+  double dmy_cs, slip_scale, f_scale, cmass;
 
 #pragma omp parallel for schedule(dynamic, 1)\
   private(xp, vp, omega_p, v_rot, delta_v, r, x, residue, x_int, r_mesh, dmy_r, dmy_phi, \
 	  sw_in_cell, pspec, SM, Vv, Sv, n_r, n_theta, n_tau, polar_axis, force, torque, \
-	  slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip, dmy_cs, slip_scale, cmass)
+	  slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip, dmy_cs, slip_scale, f_scale, cmass)
   for(int n = 0; n < Particle_Number; n++){
 
     pspec = p[n].spec;
@@ -42,18 +42,13 @@ void Make_f_slip_particle(double const* const* u,
       }
       sw_in_cell = Particle_cell(xp, dx, x_int, residue);
       sw_in_cell = 1;
-      fprintf(stderr, "%10.8g %10.8g %10.8g %4d %4d %4d %10.8g %10.8g %10.8g\n",
-	      xp[0], xp[1], xp[2],
-	      x_int[0], x_int[1], x_int[2],
-	      residue[0], residue[1], residue[2]);
-      double dmy_fancy[DIM], dmy_brute[DIM];
+
       {// Compute particle slip velocity correction
 	dmy_cs = 0.0;
 	for(int d = 0; d < DIM; d++){
 	  cmass = 0.0;
 	  Vv[d] = Sv[d] = 0.0;
 	  SM[d][0] = SM[d][1] = SM[d][2] = 0.0;
-	  dmy_fancy[d] = dmy_brute[d] = 0.0;
 	}
 
 	for(int mesh = 0; mesh < np_domain; mesh++){
@@ -67,72 +62,48 @@ void Make_f_slip_particle(double const* const* u,
 	  dmy_phi = 1.0 - Phi(dmy_r, radius);
 	  cmass += (1.0 - dmy_phi);
 	  dmy_xi = ABS(dmy_r - radius);
-	  if(r[0]*r[0] + r[1]*r[1] + r[2]*r[2] > 0){
-	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);	  
-	    for(int d = 0; d < DIM; d++){
-	      dmy_brute[d] += n_r[d];
-	      dmy_fancy[d] += r[d];
-	    }
-	  }
+
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){ // interface domain only
+	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);	  
 	    Angular2v(omega_p, r, v_rot);
-
 	    
-	    dmy_slip = slip_vel * sin(dmy_theta);
-	    dmy_cs -= dmy_phi * dmy_slip * sin(dmy_theta);
-	    dmy_slip += slip_vel * slip_mode * sin(2.0 * dmy_theta);
-
+	    dmy_cs += dmy_phi * slip_vel * SQ(sin(dmy_theta));
 	    for(int d = 0; d < DIM; d++){
 	      delta_v[d] = (vp[d] + v_rot[d]) - u[d][im];
 	    }
-	    
 	    for(int i = 0; i < DIM; i++){
-	      Vv[i] += dmy_phi * n_theta[i] * 
-		(delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
-	      Sv [i] += dmy_phi * n_theta[i] * slip_vel;
+	      Vv[i] += dmy_phi * n_theta[i] * (delta_v[0] * n_theta[0] + delta_v[1] * n_theta[1] + delta_v[2] * n_theta[2]);
+	      Sv[i] += dmy_phi * n_theta[i] * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta));
 	      for(int j = 0; j < DIM; j++){
 		SM[i][j] += dmy_phi * n_theta[i] * n_theta[j];  
 	      }
 	    }
 	  } // interface domain
 	}// mesh
-	fprintf(stderr, "%10.8g %10.8g %10.8g / %10.8g / %10.8g / %10.8g  / %10.8g / %10.8g / %10.8g\n",
-		xp[0], xp[1], xp[2],
-		dmy_brute[0], dmy_fancy[0],
-		dmy_brute[1], dmy_fancy[1],
-		dmy_brute[2], dmy_fancy[2]);
-	M_v_prod(dmy_fancy, SM, vp);
 
 	if(!Fixed_particle){
+	  //eff_mass_ratio not globally defined, use MASS_RATIO ?
 	  cmass *= dmy0;
-	  slip_scale = (-8.0*M_PI/3.0*slip_vel*radius*radius) / (dx*dx*dmy_cs);
-	  //	  slip_debug = slip_scale;
-	  //	  slip_scale = 1.0;
-	  M_scale(SM, dmy0/cmass);
-	  for(int d = 0; d < DIM; d++){
-	    Vv[d] += slip_scale * Sv[d];
-	    SM[d][d] += 1.0;
-	  }
-	  M_inv(SM);
-	  M_v_prod(force, SM, Vv);
-	  for(int d = 0; d < DIM; d++){
-	    // eff_mass_ratio ?
-	    force[d] *= (dmy0/cmass);
-	    torque[d] = 0.0;
-	    vp_old[d] = vp[d];
+	  slip_scale = (8.0*M_PI/3.0*slip_vel*radius*radius) / (dx*dx*dmy_cs);
+	  M_scale(SM, dmy0);
+	  M_copy(SMI, SM);
 
-	    p[n].f_slip_previous[d] = force[d];
-	    p[n].torque_slip_previous[d] = 0.0;
-	    p[n].v[d] -= IMASS[pspec] * force[d];
+	  // Vv : momentum exchange needed to enforce slip with current velocity
+	  // force: particle velocity force needed to ensure momentum conservation
+	  for(int d = 0; d < DIM; d++){
+	    Vv[d] += slip_scale * Sv[d];  
+	    Vv[d] *= dmy0;
+	    SMI[d][d] += cmass;
 	  }
-	}
-
+	  M_inv(SMI);
+	  M_v_prod(force, SMI, Vv, -1.0);
+	}// fixed particle
       }// slip velocity correction
 
       {// Compute fluid slip velocity 
 	for(int d = 0; d < DIM; d++){ // read updated (slip) particle velocities
-	  vp[d] = p[n].v[d];
-	  omega_p[d] = p[n].omega[d];
+	  vp_old[d] = vp[d];
+	  vp[d] += force[d];
 	  Vv[d] = Sv[d] = 0.0;
 	}
 	for(int mesh = 0; mesh < np_domain; mesh++){
@@ -158,28 +129,24 @@ void Make_f_slip_particle(double const* const* u,
 	    }
 	  }// interface domain
 
-	  // Check momentum conservation over whole fluid domain (eff_mass_ratio?)
 	  for(int d = 0; d < DIM; d++){
-	    Vv[d] += (1.0 - dmy_phi) * (vp[d] - vp_old[d]);
+	    Vv[d] += (1.0 - dmy_phi) * force[d];
 	    Sv[d] += up[d][im];
 	  }
 	} // mesh
       }
 
-      for(int d = 0; d < DIM; d++){
-	Vv[d] -= Sv[d];
+      {
+	f_scale = -(Sv[0]*polar_axis[0] + Sv[1]*polar_axis[1] + Sv[2]*polar_axis[2]);
+	f_scale /= (Vv[0]*polar_axis[0] + Vv[1]*polar_axis[1] + Vv[2]*polar_axis[2]);
+	assert(f_scale > 0);
+	for(int d = 0; d < DIM; d++){
+	  force[d] *= f_scale;
+	  p[n].v[d] += force[d];
+	  p[n].f_slip_previous[d] = force[d];
+	  p[n].torque_slip_previous[d] = 0.0;
+	}
       }
-      double dmyv = sqrt(SQ(vp_old[0]) + SQ(vp_old[1]) + SQ(vp_old[2]));
-      dmyv = (dmyv > 0 ? 1.0 / dmyv : 1.0);
-      // fprintf(stderr, "%10.8g %10.8g %10.8g %10.8g %10.8g %10.8g %10.8g %10.8g\n",
-      // 	      slip_debug,
-      // 	      ABS(vp[0] - vp_old[0]) * dmyv,
-      // 	      ABS(vp[1] - vp_old[1]) * dmyv,
-      // 	      ABS(vp[2] - vp_old[2]) * dmyv,
-      // 	      sqrt(Vv[0]*Vv[0] + Vv[1]*Vv[1] + Vv[2]*Vv[2]),
-      // 	      ABS(Vv[0]), ABS(Vv[1]), ABS(Vv[2])
-      // 	      );
-
     }// slip particle ?
   }// Particle Number
 }

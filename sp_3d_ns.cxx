@@ -136,12 +136,12 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	}
 	
 	{
-	    Reset_phi_u(phi, f);
-	    Make_f_slip_particle(u, f, p);
+	    Reset_u(f);
+	    Make_f_slip_particle(f, u, p);
 
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
-	    Make_f_particle_dt_sole(f, u, up, phi);
+	    Update_f_particle_dt_sole(f, u, up, phi);
 	    Add_f_particle(u, f);
 	}
 	
@@ -434,13 +434,12 @@ int main(int argc, char *argv[]){
   {
     Zeta_k2u(zeta, uk_dc, u);
 
-    Reset_phi_u(phi, f_particle);
-    jikan.ts = -1;
-    Make_f_slip_particle(u, f_particle, particles);
+    Reset_u(f_particle);
+    Make_f_slip_particle(f_particle, u, particles);
 
     Reset_phi_u(phi,up);
     Make_phi_u_particle(phi, up, particles);
-    Make_f_particle_dt_sole(f_particle, u, up, phi);
+    Update_f_particle_dt_sole(f_particle, u, up, phi);
 
     Add_f_particle(u, f_particle);
     U2zeta_k(zeta, uk_dc, u);

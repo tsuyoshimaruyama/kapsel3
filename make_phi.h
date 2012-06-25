@@ -252,12 +252,22 @@ inline void Spherical_coord(const double *x, double *r, double *theta, double *p
     dot_e1_r12 = v_inner_prod(e1, r12) / sqrt(dmy_norm);
     phi_angle = acos(dot_e1_r12);
   }else{ // r parallel to janus axis (phi / theta not uniquely defined)
-    for(int d = 0; d < DIM; d++){
-      phi[d] = -e1[d];
-      theta[d] = e2[d];
+    // define such that surface integral of theta is parallel to z (of phi is null)
+    if(e3[0]*r[0] + e3[1]*r[1] + e3[2]*r[2] > 0){ // parallel
+      for(int d = 0; d < DIM; d++){
+	phi[d] = -e1[d];
+	theta[d] = e2[d];
+      }
+      theta_angle = 0.0;
+      phi_angle = PI_half;
+    }else{ // anti-parallel (mirror image - left-handed frame !)
+      for(int d = 0; d < DIM; d++){
+	phi[d] = e1[d];
+	theta[d] = -e2[d];
+      }
+      theta_angle = M_PI;
+      phi_angle = 3.0*PI_half;
     }
-    theta_angle = 0.0;
-    phi_angle = PI_half;
   }
     
   //body -> space coordinates
@@ -339,6 +349,41 @@ inline void Reset_phi_u(double *phi, double **up){
 	    }
 	}
     }
+}
+inline void Reset_u(double **up){
+  int im;
+#pragma omp parallel private(im)
+  {
+#pragma omp for nowait schedule(dynamic, 1)
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ_; k++){
+	  im = (i * NY * NZ_) + (j * NZ_) + k;
+	  up[0][im] = 0.0;
+	}
+      }
+    }/* end omp for up[0] */
+
+#pragma omp for nowait schedule(dynamic, 1)
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ_; k++){
+	  im = (i * NY * NZ_) + (j * NZ_) + k;
+	  up[1][im] = 0.0;
+	}
+      }
+    }
+  }/* end omp for up[1] */
+
+#pragma omp for nowait schedule(dynamic, 1)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ_; k++){
+	im = (i * NY * NZ_) + (j * NZ_) + k;
+	up[2][im] = 0.0;
+      } 
+    }
+  }/* end omp for up[2] */
 }
 
 #endif
