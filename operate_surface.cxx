@@ -83,10 +83,10 @@ void Make_f_slip_particle(double **up,
 	  } // interface domain
 	}// mesh
 
-	if(!Fixed_particle){
+	{
 	  //eff_mass_ratio not globally defined, use MASS_RATIO ?
 	  cmass *= dmy0;
-	  slip_scale = ((8.0*M_PI/3.0*radius*radius) / (dx*dx*dmy_cs)) * slip_vel;
+	  slip_scale = ((8.0*M_PI/3.0*radius*radius) / (dx*dx*dmy_cs));
 	  stick_scale = (4.0*M_PI*radius*radius) / (dx*dx*dmy_ds);
 	  M_scale(SM, dmy0);
 	  M_copy(SMI, SM);
@@ -94,12 +94,12 @@ void Make_f_slip_particle(double **up,
 	  // Vv : momentum exchange needed to enforce slip with current velocity
 	  // force: particle force needed to ensure momentum conservation
 	  for(int d = 0; d < DIM; d++){
-	    Vv[d] = dmy0 * (stick_scale * Vv[d] + slip_scale * Sv[d] - Uv[d]);  
+	    Vv[d] = dmy0 * (stick_scale * Vv[d] + slip_scale * slip_vel * Sv[d] - Uv[d]);  
 	    SMI[d][d] += cmass;
 	  }
 	  M_inv(SMI);
 	  M_v_prod(force, SMI, Vv, -1.0);
-	}// fixed particle
+	}
       }// slip velocity correction
 
       {// Compute fluid slip velocity 
@@ -124,11 +124,11 @@ void Make_f_slip_particle(double **up,
 	    for(int d = 0; d < DIM; d++){
 	      fv[d] = stick_scale*(vp[d] + v_rot[d]) - u[d][im];
 	    }
-	    dmy_slip = slip_scale * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
+	    dmy_slip = slip_scale * slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0 * dmy_theta))
 	      + (fv[0] * n_theta[0] + fv[1] * n_theta[1] + fv[2] * n_theta[2]);
 
 	    for(int d = 0; d < DIM; d++){ // careful with parallel update
-	      up[d][im] += dmy_slip * dmy_phi * n_theta[d];
+	      up[d][im] += dmy_phi * (slip_scale * slip_vel * n_theta[d]);
 	    }
 	  }// interface domain
 
@@ -142,7 +142,6 @@ void Make_f_slip_particle(double **up,
       {
 	f_scale = -(Sv[0]*polar_axis[0] + Sv[1]*polar_axis[1] + Sv[2]*polar_axis[2]);
 	f_scale /= (Vv[0]*polar_axis[0] + Vv[1]*polar_axis[1] + Vv[2]*polar_axis[2]);
-	f_scale = 1.0;
 	assert(f_scale > 0);
 	for(int d = 0; d < DIM; d++){
 	  force[d] *= f_scale;
@@ -155,7 +154,7 @@ void Make_f_slip_particle(double **up,
 	  fv[d] = f_scale * Vv[d] + Sv[d];
 	}
 	fprintf(stderr, "slip: %8.6g %8.6g %8.6g %8.6g %8.6g %8.6g %8.6g\n",
-		stick_scale, slip_scale / slip_vel, f_scale,
+		stick_scale, slip_scale, f_scale,
 		sqrt(fv[0]*fv[0] + fv[1]*fv[1] + fv[2]*fv[2]),
 		fv[0], fv[1], fv[2]);
       }

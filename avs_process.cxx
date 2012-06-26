@@ -71,9 +71,9 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
   double nd1[DIM], nd2[DIM], nd3[DIM];
   double ar, ar2, ar3;
 
-  if(rdist >= A + DX){
+  if(rdist >= A){
     cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
-    ar = (A+DX)/rdist;
+    ar = (A)/rdist;
     ar2 = ar*ar;
     ar3 = ar*ar2;
 
@@ -117,9 +117,9 @@ void get_rms(const int &frame){
 	  rgrid[d] = (double)ei[d] * DX;
 	}
 	Distance(r0, rgrid, dmy_r, nr);
-	if(dmy_r >= A + DX){
+	if(dmy_r >= A){
 	  int im = (i * NY * NZ) + (j * NZ) + k;
-	  scale = dmy_r/(A + DX);
+	  scale = dmy_r/(A);
 	  scale *= scale;
 
 	  v_gold(ww, nr, dmy_r, B1_real, B2);
@@ -238,7 +238,7 @@ void get_image(const int &frame, const int &iso){
       }
       v_gold(ww, rp, dmy, B1_real, B2);
       pdomain = Phi(dmy, A);
-      if(dmy >= A+DX){
+      if(dmy >= A){
 	fdomain = 1.0;
       }else{
 	fdomain = 0.0;
