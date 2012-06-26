@@ -36,4 +36,9 @@
 void Make_f_slip_particle(double **up,
 			  double const* const *u,
 			  Particle *p);
+
+void Make_force_u_slip_particle(double **up, double const* const* u,
+				Particle *p, const CTime &jikan);
+void momentum_check_particle(double const* const* up, Particle *p, const CTime &jikan);
+void momentum_check_fluid(double const* const* up, Particle *p, const CTime &jikan);
 #endif

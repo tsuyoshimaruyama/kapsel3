@@ -161,3 +161,285 @@ void Make_f_slip_particle(double **up,
     }// slip particle ?
   }// Particle Number
 }
+
+void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
+  ////////////////////////
+  const double dx = DX;
+  const int np_domain = NP_domain;
+  int const* const* sekibun_cell = Sekibun_cell;
+  const int* Nlattice = Ns;
+  const double radius = RADIUS;
+  static const double dmy0 = DX3 * RHO;
+  double dmy = -dmy0/jikan.dt_md;
+  ////////////////////////
+  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
+  double r[DIM], x[DIM], residue[DIM];
+  int x_int[DIM], r_mesh[DIM];
+  double dmy_r, dmy_phi;
+  int sw_in_cell, pspec;
+
+  double n_r[DIM], n_theta[DIM], n_tau[DIM];
+  double slip_vel, slip_mode, dmy_xi, dmy_theta, dmy_tau, dmy_slip;
+  double Vv[DIM], Uv[DIM], Sv[DIM], force[DIM], torque[DIM], dmy_fv[DIM], polar_axis[DIM];
+  double dmy_cs, dmy_ds, dmy_mass, dmy_sin, dmy_dir, slip_scale, stick_scale;
+
+  for(int n = 0; n < Particle_Number; n++){
+    pspec = p[n].spec;
+    if(janus_propulsion[pspec] == slip){
+
+      slip_vel = janus_slip_vel[pspec];
+      slip_mode = janus_slip_mode[pspec];
+      Janus_direction(polar_axis, p[n]);
+      for(int d = 0; d < DIM; d++){
+	xp[d] = p[n].x[d];
+	vp[d] = p[n].v[d];
+	omega_p[d] = p[n].omega[d];
+
+	Vv[d] = Sv[d] = Uv[d] = 0.0;
+	force[d] = torque[d] = 0.0;
+      }
+      sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+      sw_in_cell = 1;
+
+      { // compute normalization factors
+	dmy_cs = dmy_ds = dmy_mass = 0.0;
+	for(int mesh = 0; mesh < np_domain; mesh++){
+	  Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	  int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	  for(int d = 0; d < DIM; d++){
+	    x[d] = r_mesh[d] * dx;
+	  }
+	  dmy_r = Distance(x, xp);
+	  dmy_phi = 1.0 - Phi(dmy_r, radius);
+	  dmy_mass += (1.0 - dmy_phi);
+	  dmy_xi = ABS(dmy_r - radius);
+	  
+	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
+	    Angular2v(omega_p, r, v_rot);
+	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	    dmy_sin = sin(dmy_theta);
+	    
+	    dmy_cs += dmy_phi * dmy_sin * dmy_sin;
+	    dmy_ds += dmy_phi;
+	  }
+	}//mesh
+	dmy_mass *= dmy0;
+	slip_scale = (8.0/3.0 * M_PI * radius * radius) / (dx * dx * dmy_cs) * slip_vel;
+	stick_scale = (4.0 * M_PI * radius * radius) / (dx * dx * dmy_ds);
+      } // compute normalization
+      
+      { // compute hydrodynamic force 
+	// should I compute solenoidal field produced by each particle to obtain slip force ??? 
+	for(int d = 0; d < DIM; d++){
+	  force[d] = torque[d] = 0.0;
+	}
+	for(int mesh = 0; mesh < np_domain; mesh++){
+	  Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	  int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	  for(int d = 0; d < DIM; d++){
+	    x[d] = r_mesh[d] * dx;
+	  }
+	  dmy_r = Distance(x, xp);
+	  dmy_phi = 1.0 - Phi(dmy_r, radius);
+	  dmy_xi = ABS(dmy_r - radius);
+
+	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
+	    Angular2v(omega_p, r, v_rot);
+	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	    dmy_sin = sin(dmy_theta);
+
+	    for(int d = 0; d < DIM; d++){
+	      dmy_fv[d] = (vp[d] + v_rot[d]);
+	    }
+	    for(int d = 0; d < DIM; d++){
+	      Uv[d] = (u[0][im] * n_theta[0] + u[1][im] * n_theta[1] + u[2][im] * n_theta[2]);
+	      Vv[d] = (dmy_fv[0] * n_theta[0] + dmy_fv[1] * n_theta[1] + dmy_fv[2] * n_theta[2]);
+	      Sv[d] = (dmy_sin + slip_mode * sin(2.0 * dmy_theta));
+	    }
+	    for(int d = 0; d < DIM; d++){
+	      dmy_dir = dmy_phi * n_theta[d];
+	      dmy_fv[d] = dmy_dir * (stick_scale * Vv[d] + slip_scale * Sv[d] - Uv[d]);
+
+	      up[d][im] += dmy_fv[d];
+	      force[d] += dmy_fv[d];
+	    }
+	    {
+	      torque[0] += (r[1] * dmy_fv[2] - r[2] * dmy_fv[1]);
+	      torque[1] += (r[2] * dmy_fv[0] - r[0] * dmy_fv[2]);
+	      torque[2] += (r[0] * dmy_fv[1] - r[1] * dmy_fv[0]);
+	    }
+	  }
+	}//mesh
+      }
+
+      { // particle force
+	dmy_mass = MASS[pspec] / dmy_mass;	//eff_mass_ratio ?
+	for(int d = 0; d < DIM; d++){
+	  p[n].f_slip[d] = (dmy * dmy_mass * force[d]);
+	}
+	if(ROTATION){
+	  for(int d = 0; d < DIM; d++){
+	    p[n].torque_slip[d] = (dmy * dmy_mass * force[d]);
+	  }
+	}
+      }
+
+    }// slip_particle ?
+  }// Particle_Number
+}
+
+void momentum_check_particle(double const* const* up, Particle *p, const CTime &jikan){
+  ////////////////////////
+  const double dx = DX;
+  const int np_domain = NP_domain;
+  int const* const* sekibun_cell = Sekibun_cell;
+  const int* Nlattice = Ns;
+  const double radius = RADIUS;
+  static const double dmy0 = DX3 * RHO;
+  /////////////////////////
+  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM];
+  int x_int[DIM], r_mesh[DIM];
+  int sw_in_cell, pspec;
+  double dmy_r, dmy_phi, dmy_phic, dmy_mass, dmy_xi;
+  /////////////////////////
+  double tot_p[DIM], part_p[DIM], fluid_p[DIM], md_p[DIM];
+  double tot_int_p[DIM], part_int_p[DIM], fluid_int_p[DIM], md_int_p[DIM];
+  for(int d = 0; d < DIM; d++){
+    tot_p[d] = part_p[d] = fluid_p[d] = md_p[d] = 0.0;
+    tot_int_p[d] = part_int_p[d] = fluid_int_p[d] = md_int_p[d] = 0.0;
+  }
+  dmy_mass = 0.0;
+  for(int n = 0; n < Particle_Number; n++){
+    pspec = p[n].spec;
+    for(int d = 0; d < DIM; d++){
+      xp[d] = p[n].x[d];
+      vp[d] = p[n].v[d];
+      omega_p[d] = p[n].omega[d];
+    }
+
+    sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+    sw_in_cell = 1;
+    for(int mesh = 0; mesh < np_domain; mesh++){
+      Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+      Angular2v(omega_p, r, v_rot);
+      int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+      for(int d = 0; d < DIM; d++){
+	x[d] = r_mesh[d] * dx;
+      }
+      dmy_r = Distance(x, xp);
+      dmy_phi = Phi(dmy_r, radius);
+      dmy_phic = 1.0 - dmy_phi;
+      dmy_mass += (1.0 - dmy_phi);
+      dmy_xi = ABS(dmy_r - radius);
+      for(int d = 0; d < DIM; d++){
+	fv[d] = (vp[d] + v_rot[d]);
+      }
+
+      if(dmy_r <= radius + dx){
+	for(int d = 0; d < DIM; d++){
+	  tot_p[d] += up[d][im];
+	  md_p[d] += dmy_phi * fv[d];
+	  part_p[d] += dmy_phi * up[d][im];
+	  fluid_p[d] += dmy_phic * up[d][im];
+	}
+	
+	if(dmy_xi <= HXI){
+	  for(int d = 0; d < DIM; d++){
+	    tot_int_p[d] += up[d][im];
+	    md_int_p[d] += dmy_phi * fv[d];
+	    part_int_p[d] += dmy_phi * up[d][im];
+	    fluid_int_p[d] += dmy_phic * up[d][im];
+	  }
+	}
+      }
+    }
+  }
+  fprintf(stderr, "#### Full Particle Domain\n");
+  fprintf(stderr, "Vp             :   %10.8E %10.8E %10.8E\n",
+	  vp[0], vp[1], vp[2]);
+  fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
+	  tot_p[0], tot_p[1], tot_p[2]);
+  fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
+	  part_p[0], part_p[1], part_p[2]);
+  fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
+	  md_p[0], md_p[1], md_p[2]);
+  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+	  fluid_p[0], fluid_p[1], fluid_p[2]);
+
+  fprintf(stderr, "#### Interface momentum:\n");
+  fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
+	  tot_int_p[0], tot_int_p[1], tot_int_p[2]);
+  fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
+	  part_int_p[0], part_int_p[1], part_int_p[2]);
+  fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
+	  md_int_p[0], md_int_p[1], md_int_p[2]);
+  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+	  fluid_int_p[0], fluid_int_p[1], fluid_int_p[2]);
+
+  fprintf(stderr, "\n");
+}
+
+void momentum_check_fluid(double const* const* up, Particle *p, const CTime &jikan){
+  ////////////////////////
+  const double dx = DX;
+  const int np_domain = NP_domain;
+  int const* const* sekibun_cell = Sekibun_cell;
+  const int* Nlattice = Ns;
+  const double radius = RADIUS;
+  static const double dmy0 = DX3 * RHO;
+  /////////////////////////
+  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM];
+  int x_int[DIM], r_mesh[DIM];
+  int sw_in_cell, pspec;
+  double dmy_r, dmy_phi, dmy_phic, dmy_mass, dmy_xi;
+  /////////////////////////
+  double full_p[DIM], fluid_p[DIM];
+  for(int d = 0; d < DIM; d++){
+    full_p[d] = fluid_p[d] = 0.0;
+  }
+  dmy_mass = 0.0;
+  int outside = 1;
+  for(int i = 0; i < NX; i++){
+    x[0] = (double)i * dx;
+    for(int j = 0; j < NY; j++){
+      x[1] = (double)j * dx;
+      for(int k = 0; k < NZ; k++){
+	x[2] = (double)k * dx;
+	int im = (i * NY * NZ_) + (j * NZ_) + k;
+
+	for(int d = 0; d < DIM; d++){
+	  full_p[d] += up[d][im];
+	}
+	
+	for(int n = 0; n < Particle_Number; n++){
+	  pspec = p[n].spec;
+	  for(int d = 0; d < DIM; d++){
+	    xp[d] = p[n].x[d];
+	    vp[d] = p[n].v[d];
+	    omega_p[d] = p[n].omega[d];
+	  }
+	  
+	  dmy_r = Distance(x, xp);
+	  dmy_phi = Phi(dmy_r, radius);
+	  dmy_phic = 1.0 - dmy_phi;
+	  if(dmy_r <= radius + dx){
+	    outside = 0;
+	    break;
+	  }
+	}
+	if(outside){
+	  for(int d = 0; d < DIM; d++){
+	    fluid_p[d] += up[d][im];
+	  }
+	}
+	
+      }
+    }
+  }
+ fprintf(stderr, "#### Total momentum:\n");
+  fprintf(stderr, "Total            :   %10.8E %10.8E %10.8E\n",
+	  full_p[0], full_p[1], full_p[2]);
+  fprintf(stderr, "Outside particle :   %10.8E %10.8E %10.8E\n",
+	  fluid_p[0], fluid_p[1], fluid_p[2]);
+  fprintf(stderr, "\n");
+}

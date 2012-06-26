@@ -69,6 +69,9 @@ void Save_Restart_udf(
 	ufres->put(target.sub("f_hydro1.x"),p[j].f_hydro1[0]);
 	ufres->put(target.sub("f_hydro1.y"),p[j].f_hydro1[1]);
 	ufres->put(target.sub("f_hydro1.z"),p[j].f_hydro1[2]);
+	ufres->put(target.sub("f_slip.x"), p[j].f_slip[0]);
+	ufres->put(target.sub("f_slip.y"), p[j].f_slip[1]);
+	ufres->put(target.sub("f_slip.z"), p[j].f_slip[2]);
 	ufres->put(target.sub("f_slip_previous.x"), p[j].f_slip_previous[0]);
 	ufres->put(target.sub("f_slip_previous.y"), p[j].f_slip_previous[1]);
 	ufres->put(target.sub("f_slip_previous.z"), p[j].f_slip_previous[2]);
@@ -97,6 +100,9 @@ void Save_Restart_udf(
 	ufres->put(target.sub("torque_hydro1.x"),p[j].torque_hydro1[0]);
 	ufres->put(target.sub("torque_hydro1.y"),p[j].torque_hydro1[1]);
 	ufres->put(target.sub("torque_hydro1.z"),p[j].torque_hydro1[2]);
+	ufres->put(target.sub("torque_slip.x"), p[j].torque_slip[0]);
+	ufres->put(target.sub("torque_slip.y"), p[j].torque_slip[1]);
+	ufres->put(target.sub("torque_slip.z"), p[j].torque_slip[2]);
 	ufres->put(target.sub("torque_slip_previous.x"), p[j].torque_slip_previous[0]);
 	ufres->put(target.sub("torque_slip_previous.y"), p[j].torque_slip_previous[1]);
 	ufres->put(target.sub("torque_slip_previous.z"), p[j].torque_slip_previous[2]);
@@ -197,6 +203,9 @@ void Force_restore_parameters(double **zeta
 		ufin->get(target.sub("f_hydro1.x"),p[j].f_hydro1[0]);
 		ufin->get(target.sub("f_hydro1.y"),p[j].f_hydro1[1]);
 		ufin->get(target.sub("f_hydro1.z"),p[j].f_hydro1[2]);
+		ufin->get(target.sub("f_slip.x"), p[j].f_slip[0]);
+		ufin->get(target.sub("f_slip.y"), p[j].f_slip[1]);
+		ufin->get(target.sub("f_slip.z"), p[j].f_slip[2]);
 		ufin->get(target.sub("f_slip_previous.x"), p[j].f_slip_previous[0]);
 		ufin->get(target.sub("f_slip_previous.y"), p[j].f_slip_previous[1]);
 		ufin->get(target.sub("f_slip_previous.z"), p[j].f_slip_previous[2]);
@@ -225,6 +234,9 @@ void Force_restore_parameters(double **zeta
 		ufin->get(target.sub("torque_hydro1.x"),p[j].torque_hydro1[0]);
 		ufin->get(target.sub("torque_hydro1.y"),p[j].torque_hydro1[1]);
 		ufin->get(target.sub("torque_hydro1.z"),p[j].torque_hydro1[2]);
+		ufin->get(target.sub("torque_slip.x"), p[j].torque_slip[0]);
+		ufin->get(target.sub("torque_slip.y"), p[j].torque_slip[1]);
+		ufin->get(target.sub("torque_slip.z"), p[j].torque_slip[2]);
 		ufin->get(target.sub("torque_slip_previous.x"), p[j].torque_slip_previous[0]);
 		ufin->get(target.sub("torque_slip_previous.y"), p[j].torque_slip_previous[1]);
 		ufin->get(target.sub("torque_slip_previous.z"), p[j].torque_slip_previous[2]);

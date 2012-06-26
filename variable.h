@@ -32,6 +32,7 @@ typedef struct Particle {
   double f_hydro[DIM];
   double f_hydro_previous[DIM];
   double f_hydro1[DIM];
+  double f_slip[DIM];
   double f_slip_previous[DIM];
 
   double fr[DIM];
@@ -43,6 +44,7 @@ typedef struct Particle {
   double torque_hydro[DIM];
   double torque_hydro_previous[DIM];
   double torque_hydro1[DIM];
+  double torque_slip[DIM];
   double torque_slip_previous[DIM];
 
   double momentum_depend_fr[DIM];

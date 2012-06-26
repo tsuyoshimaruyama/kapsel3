@@ -119,7 +119,12 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	
 	
 	{// Calculation of hydrodynamic force
-	    Reset_phi_u(phi, up);
+	    Reset_u(up);
+	    Make_force_u_slip_particle(up, u, p, jikan);
+	    momentum_check_particle(up, p, jikan);
+	    Solenoidal_u(up);
+	    momentum_check_particle(up, p, jikan);
+	    Add_f_particle(u, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	}
 
@@ -136,12 +141,9 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	}
 	
 	{
-	    Reset_u(f);
-	    Make_f_slip_particle(f, u, p);
-
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
-	    Update_f_particle_dt_sole(f, u, up, phi);
+	    Make_f_particle_dt_sole(f, u, up, phi);
 	    Add_f_particle(u, f);
 	}
 	
@@ -435,13 +437,20 @@ int main(int argc, char *argv[]){
     Zeta_k2u(zeta, uk_dc, u);
 
     Reset_u(f_particle);
-    Make_f_slip_particle(f_particle, u, particles);
+    Make_force_u_slip_particle(f_particle, u, particles, jikan);
+    MD_init_slip(particles, jikan);
+    momentum_check_particle(f_particle, particles, jikan);
 
-    Reset_phi_u(phi,up);
+    Reset_phi_u(phi, up);
     Make_phi_u_particle(phi, up, particles);
-    Update_f_particle_dt_sole(f_particle, u, up, phi);
-
+    momentum_check_particle(up, particles, jikan);
+    Update_f_particle_dt_nonsole(f_particle, u, up, phi);
+    momentum_check_particle(f_particle, particles, jikan);
+    Solenoidal_u(f_particle);
+    momentum_check_particle(f_particle, particles, jikan);
     Add_f_particle(u, f_particle);
+    momentum_check_particle(u, particles, jikan);
+    momentum_check_fluid(u, particles, jikan);
     U2zeta_k(zeta, uk_dc, u);
 
     if(1){

@@ -212,7 +212,7 @@ class sParticle:{
       f_hydro_previous:Vector3d ,
       f_hydro1:Vector3d ,
       f_slip:Vector3d ,
-      f_slip_previsou:Vector3d,
+      f_slip_previous:Vector3d,
       fr:Vector3d ,
       fr_previous:Vector3d ,
       omega:Vector3d ,
