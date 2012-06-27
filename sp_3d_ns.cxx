@@ -438,13 +438,18 @@ int main(int argc, char *argv[]){
 
     Reset_u(f_particle);
     Make_force_u_slip_particle(f_particle, u, particles, jikan);
+    momentum_check_particle(f_particle, particles, jikan);
     MD_init_slip(particles, jikan);
     momentum_check_particle(f_particle, particles, jikan);
 
     Reset_phi_u(phi, up);
     Make_phi_u_particle(phi, up, particles);
     momentum_check_particle(up, particles, jikan);
-    Update_f_particle_dt_nonsole(f_particle, u, up, phi);
+    Add_f_particle(up, f_particle);
+    momentum_check_particle(up, particles, jikan);
+
+    momentum_check_particle(u, particles, jikan);
+    Make_f_particle_dt_nonsole(f_particle, u, up, phi);
     momentum_check_particle(f_particle, particles, jikan);
     Solenoidal_u(f_particle);
     momentum_check_particle(f_particle, particles, jikan);

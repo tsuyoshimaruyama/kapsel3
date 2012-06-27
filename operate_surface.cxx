@@ -354,28 +354,26 @@ void momentum_check_particle(double const* const* up, Particle *p, const CTime &
       }
     }
   }
-  fprintf(stderr, "#### Full Particle Domain\n");
-  fprintf(stderr, "Vp             :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "#### Full Particle Domain: %10.8E %10.8E %10.8E\n",
 	  vp[0], vp[1], vp[2]);
   fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
 	  tot_p[0], tot_p[1], tot_p[2]);
+  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+	  fluid_p[0], fluid_p[1], fluid_p[2]);
   fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
 	  part_p[0], part_p[1], part_p[2]);
   fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
 	  md_p[0], md_p[1], md_p[2]);
-  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
-	  fluid_p[0], fluid_p[1], fluid_p[2]);
 
   fprintf(stderr, "#### Interface momentum:\n");
   fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
 	  tot_int_p[0], tot_int_p[1], tot_int_p[2]);
+  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+	  fluid_int_p[0], fluid_int_p[1], fluid_int_p[2]);
   fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
 	  part_int_p[0], part_int_p[1], part_int_p[2]);
   fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
 	  md_int_p[0], md_int_p[1], md_int_p[2]);
-  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
-	  fluid_int_p[0], fluid_int_p[1], fluid_int_p[2]);
-
   fprintf(stderr, "\n");
 }
 
