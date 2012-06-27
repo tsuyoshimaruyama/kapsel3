@@ -170,7 +170,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   const int* Nlattice = Ns;
   const double radius = RADIUS;
   static const double dmy0 = DX3 * RHO;
-  double dmy = -dmy0/jikan.dt_md;
+  double dmy = dmy0/jikan.dt_md;
   ////////////////////////
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
   double r[DIM], x[DIM], residue[DIM];
@@ -223,13 +223,11 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    dmy_ds += dmy_phi;
 	  }
 	}//mesh
-	dmy_mass *= dmy0;
 	slip_scale = (8.0/3.0 * M_PI * radius * radius) / (dx * dx * dmy_cs) * slip_vel;
 	stick_scale = (4.0 * M_PI * radius * radius) / (dx * dx * dmy_ds);
       } // compute normalization
       
       { // compute hydrodynamic force 
-	// should I compute solenoidal field produced by each particle to obtain slip force ??? 
 	for(int d = 0; d < DIM; d++){
 	  force[d] = torque[d] = 0.0;
 	}
@@ -270,10 +268,36 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    }
 	  }
 	}//mesh
+	for(int d = 0; d < DIM; d++){
+	  force[d] *= -1.0;
+	  torque[d] *= -1.0;
+	  Vv[d] = 0.0;
+	}
       }
 
       { // particle force
-	dmy_mass = MASS[pspec] / dmy_mass;	//eff_mass_ratio ?
+	dmy_mass = 1.0 / dmy_mass;
+	for(int mesh = 0; mesh < np_domain; mesh++){
+	  Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	  int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	  for(int d = 0; d < DIM; d++){
+	    x[d] = r_mesh[d] * dx;
+	  }
+	  dmy_r = Distance(x, xp);
+	  dmy_phi = Phi(dmy_r, radius) * dmy_mass;
+
+	  for(int d = 0; d < DIM; d++){
+	    dmy_fv[d] = dmy_phi * force[d];
+	    up[d][im] += dmy_fv[d];
+	    Vv[d] += dmy_fv[d];
+	  }
+	}
+	fprintf(stderr, "ds : %10.8g %10.8g %10.8g\n",
+		force[0]*dmy_mass, force[1]*dmy_mass, force[2]*dmy_mass);
+	fprintf(stderr, "ids: %10.8g %10.8g %10.8g\n",
+		Vv[0], Vv[1], Vv[2]);
+
+	dmy_mass *= (MASS[pspec] / dmy0); //eff_mass_ratio ?
 	for(int d = 0; d < DIM; d++){
 	  p[n].f_slip[d] = (dmy * dmy_mass * force[d]);
 	}
@@ -335,12 +359,15 @@ void momentum_check_particle(double const* const* up, Particle *p, const CTime &
 	fv[d] = (vp[d] + v_rot[d]);
       }
 
+      for(int d = 0; d < DIM; d++){
+	md_p[d] += dmy_phi * fv[d];
+	part_p[d] += dmy_phi * up[d][im];
+	fluid_p[d] += dmy_phic * up[d][im];
+      }
+
       if(dmy_r <= radius + dx){
 	for(int d = 0; d < DIM; d++){
 	  tot_p[d] += up[d][im];
-	  md_p[d] += dmy_phi * fv[d];
-	  part_p[d] += dmy_phi * up[d][im];
-	  fluid_p[d] += dmy_phic * up[d][im];
 	}
 	
 	if(dmy_xi <= HXI){
@@ -354,27 +381,27 @@ void momentum_check_particle(double const* const* up, Particle *p, const CTime &
       }
     }
   }
-  fprintf(stderr, "#### Full Particle Domain: %10.8E %10.8E %10.8E\n",
-	  vp[0], vp[1], vp[2]);
-  fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "#### Full Particle Domain:\n");
+  fprintf(stderr, "total : %10.8E %10.8E %10.8E\n",
 	  tot_p[0], tot_p[1], tot_p[2]);
-  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "fluid : %10.8E %10.8E %10.8E\n",
 	  fluid_p[0], fluid_p[1], fluid_p[2]);
-  fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "part  : %10.8E %10.8E %10.8E\n",
 	  part_p[0], part_p[1], part_p[2]);
-  fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "md    : %10.8E %10.8E %10.8E\n",
 	  md_p[0], md_p[1], md_p[2]);
-
-  fprintf(stderr, "#### Interface momentum:\n");
-  fprintf(stderr, "Total          :   %10.8E %10.8E %10.8E\n",
+  /*
+  fprintf(stderr, "#### Interface momentum:");
+  fprintf(stderr, "total : %10.8E %10.8E %10.8E\n",
 	  tot_int_p[0], tot_int_p[1], tot_int_p[2]);
-  fprintf(stderr, "Fluid          :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "fluid : %10.8E %10.8E %10.8E\n",
 	  fluid_int_p[0], fluid_int_p[1], fluid_int_p[2]);
-  fprintf(stderr, "Fluid particle :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "part  : %10.8E %10.8E %10.8E\n",
 	  part_int_p[0], part_int_p[1], part_int_p[2]);
-  fprintf(stderr, "MD    particle :   %10.8E %10.8E %10.8E\n",
+  fprintf(stderr, "md    : %10.8E %10.8E %10.8E\n",
 	  md_int_p[0], md_int_p[1], md_int_p[2]);
   fprintf(stderr, "\n");
+  */
 }
 
 void momentum_check_fluid(double const* const* up, Particle *p, const CTime &jikan){

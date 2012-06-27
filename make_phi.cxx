@@ -237,6 +237,8 @@ inline void Make_phi_u_primitive(double *phi
     double dmy_phi;
     double v_rot[DIM];
     int im;
+
+    double shit[DIM] = {0.0, 0.0, 0.0};
 #pragma omp parallel for schedule(dynamic, 1) private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot)
     for(int n=0; n < Particle_Number; n++){
 	for(int d=0;d<DIM;d++){
@@ -266,12 +268,15 @@ inline void Make_phi_u_primitive(double *phi
 		Angular2v(omega_p, r, v_rot);
 		for(int d=0;d<DIM;d++){
 		    up[d][im] += ( (vp[d]+v_rot[d]) * dmy_phi);
+		    shit[d] += (vp[d] + v_rot[d]) * dmy_phi;
 		}
 	    }
 	}
 	p[n].eff_mass_ratio 
 	    = 1.0;
     }
+    fprintf(stderr, "shiiit: %10.8g %10.8g %10.8g\n",
+	    shit[0], shit[1], shit[2]);
     
     // koba code //
     if(SW_UP){

@@ -248,6 +248,8 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	for(int d=0; d < DIM; d++ ){ 
 	    p[n].f_hydro[d] = (dmy * force[d] * p[n].eff_mass_ratio);
 	}
+	fprintf(stderr, "hydro: %10.8g %10.8g %10.8g %10.8g %10.8g\n",
+		p[n].eff_mass_ratio, dmy, -force[0], -force[1], -force[2]);
 	if(ROTATION){
 	    for(int d=0; d < DIM; d++ ){ 
 		p[n].torque_hydro[d] = ( dmy * torque[d] * p[n].eff_mass_ratio);
