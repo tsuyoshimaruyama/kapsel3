@@ -120,7 +120,7 @@ void Make_Coulomb_force_x_on_fluid(double **force
     external[d] = E_ext[d];
     if(AC){
       double time = jikan.time;
-      external[d] = sin( Angular_Frequency * time);
+      external[d] *= sin( Angular_Frequency * time);
     }
   }
   int im;

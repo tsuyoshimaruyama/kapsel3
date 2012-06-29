@@ -275,9 +275,7 @@ inline void Make_phi_u_primitive(double *phi
 	p[n].eff_mass_ratio 
 	    = 1.0;
     }
-    fprintf(stderr, "shiiit: %10.8g %10.8g %10.8g\n",
-	    shit[0], shit[1], shit[2]);
-    
+
     // koba code //
     if(SW_UP){
 	double idmy_phi;

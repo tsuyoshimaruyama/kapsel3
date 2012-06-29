@@ -200,6 +200,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
     double dmyR;
     double dmy_phi;
     double v_rot[DIM];
+    double dmy_mass;
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,dmyR,dmy_phi,v_rot) 
@@ -221,6 +222,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    torque[d] = 0.0;
 	}
 
+	dmy_mass = 0.0;
 	for(int mesh=0; mesh < NP_domain; mesh++){
 	    Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
 	    double x[DIM];
@@ -232,6 +234,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    dmyR = Distance(x, xp); // vesion2.00 needs this value
 	    dmy_phi= Phi(dmyR, RADIUS);
 	    Angular2v(omega_p, r, v_rot);
+	    dmy_mass += dmy_phi;
 	   
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 	    for(int d=0; d < DIM; d++ ){ 
@@ -244,15 +247,16 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 		torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
 	    }
 	}// mesh
+	
+	//correct mass grid resolution
+	dmy_mass = MASS[p[n].spec] / (dmy_mass * DX3 * RHO * MASS_RATIOS[p[n].spec]);
 
 	for(int d=0; d < DIM; d++ ){ 
-	    p[n].f_hydro[d] = (dmy * force[d] * p[n].eff_mass_ratio);
+	  p[n].f_hydro[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
 	}
-	fprintf(stderr, "hydro: %10.8g %10.8g %10.8g %10.8g %10.8g\n",
-		p[n].eff_mass_ratio, dmy, -force[0], -force[1], -force[2]);
 	if(ROTATION){
 	    for(int d=0; d < DIM; d++ ){ 
-		p[n].torque_hydro[d] = ( dmy * torque[d] * p[n].eff_mass_ratio);
+		p[n].torque_hydro[d] = ( dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
 	    }
 	}
     }

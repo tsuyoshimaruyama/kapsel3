@@ -71,9 +71,9 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
   double nd1[DIM], nd2[DIM], nd3[DIM];
   double ar, ar2, ar3;
 
-  if(rdist >= A){
+  if(rdist >= A + DX){
     cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
-    ar = (A)/rdist;
+    ar = (A+DX)/rdist;
     ar2 = ar*ar;
     ar3 = ar*ar2;
 
@@ -117,9 +117,9 @@ void get_rms(const int &frame){
 	  rgrid[d] = (double)ei[d] * DX;
 	}
 	Distance(r0, rgrid, dmy_r, nr);
-	if(dmy_r >= A){
+	if(dmy_r >= A + DX){
 	  int im = (i * NY * NZ) + (j * NZ) + k;
-	  scale = dmy_r/(A);
+	  scale = dmy_r/(A+DX);
 	  scale *= scale;
 
 	  v_gold(ww, nr, dmy_r, B1_real, B2);
@@ -238,7 +238,7 @@ void get_image(const int &frame, const int &iso){
       }
       v_gold(ww, rp, dmy, B1_real, B2);
       pdomain = Phi(dmy, A);
-      if(dmy >= A){
+      if(dmy >= A + DX){
 	fdomain = 1.0;
       }else{
 	fdomain = 0.0;
@@ -259,13 +259,16 @@ void get_image(const int &frame, const int &iso){
       double ww3 = v_inner_prod(ww, ew);
 
       fprintf(fstream, 
-	      "%3d %3d %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g %8.5g %8.5g %8.5g %8.5f\n",
-	      jj, kk, dmy, 
+	      "%3d %3d %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g %8.5g %8.5g %8.5g %8.5f %8.5f\n",
+	      jj, kk, 
+	      dmy, 
 	      vv1, vv2, vv3, 
 	      fdomain*ww1, fdomain*ww2, fdomain*ww3,
 	      fdomain*v01, fdomain*v02, fdomain*v03,
 	      rr1, rr2, rr3, 
-	      pdomain);
+	      fdomain,
+	      UP / sqrt(v0[0]*v0[0] + v0[1]*v0[1] + v0[2]*v0[2])
+	      );
     }
   }
   fclose(fstream);

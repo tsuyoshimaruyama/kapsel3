@@ -117,24 +117,17 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Solenoidal_u(u);
 	}
 	
-	
-	if(jikan.ts % GTS == 0){
-	  momentum_check_fluid(u, p, jikan);
-	}
-	
+		
 	{// Calculation of hydrodynamic force
 	  /*
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	   */
-	    Reset_u(up);
+            Reset_phi_u(phi, up);
 	    Make_force_u_slip_particle(up, u, p, jikan);
-	    momentum_check_fluid(up, p, jikan);
 	    Solenoidal_u(up);
-	    momentum_check_fluid(up, p, jikan);
 	    Add_f_particle(u, up);
-	    momentum_check_fluid(u, p, jikan);
-	    Calc_f_hydro_correct_precision(p, u, jikan); // double counting of slip force ?
+	    Calc_f_hydro_correct_precision(p, u, jikan);
 	}
 
 	if(!Fixed_particle){// Update of Particle Velocity
@@ -154,16 +147,12 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
 	    Make_f_particle_dt_sole(f, u, up, phi);
-	    Add_f_particle(u,f)
+	    Add_f_particle(u, f);
 	   */
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
-	    momentum_check_fluid(up, p, jikan);
 	    Make_f_particle_dt_sole(f, u, up, phi);
 	    Add_f_particle(u, f);
-	    if( jikan.ts % GTS == 0){
-	      momentum_check_fluid(u, p, jikan);
-	    }
 	}
 	
 	
@@ -453,7 +442,7 @@ int main(int argc, char *argv[]){
   Init_zeta_k(zeta, uk_dc);
 
   {
-    /*
+    /* ORIGINAL (non-slip) implementation
       Reset_phi_u(phi, up);
       Make_phi_u_particle(phi, up, particles);
       Zeta_k2u(zeta, uk_dc, u);
@@ -462,40 +451,25 @@ int main(int argc, char *argv[]){
       Add_f_particle(u, f_particle);
       U2zeta_k(zeta, uk_dc, u);
      */
-    fprintf(stderr, "Initial u\n");
+
     Reset_phi_u(phi, up);    
     Make_phi_u_particle(phi, up, particles);
-
     Zeta_k2u(zeta, uk_dc, u);
-    momentum_check_fluid(u, particles, jikan);
 
-    // Compute slip force : f_particle 
-    fprintf(stderr, "Slip velocity\n");
+    /* Slip procedures
     Reset_u(f_particle);
     Make_force_u_slip_particle(f_particle, u, particles, jikan);
-    momentum_check_particle(f_particle, particles, jikan);
-    momentum_check_fluid(f_particle, particles, jikan);
     Solenoidal_u(f_particle);
     Add_f_particle(u, f_particle);
-    momentum_check_particle(u, particles, jikan);
-    momentum_check_fluid(u, particles, jikan);
-
-    // Update particle velocity to impose momentum conservation
     Calc_f_hydro_correct_precision(particles, u, jikan);
     MD_init_slip(particles, jikan);
-    momentum_check_particle(u, particles, jikan);
-            momentum_check_fluid(u, particles, jikan);
-
 
     Reset_phi_u(phi, up);    
     Make_phi_u_particle(phi, up, particles);
-    momentum_check_particle(up, particles, jikan);
-    Make_f_particle_dt_nonsole(f_particle, u, up, phi);
-    momentum_check_particle(f_particle, particles, jikan);
-    Solenoidal_u(f_particle);
+    */
+
+    Make_f_particle_dt_sole(f_particle, u, up, phi);
     Add_f_particle(u, f_particle);
-    momentum_check_particle(u, particles, jikan);
-    momentum_check_fluid(u, particles, jikan);
     U2zeta_k(zeta, uk_dc, u);
 
     if(1){
