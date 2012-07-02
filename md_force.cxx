@@ -176,7 +176,91 @@ void Add_f_gravity(Particle *p){
     p[n].fr[G_direction] -= Gravity_on_fluid * (MASS_RATIOS[p[n].spec] -1.0); 
   }
 }
+void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
+    static const double dmy0 = -DX3*RHO;
+    double dmy = dmy0 /jikan.dt_fluid; 
+    
+    int *nlattice;
+    //if (SW_EQ == Shear_Navier_Stokes){
+    //nlattice = Ns_shear;
+    //}else {
+    nlattice = Ns;
+    //}
+    double xp[DIM],vp[DIM],omega_p[DIM];
+    int x_int[DIM];
+    double residue[DIM];
+    int sw_in_cell;
+    double force[DIM];
+    double torque[DIM];
+    int r_mesh[DIM];
+    double r[DIM];
+    double dmy_fp[DIM];
+    double x[DIM];
+    double dmyR;
+    double dmy_phi;
+    double v_rot[DIM];
+    double dmy_mass;
 
+#pragma omp parallel for schedule(dynamic, 1) \
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,dmyR,dmy_phi,v_rot) 
+    for(int n = 0; n < Particle_Number ; n++){
+	//double xp[DIM],vp[DIM],omega_p[DIM];
+	//int x_int[DIM];
+	//double residue[DIM];
+	for (int d = 0; d < DIM; d++) {
+	    xp[d] = p[n].x[d];
+	    vp[d] = p[n].v[d];
+	    omega_p[d] = p[n].omega[d];
+	}
+
+	sw_in_cell 
+	    = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
+	sw_in_cell = 1;
+	for(int d=0; d < DIM; d++){
+	    force[d] = 0.0;
+	    torque[d] = 0.0;
+	}
+
+	dmy_mass = 0.0;
+	for(int mesh=0; mesh < NP_domain; mesh++){
+	    Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
+	    double x[DIM];
+	    for(int d=0;d<DIM;d++){
+		x[d] = r_mesh[d] * DX;
+		//dmyR += SQ(r[d]);
+	    }
+	    //dmyR = sqrt(dmyR); // vesion2.10 needs this value
+	    dmyR = Distance(x, xp); // vesion2.00 needs this value
+	    dmy_phi= Phi(dmyR, RADIUS);
+	    Angular2v(omega_p, r, v_rot);
+	    dmy_mass += dmy_phi;
+	   
+	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	    for(int d=0; d < DIM; d++ ){ 
+		dmy_fp[d] = -u[d][im]*dmy_phi;
+		force[d] += dmy_fp[d];
+	    }
+	    {// torque
+		torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
+		torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
+		torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
+	    }
+	}// mesh
+	
+	//correct mass grid resolution
+	dmy_mass = MASS[p[n].spec] / (dmy_mass * DX3 * RHO * MASS_RATIOS[p[n].spec]);
+
+	for(int d = 0; d < DIM; d++){
+	  p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
+	}
+	if(ROTATION){
+	  for(int d = 0; d < DIM; d++){
+	    p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
+	    //	    p[n].torque_slip[d] = 0.0;
+	  }
+	}
+    }
+}
 void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
@@ -251,13 +335,13 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	//correct mass grid resolution
 	dmy_mass = MASS[p[n].spec] / (dmy_mass * DX3 * RHO * MASS_RATIOS[p[n].spec]);
 
-	for(int d=0; d < DIM; d++ ){ 
+	for(int d = 0; d < DIM; d++){
 	  p[n].f_hydro[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
 	}
 	if(ROTATION){
-	    for(int d=0; d < DIM; d++ ){ 
-		p[n].torque_hydro[d] = ( dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
-	    }
+	  for(int d = 0; d < DIM; d++){
+	    p[n].torque_hydro[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
+	  }
 	}
     }
 }
