@@ -120,6 +120,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		
 	{// Calculation of hydrodynamic force
 	  /*
+	    Original: 
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	   */
@@ -148,6 +149,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	
 	{
 	  /*
+	    Original: 
 	    Reset_phi_u(phi, up);
 	    Make_phi_u_particle(phi, up, p);
 	    Make_f_particle_dt_sole(f, u, up, phi);
@@ -459,18 +461,6 @@ int main(int argc, char *argv[]){
     Reset_phi_u(phi, up);    
     Make_phi_u_particle(phi, up, particles);
     Zeta_k2u(zeta, uk_dc, u);
-
-    /* Slip procedures
-    Reset_u(f_particle);
-    Make_force_u_slip_particle(f_particle, u, particles, jikan);
-    Solenoidal_u(f_particle);
-    Add_f_particle(u, f_particle);
-    Calc_f_hydro_correct_precision(particles, u, jikan);
-    MD_init_slip(particles, jikan);
-
-    Reset_phi_u(phi, up);    
-    Make_phi_u_particle(phi, up, particles);
-    */
 
     Make_f_particle_dt_sole(f_particle, u, up, phi);
     Add_f_particle(u, f_particle);
