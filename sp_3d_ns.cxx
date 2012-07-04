@@ -124,14 +124,28 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	   */
-            Reset_phi_u(phi, up);
+	  if(janus_slip_order == with_hydro){
+	    Reset_phi_u(phi, up);
+
+	    Make_force_u_slip_particle(up, u, p, jikan);
+	    Solenoidal_u(up);
+	    Add_f_particle(u, up);
+
+	    Calc_f_hydro_correct_precision(p, u, jikan);
+
+	  }else if(janus_slip_order == hydro_slip){
+	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 
 	    Make_force_u_slip_particle(up, u, p, jikan);
 	    Solenoidal_u(up);
 	    Calc_f_slip_correct_precision(p, up, jikan);
-
 	    Add_f_particle(u, up);
+
+	  }else{
+	    fprintf(stderr, "Invalid janus_slip_order\n");
+	    exit_job(EXIT_FAILURE);
+	  }
 
 	}
 

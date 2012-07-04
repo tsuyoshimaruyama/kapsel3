@@ -137,7 +137,9 @@ double **janus_force;
 double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
-
+double janus_slip_scale;
+JDBG janus_slip_debug;
+JSO janus_slip_order;
 
 //
 double NU;
@@ -1272,6 +1274,38 @@ void Gourmet_file_io(const char *infile
 	    }else{
 	      cerr << str << endl;
 	      fprintf(stderr, "invalid ORIENTATION\n");
+	      exit_job(EXIT_FAILURE);
+	    }
+
+	    ufin->get(target.sub("JANUS_slip_scale"), janus_slip_scale);
+	    ufout->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
+	    ufres->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
+
+	    ufin->get(target.sub("JANUS_slip_debug"), str);
+	    ufout->put(target.sub("JANUS_slip_debug"), str);
+	    ufres->put(target.sub("JANUS_slip_debug"), str);
+	    if(str == "full_tangent"){
+	      janus_slip_debug = full_tangent;
+	    }else if(str == "particle_tangent"){
+	      janus_slip_debug = particle_tangent;
+	    }else if(str == "no_tangent"){
+	      janus_slip_debug = no_tangent;
+	    }else{
+	      cerr << str << endl;
+	      fprintf(stderr, "invalid janus debug\n");
+	      exit_job(EXIT_FAILURE);
+	    }
+
+	    ufin->get(target.sub("JANUS_slip_order"), str);
+	    ufout->put(target.sub("JANUS_slip_order"), str);
+	    ufres->put(target.sub("JANUS_slip_order"), str);
+	    if(str == "hydro"){
+	      janus_slip_order = with_hydro;
+	    }else if(str == "hydro_slip"){
+	      janus_slip_order = hydro_slip;
+	    }else{
+	      cerr << str << endl;
+	      fprintf(stderr, "invalid janus order\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 	}

@@ -124,6 +124,9 @@ switch:{
   }
  }
  "user_specify"
+ 1.0
+ "no_tangent"
+ "hydro"
  {"ON","ON","ON"}
  {
   "YES",

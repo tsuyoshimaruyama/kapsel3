@@ -25,6 +25,12 @@
 
 void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
+
+inline void update_angular(double* l, const double *x, const double *v, const double alpha=1.0){
+  l[0] += alpha * (x[1] * v[2] + x[2] * v[1]);
+  l[1] += alpha * (x[2] * v[0] + x[0] * v[2]);
+  l[2] += alpha * (x[0] * v[1] + x[1] * v[0]);
+}
 inline void momentum_check(double const* const* up, Particle *p, const CTime &jikan){
   ////////////////////////
   const double dx = DX;
@@ -34,16 +40,22 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
   const double radius = RADIUS;
   static const double dmy0 = DX3 * RHO;
   /////////////////////////
-  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM];
+  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM], fu[DIM];
   int x_int[DIM], r_mesh[DIM];
   int sw_in_cell, pspec;
   double dmy_r, dmy_phi, dmy_phic, dmy_mass, dmy_xi;
   /////////////////////////
   double tot_p[DIM], part_p[DIM], fluid_p[DIM], md_p[DIM], full_p[DIM];
   double tot_int_p[DIM], part_int_p[DIM], fluid_int_p[DIM], md_int_p[DIM];
+
+  double tot_w[DIM], part_w[DIM], fluid_w[DIM], md_w[DIM], full_w[DIM];
+  double tot_int_w[DIM], part_int_w[DIM], fluid_int_w[DIM], md_int_w[DIM];
   for(int d = 0; d < DIM; d++){
     tot_p[d] = part_p[d] = fluid_p[d] = md_p[d] = 0.0;
     tot_int_p[d] = part_int_p[d] = fluid_int_p[d] = md_int_p[d] = 0.0;
+
+    tot_w[d] = part_w[d] = fluid_w[d] = md_w[d] = 0.0;
+    tot_int_w[d] = part_int_w[d] = fluid_int_w[d] = md_int_w[d] = 0.0;
   }
   dmy_mass = 0.0;
   for(int n = 0; n < Particle_Number; n++){
@@ -62,6 +74,7 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
       int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
       for(int d = 0; d < DIM; d++){
 	x[d] = r_mesh[d] * dx;
+	fu[d] = up[d][im];
       }
       dmy_r = Distance(x, xp);
       dmy_phi = Phi(dmy_r, radius);
@@ -74,21 +87,35 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 
       for(int d = 0; d < DIM; d++){
 	md_p[d] += dmy_phi * fv[d];
-	part_p[d] += dmy_phi * up[d][im];
-	fluid_p[d] += dmy_phic * up[d][im];
+	part_p[d] += dmy_phi * fu[d];
+	fluid_p[d] += dmy_phic * fu[d];
+      }
+      {
+	update_angular(md_w, x, fv, dmy_phi);
+	update_angular(part_w, x, fu, dmy_phi);
+	update_angular(fluid_w, x, fu, dmy_phic);
       }
 
       if(dmy_r <= radius + dx){
 	for(int d = 0; d < DIM; d++){
-	  tot_p[d] += up[d][im];
+	  tot_p[d] += fu[d];
+	}
+	{
+	  update_angular(tot_w, x, fu);
 	}
 	
 	if(dmy_xi <= HXI){
 	  for(int d = 0; d < DIM; d++){
-	    tot_int_p[d] += up[d][im];
+	    tot_int_p[d] += fu[d];
 	    md_int_p[d] += dmy_phi * fv[d];
-	    part_int_p[d] += dmy_phi * up[d][im];
-	    fluid_int_p[d] += dmy_phic * up[d][im];
+	    part_int_p[d] += dmy_phi * fu[d];
+	    fluid_int_p[d] += dmy_phic * fu[d];
+	  }
+	  {
+	    update_angular(tot_int_w, x, fu);
+	    update_angular(md_int_w, x, fv, dmy_phi);
+	    update_angular(part_int_w, x, fu, dmy_phi);
+	    update_angular(fluid_int_w, x, fu, dmy_phic);
 	  }
 	}
       }
@@ -97,6 +124,7 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 
   for(int d = 0; d < DIM; d++){
     full_p[d] = fluid_p[d] = 0.0;
+    full_w[d] = fluid_w[d] = 0.0;
   }
   int outside = 1;
   for(int i = 0; i < NX; i++){
@@ -108,8 +136,10 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 
 	int im = (i * NY * NZ_) + (j * NZ_) + k;
 	for(int d = 0; d < DIM; d++){
-	  full_p[d] += up[d][im];
+	  fu[d] = up[d][im];
+	  full_p[d] += fu[d];
 	}
+	update_angular(full_w, x, fu);
 
 	for(int n = 0; n < Particle_Number; n++){
 	  pspec = p[n].spec;
@@ -131,6 +161,7 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 	  for(int d = 0; d < DIM; d++){
 	    fluid_p[d] += up[d][im];
 	  }
+	  update_angular(fluid_w, x, fu);
 	}
       }
     }

@@ -1,6 +1,5 @@
 #include "operate_surface.h"
-void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan, 
-				const int FP_UPDATE = 0){
+void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
   const double dx3 = DX3;
@@ -16,7 +15,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
   double r[DIM], x[DIM], residue[DIM];
   
-  double dmy_xi, dmy_theta, dmy_tau, dmy_slip;
+  double dmy_xi, dmy_theta, dmy_tau;
+  double dmy_vdot, dmy_udot;
   double dmy_mass, dmy_sin, dmy_sin2;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double Vv[DIM], Uv[DIM], Sv[DIM], dmy_fv[DIM], polar_axis[DIM];
@@ -27,7 +27,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
     pspec = p[n].spec;
     if(janus_propulsion[pspec] == slip){
 
-      slip_vel = janus_slip_vel[pspec] * JANUS_SLIP_SCALE;
+      slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
       slip_mode = janus_slip_mode[pspec];
       Janus_direction(polar_axis, p[n]);
       for(int d = 0; d < DIM; d++){
@@ -59,18 +59,41 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
 	    dmy_sin2 = sin(2.0 * dmy_theta);
-
+	    
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = (vp[d] + v_rot[d]);
 	    }
-	    for(int d = 0; d < DIM; d++){
-	      Uv[d] = u[d][im];
-	      Vv[d] = dmy_fv[0] * n_theta[0] + dmy_fv[1] * n_theta[1] + dmy_fv[2] * n_theta[2];
-	      Sv[d] = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
+	    dmy_udot = u[0][im]*n_theta[0] + u[1][im]*n_theta[1] + u[2][im]*n_theta[2];
+	    dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
+	    if(janus_slip_debug == full_tangent){
+	      for(int d = 0; d < DIM; d++){
+		Uv[d] = n_theta[d] * dmy_udot;
+		Vv[d] = n_theta[d] * dmy_vdot;
+		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
+	      }
+	    }else if(janus_slip_debug == particle_tangent){
+	      for(int d = 0; d < DIM; d++){
+		Uv[d] = u[d][im];
+		Vv[d] = n_theta[d] * dmy_vdot;
+		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
+	      }
+	    }else if(janus_slip_debug == no_tangent){
+	      for(int d = 0; d < DIM; d++){
+		Uv[d] = u[d][im];
+		Vv[d] = dmy_fv[d];
+		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
+	      }
+	    }else{
+	      fprintf(stderr, "OPERATE_SURFACE tangent error\n");
+	      exit_job(EXIT_FAILURE);
 	    }
+	    /*	    fprintf(stderr, "# %8.6E %8.6E %8.6E\n",
+		    dmy_fv[0]*n_r[0] + dmy_fv[1]*n_r[1] + dmy_fv[2]*n_r[2],
+		    dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2],
+		    dmy_fv[0]*n_tau[0] + dmy_fv[1]*n_tau[1] + dmy_fv[2]*n_tau[2]);*/
 
 	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = dmy_phi * (n_theta[d] * (Vv[d] + Sv[d]) - Uv[d]);
+	      dmy_fv[d] = dmy_phi * (Sv[d] + (Vv[d] - Uv[d]));
 	      up[d][im] += dmy_fv[d];
 	      force[d] += dmy_fv[d];
 	    }
@@ -81,7 +104,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    }
 	  }
 	}//mesh
-      }
+      } // Hydrodynamic force
 
       { // particle force	
 	dmy_mass = -IMASS_RATIOS[pspec] / dmy_mass; //eff_mass_ratio ?
@@ -104,20 +127,12 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    up[d][im] += dmy_fv[d];
 	  }
 	}
-
-	if(PF_UPDATE){
-	  
-	  dmy_mass = (MASS[pspec] / jikan.dt_md); 
-	  for(int d = 0; d < DIM; d++){
-	    p[n].f_slip[d] = (dmy_mass * force[d]);
-	  }
-	  if(ROTATION){
-	    for(int d = 0; d < DIM; d++){
-	      p[n].torque_slip[d] = (dmy_mass * force[d]);
-	    }
-	  }
+	
+	for(int d = 0; d < DIM; d++){
+	  p[n].f_slip[d] = 0.0;
+	  p[n].torque_slip[d] = 0.0;
 	}
-      }
+      }// particle force
 
     }// slip_particle ?
   }// Particle_Number

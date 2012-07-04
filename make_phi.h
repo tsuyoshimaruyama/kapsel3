@@ -260,7 +260,7 @@ inline void Spherical_coord(const double *x, double *r, double *theta, double *p
       }
       theta_angle = 0.0;
       phi_angle = PI_half;
-    }else{ // anti-parallel (mirror image - left-handed frame !)
+    }else{ // anti-parallel (mirror image - left-handed system !!!)
       for(int d = 0; d < DIM; d++){
 	phi[d] = e1[d];
 	theta[d] = -e2[d];

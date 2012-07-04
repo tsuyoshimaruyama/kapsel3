@@ -6,13 +6,19 @@
 #include "udfmanager.h"
 #include "macro.h"
 #include "quaternion.h"
+#include "rigid_body.h"
+#include "lad3.h"
 #define MAXBUFFER 100
 #define NDIM 3
 using namespace std;
 enum ID_OPTION_P {POSITION, ORIENTATION, ALL_POS, NO_POS};
 enum ID_OPTION_V {VELOCITY, OMEGA, ALL_VEL, NO_VEL};
 enum ID_OPTION_F {FORCE, TORQUE, ALL_FRC, NO_FRC};
-enum OPTION {in_pos = 1, in_vel = 2, in_frc = 3, in_fin = 4, in_fout = 5};
+enum ID_OPTION_N {JANUS_X, JANUS_Y, JANUS_Z, NO_JANUS};
+enum OPTION {in_pos = 1, in_vel = 2, in_frc = 3, in_nt=4, in_fin = 5, in_fout = 6};
+double ex[NDIM] = {1.0, 0.0, 0.0};
+double ey[NDIM] = {0.0, 1.0, 0.0};
+double ez[NDIM] = {0.0, 0.0, 1.0};
 
 void newframe(ofstream &outfile,
 	      double &t,
@@ -28,19 +34,23 @@ void write_xyz(ofstream &outfile,
 	       double w[NDIM],
 	       double frc[NDIM],
 	       double tau[NDIM],
+	       double ni[NDIM],
+	       double n0[NDIM],
 	       int &ntot,
 	       ID_OPTION_P &pflag,
 	       ID_OPTION_V &vflag,
-	       ID_OPTION_F &fflag
+	       ID_OPTION_F &fflag,
+	       ID_OPTION_N &nflag
 	       );
 
-void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag);
+void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag,
+	      ID_OPTION_N &nflag);
 
 void close_xyz(ofstream &outfile);
 
 
 inline void wrong_invocation(){
-  cout << "Usage: get_xyz -OPT_pos -OPT_vel -OPT_frc UDFfile XYZfile" << endl;
+  cout << "Usage: get_xyz -OPT_pos -OPT_vel -OPT_frc -OPT_janus UDFfile XYZfile" << endl;
   cout << "Options:" << endl;
   cout << "OPT_pos:" << endl;
   cout << "  -r\t positions" << endl;
@@ -56,6 +66,10 @@ inline void wrong_invocation(){
   cout << "  -f\t hydrodynamic forces" << endl;
   cout << "  -t\t hydrodynamic torques" << endl;
   cout << "  -ft\t all force/torque info" << endl;
+  cout << "OPT_janus:" << endl;
+  cout << "  -jx\t janus x axis" << endl;
+  cout << "  -jy\t janus y axis" << endl;
+  cout << "  -jz\t janus z axis" << endl;
   exit(1);
 }
 
@@ -66,8 +80,10 @@ int main(int argc, char* argv[])
   ID_OPTION_P idp = NO_POS;
   ID_OPTION_V idv = NO_VEL;
   ID_OPTION_F idf = NO_FRC;
+  ID_OPTION_N idn = NO_JANUS;
+  double * janus_axis = NULL;
   
-  if(argc != 6){
+  if(argc != 7){
     wrong_invocation();
   }
   if(strcmp(argv[in_pos], "-r") == 0){
@@ -118,7 +134,26 @@ int main(int argc, char* argv[])
     wrong_invocation();
   }
 
-  if(idp == NO_POS && idv == NO_VEL && idf == NO_FRC){
+  if(strcmp(argv[in_nt], "-jx") == 0){
+    idn = JANUS_X;
+    janus_axis = ex;
+    cout << "Print Janus x axis" << endl;
+  }else if(strcmp(argv[in_nt], "-jy") == 0){
+    idn = JANUS_Y;
+    janus_axis = ey;
+    cout << "Print Janus y axis" << endl;
+  }else if(strcmp(argv[in_nt], "-jz") == 0){
+    idn = JANUS_Z;
+    janus_axis = ez;
+    cout << "Print Janus z axis" << endl;
+  }else if(strcmp(argv[in_nt], "-n") == 0){
+    idn = NO_JANUS;
+    cout << "Skipping Janus info" << endl;
+  }else{
+    wrong_invocation();
+  }
+
+  if(idp == NO_POS && idv == NO_VEL && idf == NO_FRC && idn == NO_JANUS){
     cout << "Nothing to do" << endl;
     exit(0);
   }
@@ -129,7 +164,7 @@ int main(int argc, char* argv[])
     ufin = new UDFManager(argv[in_fin]);
   }
   ofstream outfile;
-  init_xyz(outfile, argv[in_fout], idp, idv, idf);
+  init_xyz(outfile, argv[in_fout], idp, idv, idf, idn);
   
 
   int nx, ny, nz;
@@ -198,6 +233,8 @@ int main(int argc, char* argv[])
     double QR[NDIM][NDIM];
     double frc[NDIM];
     double tau[NDIM];
+    double n0[NDIM];
+    double ni[NDIM];
     quaternion q;
     double t;
     double q0,q1,q2,q3;
@@ -253,7 +290,19 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("torque_hydro.z"), tau[2]);
 	}
 
-	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, w, frc, tau, ntotal, idp, idv, idf);
+	if(idn != NO_JANUS){
+	  ufin -> get(target.sub("q.q0"), q0);
+	  ufin -> get(target.sub("q.q1"), q1);
+	  ufin -> get(target.sub("q.q2"), q2);
+	  ufin -> get(target.sub("q.q3"), q3);
+	  qtn_init(q, q0, q1, q2, q3);
+	  qtn_isnormal(q, QTOL_LARGE);
+	  rigid_body_rotation(ni, janus_axis, q, BODY2SPACE);
+	  if(j == 0){
+	    v_copy(n0, ni);
+	  }
+	}
+	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, w, frc, tau, ni, n0, ntotal, idp, idv, idf, idn);
       }
     }
   }
@@ -279,13 +328,16 @@ void write_xyz(ofstream &outfile,
 	       double w[NDIM],
 	       double frc[NDIM],
 	       double tau[NDIM],
+	       double ni[NDIM],
+	       double n0[NDIM],
 	       int &ntot,
 	       ID_OPTION_P &pflag,
 	       ID_OPTION_V &vflag,
-	       ID_OPTION_F &fflag){
+	       ID_OPTION_F &fflag,
+	       ID_OPTION_N &nflag){
   char str[4096];
   char dmy_str[256];
-  
+  double dmy_ndot = ni[0]*n0[0] + ni[1]*n0[1] + ni[2]*n0[2];
 
   sprintf(str, "%d %d ", pid, sid);
   if(pflag == POSITION || pflag == ALL_POS){
@@ -314,26 +366,36 @@ void write_xyz(ofstream &outfile,
     strcat(str, dmy_str);
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g", tau[0], tau[1], tau[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g ", tau[0], tau[1], tau[2]);
+    strcat(str, dmy_str);
+  }
+  if(nflag != NO_JANUS){
+    sprintf(dmy_str, "%.6g %.6g %.6g %.12g", ni[0], ni[1], ni[2], dmy_ndot);
+    strcat(str, dmy_str);
   }
 
-  if(pflag != POSITION && pflag != ORIENTATION && pflag != ALL_POS){
+  if(pflag != POSITION && pflag != ORIENTATION && pflag != ALL_POS && pflag != NO_POS){
     cout << "Wrong position flag!" << endl;
     exit(1);
   }
-  if(vflag != VELOCITY && vflag != OMEGA && vflag != ALL_VEL){
+  if(vflag != VELOCITY && vflag != OMEGA && vflag != ALL_VEL && vflag != NO_VEL){
     cout << "Wrong velocity flag!" << endl;
     exit(1);
   }
-  if(fflag != FORCE && fflag != TORQUE && fflag != ALL_FRC){
+  if(fflag != FORCE && fflag != TORQUE && fflag != ALL_FRC && fflag != NO_FRC){
     cout << "Wrong  force flag!" << endl;
+    exit(1);
+  }
+  if(nflag != JANUS_X && nflag != JANUS_Y && nflag != JANUS_Z && nflag != NO_JANUS){
+    cout << "Wrong janus flag!" << endl;
     exit(1);
   }
 
   outfile << str << endl;
 }
 
-void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag){
+void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &vflag, ID_OPTION_F &fflag,
+	      ID_OPTION_N &nflag){
 
   outfile.open(fname);
   char str[256];    
@@ -356,6 +418,9 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
     strcat(str, "N_x, N_y, N_z");
+  }
+  if(nflag != NO_JANUS){
+    strcat(str, "e_x, e_y, e_z, c_ee");
   }
   outfile << str << endl;
 

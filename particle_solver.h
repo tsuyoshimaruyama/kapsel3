@@ -14,7 +14,6 @@
 #include <omp.h>
 #endif
 
-void MD_init_slip(Particle *p, const CTime &jikan);
 void MD_solver_position_Euler(Particle *p, const CTime &jikan);
 void MD_solver_position_AB2(Particle *p, const CTime &jikan);
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan);
