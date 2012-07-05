@@ -150,18 +150,20 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
   double r[DIM], x[DIM], residue[DIM];
   
-  double dmy_xi, dmy_theta, dmy_tau, dmy_slip;
-  double dmy_mass, dmy_sin, dmy_sin2, dmy_dir;
+  double dmy_xi, dmy_theta, dmy_tau;
+  double dmy_vdot, dmy_udot;
+  double dmy_mass, dmy_sin, dmy_sin2;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double Vv[DIM], Uv[DIM], Sv[DIM], dmy_fv[DIM], polar_axis[DIM];
   double force[DIM], torque[DIM];
+  double slip_mode, slip_vel;
 
   //////////////////////// Normalization variables
   int dmy_id;
   double dmy_cs[2], dmy_ds[2], dmy_ca[2];
-  double slip_mode, mode_factor, mode_scale[2];
+  double mode_factor, mode_scale[2];
   double stick_factor, stick_scale[2];
-  double slip_vel, slip_factor, slip_scale[2];
+  double slip_factor, slip_scale[2];
   const double momentum_flux = 8.0/3.0 * M_PI * radius * radius * dx;
   const double surface_area = 4.0 * M_PI * radius * radius * dx;
 
@@ -169,7 +171,7 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
     pspec = p[n].spec;
     if(janus_propulsion[pspec] == slip){
 
-      slip_vel = janus_slip_vel[pspec];
+      slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
       slip_mode = janus_slip_mode[pspec];
       Janus_direction(polar_axis, p[n]);
       for(int d = 0; d < DIM; d++){
@@ -183,7 +185,6 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
       sw_in_cell = Particle_cell(xp, dx, x_int, residue);
       sw_in_cell = 1;
 
-      /*
       { // compute surface normalization factors
 	dmy_mass = 0.0;
 	dmy_cs[0] = dmy_cs[1] = 0.0;
@@ -200,13 +201,19 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	  dmy_phi = 1.0 - Phi(dmy_r, radius);
 	  dmy_mass += (1.0 - dmy_phi);
 	  dmy_xi = ABS(dmy_r - radius);
+
+	  if(janus_slip_region == surface_slip){
+	    dmy_region = DPhi_compact_sin_norm(dmy_r, radius);
+	  }else{
+	    dmy_region = 1.0;
+	  }
 	  
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
 	    Angular2v(omega_p, r, v_rot);
 	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
-	    dmy_sin2 = dmy_phi * dmy_sin * sin(2.0 * dmy_theta);
-	    dmy_sin *= dmy_phi * dmy_sin;
+	    dmy_sin2 = dmy_region * dmy_phi * dmy_sin * sin(2.0 * dmy_theta);
+	    dmy_sin *= (dmy_region * dmy_phi * dmy_sin);
 	    dmy_id = ((dmy_sin2 >= 0.0) ? 1 : 0);
 
 	    dmy_cs[dmy_id] += dmy_sin;
@@ -215,7 +222,6 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	  }
 	}//mesh
       } // compute normalization
-      */
 
       { // compute hydrodynamic force 
 	dmy_mass = 0.0;
@@ -241,22 +247,26 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	  dmy_mass += (1.0 - dmy_phi);
 	  dmy_xi = ABS(dmy_r - radius);
 
+	  if(janus_slip_region == surface_slip){
+	    dmy_region = DPhi_compact_sin_norm(dmy_r, radius);
+	  }else{
+	    dmy_region = 1.0;
+	  }
+
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
 	    Angular2v(omega_p, r, v_rot);
 	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
 	    dmy_sin2 = sin(2.0 * dmy_theta);
-	    //	    dmy_id = (dmy_sin2 >= 0.0 ? 1 : 0);
+	    dmy_id = (dmy_sin2 >= 0.0 ? 1 : 0);
 
-	    //	    slip_factor = slip_scale[dmy_id];
-	    //	    mode_factor = 0.5 * (mode_scale[0] + mode_scale[1]);
+	    slip_factor = slip_scale[dmy_id];
+	    mode_factor = mode_scale[dmy_id];
 	    //	    stick_factor = stick_scale[dmy_id];
-	    slip_factor = 0.847;
-	    mode_factor = 0.847;
 	    stick_factor = 1.0;
 
-	    //	    dmy_cs[dmy_id] += slip_factor * dmy_phi * dmy_sin * dmy_sin;
-	    //	    dmy_ca[dmy_id] += mode_factor * dmy_phi * dmy_sin * dmy_sin2;
+	    dmy_cs[dmy_id] += slip_factor * dmy_region * dmy_phi * dmy_sin * dmy_sin;
+	    dmy_ca[dmy_id] += mode_factor * dmy_region * dmy_phi * dmy_sin * dmy_sin2;
 
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = (vp[d] + v_rot[d]);
@@ -264,16 +274,23 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 
 	    slip_factor *= slip_vel;
 	    mode_factor *= slip_vel * slip_mode;
+	    /*	    if(janus_slip_tangent == ful_tangent){
+	    }else if(janus_slip_tangent == particle_tangent){
+	    }else{
+	      fprintf(stderr, "OPERATE_SURFACE2 tangent error\n");
+	      exit_job(EXIT_FAILURE);
+	      }*/
+
+
 	    for(int d = 0; d < DIM; d++){
-	      //	      Uv[d] = (u[0][im] * n_theta[0] + u[1][im] * n_theta[1] + u[2][im] * n_theta[2]);
 	      Uv[d] = u[d][im];
 	      Vv[d] = stick_factor * (dmy_fv[0] * n_theta[0] + dmy_fv[1] * n_theta[1] + dmy_fv[2] * n_theta[2]);
 	      Sv[d] = (slip_factor * dmy_sin) + (mode_factor * sin(2.0 * dmy_theta));
 	    }
 
 	    for(int d = 0; d < DIM; d++){
-	      dmy_dir = dmy_phi * n_theta[d];
-	      dmy_fv[d] = dmy_dir * (Vv[d] + Sv[d]) - dmy_phi * Uv[d];
+	      //	      dmy_dir = dmy_phi * n_theta[d];
+	      //	      dmy_fv[d] = dmy_dir * (Vv[d] + Sv[d]) - dmy_phi * Uv[d];
 
 	      up[d][im] += dmy_fv[d];
 	      force[d] += dmy_fv[d];
