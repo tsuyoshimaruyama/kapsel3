@@ -138,7 +138,8 @@ double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
 double janus_slip_scale;
-JDBG janus_slip_debug;
+JST janus_slip_tangent;
+JSR janus_slip_region;
 JSO janus_slip_order;
 
 //
@@ -1281,18 +1282,29 @@ void Gourmet_file_io(const char *infile
 	    ufout->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
 	    ufres->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
 
-	    ufin->get(target.sub("JANUS_slip_debug"), str);
-	    ufout->put(target.sub("JANUS_slip_debug"), str);
-	    ufres->put(target.sub("JANUS_slip_debug"), str);
+	    ufin->get(target.sub("JANUS_slip_tangent"), str);
+	    ufout->put(target.sub("JANUS_slip_tangent"), str);
+	    ufres->put(target.sub("JANUS_slip_tangent"), str);
 	    if(str == "full_tangent"){
-	      janus_slip_debug = full_tangent;
+	      janus_slip_tangent = full_tangent;
 	    }else if(str == "particle_tangent"){
-	      janus_slip_debug = particle_tangent;
-	    }else if(str == "no_tangent"){
-	      janus_slip_debug = no_tangent;
+	      janus_slip_tangent = particle_tangent;
 	    }else{
 	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus debug\n");
+	      fprintf(stderr, "invalid janus tangent\n");
+	      exit_job(EXIT_FAILURE);
+	    }
+
+	    ufin->get(target.sub("JANUS_slip_region"), str);
+	    ufout->put(target.sub("JANUS_slip_region"), str);
+	    ufres->put(target.sub("JANUS_slip_region"), str);
+	    if(str == "interface_slip"){
+	      janus_slip_region = interface_slip;
+	    }else if(str == "surface_slip"){
+	      janus_slip_region = surface_slip;
+	    }else{
+	      cerr << str << endl;
+	      fprintf(stderr, "invalid janus region\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 

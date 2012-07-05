@@ -159,7 +159,8 @@ switch: {
    }
    INIT_orientation: select {'user_specify', 'random', 'space_align'}
    JANUS_slip_scale: float "Scale factor for particle slip velocity"
-   JANUS_slip_debug: select {'full_tangent', 'particle_tangent', 'no_tangent'}
+   JANUS_slip_tangent: select {'full_tangent', 'particle_tangent'}
+   JANUS_slip_region: select {'interface_slip', 'surface_slip'}
    JANUS_slip_order: select {'hydro', 'hydro_slip'}
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"

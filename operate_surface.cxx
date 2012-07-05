@@ -11,7 +11,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   ////////////////////////  Function variables
   int sw_in_cell, pspec;
   int x_int[DIM], r_mesh[DIM];
-  double dmy_r, dmy_phi;
+  double dmy_r, dmy_phi, dmy_region;
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
   double r[DIM], x[DIM], residue[DIM];
   
@@ -50,9 +50,15 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    x[d] = r_mesh[d] * dx;
 	  }
 	  dmy_r = Distance(x, xp);
-	  dmy_phi = 1.0 - Phi(dmy_r, radius);
+	  dmy_phi = 1.0 - Phi(dmy_r, radius);	 
 	  dmy_mass += (1.0 - dmy_phi);
 	  dmy_xi = ABS(dmy_r - radius);
+
+	  if(janus_slip_region == surface_slip){
+	    dmy_region = DPhi_compact_sin_norm(dmy_r, radius);
+	  }else{
+	    dmy_region = 1.0;
+	  }
 
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
 	    Angular2v(omega_p, r, v_rot);
@@ -65,35 +71,25 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    }
 	    dmy_udot = u[0][im]*n_theta[0] + u[1][im]*n_theta[1] + u[2][im]*n_theta[2];
 	    dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
-	    if(janus_slip_debug == full_tangent){
+	    if(janus_slip_tangent == full_tangent){
 	      for(int d = 0; d < DIM; d++){
 		Uv[d] = n_theta[d] * dmy_udot;
 		Vv[d] = n_theta[d] * dmy_vdot;
 		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
 	      }
-	    }else if(janus_slip_debug == particle_tangent){
+	    }else if(janus_slip_tangent == particle_tangent){
 	      for(int d = 0; d < DIM; d++){
 		Uv[d] = u[d][im];
 		Vv[d] = n_theta[d] * dmy_vdot;
-		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
-	      }
-	    }else if(janus_slip_debug == no_tangent){
-	      for(int d = 0; d < DIM; d++){
-		Uv[d] = u[d][im];
-		Vv[d] = dmy_fv[d];
 		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
 	      }
 	    }else{
 	      fprintf(stderr, "OPERATE_SURFACE tangent error\n");
 	      exit_job(EXIT_FAILURE);
 	    }
-	    /*	    fprintf(stderr, "# %8.6E %8.6E %8.6E\n",
-		    dmy_fv[0]*n_r[0] + dmy_fv[1]*n_r[1] + dmy_fv[2]*n_r[2],
-		    dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2],
-		    dmy_fv[0]*n_tau[0] + dmy_fv[1]*n_tau[1] + dmy_fv[2]*n_tau[2]);*/
 
 	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = dmy_phi * (Sv[d] + (Vv[d] - Uv[d]));
+	      dmy_fv[d] = dmy_phi * dmy_region * (Sv[d] + (Vv[d] - Uv[d]));
 	      up[d][im] += dmy_fv[d];
 	      force[d] += dmy_fv[d];
 	    }
@@ -102,7 +98,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	      torque[1] += (r[2] * dmy_fv[0] - r[0] * dmy_fv[2]);
 	      torque[2] += (r[0] * dmy_fv[1] - r[1] * dmy_fv[0]);
 	    }
-	  }
+	  }//interface_domain
 	}//mesh
       } // Hydrodynamic force
 
@@ -150,7 +146,7 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
   ////////////////////////  Function variables
   int sw_in_cell, pspec;
   int x_int[DIM], r_mesh[DIM];
-  double dmy_r, dmy_phi;
+  double dmy_r, dmy_phi, dmy_region;
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
   double r[DIM], x[DIM], residue[DIM];
   

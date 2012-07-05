@@ -83,6 +83,18 @@ inline double DPhi_compact_sin(const double &x
 	return 0.;
     }
 }
+inline double DPhi_compact_sin_norm(const double &x,
+				    const double radius = RADIUS,
+				    const double xi = XI){
+  const double hxi = xi * 0.5;
+  const double ixi = 1.0/xi;
+  double dmy_x = radius - x;
+  if(fabs(dmy_x)<hxi){
+    return cos(M_PI * dmy_x * ixi);
+  }else{
+    return 0.0;
+  }
+}
 
 void Particle_domain(
 		     double (*profile_func)(const double &x, const double radius)

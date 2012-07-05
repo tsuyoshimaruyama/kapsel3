@@ -52,9 +52,8 @@ enum JP {swimmer,
 	 tumbler,
 	 slip,
          no_propulsion};
-enum JDBG {full_tangent,
-	   particle_tangent,
-	   no_tangent};
+enum JST {full_tangent,particle_tangent};
+enum JSR {interface_slip, surface_slip};
 enum JSO {with_hydro, hydro_slip};
 //////  
 extern SW_time SW_TIME;
@@ -112,7 +111,8 @@ extern double **janus_torque;
 extern double *janus_slip_vel;
 extern double *janus_slip_mode;
 extern double janus_slip_scale;
-extern JDBG janus_slip_debug;
+extern JST janus_slip_tangent;
+extern JSR janus_slip_region;
 extern JSO janus_slip_order;
 
 extern char Out_dir[];
