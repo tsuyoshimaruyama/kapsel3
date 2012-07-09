@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
 	  qtn_init(q, q0, q1, q2, q3);
 	  qtn_isnormal(q, QTOL_LARGE);
 	  rigid_body_rotation(ni, janus_axis, q, BODY2SPACE);
-	  if(j == 0){
+	  if(i == 0){
 	    v_copy(n0, ni);
 	  }
 	}

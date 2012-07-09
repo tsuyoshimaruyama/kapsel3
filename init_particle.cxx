@@ -271,6 +271,7 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("omega.y"), p[i].omega[1]);
 	ufout->put(target.sub("omega.z"), p[i].omega[2]);
 
+	qtn_normalize(p[i].q);
 	qtn_isnormal(p[i].q);
 	rqtn_rv(phi, nv, p[i].q);
 	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 

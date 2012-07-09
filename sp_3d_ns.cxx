@@ -132,7 +132,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Add_f_particle(u, up);
 
 	    Calc_f_hydro_correct_precision(p, u, jikan);
-
 	  }else if(janus_slip_order == hydro_slip){
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);

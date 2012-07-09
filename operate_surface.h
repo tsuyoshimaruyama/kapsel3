@@ -25,6 +25,8 @@
 
 void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
+void Make_force_u_slip_particle_norm(double **up, double const* const* u,
+				     Particle *p, const CTime &jikan);
 
 inline void update_angular(double* l, const double *x, const double *v, const double alpha=1.0){
   l[0] += alpha * (x[1] * v[2] + x[2] * v[1]);
@@ -166,8 +168,9 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
       }
     }
   }
-
-  fprintf(stderr, "Momentum : %10.8E %10.8E %10.8E\n", full_p[0], full_p[1], full_p[2]);
+  fprintf(stderr, "%10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E\n",
+	  tot_p[0], tot_p[1], tot_p[2], tot_w[0], tot_w[1], tot_w[2],
+	  full_p[0], full_p[1], full_p[2], full_w[0], full_w[1], full_w[2]);
 }
 
 
