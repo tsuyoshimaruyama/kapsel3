@@ -73,7 +73,6 @@ inline void Make_rho_field_primitive(double *phi
     double x[DIM];
     double dmy;
     double dmy_phi;
-    int im;
 #pragma omp parallel for schedule(dynamic, 1) private(drho,xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi)
     for(int n=0; n < Particle_Number; n++){
 	drho = RHO_particle[p[n].spec] - RHO;
@@ -95,6 +94,8 @@ inline void Make_rho_field_primitive(double *phi
 	    phi[(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += dmy_phi;
 	}
     }
+
+    int im;
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for(int i=0;i<Nlattice[0];i++){
 	for(int j=0;j<Nlattice[1];j++){
@@ -239,7 +240,7 @@ inline void Make_phi_u_primitive(double *phi
     int im;
 
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot)
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,im)
     for(int n=0; n < Particle_Number; n++){
 	for(int d=0;d<DIM;d++){
 	    xp[d] = p[n].x[d];
@@ -318,7 +319,7 @@ inline void Make_phi_u_primitive_OBL(double *phi
     double v_rot[DIM];
     int sign;
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,sign)
+#pragma omp parallel for schedule(dynamic, 1) private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,sign,im)
     for(int n=0; n < Particle_Number; n++){
 	for(int d=0;d<DIM;d++){
 	    xp[d] = p[n].x[d];

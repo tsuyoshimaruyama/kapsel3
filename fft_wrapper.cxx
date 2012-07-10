@@ -655,7 +655,7 @@ void U_k2divergence_k(double **u, double *div){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
 	k2=2*k;
-	ks[DIM];
+	//	ks[DIM];
 	im0=(i*NY*NZ_)+(j*NZ_)+k2;
 	im1=im0+1;
 
@@ -686,7 +686,7 @@ void U_k2rotation_k(double **u){
     int k2;
     int im;
     {
-#pragma omp parallel for schedule(dynamic, 1) private(ks, dmy_rot_re, dmy_rot_im, k2, im)
+#pragma omp parallel for schedule(dynamic, 1) private(ks, dmy_u_re, dmy_u_im, dmy_rot_re, dmy_rot_im, k2, im)
 	for(int i = 0; i < NX; i++){
 	    for(int j = 0; j < NY; j++){
 		for(int k = 0; k < HNZ_; k++){

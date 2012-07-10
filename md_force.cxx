@@ -179,13 +179,9 @@ void Add_f_gravity(Particle *p){
 void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
-    
     int *nlattice;
-    //if (SW_EQ == Shear_Navier_Stokes){
-    //nlattice = Ns_shear;
-    //}else {
     nlattice = Ns;
-    //}
+
     double xp[DIM],vp[DIM],omega_p[DIM];
     int x_int[DIM];
     double residue[DIM];
@@ -204,9 +200,6 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass) 
     for(int n = 0; n < Particle_Number ; n++){
-	//double xp[DIM],vp[DIM],omega_p[DIM];
-	//int x_int[DIM];
-	//double residue[DIM];
 	for (int d = 0; d < DIM; d++) {
 	    xp[d] = p[n].x[d];
 	    vp[d] = p[n].v[d];
@@ -214,7 +207,7 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 	}
 
 	sw_in_cell 
-	    = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
+	    = Particle_cell(xp, DX, x_int, residue);
 	sw_in_cell = 1;
 	for(int d=0; d < DIM; d++){
 	    force[d] = 0.0;
@@ -227,10 +220,8 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 	    double x[DIM];
 	    for(int d=0;d<DIM;d++){
 		x[d] = r_mesh[d] * DX;
-		//dmyR += SQ(r[d]);
 	    }
-	    //dmyR = sqrt(dmyR); // vesion2.10 needs this value
-	    dmyR = Distance(x, xp); // vesion2.00 needs this value
+	    dmyR = Distance(x, xp);
 	    dmy_phi= Phi(dmyR, RADIUS);
 	    Angular2v(omega_p, r, v_rot);
 	    dmy_mass += dmy_phi;

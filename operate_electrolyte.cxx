@@ -470,7 +470,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_nosalt(double **Concentrati
     A_k2a(e_potential);
     
     double rho_0 = 0.;
- 	double dmy_phi;
+    double dmy_phi;
 #pragma omp parallel for schedule(dynamic, 1) reduction(+:rho_0) private(dmy_phi)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){

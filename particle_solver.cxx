@@ -89,7 +89,7 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
+#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
     //double dmy = jikan.dt_md * IMASS[p[n].spec];
     //double dmy_rot = jikan.dt_md * IMOI[p[n].spec];
@@ -125,17 +125,6 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
 	p[n].torque_slip[d] = 0.0;
       }
     }
-    /*    fprintf(stderr, "%5d %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E\n",
-	    jikan.ts,
-	    p[n].f_hydro_previous[0] + p[n].f_slip_previous[0],
-	    p[n].f_hydro_previous[1] + p[n].f_slip_previous[1],
-	    p[n].f_hydro_previous[2] + p[n].f_slip_previous[2],
-	    p[n].f_slip_previous[0],
-	    p[n].f_slip_previous[1],
-	    p[n].f_slip_previous[2],
-	    p[n].torque_hydro_previous[0] + p[n].torque_slip_previous[0],
-	    p[n].torque_hydro_previous[1] + p[n].torque_slip_previous[1],
-	    p[n].torque_hydro_previous[2] + p[n].torque_slip_previous[2]);*/
   }
 }
 
@@ -146,7 +135,7 @@ void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
+#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
     //static double dmy = jikan.dt_md * IMASS[p[n].spec];
     //static double dmy_rot = jikan.dt_md * IMOI[p[n].spec];
@@ -188,7 +177,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
   double self_force[DIM];
   double self_torque[DIM];
 
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
+#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
 	//double dmy = jikan.hdt_md * IMASS[p[n].spec];
 	//double dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
@@ -227,17 +216,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 	p[n].torque_slip[d] = 0.0;
       }
     }
-    /*    fprintf(stderr, "%5d %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.5E\n",
-	    jikan.ts,
-	    p[n].f_hydro_previous[0] + p[n].f_slip_previous[0],
-	    p[n].f_hydro_previous[1] + p[n].f_slip_previous[1],
-	    p[n].f_hydro_previous[2] + p[n].f_slip_previous[2],
-	    p[n].f_slip_previous[0], 
-	    p[n].f_slip_previous[1],
-	    p[n].f_slip_previous[2],
-	    p[n].torque_hydro_previous[0] + p[n].torque_slip_previous[0],
-	    p[n].torque_hydro_previous[1] + p[n].torque_slip_previous[1],
-	    p[n].torque_hydro_previous[2] + p[n].torque_slip_previous[2]);*/
+
   }
 }
 
@@ -313,7 +292,7 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
+#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
 	//static double dmy = jikan.dt_md * IMASS[p[n].spec];
 	//static double dmy_rot = jikan.dt_md * IMOI[p[n].spec];
@@ -351,7 +330,7 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
+#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
 	//double dmy = jikan.hdt_md * IMASS[p[n].spec];
 	//double dmy_rot = jikan.hdt_md * IMOI[p[n].spec];

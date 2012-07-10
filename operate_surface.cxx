@@ -23,6 +23,10 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   double force[DIM], torque[DIM];
   double slip_mode, slip_vel;
 
+#pragma omp parallel for schedule(dynamic, 1) \
+  private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_phi, dmy_region, xp, vp, omega_p, v_rot, r, x, residue, \
+	  dmy_xi, dmy_theta, dmy_tau, dmy_vdot, dmy_udot, dmy_mass, dmy_sin, dmy_sin2, n_r, n_theta, n_tau, \
+	  Vv, Uv, Sv, dmy_fv, polar_axis, force, torque, slip_mode, slip_vel)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
     if(janus_propulsion[pspec] == slip){
@@ -90,8 +94,10 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = dmy_phi * dmy_region * (Sv[d] + (Vv[d] - Uv[d]));
-	      up[d][im] += dmy_fv[d];
 	      force[d] += dmy_fv[d];
+
+#pragma omp atomic
+	      up[d][im] += dmy_fv[d];
 	    }
 	    {
 	      torque[0] += (r[1] * dmy_fv[2] - r[2] * dmy_fv[1]);
@@ -120,6 +126,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 
 	  for(int d = 0; d < DIM; d++){
 	    dmy_fv[d] = dmy_phi * force[d];
+
+#pragma omp atomic
 	    up[d][im] += dmy_fv[d];
 	  }
 	}
