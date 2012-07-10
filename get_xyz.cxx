@@ -345,7 +345,8 @@ void write_xyz(ofstream &outfile,
     strcat(str, dmy_str);
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", v[0], v[1], v[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  ", v[0], v[1], v[2],
+	    sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]));
     strcat(str, dmy_str);
   }
 
@@ -404,7 +405,7 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
     strcat(str, "r_x, r_y, r_z ");
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    strcat(str, "v_x, v_y, v_z ");
+    strcat(str, "v_x, v_y, v_z, v ");
 
   }
   if(pflag == ORIENTATION || pflag == ALL_POS){
