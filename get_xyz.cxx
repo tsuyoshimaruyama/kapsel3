@@ -31,6 +31,7 @@ void write_xyz(ofstream &outfile,
 	       double r[NDIM], 
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
+	       double vs[NDIM],
 	       double w[NDIM],
 	       double frc[NDIM],
 	       double tau[NDIM],
@@ -173,6 +174,7 @@ int main(int argc, char* argv[])
   int nspec;
   int *pnum;
   int *spec_id;
+  double *bslip;
   const string sep = "\t\t";  
 
   {
@@ -198,6 +200,7 @@ int main(int argc, char* argv[])
     nspec = ufin -> size("object_type.spherical_particle.Particle_spec[]");
 
     pnum = alloc_1d_int(nspec);
+    bslip = alloc_1d_double(nspec);
     int nmax = 0;
     ntotal = 0;
     for(int i = 0; i < nspec; i++){
@@ -205,6 +208,10 @@ int main(int argc, char* argv[])
       sprintf(str, "object_type.spherical_particle.Particle_spec[%d]",i);
       Location target(str);
       ufin -> get(target.sub("Particle_number"), pnum[i]);
+      ufin -> get(target.sub("janus_slip_vel"), bslip[i]);
+      fprintf(stderr, "SLIIIIP: %10.8g ", bslip[i]);
+      bslip[i] = 1.0 / (2./3 * bslip[i]);
+      fprintf(stderr, " (%10.8g) \n", bslip[i]);
       nmax = MAX(nmax, pnum[i]);
       ntotal += pnum[i];
     }
@@ -212,7 +219,7 @@ int main(int argc, char* argv[])
     int sum = 0;
     for(int i = 0; i < nspec; i++){
       for(int j = 0; j < pnum[i]; j++){
-	spec_id[sum] = i + 1;
+	spec_id[sum] = i;
 	sum++;
       }
     }
@@ -229,6 +236,7 @@ int main(int argc, char* argv[])
     //read particle data
     double r[NDIM];
     double v[NDIM];
+    double vs[NDIM];
     double w[NDIM];
     double QR[NDIM][NDIM];
     double frc[NDIM];
@@ -270,6 +278,9 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("v.x"), v[0]);
 	  ufin -> get(target.sub("v.y"), v[1]);
 	  ufin -> get(target.sub("v.z"), v[2]);
+	  for(int d = 0; d < NDIM; d++){
+	    vs[d] = v[d] * bslip[spec_id[j]];
+	  }
 	}
 
 	if(idv == OMEGA || idv == ALL_VEL){
@@ -302,7 +313,7 @@ int main(int argc, char* argv[])
 	    v_copy(n0, ni);
 	  }
 	}
-	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, w, frc, tau, ni, n0, ntotal, idp, idv, idf, idn);
+	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, vs, w, frc, tau, ni, n0, ntotal, idp, idv, idf, idn);
       }
     }
   }
@@ -315,7 +326,7 @@ int main(int argc, char* argv[])
 void newframe(ofstream &outfile,
 	      double &t,
 	      int &ntot){
-  outfile << "# " << t << "  " << ntot << endl;
+  //  outfile << endl;
 }
 
 void write_xyz(ofstream &outfile, 
@@ -325,6 +336,7 @@ void write_xyz(ofstream &outfile,
 	       double r[NDIM], 
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
+	       double vs[NDIM],
 	       double w[NDIM],
 	       double frc[NDIM],
 	       double tau[NDIM],
@@ -345,8 +357,10 @@ void write_xyz(ofstream &outfile,
     strcat(str, dmy_str);
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  ", v[0], v[1], v[2],
-	    sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]));
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  ", v[0], v[1], v[2],
+	    sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]),
+	    sqrt(vs[0]*vs[0] + vs[1]*vs[1] + vs[2]*vs[2])
+	    );
     strcat(str, dmy_str);
   }
 
@@ -402,26 +416,26 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
   char str[256];    
   sprintf(str, "## p_id spec_id ");
   if(pflag == POSITION || pflag == ALL_POS){
-    strcat(str, "r_x, r_y, r_z ");
+    strcat(str, "r_x, r_y, r_z, ");
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    strcat(str, "v_x, v_y, v_z, v ");
+    strcat(str, "v_x, v_y, v_z, v, vs, ");
 
   }
   if(pflag == ORIENTATION || pflag == ALL_POS){
-    strcat(str, "e1_x e1_y e1_z e2_x e2_y e2_z e3_x e3_y e3_z ");
+    strcat(str, "e1_x, e1_y, e1_z, e2_x, e2_y, e2_z, e3_x, e3_y, e3_z, ");
   }
   if(vflag == OMEGA || vflag == ALL_VEL){
-    strcat(str, "w_x, w_y, w_z ");
+    strcat(str, "w_x, w_y, w_z, ");
   }
   if(fflag == FORCE || fflag == ALL_FRC){
-    strcat(str, "F_x, F_y, F_z ");
+    strcat(str, "F_x, F_y, F_z, ");
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
-    strcat(str, "N_x, N_y, N_z");
+    strcat(str, "N_x, N_y, N_z, ");
   }
   if(nflag != NO_JANUS){
-    strcat(str, "e_x, e_y, e_z, c_ee");
+    strcat(str, "e_x, e_y, e_z, c_ee, ");
   }
   outfile << str << endl;
 

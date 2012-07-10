@@ -242,8 +242,7 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	  mode_scale[d] = surface_area / (4.0 * dx3 * ABS(dmy_ca[d]));
 	  area_scale[d] = surface_area / (2.0 * dx3 * ABS(dmy_ds[d]));
 	}
-	fprintf(stderr, "%8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E\n",
-		residue[0], residue[1], residue[2],
+	fprintf(stderr, "%8.6E %8.6E %8.6E %8.6E %8.6E %8.6E\n",
 		slip_scale[0], slip_scale[1], 
 		mode_scale[0], mode_scale[1],
 		area_scale[0], area_scale[1]);
@@ -275,7 +274,7 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	    dmy_sin2 = sin(2.0 * dmy_theta);
 	    dmy_id = (dmy_sin2 >= 0.0 ? 1 : 0);
 
-	    slip_factor = area_scale[dmy_id];
+	    slip_factor = slip_scale[dmy_id];
 	    mode_factor = mode_scale[dmy_id];
 	    area_factor = area_scale[dmy_id];
 

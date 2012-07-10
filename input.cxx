@@ -1315,7 +1315,12 @@ void Gourmet_file_io(const char *infile
 	      janus_slip_order = with_hydro;
 	    }else if(str == "hydro_slip"){
 	      janus_slip_order = hydro_slip;
-	    }else{
+	    }else if(str == "hydro_scale"){
+	      janus_slip_order = with_hydro_scale;
+	    }else if(str == "hydro_slip_scale"){
+	      janus_slip_order = hydro_slip_scale;
+	    }
+	    else{
 	      cerr << str << endl;
 	      fprintf(stderr, "invalid janus order\n");
 	      exit_job(EXIT_FAILURE);

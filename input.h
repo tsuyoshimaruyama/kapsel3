@@ -54,7 +54,7 @@ enum JP {swimmer,
          no_propulsion};
 enum JST {full_tangent,particle_tangent};
 enum JSR {interface_slip, surface_slip};
-enum JSO {with_hydro, hydro_slip};
+enum JSO {with_hydro, hydro_slip, with_hydro_scale, hydro_slip_scale};
 //////  
 extern SW_time SW_TIME;
 //////  
