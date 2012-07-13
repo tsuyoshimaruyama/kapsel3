@@ -4,6 +4,7 @@
 #include "sp_3d_ns.h"
 
 void (*Time_evolution)(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan);
+void (*Make_force_u_slip_particle)(double **up, double const* const* u, Particle *p, const CTime &jikan);
 
 void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
     if(SW_EQ == Navier_Stokes){
@@ -124,38 +125,27 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	   */
-	  if(janus_slip_order == with_hydro ||
-	     janus_slip_order == with_hydro_scale){
+
+	  if(janus_slip_order == slip_full || janus_slip_order == slip_full_scale){
 	    Reset_phi_u(phi, up);
 
-	    if(janus_slip_order == with_hydro){
 	    Make_force_u_slip_particle(up, u, p, jikan);
-	    }else{
-	      Make_force_u_slip_particle_norm(up, u, p, jikan);
-	    }
 	    Solenoidal_u(up);
 	    Add_f_particle(u, up);
 
 	    Calc_f_hydro_correct_precision(p, u, jikan);
-	  }else if(janus_slip_order == hydro_slip ||
-		   janus_slip_order == hydro_slip_scale){
+	  }else if(janus_slip_order == slip_norotation || janus_slip_order == slip_norotation_scale){
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 
-	    if(janus_slip_order == hydro_slip){
-	      Make_force_u_slip_particle(up, u, p, jikan);
-	    }else{
-	      Make_force_u_slip_particle_norm(up, u, p, jikan);
-	    }
+	    Make_force_u_slip_particle(up, u, p, jikan);
 	    Solenoidal_u(up);
 	    Calc_f_slip_correct_precision(p, up, jikan);
 	    Add_f_particle(u, up);
-
 	  }else{
 	    fprintf(stderr, "Invalid janus_slip_order\n");
 	    exit_job(EXIT_FAILURE);
 	  }
-
 	}
 
 	if(!Fixed_particle){// Update of Particle Velocity
@@ -436,6 +426,13 @@ int main(int argc, char *argv[]){
   } else {
       fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
       Time_evolution = Time_evolution_hydro;
+  }
+
+  // Slip type
+  if(janus_slip_order == slip_full || janus_slip_order == slip_norotation){
+    Make_force_u_slip_particle = Make_force_u_slip_particle_noscale;
+  } else {
+    Make_force_u_slip_particle = Make_force_u_slip_particle_scale;
   }
 
   MT_seed(GIVEN_SEED,0);

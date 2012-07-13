@@ -125,8 +125,8 @@ switch:{
  }
  "user_specify"
  1.0
- "no_tangent"
- "hydro"
+ "interface_slip"
+ "slip_full"
  {"ON","ON","ON"}
  {
   "YES",

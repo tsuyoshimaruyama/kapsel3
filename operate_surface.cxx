@@ -1,5 +1,122 @@
 #include "operate_surface.h"
-void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
+
+void Make_u_slip_particle_factor(double **){
+  //////////////////////////////
+  const double dx = DX;
+  const double dx3 = DX3;
+  const int np_domain = NP_domain;
+  int const* const* sekibun_cell = Sekibun_cell;
+  const int* Nlattice = Ns;
+  const double radius = RADIUS;
+  //////////////////////////////
+  int sw_in_cell, pspec;
+  int x_int[DIM], r_mesh[DIM];
+  double dmy_r, dmy_phi, dmy_region;
+  double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM];
+  double r[DIM], x[DIM], residue[DIM];
+
+  double dmy_xi, dmy_theta, dmy_tau;
+  double dmy_sin, dmy_sin2, dmy_vdot;
+  double n_r[DIM], n_theta[DIM], n_tau[DIM], dmy_fv[DIM], polar_axis[DIM];
+  double M0, M1[DIM], M2[DIM][DIM], ST[DIM][DIM], SU[DIM][DIM], SV[DIM][DIM], dv_s[DIM], domega_s[DIM];
+  double slip_mode, slip_vel, slip_magnitude;
+  double r_x_theta[DIM], r_x_us[DIM], us[DIM];
+#pragma omp parallel for schedule(dynamic, 1) \
+  private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_phi, dmy_region, xp, vp, omega_p, \
+	  v_rot, r, x, residue, dmy_xi, dmy_theta, dmy_tau, dmy_sin, dmy_sin2, dmy_vdot, \
+	  n_r, n_theta, n_tau, dmy_fv, polar_axis, M0, M1, M2, ST, SU, SV, dv_s, domega_s, \
+	  slip_mode, slip_vel, slip_magnitude, r_x_theta, r_x_us, us)
+  for(int n = 0; n < Particle_Number; n++){
+    pspec = p[n].spec;
+
+    if(janus_propulsion[pspec] == slip){
+      slip_vel = janus_slip_velp[pspec] * janus_slip_scale;
+      slip_mode = janus_slip_mode[pspec];
+      Janus_direction(polar_axis, p[n]);
+      for(int i = 0; i < DIM; i++){
+	xp[i] = p[n].x[i];
+	vp[i] = p[n].v[i];
+	omega_p[i] = p[n].omega[i];
+
+	M1[i] = dv_s[i] = domega_s[i] = 0.0;
+	for(int j = 0; j < DIM; j++){
+	  M2[i][j] = ST[i][j] = SU[i][j] = SV[i][j] = 0.0;
+	}
+      }
+      M0 = 0.0;
+      
+      sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+      sw_in_cell = 1;
+      for(int mesh = 0; mesh < np_domain; mesh++){
+	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	for(int d = 0; d < DIM; d++){
+	  x[d] = r_mesh[d] * dx;
+	}
+	dmy_r = Distance(x, xp);
+	dmy_phi = Phi(dmy_r, radius);
+	dmy_xi = ABS(dmy_r - radius);
+	
+	//particle properties
+	M0 += dmy_phi;
+	for(int i = 0; i < DIM; d++){
+	  M1[i] += dmy_phi * r[i];
+	  M2[i][i] += dmy_phi * dmy_r * dmy_r;
+	  for(int j = 0; j < DIM; d++){
+	    M2[i][j] -= dmy_phi * r[i] * r[j];
+	  }
+	}
+
+	//surface properties
+	if(janus_slip_region == surface_slip){
+	  dmy_region = (1.0 - dmy_phi) * dmy_DPhi_compact_sin_norm(dmy_r, radius);
+	}else{
+	  dmy_region = (1.0 - dmy_phi);
+	}
+	if(dmy_xi <= HXI && dmy_phi > 0.0){
+	  Angular2v(omega_p, r, v_rot);
+	  Sphercial_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	  dmy_sin = sin(dmy_theta);
+	  dmy_sin2 = sin(2.0 * dmy_theta);
+
+	  slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
+	  for(int i = 0; i < DIM; i++){
+	    us[d] = n_theta[d] * slip_magnitude - u[d][im];
+	  }
+
+	  v_cross(r_x_theta, r, n_theta);
+	  v_cross(r_x_us, r, us);
+
+	  for(int i = 0; i < DIM; i++){
+	    dv_s[i] += dmy_region * us[i];
+	    domega_s[i] += dmy_region * r_x_us[i];
+
+	    for(int j = 0; j < DIM; j++){
+	      ST[i][j] += dmy_region * n_theta[i] * n_theta[j];
+	      SU[i][j] += dmy_region * n_theta[i] * r_x_theta[j];
+	      SV[i][j] += dmy_region * r_x_theta[i] * r_x_theta[j];
+	    }
+	  }
+	}
+      }//mesh
+    }
+
+    p[n].mass = M0;
+    for(int i = 0; i < DIM; i++){
+      p[n].mass_center[i] = M1[d];
+      p[n].surface_dv[i] = dv_s[d];
+      p[n].surface_domega[i] = domega_s[d];
+      for(int j = 0; j < DIM; j++){
+	inertia[i][j] = M2[i][j];
+	surfaceT[i][j] = ST[i][j];
+	surfaceU[i][j] = SU[i][j];
+	surfaceV[i][j] = SV[i][j];
+      }
+    }
+  }//Particle_Number
+}
+
+void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
   const double dx3 = DX3;
@@ -16,8 +133,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   double r[DIM], x[DIM], residue[DIM];
   
   double dmy_xi, dmy_theta, dmy_tau;
-  double dmy_vdot, dmy_udot;
-  double dmy_mass, dmy_sin, dmy_sin2;
+  double dmy_mass, dmy_sin, dmy_sin2, dmy_vdot;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double Vv[DIM], Uv[DIM], Sv[DIM], dmy_fv[DIM], polar_axis[DIM];
   double force[DIM], torque[DIM];
@@ -25,10 +141,11 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_phi, dmy_region, xp, vp, omega_p, v_rot, r, x, residue, \
-	  dmy_xi, dmy_theta, dmy_tau, dmy_vdot, dmy_udot, dmy_mass, dmy_sin, dmy_sin2, n_r, n_theta, n_tau, \
+	  dmy_xi, dmy_theta, dmy_tau, dmy_vdot, dmy_mass, dmy_sin, dmy_sin2, n_r, n_theta, n_tau, \
 	  Vv, Uv, Sv, dmy_fv, polar_axis, force, torque, slip_mode, slip_vel)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
+
     if(janus_propulsion[pspec] == slip){
 
       slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
@@ -54,8 +171,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    x[d] = r_mesh[d] * dx;
 	  }
 	  dmy_r = Distance(x, xp);
-	  dmy_phi = 1.0 - Phi(dmy_r, radius);	 
-	  dmy_mass += (1.0 - dmy_phi);
+	  dmy_phi = Phi(dmy_r, radius);	 
+	  dmy_mass += dmy_phi;
 	  dmy_xi = ABS(dmy_r - radius);
 
 	  if(janus_slip_region == surface_slip){
@@ -64,7 +181,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    dmy_region = 1.0;
 	  }
 
-	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
+	  dmy_phi = 1.0 - dmy_phi;
+	  if(dmy_xi <= HXI && dmy_phi > 0.0 ){//interface domain
 	    Angular2v(omega_p, r, v_rot);
 	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
@@ -73,23 +191,11 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = (vp[d] + v_rot[d]);
 	    }
-	    dmy_udot = u[0][im]*n_theta[0] + u[1][im]*n_theta[1] + u[2][im]*n_theta[2];
 	    dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
-	    if(janus_slip_tangent == full_tangent){
-	      for(int d = 0; d < DIM; d++){
-		Uv[d] = n_theta[d] * dmy_udot;
-		Vv[d] = n_theta[d] * dmy_vdot;
-		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
-	      }
-	    }else if(janus_slip_tangent == particle_tangent){
-	      for(int d = 0; d < DIM; d++){
-		Uv[d] = u[d][im];
-		Vv[d] = n_theta[d] * dmy_vdot;
-		Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
-	      }
-	    }else{
-	      fprintf(stderr, "OPERATE_SURFACE tangent error\n");
-	      exit_job(EXIT_FAILURE);
+	    for(int d = 0; d < DIM; d++){
+	      Uv[d] = u[d][im];
+	      Vv[d] = n_theta[d] * dmy_vdot;
+	      Sv[d] = n_theta[d] * (slip_vel * (dmy_sin + slip_mode * dmy_sin2));
 	    }
 
 	    for(int d = 0; d < DIM; d++){
@@ -144,7 +250,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 
 /*
  */
-void Make_force_u_slip_particle_norm(double **up, double const* const* u, Particle *p, const CTime &jikan){
+void Make_force_u_slip_particle_scale(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
   const double dx3 = DX3;
@@ -161,8 +267,7 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
   double r[DIM], x[DIM], residue[DIM];
   
   double dmy_xi, dmy_theta, dmy_tau;
-  double dmy_vdot, dmy_udot;
-  double dmy_mass, dmy_sin, dmy_sin2;
+  double dmy_mass, dmy_sin, dmy_sin2, dmy_vdot;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double Vv[DIM], Uv[DIM], Sv[DIM], dmy_fv[DIM], polar_axis[DIM];
   double force[DIM], torque[DIM];
@@ -285,26 +390,14 @@ void Make_force_u_slip_particle_norm(double **up, double const* const* u, Partic
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = (vp[d] + v_rot[d]);
 	    }
-	    dmy_udot = u[0][im]*n_theta[0] + u[1][im]*n_theta[1] + u[2][im]*n_theta[2];
 	    dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
 
 	    slip_factor *= slip_vel;
 	    mode_factor *= slip_vel * slip_mode;
-	    if(janus_slip_tangent == full_tangent){
-	      for(int d = 0; d < DIM; d++){
-		Uv[d] = n_theta[d] * dmy_udot;
-		Vv[d] = n_theta[d] * dmy_vdot;
-		Sv[d] = n_theta[d] * (slip_factor*dmy_sin + mode_factor * dmy_sin2);
-	      }
-	    }else if(janus_slip_tangent == particle_tangent){
-	      for(int d = 0; d < DIM; d++){
-		Uv[d] = u[d][im];
-		Vv[d] = n_theta[d] * dmy_vdot;
-		Sv[d] = n_theta[d] * (slip_factor*dmy_sin + mode_factor * dmy_sin2);
-	      }
-	    }else{
-	      fprintf(stderr, "OPERATE_SURFACE tangent error\n");
-	      exit_job(EXIT_FAILURE);
+	    for(int d = 0; d < DIM; d++){
+	      Uv[d] = u[d][im];
+	      Vv[d] = n_theta[d] * dmy_vdot;
+	      Sv[d] = n_theta[d] * (slip_factor*dmy_sin + mode_factor * dmy_sin2);
 	    }
 
 	    for(int d = 0; d < DIM; d++){

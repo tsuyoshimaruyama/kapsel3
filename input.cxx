@@ -138,7 +138,6 @@ double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
 double janus_slip_scale;
-JST janus_slip_tangent;
 JSR janus_slip_region;
 JSO janus_slip_order;
 
@@ -1282,19 +1281,6 @@ void Gourmet_file_io(const char *infile
 	    ufout->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
 	    ufres->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
 
-	    ufin->get(target.sub("JANUS_slip_tangent"), str);
-	    ufout->put(target.sub("JANUS_slip_tangent"), str);
-	    ufres->put(target.sub("JANUS_slip_tangent"), str);
-	    if(str == "full_tangent"){
-	      janus_slip_tangent = full_tangent;
-	    }else if(str == "particle_tangent"){
-	      janus_slip_tangent = particle_tangent;
-	    }else{
-	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus tangent\n");
-	      exit_job(EXIT_FAILURE);
-	    }
-
 	    ufin->get(target.sub("JANUS_slip_region"), str);
 	    ufout->put(target.sub("JANUS_slip_region"), str);
 	    ufres->put(target.sub("JANUS_slip_region"), str);
@@ -1311,14 +1297,14 @@ void Gourmet_file_io(const char *infile
 	    ufin->get(target.sub("JANUS_slip_order"), str);
 	    ufout->put(target.sub("JANUS_slip_order"), str);
 	    ufres->put(target.sub("JANUS_slip_order"), str);
-	    if(str == "hydro"){
-	      janus_slip_order = with_hydro;
-	    }else if(str == "hydro_slip"){
-	      janus_slip_order = hydro_slip;
-	    }else if(str == "hydro_scale"){
-	      janus_slip_order = with_hydro_scale;
-	    }else if(str == "hydro_slip_scale"){
-	      janus_slip_order = hydro_slip_scale;
+	    if(str == "slip_full"){
+	      janus_slip_order = slip_full;
+	    }else if(str == "slip_norotation"){
+	      janus_slip_order = slip_norotation;
+	    }else if(str == "slip_full_scale"){
+	      janus_slip_order = slip_full_scale;
+	    }else if(str == "slip_norotation_scale"){
+	      janus_slip_order = slip_norotation_scale;
 	    }
 	    else{
 	      cerr << str << endl;

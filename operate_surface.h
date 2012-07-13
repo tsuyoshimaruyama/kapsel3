@@ -12,20 +12,9 @@
 #include "make_phi.h"
 #include "particle_solver.h"
 
-/*void Make_f_slip_particle_primitive(double const* const * u,
-				    double **up,
-				    Particle *p,
-				    const int &SW_MC,
-				    const double &dx,
-				    const int &np_domain,
-				    int **sekibun_cell,
-				    const int Nlattice[DIM],
-				    const double radius = RADIUS);
-*/
-
-void Make_force_u_slip_particle(double **up, double const* const* u,
+void Make_force_u_slip_particle_noscale(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
-void Make_force_u_slip_particle_norm(double **up, double const* const* u,
+void Make_force_u_slip_particle_scale(double **up, double const* const* u,
 				     Particle *p, const CTime &jikan);
 
 inline void update_angular(double* l, const double *x, const double *v, const double alpha=1.0){

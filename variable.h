@@ -54,6 +54,15 @@ typedef struct Particle {
 
   quaternion q;
   quaternion q_old;
+
+  double mass;
+  double mass_center[DIM];
+  double intertia[DIM][DIM];
+  double surfaceT[DIM][DIM];
+  double surfaceU[DIM][DIM];
+  double surfaceV[DIM][DIM];
+  double surface_dv[DIM];
+  double surface_domega[DIM];
 } Particle;
 
 typedef struct Index_range {
