@@ -126,6 +126,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	   */
 
+	  Make_u_slip_particle_factor(u, p);
 	  if(janus_slip_order == slip_full || janus_slip_order == slip_full_scale){
 	    Reset_phi_u(phi, up);
 
@@ -135,6 +136,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	  }else if(janus_slip_order == slip_norotation || janus_slip_order == slip_norotation_scale){
+
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 

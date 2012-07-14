@@ -28,6 +28,7 @@ typedef struct Particle {
 
   double v[DIM];
   double v_old[DIM];
+  double v_slip[DIM];
 
   double f_hydro[DIM];
   double f_hydro_previous[DIM];
@@ -40,6 +41,7 @@ typedef struct Particle {
 
   double omega[DIM];
   double omega_old[DIM];
+  double omega_slip[DIM];
 
   double torque_hydro[DIM];
   double torque_hydro_previous[DIM];
@@ -57,7 +59,7 @@ typedef struct Particle {
 
   double mass;
   double mass_center[DIM];
-  double intertia[DIM][DIM];
+  double inertia[DIM][DIM];
   double surfaceT[DIM][DIM];
   double surfaceU[DIM][DIM];
   double surfaceV[DIM][DIM];

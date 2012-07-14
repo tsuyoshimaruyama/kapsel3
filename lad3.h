@@ -8,6 +8,13 @@ static double QRTOL_LARGE=1.0e-6;
 // Basic Matrix / Vector routines 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
+inline double v_rms(const double a[DIM], const double b[DIM]){
+  double c[DIM];
+  for(int d = 0; d < DIM; d++){
+    c[d] = a[d] - b[d];
+  }
+  return sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);
+}
 
 //
 // Copy routines
@@ -220,6 +227,19 @@ inline void M_v_prod(double Ax[DIM],
       dmy += A[i][j] * x[j];
     }
     Ax[i] = alpha*dmy;
+  }
+}
+inline void M_v_prod_add(double Ax[DIM],
+			 const double A[DIM][DIM],
+			 const double x[DIM],
+			 const double alpha=1.0){
+  double dmy;
+  for(int i = 0; i < DIM; i++){
+    dmy = 0.0;
+    for(int j = 0; j < DIM; j++){
+      dmy += A[i][j] * x[j];
+    }
+    Ax[i] += alpha*dmy;
   }
 }
 inline void M_v_prod(double Ax[DIM],
