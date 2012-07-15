@@ -36,7 +36,7 @@ extern double *w;
 extern double *t;
 
 extern double **ucp;
-extern double *phi,**up,**u, *rhop;
+extern double *phi,**up,**u,*rhop;
 extern double **work_v3, *work_v1;
 
 extern int *KX_int, *KY_int, *KZ_int;

@@ -18,7 +18,51 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
 void Make_force_u_slip_particle_scale(double **up, double const* const* u,
 				     Particle *p, const CTime &jikan);
+inline double Slip_particle_convergence(Particle *p){
+  double eps,dmy_v, dmy_w, nv, nw;
+  eps = 0.0;
+#pragma omp parallel for schedule(dynamic, 1) private(dmy_v, dmy_w, nv, nw) \
+  reduction(+:eps)
+  for(int n = 0; n < Particle_Number; n++){
+    dmy_v = dmy_w = nv = nw = 0.;
+    for(int d = 0; d < DIM; d++){
+      nv += p[n].v[d] * p[n].v[d];
+      nw += p[n].omega[d] * p[n].omega[d];
 
+      dmy_v += (p[n].v_slip[d] - p[n].v[d]) * (p[n].v_slip[d] - p[n].v[d]);
+      dmy_w += (p[n].omega_slip[d] - p[n].omega[d]) * (p[n].omega_slip[d] - p[n].omega[d]);
+    }
+    if(nv > 0){
+      dmy_v /= nv;
+    }
+    if(nw > 0){
+      dmy_w /= nw;
+    }
+     eps += (dmy_v + dmy_w);
+  }
+  return sqrt(eps)/Particle_Number;
+}
+inline void Update_slip_particle_velocity(Particle *p, const int &iter){
+  if(iter == 0){
+#pragma omp parallel for schedule(dynamic, 1)
+    for(int n = 0; n < Particle_Number; n++){
+      for(int d = 0; d < DIM; d++){
+	p[n].v_slip[d] =  p[n].v[d];
+	p[n].omega_slip[d] = p[n].omega[d];
+      }
+    }
+  }else{
+    double dmy_new = 0.7;
+    double dmy_old = 1.0 - dmy_new;
+#pragma omp parallel for schedule(dynamic, 1)
+    for(int n = 0; n < Particle_Number; n++){
+      for(int d = 0; d < DIM; d++){
+	p[n].v_slip[d] = dmy_old*p[n].v_slip[d] + dmy_new*p[n].v[d];
+	p[n].omega_slip[d] = dmy_old*p[n].omega_slip[d] + dmy_new*p[n].omega[d];
+      }
+    }
+  }
+}
 inline void update_angular(double* l, const double *x, const double *v, const double alpha=1.0){
   l[0] += alpha * (x[1] * v[2] + x[2] * v[1]);
   l[1] += alpha * (x[2] * v[0] + x[0] * v[2]);

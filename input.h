@@ -11,6 +11,7 @@
 #include <cfloat>
 #include <sys/types.h>
 #include <dirent.h>
+#include <assert.h>
 #include "macro.h"
 #include "alloc.h"
 #include "udfmanager.h"
@@ -103,6 +104,10 @@ extern int SW_AVS;
 extern int SW_AVSFLUID;
 
 extern int SW_JANUS;
+extern int SW_JANUS_MOTOR;
+extern int SW_JANUS_SLIP;
+extern int MAX_SLIP_ITER;
+extern double MAX_SLIP_TOL;
 extern JAX *janus_axis;
 extern JP *janus_propulsion;
 extern double **janus_force;

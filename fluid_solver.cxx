@@ -7,9 +7,9 @@ double *Pressure;
 double **Shear_force;
 double **Shear_force_k;
 double **f_ns0;
-double **f_ns1;
-double **f_ns2;
-double **f_ns3;
+//double **f_ns1;
+//double **f_ns2;
+//double **f_ns3;
 double **f_ns4;
 
 ////////// inline functions
@@ -149,18 +149,18 @@ inline void Rhs_NS(double **zeta
 void Mem_alloc_NS_solver(void){
     Pressure = alloc_1d_double(NX*NY*NZ_);
     f_ns0 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns1 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns2 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns3 = (double **) malloc(sizeof (double *)*DIM-1);
+    //    f_ns1 = (double **) malloc(sizeof (double *)*DIM-1);
+    //    f_ns2 = (double **) malloc(sizeof (double *)*DIM-1);
+    //    f_ns3 = (double **) malloc(sizeof (double *)*DIM-1);
     f_ns4 = (double **) malloc(sizeof (double *)*DIM-1);
 
     Shear_force = (double **) malloc(sizeof (double *)*DIM);
     Shear_force_k = (double **) malloc(sizeof (double *)*DIM);
     for(int d=0;d<DIM-1;d++){
 	f_ns0[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns1[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns2[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns3[d] = alloc_1d_double(NX*NY*NZ_);
+	//	f_ns1[d] = alloc_1d_double(NX*NY*NZ_);
+	//	f_ns2[d] = alloc_1d_double(NX*NY*NZ_);
+	//	f_ns3[d] = alloc_1d_double(NX*NY*NZ_);
 	f_ns4[d] = alloc_1d_double(NX*NY*NZ_);
     }
     for(int d=0;d<DIM;d++){

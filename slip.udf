@@ -127,6 +127,8 @@ switch:{
  1.0
  "interface_slip"
  "slip_full"
+ 0.001
+ 4
  {"ON","ON","ON"}
  {
   "YES",

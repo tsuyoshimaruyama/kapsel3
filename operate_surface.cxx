@@ -106,9 +106,6 @@ void Make_u_slip_particle_factor(double const* const* u, Particle *p){
 	p[n].surface_dv[i] = dv_s[i];
 	p[n].surface_domega[i] = domega_s[i];
 
-	p[n].v_slip[i] = p[n].v[i];
-	p[n].omega_slip[i] = p[n].omega[i];
-
 	for(int j = 0; j < DIM; j++){
 	  p[n].inertia[i][j] = M2[i][j];
 	  p[n].surfaceT[i][j] = ST[i][j];

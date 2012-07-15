@@ -182,7 +182,7 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
     int *nlattice;
     nlattice = Ns;
 
-    double xp[DIM],vp[DIM],omega_p[DIM];
+    double xp[DIM];
     int x_int[DIM];
     double residue[DIM];
     int sw_in_cell;
@@ -194,16 +194,13 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
     double x[DIM];
     double dmyR;
     double dmy_phi;
-    double v_rot[DIM];
     double dmy_mass;
 
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass) 
+  private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,dmy_mass) 
     for(int n = 0; n < Particle_Number ; n++){
 	for (int d = 0; d < DIM; d++) {
 	    xp[d] = p[n].x[d];
-	    vp[d] = p[n].v[d];
-	    omega_p[d] = p[n].omega[d];
 	}
 
 	sw_in_cell 
@@ -223,7 +220,6 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 	    }
 	    dmyR = Distance(x, xp);
 	    dmy_phi= Phi(dmyR, RADIUS);
-	    Angular2v(omega_p, r, v_rot);
 	    dmy_mass += dmy_phi;
 	   
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];

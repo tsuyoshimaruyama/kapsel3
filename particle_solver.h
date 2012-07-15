@@ -14,8 +14,11 @@
 #include <omp.h>
 #endif
 
+enum ITER {start_iter, new_iter, reset_iter, end_iter};
 void MD_solver_position_Euler(Particle *p, const CTime &jikan);
 void MD_solver_position_AB2(Particle *p, const CTime &jikan);
+void MD_solver_velocity_iter(Particle *p, const CTime &jikan, 
+			     const ITER &iter_flag);
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan);
 void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan);

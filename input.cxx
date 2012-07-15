@@ -131,6 +131,10 @@ int GTS;
 int Num_snap;
 //per species janus specifications
 int SW_JANUS;
+int SW_JANUS_MOTOR;
+int SW_JANUS_SLIP;
+int MAX_SLIP_ITER;
+double MAX_SLIP_TOL;
 JAX *janus_axis;           
 JP *janus_propulsion;  
 double **janus_force;      
@@ -843,6 +847,8 @@ void Gourmet_file_io(const char *infile
 	}
 	
 	SW_JANUS = 0;
+	SW_JANUS_MOTOR = 0;
+	SW_JANUS_SLIP = 0;
 	if(SW_PT == spherical_particle){
 	    for(int i=0; i<Component_Number; i++){
 		char str[256];
@@ -876,12 +882,16 @@ void Gourmet_file_io(const char *infile
 		      janus_propulsion[i] = no_propulsion;
 		    }else if(str_in == JP_name[swimmer]){
 		      janus_propulsion[i] = swimmer;
+		      SW_JANUS_MOTOR = 1;
 		    }else if(str_in == JP_name[rotator]){
 		      janus_propulsion[i] = rotator;
+		      SW_JANUS_MOTOR = 1;
 		    }else if(str_in == JP_name[tumbler]){
 		      janus_propulsion[i] = tumbler;
+		      SW_JANUS_MOTOR = 1;
 		    }else if(str_in == JP_name[slip]){
 		      janus_propulsion[i] = slip;
+		      SW_JANUS_SLIP = 1;
 		    }else{
 		      fprintf(stderr, "ERROR: Unknown propulsion mechanism\n");
 		      exit_job(EXIT_FAILURE);
@@ -891,6 +901,9 @@ void Gourmet_file_io(const char *infile
 		      ufin->get(target.sub("janus_force.x"), janus_force[i][0]);
 		      ufin->get(target.sub("janus_force.y"), janus_force[i][1]);
 		      ufin->get(target.sub("janus_force.z"), janus_force[i][2]);
+		      assert(janus_force[i][0] * janus_force[i][0] + 
+			     janus_force[i][1] * janus_force[i][1] +
+			     janus_force[i][2] * janus_force[i][2] > 0);
 		    }else{
 		      for(int d = 0; d < DIM; d++){
 			janus_force[i][d] = 0.0;
@@ -901,6 +914,9 @@ void Gourmet_file_io(const char *infile
 		      ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
 		      ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
 		      ufin->get(target.sub("janus_torque.z"), janus_torque[i][2]);
+		      assert(janus_torque[i][0] * janus_torque[i][0] +
+			     janus_torque[i][1] * janus_torque[i][1] +
+			     janus_torque[i][2] * janus_torque[i][2] > 0);
 		    }else{
 		      for(int d = 0; d < DIM; d++){
 			janus_torque[i][d] = 0.0;
@@ -910,6 +926,7 @@ void Gourmet_file_io(const char *infile
 		    if(janus_propulsion[i] == slip){
 		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]);
+		      assert(janus_slip_vel > 0);
 		    }else{
 		      janus_slip_vel[i] = 0.0;
 		      janus_slip_mode[i] = 0.0;
@@ -975,6 +992,10 @@ void Gourmet_file_io(const char *infile
 		
 		fprintf(stderr, "#\n");
 		fprintf(stderr, "# Spherical Particles selected.\n");
+	    }//components
+	    if(SW_JANUS_MOTOR && SW_JANUS_SLIP){
+	      fprintf(stderr, "# ERROR: Choose either janus motor OR janus slip particle\n");
+	      exit_job(EXIT_FAILURE);
 	    }
 	}else if(SW_PT == chain){
 	    for(int i=0; i<Component_Number; i++){
@@ -1311,6 +1332,16 @@ void Gourmet_file_io(const char *infile
 	      fprintf(stderr, "invalid janus order\n");
 	      exit_job(EXIT_FAILURE);
 	    }
+
+	    ufin->get(target.sub("SLIP_tol"), MAX_SLIP_TOL);
+	    ufout->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
+	    ufres->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
+	    assert(MAX_SLIP_TOL >= 0.0);
+
+	    ufin->get(target.sub("SLIP_iter"), MAX_SLIP_ITER);
+	    ufout->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
+	    ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
+	    assert(MAX_SLIP_ITER >= 1);
 	}
 	
 	{

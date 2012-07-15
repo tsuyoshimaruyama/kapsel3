@@ -69,7 +69,7 @@ inline void self_propulsion(Particle &p, double *force, double *torque){
     force[d] = 0.0;
     torque[d] = 0.0;
   }
-  if(SW_PT == spherical_particle){
+  if(SW_JANUS_MOTOR){
     int &spec = p.spec;
     int self_flag = janus_propulsion[spec];
     if(self_flag == swimmer || self_flag == tumbler){
@@ -96,7 +96,6 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
     dmy = jikan.dt_md * IMASS[p[n].spec];
     dmy_rot = jikan.dt_md * IMOI[p[n].spec];
     self_propulsion(p[n], self_force, self_torque);
-    
     for(int d = 0; d < DIM; d++) {
       {
 	p[n].v_old[d] = p[n].v[d];
@@ -111,7 +110,7 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
 	p[n].f_hydro[d] = 0.0;
 
 	p[n].f_slip_previous[d] = p[n].f_slip[d];
-	p[n].f_hydro[d] = 0.0;
+	p[n].f_slip[d] = 0.0;
 
       }
       {
@@ -126,6 +125,97 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
       }
     }
   }
+}
+
+void MD_solver_velocity_iter(Particle *p, const CTime &jikan, 
+				   const ITER &iter_flag){
+  if(iter_flag != start_iter && iter_flag != new_iter && 
+     iter_flag != end_iter && iter_flag != reset_iter){
+    fprintf(stderr, "Error: wrong Euler iter_flag\n");
+    exit_job(EXIT_FAILURE);
+  }
+  if(iter_flag == start_iter){//only compute forces once
+    Force(p);
+  }
+
+  if(iter_flag == start_iter || iter_flag == new_iter){
+    double dmy;
+    double dmy_rot;
+    double self_force[DIM];
+    double self_torque[DIM];
+
+    if(jikan.ts == 0){//Euler update
+      #pragma omp parallel for schedule(dynamic, 1) private(dmy, dmy_rot, self_force, self_torque)
+      for(int n = 0; n < Particle_Number; n++){
+	dmy = jikan.dt_md * IMASS[p[n].spec];
+	dmy_rot = jikan.dt_md * IMOI[p[n].spec];
+	self_propulsion(p[n], self_force, self_torque);
+	
+	for(int d = 0; d < DIM; d++){
+	  p[n].v_old[d] = p[n].v[d];
+	  p[n].v[d] += (dmy * (p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d]));
+	  
+	  p[n].omega_old[d] = p[n].omega[d];
+	  p[n].omega[d] += (dmy_rot * (p[n].torque_hydro[d] + p[n].torque_slip[d] + self_torque[d]));
+	}
+      }//Euler
+    }else{//AB2_hydro update
+      #pragma omp parallel for schedule(dynamic, 1) private(dmy, dmy_rot, self_force, self_torque)
+      for(int n = 0; n < Particle_Number; n++){
+	dmy = jikan.hdt_md * IMASS[p[n].spec];
+	dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
+	self_propulsion(p[n], self_force, self_torque);
+
+	for(int d = 0; d < DIM; d++){
+	  p[n].v_old[d] = p[n].v[d];
+	  p[n].v[d] += 
+	    dmy * (2.0 * p[n].f_hydro[d] + 2.0 * p[n].f_slip[d] + 2.0 * self_force[d]
+		   + p[n].fr[d] + p[n].fr_previous[d]);
+	  
+	  p[n].omega_old[d] = p[n].omega[d];
+	  p[n].omega[d] +=
+	    dmy_rot * (2.0 * p[n].torque_hydro[d] + 2.0 * p[n].torque_slip[d] + 2.0 * self_torque[d]);
+	}
+      }//AB2
+    }
+
+  }//start_iter || new_iter
+  else if(iter_flag == reset_iter){
+    #pragma omp parallel for schedule(dynamic, 1)
+    for(int n = 0; n < Particle_Number; n++){
+      for(int d = 0; d < DIM; d++){
+	p[n].v[d] = p[n].v_old[d];
+	p[n].omega[d] = p[n].omega_old[d];
+      }
+    }
+    
+  }// reset_iter
+  else if(iter_flag == end_iter){
+    #pragma omp parallel for schedule(dynamic, 1)
+    for(int n = 0; n < Particle_Number; n++){
+      for(int d = 0; d < DIM; d++){
+	{
+	  p[n].fr_previous[d] = p[n].fr[d];
+	  p[n].fr[d] = 0.0;
+	  
+	  p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+	  p[n].f_hydro[d] = 0.0;
+	  
+	  p[n].f_slip_previous[d] = p[n].f_slip[d];
+	  p[n].f_slip[d] = 0.0;
+	}
+	{
+	  p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
+	  p[n].torque_hydro[d] = 0.0;
+	  
+	  p[n].torque_slip_previous[d] = p[n].torque_slip[d];
+	  p[n].torque_slip[d] = 0.0;
+	}
+      }
+    }
+
+  }//end_iter
+
 }
 
 void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){

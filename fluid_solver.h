@@ -16,9 +16,9 @@ extern double *Pressure;
 extern double **Shear_force;
 extern double **Shear_force_k;
 extern double **f_ns0;
-extern double **f_ns1;
-extern double **f_ns2;
-extern double **f_ns3;
+//extern double **f_ns1;
+//extern double **f_ns2;
+//extern double **f_ns3;
 extern double **f_ns4;
 
 

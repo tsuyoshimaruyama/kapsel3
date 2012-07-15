@@ -161,6 +161,8 @@ switch: {
    JANUS_slip_scale: float "Scale factor for particle slip velocity"
    JANUS_slip_region: select {'interface_slip', 'surface_slip'}
    JANUS_slip_order: select {'slip_full', 'slip_norotation', 'slip_full_scale', 'slip_norotation_scale'}
+   SLIP_tol: float "Tolerance for iterative slip convergence"
+   SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
