@@ -308,6 +308,7 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("q.q3"), q3);
 	  qtn_init(q, q0, q1, q2, q3);
 	  qtn_isnormal(q, QTOL_LARGE);
+	  qtn_normalize(q);
 	  rigid_body_rotation(ni, janus_axis, q, BODY2SPACE);
 	  if(i == 0){
 	    v_copy(n0, ni);
@@ -350,6 +351,7 @@ void write_xyz(ofstream &outfile,
   char str[4096];
   char dmy_str[256];
   double dmy_ndot = ni[0]*n0[0] + ni[1]*n0[1] + ni[2]*n0[2];
+  double dmy_theta = (dmy_ndot < 1.0 ? acos(dmy_ndot) : 0.0);
 
   sprintf(str, "%d %d ", pid, sid);
   if(pflag == POSITION || pflag == ALL_POS){
@@ -385,7 +387,7 @@ void write_xyz(ofstream &outfile,
     strcat(str, dmy_str);
   }
   if(nflag != NO_JANUS){
-    sprintf(dmy_str, "%.6g %.6g %.6g %.12g", ni[0], ni[1], ni[2], dmy_ndot);
+    sprintf(dmy_str, "%.6g %.6g %.6g %.15g %.6g", ni[0], ni[1], ni[2], dmy_ndot, dmy_theta);
     strcat(str, dmy_str);
   }
 
@@ -435,7 +437,7 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
     strcat(str, "N_x, N_y, N_z, ");
   }
   if(nflag != NO_JANUS){
-    strcat(str, "e_x, e_y, e_z, c_ee, ");
+    strcat(str, "e_x, e_y, e_z, c_ee, theta");
   }
   outfile << str << endl;
 

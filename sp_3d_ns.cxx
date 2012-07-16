@@ -121,7 +121,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		
 	{// Calculation of hydrodynamic force
 	  if(!SW_JANUS_SLIP){
-	    exit_job(EXIT_FAILURE);
 	    Reset_phi_u(phi, up);
 	    Calc_f_hydro_correct_precision(p, u, jikan);
 	    
