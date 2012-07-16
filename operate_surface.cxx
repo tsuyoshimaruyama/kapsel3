@@ -1,6 +1,6 @@
 #include "operate_surface.h"
 
-void Make_u_slip_particle_factor(double const* const* u, Particle *p){
+void Make_particle_momentum_factor(double const* const* u, Particle *p){
   //////////////////////////////
   const double dx = DX;
   const double dx3 = DX3;
@@ -29,45 +29,44 @@ void Make_u_slip_particle_factor(double const* const* u, Particle *p){
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
 
-    if(janus_propulsion[pspec] == slip){
-      slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
-      slip_mode = janus_slip_mode[pspec];
-      Janus_direction(polar_axis, p[n]);
+    for(int i = 0; i < DIM; i++){
+      xp[i] = p[n].x[i];
+      vp[i] = p[n].v[i];
+      omega_p[i] = p[n].omega[i];
+      
+      M1[i] = dv_s[i] = domega_s[i] = 0.0;
+      for(int j = 0; j < DIM; j++){
+	M2[i][j] = ST[i][j] = SU[i][j] = SV[i][j] = 0.0;
+      }
+    }
+    M0 = 0.0;
+    
+    sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+    sw_in_cell = 1;
+    for(int mesh = 0; mesh < np_domain; mesh++){
+      Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
+      int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+      for(int d = 0; d < DIM; d++){
+	x[d] = r_mesh[d] * dx;
+      }
+      dmy_r = Distance(x, xp);
+      dmy_phi = Phi(dmy_r, radius);
+      dmy_xi = ABS(dmy_r - radius);
+      
+      //particle properties
+      M0 += dmy_phi;
       for(int i = 0; i < DIM; i++){
-	xp[i] = p[n].x[i];
-	vp[i] = p[n].v[i];
-	omega_p[i] = p[n].omega[i];
-
-	M1[i] = dv_s[i] = domega_s[i] = 0.0;
+	M1[i] += dmy_phi * r[i];
+	M2[i][i] += dmy_phi * dmy_r * dmy_r;
 	for(int j = 0; j < DIM; j++){
-	  M2[i][j] = ST[i][j] = SU[i][j] = SV[i][j] = 0.0;
+	  M2[i][j] -= dmy_phi * r[i] * r[j];
 	}
       }
-      M0 = 0.0;
-      
-      sw_in_cell = Particle_cell(xp, dx, x_int, residue);
-      sw_in_cell = 1;
-      for(int mesh = 0; mesh < np_domain; mesh++){
-	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
-	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-	for(int d = 0; d < DIM; d++){
-	  x[d] = r_mesh[d] * dx;
-	}
-	dmy_r = Distance(x, xp);
-	dmy_phi = Phi(dmy_r, radius);
-	dmy_xi = ABS(dmy_r - radius);
-	
-	//particle properties
-	M0 += dmy_phi;
-	for(int i = 0; i < DIM; i++){
-	  M1[i] += dmy_phi * r[i];
-	  M2[i][i] += dmy_phi * dmy_r * dmy_r;
-	  for(int j = 0; j < DIM; j++){
-	    M2[i][j] -= dmy_phi * r[i] * r[j];
-	  }
-	}
 
-	//surface properties
+      if(janus_propulsion[pspec] == slip){	//surface properties
+	slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
+	slip_mode = janus_slip_mode[pspec];
+	
 	if(janus_slip_region == surface_slip){
 	  dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
 	}else{
@@ -78,55 +77,43 @@ void Make_u_slip_particle_factor(double const* const* u, Particle *p){
 	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	  dmy_sin = sin(dmy_theta);
 	  dmy_sin2 = sin(2.0 * dmy_theta);
-
+	  
 	  slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
 	  for(int i = 0; i < DIM; i++){
 	    us[i] = n_theta[i] * slip_magnitude - u[i][im];
 	  }
-
+	  
 	  v_cross(r_x_theta, r, n_theta);
 	  v_cross(r_x_us, r, us);
 	  for(int i = 0; i < DIM; i++){
 	    dv_s[i] += dmy_region * us[i];
 	    domega_s[i] += dmy_region * r_x_us[i];
-
+	    
 	    for(int j = 0; j < DIM; j++){
 	      ST[i][j] += dmy_region * n_theta[i] * n_theta[j];
 	      SU[i][j] += dmy_region * n_theta[i] * r_x_theta[j];
 	      SV[i][j] += dmy_region * r_x_theta[i] * r_x_theta[j];
 	    }
 	  }
-	}
-      }//mesh
+	}//interface_region
+      }//slip_particle
+    }//mesh
 
-      p[n].mass = M0;
-      for(int i = 0; i < DIM; i++){
-
-	p[n].mass_center[i] = M1[i];
-	p[n].surface_dv[i] = dv_s[i];
-	p[n].surface_domega[i] = domega_s[i];
-
-	for(int j = 0; j < DIM; j++){
-	  p[n].inertia[i][j] = M2[i][j];
-	  p[n].surfaceT[i][j] = ST[i][j];
-	  p[n].surfaceU[i][j] = SU[i][j];
-	  p[n].surfaceV[i][j] = SV[i][j];
-	}
-      }
-    }else{
-      p[n].mass = 0.0;
-      for(int i = 0; i < DIM; i++){
-	p[n].mass_center[i] = 0.0;
-	p[n].surface_dv[i] = 0.0;
-	p[n].surface_domega[i] = 0.0;
-	for(int j = 0; j < DIM; j++){
-	  p[n].inertia[i][j] = 0.0;
-	  p[n].surfaceT[i][j] = 0.0;
-	  p[n].surfaceU[i][j] = 0.0;
-	  p[n].surfaceV[i][j] = 0.0;
-	}
+    p[n].mass = M0;
+    for(int i = 0; i < DIM; i++){
+      
+      p[n].mass_center[i] = M1[i];
+      p[n].surface_dv[i] = dv_s[i];
+      p[n].surface_domega[i] = domega_s[i];
+      
+      for(int j = 0; j < DIM; j++){
+	p[n].inertia[i][j] = M2[i][j];
+	p[n].surfaceT[i][j] = ST[i][j];
+	p[n].surfaceU[i][j] = SU[i][j];
+	p[n].surfaceV[i][j] = SV[i][j];
       }
     }
+
   }//Particle_Number
 }
 

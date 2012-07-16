@@ -34,7 +34,9 @@ void write_xyz(ofstream &outfile,
 	       double vs[NDIM],
 	       double w[NDIM],
 	       double frc[NDIM],
+	       double frc_slip[NDIM],
 	       double tau[NDIM],
+	       double tau_slip[NDIM],
 	       double ni[NDIM],
 	       double n0[NDIM],
 	       int &ntot,
@@ -240,7 +242,9 @@ int main(int argc, char* argv[])
     double w[NDIM];
     double QR[NDIM][NDIM];
     double frc[NDIM];
+    double frc_slip[NDIM];
     double tau[NDIM];
+    double tau_slip[NDIM];
     double n0[NDIM];
     double ni[NDIM];
     quaternion q;
@@ -293,12 +297,20 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("f_hydro.x"), frc[0]);
 	  ufin -> get(target.sub("f_hydro.y"), frc[1]);
 	  ufin -> get(target.sub("f_hydro.z"), frc[2]);
+
+	  ufin -> get(target.sub("f_slip.x"), frc_slip[0]);
+	  ufin -> get(target.sub("f_slip.y"), frc_slip[1]);
+	  ufin -> get(target.sub("f_slip.z"), frc_slip[2]);
 	}
 
 	if(idf == TORQUE || idf == ALL_FRC){
 	  ufin -> get(target.sub("torque_hydro.x"), tau[0]);
 	  ufin -> get(target.sub("torque_hydro.y"), tau[1]);
 	  ufin -> get(target.sub("torque_hydro.z"), tau[2]);
+
+	  ufin -> get(target.sub("torque_slip.x"), tau_slip[0]);
+	  ufin -> get(target.sub("torque_slip.y"), tau_slip[1]);
+	  ufin -> get(target.sub("torque_slip.z"), tau_slip[2]);
 	}
 
 	if(idn != NO_JANUS){
@@ -314,7 +326,7 @@ int main(int argc, char* argv[])
 	    v_copy(n0, ni);
 	  }
 	}
-	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, vs, w, frc, tau, ni, n0, ntotal, idp, idv, idf, idn);
+	write_xyz(outfile, t, j+1, spec_id[j], r, QR, v, vs, w, frc, frc_slip, tau, tau_slip, ni, n0, ntotal, idp, idv, idf, idn);
       }
     }
   }
@@ -340,7 +352,9 @@ void write_xyz(ofstream &outfile,
 	       double vs[NDIM],
 	       double w[NDIM],
 	       double frc[NDIM],
+	       double frc_slip[NDIM],
 	       double tau[NDIM],
+	       double tau_slip[NDIM],
 	       double ni[NDIM],
 	       double n0[NDIM],
 	       int &ntot,
@@ -379,11 +393,11 @@ void write_xyz(ofstream &outfile,
   }
 
   if(fflag == FORCE || fflag == ALL_FRC){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g  ", frc[0], frc[1], frc[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", frc[0], frc[1], frc[2], frc_slip[0], frc_slip[1], frc_slip[2]);
     strcat(str, dmy_str);
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
-    sprintf(dmy_str, "%.6g  %.6g  %.6g ", tau[0], tau[1], tau[2]);
+    sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", tau[0], tau[1], tau[2], tau_slip[0], tau_slip[1], tau_slip[2]);
     strcat(str, dmy_str);
   }
   if(nflag != NO_JANUS){
@@ -416,28 +430,28 @@ void init_xyz(ofstream &outfile, char *fname, ID_OPTION_P &pflag, ID_OPTION_V &v
 
   outfile.open(fname);
   char str[256];    
-  sprintf(str, "## p_id spec_id ");
+  sprintf(str, "## 1:p_id 2:spec_id ");
   if(pflag == POSITION || pflag == ALL_POS){
-    strcat(str, "r_x, r_y, r_z, ");
+    strcat(str, "3:r_x 4:r_y 5:r_z ");
   }
   if(vflag == VELOCITY || vflag == ALL_VEL){
-    strcat(str, "v_x, v_y, v_z, v, vs, ");
+    strcat(str, "6:v_x 7:v_y 8:v_z 9:v 10:vs ");
 
   }
   if(pflag == ORIENTATION || pflag == ALL_POS){
-    strcat(str, "e1_x, e1_y, e1_z, e2_x, e2_y, e2_z, e3_x, e3_y, e3_z, ");
+    strcat(str, "11:e1_x 12:e1_y 13:e1_z 14:e2_x 15:e2_y 16:e2_z 17:e3_x 18:e3_y 19:e3_z ");
   }
   if(vflag == OMEGA || vflag == ALL_VEL){
-    strcat(str, "w_x, w_y, w_z, ");
+    strcat(str, "20:w_x 21:w_y 22:w_z ");
   }
   if(fflag == FORCE || fflag == ALL_FRC){
-    strcat(str, "F_x, F_y, F_z, ");
+    strcat(str, "23:F_x 24:F_y 25:F_z 26:Fs_x 27:Fs_y 28:Fs_z ");
   }
   if(fflag == TORQUE || fflag == ALL_FRC){
-    strcat(str, "N_x, N_y, N_z, ");
+    strcat(str, "29:N_x 30:N_y 31:N_z 32:Ns_x 33:Ns_y 34:Ns_z ");
   }
   if(nflag != NO_JANUS){
-    strcat(str, "e_x, e_y, e_z, c_ee, theta");
+    strcat(str, "35:e_x 36:e_y 37:e_z 38:c_ee 39:theta");
   }
   outfile << str << endl;
 

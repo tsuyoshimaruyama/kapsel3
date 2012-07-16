@@ -125,10 +125,10 @@ switch:{
  }
  "user_specify"
  1.0
- "interface_slip"
+ "surface_slip"
  "slip_full"
- 0.001
- 4
+ 0.01
+ 5
  {"ON","ON","ON"}
  {
   "YES",
@@ -139,7 +139,7 @@ switch:{
  }
 }
 boundary_condition:{"full_periodic",{0.0,0.0,0.0}}
-output:{250, 25,"ON",{"avs_ch","data","BINARY","ON"}"ON"}
+output:{250, 10,"OFF",{"avs_ch","data","BINARY","ON"}"ON"}
 resume:{
  "NEW",
  {

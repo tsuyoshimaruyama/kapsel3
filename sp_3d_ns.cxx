@@ -120,10 +120,11 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	
 		
 	{// Calculation of hydrodynamic force
+
+	  Reset_phi_u(phi, up);	  
+	  Calc_f_hydro_correct_precision(p, u, jikan);
+
 	  if(!SW_JANUS_SLIP){
-	    Reset_phi_u(phi, up);
-	    Calc_f_hydro_correct_precision(p, u, jikan);
-	    
 	    if(!Fixed_particle){
 	      if(jikan.ts == 0){
 		MD_solver_velocity_Euler(p, jikan);
@@ -135,32 +136,15 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 
 	    int slip_converge = 0;
 	    int slip_iter = 0;
-
-	    Make_u_slip_particle_factor(u, p);
+	    Make_particle_momentum_factor(u, p);
 	    Update_slip_particle_velocity(p, slip_iter);
 	    while(!slip_converge){
 	      Reset_phi_u(phi, up);
 
-	      // Computed fluid slip velocity
-	      if(janus_slip_order == slip_full || janus_slip_order == slip_full_scale){
-
-		Make_force_u_slip_particle(up, u, p, jikan);
-		Solenoidal_u(up);
-		Add_f_particle(up, u);
-		Calc_f_hydro_correct_precision(p, up, jikan);
-
-	      }else if(janus_slip_order == slip_norotation || janus_slip_order == slip_norotation_scale){
-
-		Calc_f_hydro_correct_precision(p, u, jikan);
-		Make_force_u_slip_particle(up, u, p, jikan);
-		Solenoidal_u(up);
-		Calc_f_slip_correct_precision(p, up, jikan);
-		Add_f_particle(up, u);
-
-	      }else{
-		fprintf(stderr, "Invalid janus_slip_order\n");
-		exit_job(EXIT_FAILURE);
-	      }
+	      Make_force_u_slip_particle(up, u, p, jikan);
+	      Solenoidal_u(up);
+	      Calc_f_slip_correct_precision(p, up, jikan);
+	      Add_f_particle(up, u);
 
 	      // Update particle velocity
 	      if(!Fixed_particle){
@@ -172,26 +156,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	      }
 	      slip_iter++;
 	    
-	      /*{
-		double dmy_v=0;
-		double dmy_w=0;
-		dmy_v = SQ(p[0].v[0]) + SQ(p[0].v[1]) + SQ(p[0].v[2]);
-		dmy_w = SQ(p[0].omega[0]) + SQ(p[0].omega[1]) + SQ(p[0].omega[2]);
-		dmy_v = (dmy_v > 0 ? 1.0/dmy_v : 1.0);
-		dmy_w = (dmy_w > 0 ? 1.0/dmy_w : 1.0);
-		dmy_v *= SQ(p[0].v_slip[0] - p[0].v[0]) + SQ(p[0].v_slip[1] - p[0].v[1])
-		  + SQ(p[0].v_slip[2] - p[0].v[2]);
-		dmy_w *= SQ(p[0].omega_slip[0] - p[0].omega[0]) + SQ(p[0].omega_slip[1] - p[0].omega[1])
-		  + SQ(p[0].omega_slip[2] - p[0].omega[2]);
-		
-		fprintf(stderr, "%5d %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E %8.6E\n",
-			slip_iter, sqrt(dmy_v + dmy_w), sqrt(dmy_v), sqrt(dmy_w),
-			p[0].v[0], p[0].v[1], p[0].v[2],
-			p[0].omega[0], p[0].omega[1], p[0].omega[2]);
-			}*/
-
-	      if(Slip_particle_convergence(p) < MAX_SLIP_TOL || 
-		 slip_iter == MAX_SLIP_ITER){
+	      if(Slip_particle_convergence(p) < MAX_SLIP_TOL || slip_iter == MAX_SLIP_ITER){
 		slip_converge = 1;
 		MD_solver_velocity_iter(p, jikan, end_iter);
 	      }else{
@@ -205,7 +170,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	  } // slip boundary
 	  
 	}
-
 
 	if(kBT > 0. && SW_EQ != Electrolyte){
 	    Add_random_force_thermostat(p, jikan); 
