@@ -144,6 +144,7 @@ double *janus_slip_mode;
 double janus_slip_scale;
 JSR janus_slip_region;
 JSO janus_slip_order;
+JST janus_slip_tangent;
 
 //
 double NU;
@@ -367,8 +368,11 @@ inline void Set_global_parameters(void){
 	VF_LJ = dmy * POW3(radius_dmy);
     }
     //
-    for(int i = 0; i < Component_Number; i++){
-      janus_slip_mode[i] /= 2.0;
+    
+    if(SW_JANUS_SLIP){
+      for(int i = 0; i < Component_Number; i++){
+	janus_slip_mode[i] /= 2.0;
+      }
     }
 }
 
@@ -1198,6 +1202,10 @@ void Gourmet_file_io(const char *infile
 	{
 	    if(str == "OFF"){
 		ROTATION = 0;
+		if(SW_JANUS_SLIP == 1){
+		  fprintf(stderr, "ROTATION must be turned on for janus slip particles !!!\n");
+		  exit_job(EXIT_FAILURE);
+		} 
 	    }else if(str == "ON"){
 		ROTATION = 1;
 	    }else{
@@ -1312,6 +1320,19 @@ void Gourmet_file_io(const char *infile
 	    }else{
 	      cerr << str << endl;
 	      fprintf(stderr, "invalid janus region\n");
+	      exit_job(EXIT_FAILURE);
+	    }
+
+	    ufin->get(target.sub("JANUS_slip_tangent"), str);
+	    ufout->put(target.sub("JANUS_slip_tangent"), str);
+	    ufres->put(target.sub("JANUS_slip_tangent"), str);
+	    if(str == "tangent_partial"){
+	      janus_slip_tangent = tangent_partial;
+	    }else if(str == "tangent_full"){
+	      janus_slip_tangent = tangent_full;
+	    }else{
+	      cerr << str << endl;
+	      fprintf(stderr, "invalid janus tangent\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 

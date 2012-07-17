@@ -343,6 +343,7 @@ void Init_Particle(Particle *p){
       int i = offset + n;
       p[i].spec = j;
       p[i].mass = 0.0;
+      p[i].surface_mass = 0.0;
       for(int d = 0; d < DIM; d++) {
 	p[i].v[d] = 0.e0 * RA();
 	p[i].v_old[d] = 0.e0;
@@ -365,10 +366,12 @@ void Init_Particle(Particle *p){
 	p[i].torque_slip_previous[d] = 0.0;
 
 	p[i].mass_center[d] = 0.0;
+	p[i].surface_mass_center[d] = 0.0;
 	p[i].surface_dv[d] = 0.0;
 	p[i].surface_domega[d] = 0.0;
 	for(int l = 0; l < DIM; l++){
 	  p[i].inertia[d][l] = 0.0;
+	  p[i].surface_inertia[d][l] = 0.0;
 	  p[i].surfaceT[d][l] = 0.0;
 	  p[i].surfaceU[d][l] = 0.0;
 	  p[i].surfaceV[d][l] = 0.0;

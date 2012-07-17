@@ -177,7 +177,7 @@ void Add_f_gravity(Particle *p){
   }
 }
 void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
-    static const double dmy0 = -DX3*RHO;
+    static const double dmy0 = DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
     int *nlattice;
     nlattice = Ns;
@@ -220,8 +220,8 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 	    dmy_phi= Phi(dmyR, RADIUS);
 	   
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-	    for(int d=0; d < DIM; d++ ){ 
-		dmy_fp[d] = -u[d][im]*dmy_phi;
+	    for(int d=0; d < DIM; d++ ){
+		dmy_fp[d] = u[d][im]*dmy_phi;
 		force[d] += dmy_fp[d];
 	    }
 	    {// torque
@@ -276,7 +276,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
     double dmy_phi;
     double v_rot[DIM];
     double dmy_mass;
-    double dmy_inertia[DIM][DIM];
+    double dmy_inertia[DIM];
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass,dmy_inertia) 
@@ -289,8 +289,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    vp[d] = p[n].v[d];
 	    omega_p[d] = p[n].omega[d];
 
-	    force[d] = torque[d] = 0.0;
-	    dmy_inertia[d][0] = dmy_inertia[d][1] = dmy_inertia[d][2] = 0.0;
+	    force[d] = torque[d] = dmy_inertia[d] = 0.0;
 	}
 	dmy_mass = 0.0;
 
@@ -312,11 +311,8 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 
 	    //Mass grid factors
 	    dmy_mass += dmy_phi;
-	    for(int i = 0; i < DIM; i++){
-	      dmy_inertia[i][i] += dmy_phi * dmyR * dmyR;
-	      for(int j = 0; j < DIM; j++){
-		dmy_inertia[i][j] -= dmy_phi * r[i] * r[j];
-	      }
+	    for(int d = 0; d < DIM; d++){
+	      dmy_inertia[d] += dmy_phi * (dmyR * dmyR - r[d]*r[d]);
 	    }
 	   
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
@@ -339,7 +335,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	  p[n].f_slip[d] = 0.0;
 	}
 	if(ROTATION){
-	  dmy_mass = 1./3. * (dmy_inertia[0][0] + dmy_inertia[1][1] + dmy_inertia[2][2]);
+	  dmy_mass = 1./3. * (dmy_inertia[0] + dmy_inertia[1] + dmy_inertia[2]);
 	  dmy_mass = MOI[p[n].spec] / (dmy_mass * dmy_factor);
 
 	  for(int d = 0; d < DIM; d++){

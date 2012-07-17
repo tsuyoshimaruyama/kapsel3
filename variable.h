@@ -57,12 +57,19 @@ typedef struct Particle {
   quaternion q;
   quaternion q_old;
 
+  //working memory for iterative slip implementation
   double mass;
   double mass_center[DIM];
   double inertia[DIM][DIM];
+
+  double surface_mass;
+  double surface_mass_center[DIM];
+  double surface_inertia[DIM][DIM];
+
   double surfaceT[DIM][DIM];
   double surfaceU[DIM][DIM];
   double surfaceV[DIM][DIM];
+
   double surface_dv[DIM];
   double surface_domega[DIM];
 } Particle;

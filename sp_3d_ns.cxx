@@ -137,9 +137,9 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    int slip_converge = 0;
 	    int slip_iter = 0;
 	    Make_particle_momentum_factor(u, p);
-	    Update_slip_particle_velocity(p, slip_iter);
+	    Update_slip_particle_velocity(p, slip_iter); // initial particle velocity for slip profile
 	    while(!slip_converge){
-	      Reset_phi_u(phi, up);
+	      Reset_u(up);
 
 	      Make_force_u_slip_particle(up, u, p, jikan);
 	      Solenoidal_u(up);
@@ -155,18 +155,22 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		}
 	      }
 	      slip_iter++;
-	    
+
 	      if(Slip_particle_convergence(p) < MAX_SLIP_TOL || slip_iter == MAX_SLIP_ITER){
 		slip_converge = 1;
 		MD_solver_velocity_iter(p, jikan, end_iter);
 	      }else{
-		Update_slip_particle_velocity(p, slip_iter);
+		Update_slip_particle_velocity(p, slip_iter); // use new particle velocity for new slip profile
 		MD_solver_velocity_iter(p, jikan, reset_iter);
 	      }
 	    }//slip_convergence
+	    if(slip_iter == MAX_SLIP_ITER){
+	      fprintf(stderr, "#Warning: consider increasing MAX_SLIP_ITER (%d)\n",jikan.ts);
+	    }
 	    double **u_old=u;
 	    u = up;
 	    up = u_old;
+	    Reset_u(up);
 	  } // slip boundary
 	  
 	}

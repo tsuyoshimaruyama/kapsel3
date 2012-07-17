@@ -401,7 +401,7 @@ void write_xyz(ofstream &outfile,
     strcat(str, dmy_str);
   }
   if(nflag != NO_JANUS){
-    sprintf(dmy_str, "%.6g %.6g %.6g %.15g %.6g", ni[0], ni[1], ni[2], dmy_ndot, dmy_theta);
+    sprintf(dmy_str, "%.6g %.6g %.6g %.15g %.6g", ni[0], ni[1], ni[2], dmy_ndot, dmy_theta * 180.0 / M_PI);
     strcat(str, dmy_str);
   }
 

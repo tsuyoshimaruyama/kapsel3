@@ -350,6 +350,7 @@ inline void Reset_phi_u(double *phi, double **up){
 	}
     }
 }
+
 inline void Reset_u(double **up){
   int im;
 #pragma omp parallel private(im)
@@ -363,7 +364,7 @@ inline void Reset_u(double **up){
 	}
       }
     }/* end omp for up[0] */
-
+    
 #pragma omp for nowait schedule(dynamic, 1)
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
@@ -372,18 +373,18 @@ inline void Reset_u(double **up){
 	  up[1][im] = 0.0;
 	}
       }
-    }
-  }/* end omp for up[1] */
-
+    }/* end omp for up[1] */
+  
 #pragma omp for nowait schedule(dynamic, 1)
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < NZ_; k++){
-	im = (i * NY * NZ_) + (j * NZ_) + k;
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ_; k++){
+	  im = (i * NY * NZ_) + (j * NZ_) + k;
 	up[2][im] = 0.0;
-      } 
-    }
-  }/* end omp for up[2] */
+	} 
+      }
+    }/* end omp for up[2] */
+  }
 }
 
 #endif

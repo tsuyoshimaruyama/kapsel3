@@ -126,8 +126,9 @@ switch:{
  "user_specify"
  1.0
  "surface_slip"
+ "tangent_full"
  "slip_full"
- 0.01
+ 0.001
  5
  {"ON","ON","ON"}
  {
