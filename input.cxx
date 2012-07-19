@@ -144,7 +144,7 @@ double *janus_slip_mode;
 double janus_slip_scale;
 JSR janus_slip_region;
 JSO janus_slip_order;
-JST janus_slip_tangent;
+JSB janus_slip_boundary;
 
 //
 double NU;
@@ -1323,16 +1323,16 @@ void Gourmet_file_io(const char *infile
 	      exit_job(EXIT_FAILURE);
 	    }
 
-	    ufin->get(target.sub("JANUS_slip_tangent"), str);
-	    ufout->put(target.sub("JANUS_slip_tangent"), str);
-	    ufres->put(target.sub("JANUS_slip_tangent"), str);
-	    if(str == "tangent_partial"){
-	      janus_slip_tangent = tangent_partial;
-	    }else if(str == "tangent_full"){
-	      janus_slip_tangent = tangent_full;
+	    ufin->get(target.sub("JANUS_slip_boundary"), str);
+	    ufout->put(target.sub("JANUS_slip_boundary"), str);
+	    ufres->put(target.sub("JANUS_slip_boundary"), str);
+	    if(str == "tangent_boundary"){
+	      janus_slip_boundary = tangent_boundary;
+	    }else if(str == "full_boundary"){
+	      janus_slip_boundary = full_boundary;
 	    }else{
 	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus tangent\n");
+	      fprintf(stderr, "invalid janus slip boundary\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 

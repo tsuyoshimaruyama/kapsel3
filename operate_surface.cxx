@@ -79,11 +79,11 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 	dmy_sin = sin(dmy_theta);
 	dmy_sin2 = sin(2.0 * dmy_theta);
 	slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
-	if(janus_slip_tangent == tangent_full){
+	if(janus_slip_boundary == full_boundary){
 	  for(int d = 0; d < DIM; d++){
 	    us[d] = n_theta[d] * slip_magnitude - u_fluid[d];
 	  }
-	}else{ // tangent_partial
+	}else{ // partial tangential boundary
 	  double dmy_udot = u_fluid[0] * n_theta[0] + u_fluid[1] * n_theta[1] + u_fluid[2] * n_theta[2];
 	  for(int d = 0; d < DIM; d++){
 	    us[d] = n_theta[d] * (slip_magnitude - dmy_udot);
@@ -144,17 +144,7 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
   imass = 1.0 / p.mass;
 
   //momentum change due to slip at boundary
-  if(janus_slip_tangent == tangent_partial){
-    for(int d = 0; d < DIM; d++){
-      dP[d] = -(p.surfaceT[d][0] * vp[0] + p.surfaceT[d][1] * vp[1] + p.surfaceT[d][2] * vp[2] +
-		p.surfaceU[d][0] * wp[0] + p.surfaceU[d][1] * wp[1] + p.surfaceU[d][2] * wp[2] +
-		p.surface_dv[d]);
-      
-      dL[d] = -(p.surfaceU[0][d] * vp[0] + p.surfaceU[1][d] * vp[1] + p.surfaceU[2][d] * vp[2] +
-		p.surfaceV[d][0] * wp[0] + p.surfaceV[d][1] * wp[1] + p.surfaceV[d][2] * wp[2] +
-		p.surface_domega[d]);
-    }
-  }else{ // tangent_full
+  if(janus_slip_boundary == full_boundary){
     double w_x_r[DIM];
     double r_x_v[DIM];
     v_cross(w_x_r, wp, p.surface_mass_center);
@@ -163,6 +153,16 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
       dP[d] = -(p.surface_mass * vp[d] + w_x_r[d] + p.surface_dv[d]);
       dL[d] = -(r_x_v[d] + 
 		p.surface_inertia[d][0] * wp[0] + p.surface_inertia[d][1] * wp[1] + p.surface_inertia[d][2] * wp[2] +
+		p.surface_domega[d]);
+    }
+  }else{//partial_boundary
+    for(int d = 0; d < DIM; d++){
+      dP[d] = -(p.surfaceT[d][0] * vp[0] + p.surfaceT[d][1] * vp[1] + p.surfaceT[d][2] * vp[2] +
+		p.surfaceU[d][0] * wp[0] + p.surfaceU[d][1] * wp[1] + p.surfaceU[d][2] * wp[2] +
+		p.surface_dv[d]);
+      
+      dL[d] = -(p.surfaceU[0][d] * vp[0] + p.surfaceU[1][d] * vp[1] + p.surfaceU[2][d] * vp[2] +
+		p.surfaceV[d][0] * wp[0] + p.surfaceV[d][1] * wp[1] + p.surfaceV[d][2] * wp[2] +
 		p.surface_domega[d]);
     }
   }
@@ -206,14 +206,14 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Par
   double r[DIM], x[DIM], residue[DIM], u_fluid[DIM];
   
   double dmy_xi, dmy_theta, dmy_tau;
-  double dmy_sin, dmy_sin2, dmy_vslip, slip_mode, slip_vel;
+  double dmy_sin, dmy_sin2, dmy_vslip, slip_mode, slip_vel, dmy_us;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double dmy_fv[DIM], force_s[DIM], torque_s[DIM], force_p[DIM], torque_p[DIM];
 
 #pragma omp parallel for schedule(dynamic, 1) \
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_phi, dmy_region, xp, vp, omega_p, v_rot, \
 	  delta_v, delta_omega, delta_v_rot, r, x, residue, u_fluid, \
-	  dmy_xi, dmy_theta, dmy_tau, dmy_sin, dmy_sin2, dmy_vslip, slip_mode, slip_vel, \
+	  dmy_xi, dmy_theta, dmy_tau, dmy_sin, dmy_sin2, dmy_vslip, slip_mode, slip_vel, dmy_us,  \
 	  n_r, n_theta, n_tau, dmy_fv, force_s, torque_s, force_p, torque_p)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
@@ -273,16 +273,16 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Par
 	    dmy_fv[d] = (vp[d] + v_rot[d]);
 	  }
 	  dmy_vslip = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
-	  if(janus_slip_tangent == tangent_full){
+	  if(janus_slip_boundary == full_boundary){
 	    for(int d = 0; d < DIM; d++){
 	      dmy_fv[d] = dmy_region * (dmy_fv[d] + n_theta[d]*dmy_vslip - u_fluid[d]);
 	    }
-	  }else { //tangent_partial
-	    double dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
-	    double dmy_udot = u_fluid[0]*n_theta[0] + u_fluid[1]*n_theta[1] + u_fluid[2]*n_theta[2];
-	    double dmy_us = dmy_vdot + dmy_vslip - dmy_udot;
+	  }else { //partial tangential boundary
+	    dmy_us = dmy_vslip + 
+	      (dmy_fv[0] - u_fluid[0])*n_theta[0] + (dmy_fv[1] - u_fluid[1])*n_theta[1] + (dmy_fv[2] - u_fluid[2])*n_theta[2]; 
+	    dmy_us *= dmy_region;
 	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = dmy_region * (n_theta[d] * dmy_us);
+	      dmy_fv[d] = n_theta[d] * dmy_us;
 	    }
 	  }
 	  for(int d = 0; d < DIM; d++){
