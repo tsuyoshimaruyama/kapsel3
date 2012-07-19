@@ -195,62 +195,65 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
     double dmyR;
     double dmy_phi;
     double dmy_mass;
+    int pspec;
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,dmy_mass) 
-    for(int n = 0; n < Particle_Number ; n++){
-	for (int d = 0; d < DIM; d++) {
-	    xp[d] = p[n].x[d];
+  private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,dmy_mass,pspec) 
+    for(int n = 0; n < Particle_Number; n++){
+      for (int d = 0; d < DIM; d++) {
+	xp[d] = p[n].x[d];
+      }
+      
+      sw_in_cell 
+	= Particle_cell(xp, DX, x_int, residue);
+      sw_in_cell = 1;
+      for(int d=0; d < DIM; d++){
+	force[d] = 0.0;
+	torque[d] = 0.0;
+      }
+      
+      for(int mesh=0; mesh < NP_domain; mesh++){
+	Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
+	double x[DIM];
+	for(int d=0;d<DIM;d++){
+	  x[d] = r_mesh[d] * DX;
 	}
-
-	sw_in_cell 
-	    = Particle_cell(xp, DX, x_int, residue);
-	sw_in_cell = 1;
-	for(int d=0; d < DIM; d++){
-	    force[d] = 0.0;
-	    torque[d] = 0.0;
-	}
-
-	for(int mesh=0; mesh < NP_domain; mesh++){
-	    Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
-	    double x[DIM];
-	    for(int d=0;d<DIM;d++){
-		x[d] = r_mesh[d] * DX;
-	    }
-	    dmyR = Distance(x, xp);
-	    dmy_phi= Phi(dmyR, RADIUS);
-	   
-	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-	    for(int d=0; d < DIM; d++ ){
-		dmy_fp[d] = u[d][im]*dmy_phi;
-		force[d] += dmy_fp[d];
-	    }
-	    {// torque
-		torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
-		torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
-		torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
-	    }
-	}// mesh
+	dmyR = Distance(x, xp);
+	dmy_phi= Phi(dmyR, RADIUS);
 	
-	//correct mass grid resolution
-	double dmy_factor = DX3 * RHO * MASS_RATIOS[p[n].spec];
-	dmy_mass = MASS[p[n].spec] / (p[n].mass * dmy_factor);
+	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+	for(int d=0; d < DIM; d++ ){
+	  dmy_fp[d] = u[d][im]*dmy_phi;
+	  force[d] += dmy_fp[d];
+	}
+	{// torque
+	  torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
+	  torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
+	  torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
+	}
+      }// mesh
+      
+      //correct mass grid resolution
+      pspec = p[n].spec;
+      double dmy_factor = DX3 * RHO * MASS_RATIOS[pspec];
+      dmy_mass = MASS[pspec] / (p[n].mass * dmy_factor);
+      for(int d = 0; d < DIM; d++){
+	p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
+      }
+      
+      if(janus_slip_momentum != slip_norotation){
+	dmy_mass = 1.0/3.0 * (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2]);
+	dmy_mass = MOI[pspec] / (dmy_mass * dmy_factor);
+	
 	for(int d = 0; d < DIM; d++){
-	  p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
+	  p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
 	}
-
-	if(ROTATION && (janus_slip_order != slip_norotation) && (janus_slip_order != slip_norotation_scale)){
-	  dmy_mass = 1.0/3.0 * (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2]);
-	  dmy_mass = MOI[p[n].spec] / (dmy_mass * dmy_factor);
-
-	  for(int d = 0; d < DIM; d++){
-	    p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
-	  }
-	}else{
-	  for(int d = 0; d < DIM; d++){
-	    p[n].torque_slip[d] = 0.0;
-	  }
+      }else{
+	for(int d = 0; d < DIM; d++){
+	  p[n].torque_slip[d] = 0.0;
 	}
-    }
+      }
+
+    }//Particle_number
 }
 void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;

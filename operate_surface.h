@@ -14,7 +14,7 @@
 
 void Make_particle_momentum_factor(double const* const* u, Particle *p);
 
-void Make_force_u_slip_particle_noscale(double **up, double const* const* u,
+void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
 void Make_force_u_slip_particle_scale(double **up, double const* const* u,
 				     Particle *p, const CTime &jikan);

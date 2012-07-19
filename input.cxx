@@ -143,8 +143,8 @@ double *janus_slip_vel;
 double *janus_slip_mode;
 double janus_slip_scale;
 JSR janus_slip_region;
-JSO janus_slip_order;
 JSB janus_slip_boundary;
+JSM janus_slip_momentum;
 
 //
 double NU;
@@ -1336,21 +1336,17 @@ void Gourmet_file_io(const char *infile
 	      exit_job(EXIT_FAILURE);
 	    }
 
-	    ufin->get(target.sub("JANUS_slip_order"), str);
-	    ufout->put(target.sub("JANUS_slip_order"), str);
-	    ufres->put(target.sub("JANUS_slip_order"), str);
+	    ufin->get(target.sub("JANUS_slip_momentum"), str);
+	    ufout->put(target.sub("JANUS_slip_momentum"), str);
+	    ufres->put(target.sub("JANUS_slip_momentum"), str);
 	    if(str == "slip_full"){
-	      janus_slip_order = slip_full;
+	      janus_slip_momentum = slip_full;
 	    }else if(str == "slip_norotation"){
-	      janus_slip_order = slip_norotation;
-	    }else if(str == "slip_full_scale"){
-	      janus_slip_order = slip_full_scale;
-	    }else if(str == "slip_norotation_scale"){
-	      janus_slip_order = slip_norotation_scale;
+	      janus_slip_momentum = slip_norotation;
 	    }
 	    else{
 	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus order\n");
+	      fprintf(stderr, "invalid janus momentum conservation\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 

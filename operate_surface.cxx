@@ -188,7 +188,7 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
   }
 }
 
-void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Particle *p, const CTime &jikan){
+void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
   const double dx3 = DX3;

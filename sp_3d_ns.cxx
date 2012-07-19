@@ -4,7 +4,6 @@
 #include "sp_3d_ns.h"
 
 void (*Time_evolution)(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan);
-void (*Make_force_u_slip_particle)(double **up, double const* const* u, Particle *p, const CTime &jikan);
 
 void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
     if(SW_EQ == Navier_Stokes){
@@ -438,13 +437,6 @@ int main(int argc, char *argv[]){
   } else {
       fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
       Time_evolution = Time_evolution_hydro;
-  }
-
-  // Slip type
-  if(janus_slip_order == slip_full || janus_slip_order == slip_norotation){
-    Make_force_u_slip_particle = Make_force_u_slip_particle_noscale;
-  } else {
-    Make_force_u_slip_particle = Make_force_u_slip_particle_scale;
   }
 
   MT_seed(GIVEN_SEED,0);
