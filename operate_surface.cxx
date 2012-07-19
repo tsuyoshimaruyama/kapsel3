@@ -63,50 +63,50 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 	}
       }
 
-      if(janus_propulsion[pspec] == slip){	//surface properties
+      //surface properties
+      if(janus_propulsion[pspec] == slip &&  less_than_mp(dmy_xi, HXI)){
+
 	slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
 	slip_mode = janus_slip_mode[pspec];
-	
 	if(janus_slip_region == surface_slip){
 	  dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
 	}else{
 	  dmy_region = (1.0 - dmy_phi);
 	}
-	if(dmy_xi <= HXI && dmy_region > 0.0){
-	  SM0 += dmy_region;
-	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
-	  dmy_sin = sin(dmy_theta);
-	  dmy_sin2 = sin(2.0 * dmy_theta);
-	  
-	  slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
-	  if(janus_slip_tangent == tangent_full){
-	    for(int d = 0; d < DIM; d++){
-	      us[d] = n_theta[d] * slip_magnitude - u_fluid[d];
-	    }
-	  }else{ // tangent_partial
-	    double dmy_udot = u_fluid[0] * n_theta[0] + u_fluid[1] * n_theta[1] + u_fluid[2] * n_theta[2];
-	    for(int d = 0; d < DIM; d++){
-	      us[d] = n_theta[d] * (slip_magnitude - dmy_udot);
-	    }
-	  }
-	  
-	  v_cross(r_x_theta, r, n_theta);
-	  v_cross(r_x_us, r, us);
+	
+	SM0 += dmy_region;
+	Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	dmy_sin = sin(dmy_theta);
+	dmy_sin2 = sin(2.0 * dmy_theta);
+	slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
+	if(janus_slip_tangent == tangent_full){
 	  for(int d = 0; d < DIM; d++){
-	    dv_s[d] += dmy_region * us[d];
-	    domega_s[d] += dmy_region * r_x_us[d];
-
-	    SM1[d] += dmy_region * r[d];
-	    SM2[d][d] += dmy_region * dmy_r * dmy_r;
-	    for(int l = 0; l < DIM; l++){
-	      SM2[d][l] -= dmy_region * r[d] * r[l];
-	      ST[d][l] += dmy_region * n_theta[d] * n_theta[l];
-	      SU[d][l] += dmy_region * n_theta[d] * r_x_theta[l];
-	      SV[d][l] += dmy_region * r_x_theta[d] * r_x_theta[l];
-	    }
+	    us[d] = n_theta[d] * slip_magnitude - u_fluid[d];
 	  }
-	}//interface_region
-      }//slip_particle
+	}else{ // tangent_partial
+	  double dmy_udot = u_fluid[0] * n_theta[0] + u_fluid[1] * n_theta[1] + u_fluid[2] * n_theta[2];
+	  for(int d = 0; d < DIM; d++){
+	    us[d] = n_theta[d] * (slip_magnitude - dmy_udot);
+	  }
+	}
+	
+	v_cross(r_x_theta, r, n_theta);
+	v_cross(r_x_us, r, us);
+	for(int d = 0; d < DIM; d++){
+	  dv_s[d] += dmy_region * us[d];
+	  domega_s[d] += dmy_region * r_x_us[d];
+	  
+	  SM1[d] += dmy_region * r[d];
+	  SM2[d][d] += dmy_region * dmy_r * dmy_r;
+	  for(int l = 0; l < DIM; l++){
+	    SM2[d][l] -= dmy_region * r[d] * r[l];
+	    ST[d][l] += dmy_region * n_theta[d] * n_theta[l];
+	    SU[d][l] += dmy_region * n_theta[d] * r_x_theta[l];
+	    SV[d][l] += dmy_region * r_x_theta[d] * r_x_theta[l];
+	  }
+	}
+      }//slip surface
+
     }//mesh
 
     p[n].mass = M0;
@@ -263,9 +263,9 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Par
 	}else{
 	  dmy_region = (1.0 - dmy_phi);
 	}
-	if(dmy_xi <= HXI && dmy_region > 0.0 ){//interface domain
+	if(less_than_mp(dmy_xi, HXI)){//interface domain
 	  Angular2v(omega_p, r, v_rot);
-	  Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	  Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	  dmy_sin = sin(dmy_theta);
 	  dmy_sin2 = sin(2.0 * dmy_theta);
 	  
@@ -280,8 +280,9 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Par
 	  }else { //tangent_partial
 	    double dmy_vdot = dmy_fv[0]*n_theta[0] + dmy_fv[1]*n_theta[1] + dmy_fv[2]*n_theta[2];
 	    double dmy_udot = u_fluid[0]*n_theta[0] + u_fluid[1]*n_theta[1] + u_fluid[2]*n_theta[2];
+	    double dmy_us = dmy_vdot + dmy_vslip - dmy_udot;
 	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = dmy_region * (n_theta[d] * (dmy_vdot + dmy_vslip - dmy_udot));
+	      dmy_fv[d] = dmy_region * (n_theta[d] * dmy_us);
 	    }
 	  }
 	  for(int d = 0; d < DIM; d++){
@@ -304,8 +305,8 @@ void Make_force_u_slip_particle_noscale(double **up, double const* const* u, Par
 	p[n].torque_slip[d] = 0.0;
       }
 
-      if(v_rms(force_p, force_s) > 1.0e-12 ||
-	 v_rms(torque_p, torque_s) > 1.0e-12){
+      if(v_rms(force_p, force_s) > LARGE_TOL_MP||
+	 v_rms(torque_p, torque_s) > LARGE_TOL_MP){
 	fprintf(stderr, "# Momentum Conservation Warning : %10.8E %10.8E\n",
 		v_rms(force_p, force_s), v_rms(torque_p, torque_s));
 	
@@ -390,7 +391,7 @@ void Make_force_u_slip_particle_scale(double **up, double const* const* u, Parti
 	  
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
 	    Angular2v(omega_p, r, v_rot);
-	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	    Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
 	    dmy_sin2 = sin(2.0 * dmy_theta);
 	    dmy_id = ((dmy_sin2 >= 0.0) ? 1 : 0);
@@ -439,7 +440,7 @@ void Make_force_u_slip_particle_scale(double **up, double const* const* u, Parti
 
 	  if(dmy_xi <= HXI && dmy_phi > 0.0){//interface domain
 	    Angular2v(omega_p, r, v_rot);
-	    Spherical_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
+	    Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	    dmy_sin = sin(dmy_theta);
 	    dmy_sin2 = sin(2.0 * dmy_theta);
 	    dmy_id = (dmy_sin2 >= 0.0 ? 1 : 0);

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include <float.h>
 #include <time.h>
 
 
@@ -20,6 +21,9 @@ const double One_third= 1./3.;
 const double Root_six= sqrt(6.);
 const double Root_two= sqrt(2.);
 const double Root_three= sqrt(3.);
+const double EPSILON_MP= DBL_EPSILON;
+const double TOL_MP=10.0*EPSILON_MP;
+const double LARGE_TOL_MP=50.0*TOL_MP;
 /////////////////////// inline function prototype if necessary
 void exit_job(int status);
 // 
@@ -125,6 +129,19 @@ inline double MAX(const double &a, const double &b){
 }
 inline double SGN(const double &a){
     return a>=0?1.:-1.;
+}
+
+inline bool equal_mp(const double &a, const double &b){
+  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
+  return ABS(a - b) < eps;
+}
+inline bool greater_than_mp(const double &a, const double &b){
+  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
+  return (a-b) > eps;
+}
+inline bool less_than_mp(const double &a, const double &b){
+  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
+  return (b-a) > eps;
 }
 
 inline void exit_job(int status){

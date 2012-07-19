@@ -184,8 +184,9 @@ inline void Janus_direction(double *polar_axis, const Particle &p){
   }
   rigid_body_rotation(polar_axis, e3, p.q, BODY2SPACE);
 }
-inline void Spherical_coord(const double *x, double *r, double *theta, double *phi, 
-			    double &norm_r, double &theta_angle, double &phi_angle, const Particle &p){
+
+inline void Squirmer_coord(const double *x, double *r, double *theta, double *phi, 
+		      double &norm_r, double &theta_angle, double &phi_angle, const Particle &p){
   double ex[DIM] = {1.0, 0.0, 0.0};
   double ey[DIM] = {0.0, 1.0, 0.0};
   double ez[DIM] = {0.0, 0.0, 1.0};
@@ -212,12 +213,10 @@ inline void Spherical_coord(const double *x, double *r, double *theta, double *p
     exit_job(EXIT_FAILURE);
   }
 
-  //space -> janus body coordinates
-  rigid_body_rotation(r, x, p.q, SPACE2BODY);
-
   //r normal vector
+  rigid_body_rotation(r, x, p.q, SPACE2BODY);
   norm_r = sqrt( SQ(r[0]) + SQ(r[1]) + SQ(r[2]) );
-  assert(norm_r > 0.);
+  assert(norm_r > 0.0);
   dmy_norm = 1.0/norm_r;
   for(int d = 0; d < DIM; d++){
     r[d] *= dmy_norm;
@@ -225,23 +224,25 @@ inline void Spherical_coord(const double *x, double *r, double *theta, double *p
 
   // phi normal vector
   v_cross(phi, e3, r);  
+
+  dot_e3_r = v_inner_prod(e3, r);
   dmy_norm = sqrt(SQ(phi[0]) + SQ(phi[1]) + SQ(phi[2]));
-  if(dmy_norm > 0.){// r NOT parallel to janus axis
+
+  // No tangential velocity at the janus poles !
+  if(greater_than_mp(dmy_norm, 0.0) && less_than_mp(dot_e3_r, 1.0)){
+
     dmy_norm = 1.0/dmy_norm;
     for(int d = 0; d < DIM; d++){
       phi[d] *= dmy_norm;
     }
     
     //theta normal vector
+    theta_angle = acos(dot_e3_r);
     v_cross(theta, phi, r);
     dmy_norm = 1.0/sqrt(SQ(theta[0]) + SQ(theta[1]) + SQ(theta[2]));
     for(int d = 0; d < DIM; d++){
       theta[d] *= dmy_norm;
-    }
-    
-    //theta angle
-    dot_e3_r = v_inner_prod(e3, r);
-    theta_angle = acos(dot_e3_r);
+    }    
     
     //phi angle
     dmy_norm = 0.0;
@@ -251,29 +252,29 @@ inline void Spherical_coord(const double *x, double *r, double *theta, double *p
     }
     dot_e1_r12 = v_inner_prod(e1, r12) / sqrt(dmy_norm);
     phi_angle = acos(dot_e1_r12);
-  }else{ // r parallel to janus axis (phi / theta not uniquely defined)
-    // define such that surface integral of theta is parallel to z (of phi is null)
-    if(e3[0]*r[0] + e3[1]*r[1] + e3[2]*r[2] > 0){ // parallel
-      for(int d = 0; d < DIM; d++){
-	phi[d] = -e1[d];
-	theta[d] = e2[d];
-      }
+
+    rigid_body_rotation(r, p.q, BODY2SPACE);
+    rigid_body_rotation(theta, p.q, BODY2SPACE);
+    rigid_body_rotation(phi, p.q, BODY2SPACE);
+
+  }else{ // r parallel to janus axis (tangent vectors not uniquely defined)
+    norm_r = sqrt( SQ(x[0]) + SQ(x[1]) + SQ(x[2]) );
+    assert(dmy_norm > 0.0);
+    dmy_norm = 1.0/norm_r;
+    for(int d = 0; d < DIM; d++){
+      r[d] *= x[d]*dmy_norm;
+      phi[d] = theta[d] = 0.0;
+    }
+
+    if(dot_e3_r > 0.0){ // parallel
       theta_angle = 0.0;
-      phi_angle = PI_half;
-    }else{ // anti-parallel (mirror image - left-handed system !!!)
-      for(int d = 0; d < DIM; d++){
-	phi[d] = e1[d];
-	theta[d] = -e2[d];
-      }
+      phi_angle = 0.0;
+    }else{ // anti-parallel 
       theta_angle = M_PI;
-      phi_angle = 3.0*PI_half;
+      phi_angle = 0.0;
     }
   }
-    
-  //body -> space coordinates
-  rigid_body_rotation(r, p.q, BODY2SPACE);
-  rigid_body_rotation(theta, p.q, BODY2SPACE);
-  rigid_body_rotation(phi, p.q, BODY2SPACE);
+
 }
 
 
