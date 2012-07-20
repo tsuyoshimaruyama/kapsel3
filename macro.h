@@ -21,9 +21,10 @@ const double One_third= 1./3.;
 const double Root_six= sqrt(6.);
 const double Root_two= sqrt(2.);
 const double Root_three= sqrt(3.);
-const double EPSILON_MP= DBL_EPSILON;
-const double TOL_MP=10.0*EPSILON_MP;
-const double LARGE_TOL_MP=50.0*TOL_MP;
+const double EPSILON_MP= DBL_EPSILON;// E-16
+const double TOL_MP=10.0*EPSILON_MP;// E-15
+const double LARGE_TOL_MP=1.0e3*TOL_MP;// E-12
+const double HUGE_TOL_MP=1.0e6*LARGE_TOL_MP;//E-6
 /////////////////////// inline function prototype if necessary
 void exit_job(int status);
 // 
@@ -131,19 +132,43 @@ inline double SGN(const double &a){
     return a>=0?1.:-1.;
 }
 
+inline bool equal_tol(const double &a, const double &b, const double &rtol, 
+		      const double &atol = TOL_MP){
+  if(a == b) return true;
+
+  double diff = ABS(a-b);
+  if(diff <= atol) return true;
+  
+  double eps = MAX(ABS(a), ABS(b)) * rtol;
+  return (diff <= eps ? true : false);
+}
 inline bool equal_mp(const double &a, const double &b){
-  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
-  return ABS(a - b) < eps;
+  if(a == b) return true;
+  double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;
+  return ABS(a - b) <= eps;
 }
 inline bool greater_than_mp(const double &a, const double &b){
-  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
+  double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;
   return (a-b) > eps;
 }
 inline bool less_than_mp(const double &a, const double &b){
-  double eps = (ABS(a) + ABS(b) + 10.0)*EPSILON_MP;
+  double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;
   return (b-a) > eps;
 }
+inline bool non_zero_mp(const double &a){
+  return (a > TOL_MP) || (-TOL_MP > a);
+}
+inline bool zero_mp(const double &a){
+  return !non_zero_mp(a);
+}
+inline bool positive_mp(const double &a){
+  return a > TOL_MP;
+}
+inline bool negative_mp(const double &a){
+  return -TOL_MP > a;
+}
 
+///
 inline void exit_job(int status){
   exit(status);
 }

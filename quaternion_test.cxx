@@ -135,15 +135,15 @@ int main(int argc, char**argv){
   qtn_inv(qc1, q5);
   qtn_init(qg1, -0.883707, -0.0235524, -1.56391, 0.967863);
   qtn_prod(qc2,qc1,q5);
-  if(qtn_cmp(qc2, q_one) && qtn_cmp(qc1, qg1)){
+  if(qtn_cmp(qc2, q_one, tol) && qtn_cmp(qc1, qg1, tol)){
     printf("test 4: ok\n");
   } else{
     printf("test 4: failed!\n");
     qtn_print(qc1);
     qtn_print(qg1);
-    qtn_print(qc2);
-    qtn_print(q_one);
-  }
+      qtn_print(qc2);
+      qtn_print(q_one);
+    }
 
   // rotation quaternion
   printf("Testing Quaternions Rotations\n");
@@ -159,7 +159,7 @@ int main(int argc, char**argv){
   qtn_vector(rv, qc1);
   printf("Rotation : %.5f %.5f %.5f %.5f\n",
 	 phi, rv[0], rv[1], rv[2]);
-  if(qtn_cmp(qc1, qg1) && qtn_cmp(qc2, qg1)){
+  if(qtn_cmp(qc1, qg1, tol) && qtn_cmp(qc2, qg1, tol)){
     printf("test 5: ok\n");
   }else{
     printf("test 5: failed!\n");

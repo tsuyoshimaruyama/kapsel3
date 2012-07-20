@@ -13,15 +13,14 @@
 
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 #include "macro.h"
 #include "parameter_define.h"
 
-static double QTOL=1.0e-15;
-static double QTOL_LARGE=1.0e-5;
-double M_eps = 1.0e-15;
-double M_eps2 = sqrt(M_eps);
-double M_eps4 = sqrt(M_eps2);
-double M_eps6 = pow(M_eps2, 1.0/3.0);
+const static double QTOL=TOL_MP;
+const double QTOL2 = sqrt(QTOL);
+const double QTOL4 = sqrt(QTOL2);
+const double QTOL6 = pow(QTOL2, 1.0/3.0);
 
 typedef struct quaternion {
   double s; //scalar part
@@ -211,8 +210,8 @@ inline double qtn_sqnorm(const quaternion &q){
 /*!
   \brief Check normal quaternion
  */
-inline void qtn_isnormal(const quaternion &q, const double tol=QTOL){
-  assert(ABS(qtn_norm(q) - 1.0) <= tol);
+inline void qtn_isnormal(const quaternion &q, const double &rtol=LARGE_TOL_MP){
+  assert(equal_tol(qtn_norm(q), 1.0, rtol));
 }
 
 /*!
@@ -220,7 +219,7 @@ inline void qtn_isnormal(const quaternion &q, const double tol=QTOL){
  */
 inline void qtn_normalize(quaternion &q){
   double qnorm = qtn_norm(q);
-  if(qnorm <= 0.0){
+  if(zero_mp(qnorm)){
     fprintf(stderr, "Erorr: qnorm = %.10f\n", qnorm);
     exit_job(EXIT_FAILURE);
   }
@@ -233,7 +232,7 @@ inline void qtn_normalize(quaternion &q){
  */
 inline void qtn_inv(quaternion &q, quaternion qa, const double alpha=1.0){
   double q2i = qtn_sqnorm(qa);
-  assert(q2i != 0.0);
+  assert(non_zero_mp(q2i));
 
   q2i = 1.0 / q2i;
   qtn_conj(qa);
@@ -245,7 +244,7 @@ inline void qtn_inv(quaternion &q, quaternion qa, const double alpha=1.0){
  */
 inline void qtn_inv(quaternion &q, const double alpha=1.0){
   double q2i = qtn_sqnorm(q);
-  assert(q2i != 0.0);
+  assert(non_zero_mp(q2i));
 
   q2i = 1.0 / q2i;
   qtn_conj(q);
@@ -256,32 +255,26 @@ inline void qtn_inv(quaternion &q, const double alpha=1.0){
   \brief Compare two quaternions
  */
 inline int qtn_cmp(const quaternion &qa, const quaternion &qb, 
-		    const double tol=QTOL_LARGE){
-  quaternion qd;
-  double dmax;
-
-  qtn_add(qd, qa, qb, -1.0);
-  dmax = (qb.s != 0.0 ? ABS(qd.s/qb.s) : ABS(qd.s));
+		    const double tol=LARGE_TOL_MP){
+  bool equalq = equal_tol(qa.s, qb.s, tol);
   for(int i = 0; i < DIM; i++){
-    dmax = (qb.v[i] != 0.0 ? 
-	    MAX(dmax, ABS(qd.v[i]/qb.v[i])) : MAX(dmax, ABS(qd.v[i])));
+    equalq = equalq && equal_tol(qa.v[i], qb.v[i], tol);
   }
-
-  return (dmax <= tol ? 1 : 0);
+  return (equalq ? 1 : 0);
 }
 
 inline double sinc(const double &x){
   double sincx;
-  if(ABS(x) > M_eps6){
+  if(ABS(x) > QTOL6){
     sincx = sin(x)/x;
   }else{
     double x2 = x*x;
     sincx = 1.0;
-    if(ABS(x) > M_eps){
+    if(ABS(x) > QTOL){
       sincx -= x2/6.0;
-      if(ABS(x) > M_eps2){
+      if(ABS(x) > QTOL2){
 	sincx += x2*x2/120.0;
-	if(ABS(x) > M_eps4){
+	if(ABS(x) > QTOL4){
 	  sincx -= x2*x2*x2/5040.0;
 	}
       }
@@ -295,11 +288,12 @@ inline double sinc(const double &x){
 inline void rv_rqtn(quaternion &q, const double &phi, const double n[DIM]){
   double sinc_phi,dn;
   
-  dn = sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);
-  if(ABS(dn - 1.0) > QTOL){
-    printf("Error: n must be normal vector, |n|= %.15f\n", dn);
+  dn = n[0]*n[0] + n[1]*n[1] + n[2]*n[2];
+  if(!equal_tol(dn, 1.0, HUGE_TOL_MP)){
+    fprintf(stderr, "Error: n not normal vector, |n|= %.15f\n", dn);
     exit_job(EXIT_FAILURE);
   }
+  dn = sqrt(dn);
 
   sinc_phi = sinc(phi/2.0);
   q.s = cos(phi/2.0);
@@ -338,7 +332,7 @@ inline void rqtn_rv(double &phi, double v[DIM], const quaternion &q){
   qtn_vector(v, q);
 
   double ds =  sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-  if(ds > M_eps){
+  if(positive_mp(ds)){
     ds = 1.0/ds;
     for(int i = 0; i < DIM; i++){
       v[i] *= ds;
@@ -354,13 +348,13 @@ inline void rqtn_rv(double &phi, double v[DIM], const quaternion &q){
 /*!
   \brief Computes rotation vector from rotation quaternion
  */
-inline void rqtn_vr(double v[DIM], const quaternion &q){
+inline void rqtn_rv(double v[DIM], const quaternion &q){
   qtn_isnormal(q);
   qtn_vector(v, q);
 
   double phi = 2.0*asin(qtn_norm_v(q));
   double ds = sqrt(v[0]*v[0] + v[1]*v[2] + v[2]*v[2]);
-  if(ds > M_eps){
+  if(positive_mp(ds)){
     ds = 1.0/ds;
     for(int i = 0; i < DIM; i++){
       v[i] *= (ds * phi);

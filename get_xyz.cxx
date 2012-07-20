@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("q.q2"), q2);
 	  ufin -> get(target.sub("q.q3"), q3);
 	  qtn_init(q, q0 ,q1, q2, q3);
-	  qtn_isnormal(q, QTOL_LARGE);
+	  qtn_isnormal(q, HUGE_TOL_MP);
 	  rqtn_rm(QR, q);
 	}
 
@@ -319,7 +319,7 @@ int main(int argc, char* argv[])
 	  ufin -> get(target.sub("q.q2"), q2);
 	  ufin -> get(target.sub("q.q3"), q3);
 	  qtn_init(q, q0, q1, q2, q3);
-	  qtn_isnormal(q, QTOL_LARGE);
+	  qtn_isnormal(q, HUGE_TOL_MP);
 	  qtn_normalize(q);
 	  rigid_body_rotation(ni, janus_axis, q, BODY2SPACE);
 	  if(i == 0){

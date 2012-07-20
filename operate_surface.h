@@ -32,16 +32,17 @@ inline double Slip_particle_convergence(Particle *p){
       dmy_v += (p[n].v_slip[d] - p[n].v[d]) * (p[n].v_slip[d] - p[n].v[d]);
       dmy_w += (p[n].omega_slip[d] - p[n].omega[d]) * (p[n].omega_slip[d] - p[n].omega[d]);
     }
-    if(nv > 0){
+    if(positive_mp(nv)){
       dmy_v /= nv;
     }
-    if(nw > 0){
+    if(positive_mp(nw)){
       dmy_w /= nw;
     }
      eps += (dmy_v + dmy_w);
   }
   return sqrt(eps)/Particle_Number;
 }
+
 inline void Update_slip_particle_velocity(Particle *p, const int &iter){
   if(iter == 0){
 #pragma omp parallel for schedule(dynamic, 1)

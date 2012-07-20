@@ -164,7 +164,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	      }
 	    }//slip_convergence
 	    if(slip_iter == MAX_SLIP_ITER){
-	      fprintf(stderr, "#Warning: consider increasing MAX_SLIP_ITER (%d)\n",jikan.ts);
+	      fprintf(stderr, "#Warning: increase MAX_SLIP_ITER (%d)\n",
+		      jikan.ts);
 	    }
 	    double **u_old=u;
 	    u = up;

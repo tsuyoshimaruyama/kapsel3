@@ -216,7 +216,7 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
   //r normal vector
   rigid_body_rotation(r, x, p.q, SPACE2BODY);
   norm_r = sqrt( SQ(r[0]) + SQ(r[1]) + SQ(r[2]) );
-  assert(norm_r > 0.0);
+  assert(positive_mp(norm_r));
   dmy_norm = 1.0/norm_r;
   for(int d = 0; d < DIM; d++){
     r[d] *= dmy_norm;
@@ -229,7 +229,7 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
   dmy_norm = sqrt(SQ(phi[0]) + SQ(phi[1]) + SQ(phi[2]));
 
   // No tangential velocity at the janus poles !
-  if(greater_than_mp(dmy_norm, 0.0) && less_than_mp(dot_e3_r, 1.0)){
+  if(non_zero_mp(dmy_norm) && less_than_mp(dot_e3_r, 1.0)){
 
     dmy_norm = 1.0/dmy_norm;
     for(int d = 0; d < DIM; d++){
@@ -259,10 +259,9 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
 
   }else{ // r parallel to janus axis (tangent vectors not uniquely defined)
     norm_r = sqrt( SQ(x[0]) + SQ(x[1]) + SQ(x[2]) );
-    assert(dmy_norm > 0.0);
-    dmy_norm = 1.0/norm_r;
+    norm_r = 1.0/norm_r;
     for(int d = 0; d < DIM; d++){
-      r[d] *= x[d]*dmy_norm;
+      r[d] *= x[d]*norm_r;
       phi[d] = theta[d] = 0.0;
     }
 

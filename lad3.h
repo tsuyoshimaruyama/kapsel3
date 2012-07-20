@@ -1,8 +1,6 @@
 #ifndef LAD3_H
 #define LAD3_H
 
-static double QRTOL=1.0e-12;
-static double QRTOL_LARGE=1.0e-6;
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
 // Basic Matrix / Vector routines 
@@ -28,17 +26,16 @@ inline void M_copy(double copy[DIM][DIM], const double original[DIM][DIM]){
       copy[i][j] = original[i][j];
 }
 
-// Compare two matrices
+// Compare two matrices (user specified relative error)
 inline int M_cmp(const double A[DIM][DIM], const double B[DIM][DIM],
-		 const double tol = QRTOL_LARGE){
-  double dmax=0.0;
-  for(int i = 0; i < DIM; i++)
-    for(int j = 0; j < DIM; j++)
-      dmax = ((B[i][j] != 0.0) ? 
-	      MAX(dmax, ABS((A[i][j] - B[i][j]) / B[i][j])) :
-	      MAX(dmax, ABS(A[i][j]))
-	      );
-  return ((dmax <= tol) ? 1 : 0);
+		 const double tol=LARGE_TOL_MP){
+  bool mequal = true;
+  for(int i = 0; i < DIM; i++){
+    for(int j = 0; j < DIM; j++){
+      mequal = mequal && equal_tol(A[i][j], B[i][j], tol);
+    }
+  }
+  return (mequal ? 1 : 0);
 }
 
 //
@@ -121,7 +118,7 @@ inline void M_inv(double B[DIM][DIM], const double A[DIM][DIM],
 		  const double alpha=1.0){
   assert(DIM == 3);
   double idetA = M_det(A);
-  assert(idetA != 0.0);
+  assert(non_zero_mp(idetA));
   idetA = alpha/idetA;
 
   B[0][0] = (A[1][1]*A[2][2] - A[1][2]*A[2][1])*idetA;
@@ -158,8 +155,7 @@ inline void M_trans(double B[DIM][DIM], const double alpha=1.0){
 
 //
 // Verify rotation matrix
-inline void M_isValidRotation(double QR[DIM][DIM], 
-			    const double tol=QRTOL){
+inline void M_isValidRotation(double QR[DIM][DIM]){
   double ID[DIM][DIM] = {{1.0, 0.0, 0.0},
 		      {0.0, 1.0, 0.0},
 		      {0.0, 0.0, 1.0}};
@@ -167,10 +163,10 @@ inline void M_isValidRotation(double QR[DIM][DIM],
   double tQR[DIM][DIM];
   int det, test_det, test_inv;
 
-  test_det = (ABS(M_det(QR) - 1.0) < tol) ? 1 : 0;
+  test_det = (equal_tol(M_det(QR), 1.0, LARGE_TOL_MP) ? 1 : 0);
   M_trans(tQR, QR);
   M_prod(iQR, tQR, QR);
-  test_inv = M_cmp(iQR, ID, tol);
+  test_inv = M_cmp(iQR, ID, LARGE_TOL_MP);
   assert(test_det && test_inv);
 }
 
