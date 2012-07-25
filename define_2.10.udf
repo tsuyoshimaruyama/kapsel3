@@ -89,7 +89,7 @@ object_type: {
          MASS_RATIO: double "mass density ratio colloid/solvent"
          Surface_charge: double "surface charge of colloid"
 	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
-	 janus_propulsion: select{'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER', 'SLIP'}
+	 janus_propulsion: select{'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER', 'SLIP', 'OBSTACLE'}
 	 janus_force: Vector3d "self-propulsion force"
 	 janus_torque: Vector3d "self-propulsion torque"
 	 janus_slip_vel: float "Slip velocity coeff B1"

@@ -225,7 +225,7 @@ void Init_Particle(Particle *p){
     fprintf(stderr, "############################\n");
     fprintf(stderr, "# init_particle: configuration and velocity specified by user: ");
     fprintf(stderr, "(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
-
+    
     //double specified_position[Particle_Number][DIM];
     for(int i = 0; i < Particle_Number; i++) {
       char dmy[256];
@@ -250,7 +250,7 @@ void Init_Particle(Particle *p){
 	      i, p[i].x[0], p[i].x[1], p[i].x[2]);
       fprintf(stderr, "# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n", 
 	      i, p[i].v[0], p[i].v[1], p[i].v[2]);
-
+      
       if(ROTATION && ORIENTATION == user_dir){
 	double q0,q1,q2,q3;
 	double phi, nv[DIM];
@@ -272,7 +272,7 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("omega.z"), p[i].omega[2]);
 
 	qtn_normalize(p[i].q);
-	qtn_isnormal(p[i].q);
+	qtn_init(p[i].q_old, p[i].q);
 	rqtn_rv(phi, nv, p[i].q);
 	fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 
 		i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
@@ -312,28 +312,27 @@ void Init_Particle(Particle *p){
   }
   
   //set orientation
-  if(ROTATION && ORIENTATION != user_dir){
+  if(ROTATION){
     if(ORIENTATION == random_dir){
       for(int i = 0; i < Particle_Number; i++){
 	random_rqtn(p[i].q);
-	qtn_isnormal(p[i].q);
       }
-    }else if(ORIENTATION == space_dir){
+    }else if(ORIENTATION == space_dir ||
+	     (ORIENTATION == user_dir && DISTRIBUTION != user_specify)){
       for(int i = 0; i < Particle_Number; i++){
 	qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
-	qtn_isnormal(p[i].q);
       }
     }else{
       fprintf(stderr, "Error: wrong ORIENTATION\n");
       exit_job(EXIT_FAILURE);
     }
-  }
-  if(!ROTATION){
+  }else{
     for(int i = 0; i < Particle_Number; i++){
       qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
-      qtn_isnormal(p[i].q);
     }
   }
+  qtn_isnormal(p[i].q);
+  qtn_init(p[i].q_old, p[i].q);
 
   // species, velocity, angular velocity
   int offset = 0;
@@ -690,6 +689,7 @@ void Init_Chain(Particle *p){
     }while(overlap);
     
     qtn_init(p[n].q, 1.0, 0.0, 0.0, 0.0);
+    qtn_init(p[n].q_old, p[n].q);
   }
   
 }

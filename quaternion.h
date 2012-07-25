@@ -211,7 +211,11 @@ inline double qtn_sqnorm(const quaternion &q){
   \brief Check normal quaternion
  */
 inline void qtn_isnormal(const quaternion &q, const double &rtol=LARGE_TOL_MP){
-  assert(equal_tol(qtn_norm(q), 1.0, rtol));
+  if(!equal_tol(qtn_norm(q), 1.0, rtol)){
+    fprintf(stderr, "#Error: unnormalized rotation quaternion %12.10E\n", 
+	    qtn_norm(q));
+    assert(equal_tol(qtn_norm(q), 1.0, rtol));
+  }
 }
 
 /*!

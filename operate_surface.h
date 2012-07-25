@@ -16,31 +16,30 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p);
 
 void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
-void Make_force_u_slip_particle_scale(double **up, double const* const* u,
-				     Particle *p, const CTime &jikan);
 inline double Slip_particle_convergence(Particle *p){
   double eps,dmy_v, dmy_w, nv, nw;
   eps = 0.0;
-#pragma omp parallel for schedule(dynamic, 1) private(dmy_v, dmy_w, nv, nw) \
-  reduction(+:eps)
+
   for(int n = 0; n < Particle_Number; n++){
     dmy_v = dmy_w = nv = nw = 0.;
-    for(int d = 0; d < DIM; d++){
-      nv += p[n].v[d] * p[n].v[d];
-      nw += p[n].omega[d] * p[n].omega[d];
-
-      dmy_v += (p[n].v_slip[d] - p[n].v[d]) * (p[n].v_slip[d] - p[n].v[d]);
-      dmy_w += (p[n].omega_slip[d] - p[n].omega[d]) * (p[n].omega_slip[d] - p[n].omega[d]);
+    if(janus_propulsion[p[n].spec] == slip){
+      for(int d = 0; d < DIM; d++){
+	nv += p[n].v[d] * p[n].v[d];
+	nw += p[n].omega[d] * p[n].omega[d];
+	
+	dmy_v += (p[n].v_slip[d] - p[n].v[d]) * (p[n].v_slip[d] - p[n].v[d]);
+	dmy_w += (p[n].omega_slip[d] - p[n].omega[d]) * (p[n].omega_slip[d] - p[n].omega[d]);
+      }
+      if(positive_mp(nv)){
+	dmy_v /= nv;
+      }
+      if(positive_mp(nw)){
+	dmy_w /= nw;
+      }
     }
-    if(positive_mp(nv)){
-      dmy_v /= nv;
-    }
-    if(positive_mp(nw)){
-      dmy_w /= nw;
-    }
-     eps += (dmy_v + dmy_w);
+    eps = MAX(eps, dmy_v + dmy_w);
   }
-  return sqrt(eps)/Particle_Number;
+  return sqrt(eps);
 }
 
 inline void Update_slip_particle_velocity(Particle *p, const int &iter){

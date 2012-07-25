@@ -52,6 +52,7 @@ enum JP {swimmer,
 	 rotator,
 	 tumbler,
 	 slip,
+         obstacle,
          no_propulsion};
 enum JSR {interface_slip, surface_slip};
 enum JSB {tangent_boundary, full_boundary};

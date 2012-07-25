@@ -25,7 +25,7 @@ const char *PT_name[]={"spherical_particle"
 };
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
-const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "SLIP", "OFF"};
+const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "SLIP", "OBSTACLE", "OFF"};
 //////
 SW_time SW_TIME;
 //////
@@ -884,6 +884,8 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("janus_propulsion"), str_in);
 		    if(str_in == JP_name[no_propulsion]){
 		      janus_propulsion[i] = no_propulsion;
+		    }else if(str_in == JP_name[obstacle]){
+		      janus_propulsion[i] = obstacle;
 		    }else if(str_in == JP_name[swimmer]){
 		      janus_propulsion[i] = swimmer;
 		      SW_JANUS_MOTOR = 1;
@@ -897,10 +899,11 @@ void Gourmet_file_io(const char *infile
 		      janus_propulsion[i] = slip;
 		      SW_JANUS_SLIP = 1;
 		    }else{
-		      fprintf(stderr, "ERROR: Unknown propulsion mechanism\n");
+		      fprintf(stderr, "ERROR: Unknown Janus mechanism\n");
 		      exit_job(EXIT_FAILURE);
 		    }
 
+		    // self-force in body coordinates
 		    if(janus_propulsion[i] == swimmer || janus_propulsion[i] == tumbler){
 		      ufin->get(target.sub("janus_force.x"), janus_force[i][0]);
 		      ufin->get(target.sub("janus_force.y"), janus_force[i][1]);
@@ -914,6 +917,7 @@ void Gourmet_file_io(const char *infile
 		      }
 		    }
 
+		    // self-torque in body-coordinates
 		    if(janus_propulsion[i] == rotator || janus_propulsion[i] == tumbler){
 		      ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
 		      ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
@@ -997,8 +1001,8 @@ void Gourmet_file_io(const char *infile
 		fprintf(stderr, "#\n");
 		fprintf(stderr, "# Spherical Particles selected.\n");
 	    }//components
-	    if(SW_JANUS_MOTOR && SW_JANUS_SLIP){
-	      fprintf(stderr, "# ERROR: Choose either janus motor OR janus slip particle\n");
+	    if(SW_EQ != Navier_Stokes && (SW_JANUS_MOTOR == 1 || SW_JANUS_SLIP == 1)){
+	      fprintf(stderr, "# Janus particles only implemented for Navier-Stokes solver...\n");
 	      exit_job(EXIT_FAILURE);
 	    }
 	}else if(SW_PT == chain){
@@ -1202,8 +1206,8 @@ void Gourmet_file_io(const char *infile
 	{
 	    if(str == "OFF"){
 		ROTATION = 0;
-		if(SW_JANUS_SLIP == 1){
-		  fprintf(stderr, "ROTATION must be turned on for janus slip particles !!!\n");
+		if(SW_JANUS_SLIP == 1 || SW_JANUS_MOTOR == 1){
+		  fprintf(stderr, "ROTATION must be turned on for JANUS particles !!!\n");
 		  exit_job(EXIT_FAILURE);
 		} 
 	    }else if(str == "ON"){

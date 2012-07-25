@@ -50,17 +50,19 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
 {
 #pragma omp parallel for schedule(dynamic, 1)
   for(int n = 0; n < Particle_Number; n++) {
-    for(int d = 0; d < DIM; d++) {
-      p[n].x[d] += jikan.dt_md * p[n].v[d];
-      p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
-
-      assert(p[n].x[d] >= 0);
-      assert(p[n].x[d] < L[d]);
+    if(janus_propulsion[p[n].spec] != obstacle){
+      for(int d = 0; d < DIM; d++) {
+	p[n].x[d] += jikan.dt_md * p[n].v[d];
+	p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
+	
+	assert(p[n].x[d] >= 0);
+	assert(p[n].x[d] < L[d]);
+      }
+      
+      MD_solver_orientation_Euler(p[n], jikan.dt_md);
     }
-    
-    MD_solver_orientation_Euler(p[n], jikan.dt_md);
-  }
 
+  }
 }
 
 void MD_solver_position_AB2(Particle *p, const CTime &jikan)
@@ -68,15 +70,19 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan)
 
 #pragma omp parallel for schedule(dynamic, 1)
   for(int n = 0; n < Particle_Number; n++) {
-    for(int d = 0; d < DIM; d++) {
-      p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
-      p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
 
-      assert(p[n].x[d] >= 0);
-      assert(p[n].x[d] < L[d]);
+    if(janus_propulsion[p[n].spec] != obstacle){
+      for(int d = 0; d < DIM; d++) {
+	p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
+	p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
+	
+	assert(p[n].x[d] >= 0);
+	assert(p[n].x[d] < L[d]);
+      }
+      
+      MD_solver_orientation_AB2(p[n], jikan.hdt_md);
     }
 
-    MD_solver_orientation_AB2(p[n], jikan.hdt_md);
   }
 }
 
@@ -85,13 +91,14 @@ inline void self_propulsion(Particle &p, double *force, double *torque){
     force[d] = 0.0;
     torque[d] = 0.0;
   }
+
   if(SW_JANUS_MOTOR){
     int &spec = p.spec;
     int self_flag = janus_propulsion[spec];
     if(self_flag == swimmer || self_flag == tumbler){
       rigid_body_rotation(force, janus_force[spec], p.q, BODY2SPACE);
     }
-    if(ROTATION && (self_flag == rotator || self_flag == tumbler)){
+    if(self_flag == rotator || self_flag == tumbler){
       rigid_body_rotation(torque, janus_torque[spec], p.q, BODY2SPACE);
     }
   }
@@ -107,40 +114,52 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
   double self_torque[DIM];
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
+
     //double dmy = jikan.dt_md * IMASS[p[n].spec];
     //double dmy_rot = jikan.dt_md * IMOI[p[n].spec];
     dmy = jikan.dt_md * IMASS[p[n].spec];
     dmy_rot = jikan.dt_md * IMOI[p[n].spec];
+
+    if(janus_propulsion[p[n].spec] != obstacle){
     self_propulsion(p[n], self_force, self_torque);
-    for(int d = 0; d < DIM; d++) {
-      {
+      for(int d = 0; d < DIM; d++) {
 	p[n].v_old[d] = p[n].v[d];
-	p[n].v[d] += ( dmy *
-		       (p[n].f_hydro[d] + p[n].f_slip[d] + 
-			p[n].fr[d] + self_force[d]) );
+	p[n].v[d] += ( dmy * (p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d]) );
 
-	p[n].fr_previous[d] = p[n].fr[d];
-	p[n].fr[d] = 0.0;
-
-	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
-	p[n].f_hydro[d] = 0.0;
-
-	p[n].f_slip_previous[d] = p[n].f_slip[d];
-	p[n].f_slip[d] = 0.0;
-
-      }
-      {
 	p[n].omega_old[d] = p[n].omega[d];
 	p[n].omega[d] += ( dmy_rot * (p[n].torque_hydro[d] + p[n].torque_slip[d] + self_torque[d]));
+      }      
+    }else{ // fixed particle ?
+      for(int d = 0; d < DIM; d++){
+	p[n].v_old[d] = p[n].v[d];
+	p[n].v[d] = 0.0;
 
+	p[n].omega_old[d] = p[n].omega[d];
+	p[n].omega[d] = 0.0;
+      }
+    }
+
+    for(int d = 0; d < DIM; d++){
+      {
+	p[n].fr_previous[d] = p[n].fr[d];
+	p[n].fr[d] = 0.0;
+	
+	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
+	p[n].f_hydro[d] = 0.0;
+	
+	p[n].f_slip_previous[d] = p[n].f_slip[d];
+	p[n].f_slip[d] = 0.0;
+      }
+      {
 	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
-
+	
 	p[n].torque_slip_previous[d] = p[n].torque_slip[d];
 	p[n].torque_slip[d] = 0.0;
       }
     }
-  }
+
+  }// Particle_Number
 }
 
 void MD_solver_velocity_iter(Particle *p, const CTime &jikan, 
@@ -161,18 +180,29 @@ void MD_solver_velocity_iter(Particle *p, const CTime &jikan,
     double self_torque[DIM];
 
     if(jikan.ts == 0){//Euler update
+
       #pragma omp parallel for schedule(dynamic, 1) private(dmy, dmy_rot, self_force, self_torque)
       for(int n = 0; n < Particle_Number; n++){
 	dmy = jikan.dt_md * IMASS[p[n].spec];
 	dmy_rot = jikan.dt_md * IMOI[p[n].spec];
-	self_propulsion(p[n], self_force, self_torque);
 	
-	for(int d = 0; d < DIM; d++){
-	  p[n].v_old[d] = p[n].v[d];
-	  p[n].v[d] += (dmy * (p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d]));
-	  
-	  p[n].omega_old[d] = p[n].omega[d];
-	  p[n].omega[d] += (dmy_rot * (p[n].torque_hydro[d] + p[n].torque_slip[d] + self_torque[d]));
+	if(janus_propulsion[p[n].spec] != obstacle){
+	  self_propulsion(p[n], self_force, self_torque);
+	  for(int d = 0; d < DIM; d++){
+	    p[n].v_old[d] = p[n].v[d];
+	    p[n].v[d] += (dmy * (p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d]));
+	    
+	    p[n].omega_old[d] = p[n].omega[d];
+	    p[n].omega[d] += (dmy_rot * (p[n].torque_hydro[d] + p[n].torque_slip[d] + self_torque[d]));
+	  }
+	}else{
+	  for(int d = 0; d < DIM; d++){
+	    p[n].v_old[d] = p[n].v[d];
+	    p[n].v[d] = 0.0;
+
+	    p[n].omega_old[d] = p[n].omega[d];
+	    p[n].omega[d] = 0.0;
+	  }
 	}
       }//Euler
     }else{//AB2_hydro update
@@ -180,17 +210,27 @@ void MD_solver_velocity_iter(Particle *p, const CTime &jikan,
       for(int n = 0; n < Particle_Number; n++){
 	dmy = jikan.hdt_md * IMASS[p[n].spec];
 	dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
-	self_propulsion(p[n], self_force, self_torque);
 
-	for(int d = 0; d < DIM; d++){
-	  p[n].v_old[d] = p[n].v[d];
-	  p[n].v[d] += 
-	    dmy * (2.0 * p[n].f_hydro[d] + 2.0 * p[n].f_slip[d] + 2.0 * self_force[d]
-		   + p[n].fr[d] + p[n].fr_previous[d]);
-	  
-	  p[n].omega_old[d] = p[n].omega[d];
-	  p[n].omega[d] +=
-	    dmy_rot * (2.0 * p[n].torque_hydro[d] + 2.0 * p[n].torque_slip[d] + 2.0 * self_torque[d]);
+	if(janus_propulsion[p[n].spec] != obstacle){
+	  self_propulsion(p[n], self_force, self_torque);
+	  for(int d = 0; d < DIM; d++){
+	    p[n].v_old[d] = p[n].v[d];
+	    p[n].v[d] += 
+	      dmy * (2.0 * p[n].f_hydro[d] + 2.0 * p[n].f_slip[d] + 2.0 * self_force[d]
+		     + p[n].fr[d] + p[n].fr_previous[d]);
+	    
+	    p[n].omega_old[d] = p[n].omega[d];
+	    p[n].omega[d] +=
+	      dmy_rot * (2.0 * p[n].torque_hydro[d] + 2.0 * p[n].torque_slip[d] + 2.0 * self_torque[d]);
+	  }
+	}else{
+	  for(int d = 0; d < DIM; d++){
+	    p[n].v_old[d] = p[n].v[d];
+	    p[n].v[d] = 0.0;
+
+	    p[n].omega_old[d] = p[n].omega[d];
+	    p[n].omega[d] = 0.0;
+	  }
 	}
       }//AB2
     }
@@ -285,36 +325,44 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++) {
-	//double dmy = jikan.hdt_md * IMASS[p[n].spec];
-	//double dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
+
+    //double dmy = jikan.hdt_md * IMASS[p[n].spec];
+    //double dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
     dmy = jikan.hdt_md * IMASS[p[n].spec];
     dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
-    self_propulsion(p[n], self_force, self_torque);
+
+    if(janus_propulsion[p[n].spec] != obstacle){
+      self_propulsion(p[n], self_force, self_torque);
+      for(int d = 0; d < DIM; d++){
+	p[n].v_old[d] = p[n].v[d];
+	p[n].v[d] +=  dmy * (2.*p[n].f_hydro[d]	 + 2.*p[n].f_slip[d] + p[n].fr[d] + p[n].fr_previous[d] // CN
+		 + 2.0 * self_force[d]);
+	
+	p[n].omega_old[d] = p[n].omega[d];
+	p[n].omega[d] += dmy_rot * ( 2.* p[n].torque_hydro[d] + 2.* p[n].torque_slip[d] + 2.* self_torque[d]);
+      }
+    }else{ // fixed particle ?
+      for(int d = 0; d < DIM; d++){
+	p[n].v_old[d] = p[n].v[d];
+	p[n].v[d] = 0.0;
+
+	p[n].omega_old[d] = p[n].omega[d];
+	p[n].omega[d] = 0.0;
+      }
+    }
+
     for(int d = 0; d < DIM; d++) {
       {
-	p[n].v_old[d] = p[n].v[d];
-	p[n].v[d] +=
-	  dmy * (2.*p[n].f_hydro[d]
-		 + 2.*p[n].f_slip[d]
-		 + p[n].fr[d] + p[n].fr_previous[d] // CN
-		 + 2.0 * self_force[d]
-		 );
-
 	p[n].fr_previous[d] = p[n].fr[d];
 	p[n].fr[d] = 0.0;
-
+	
 	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
 	p[n].f_hydro[d] = 0.0;
-
+	
 	p[n].f_slip_previous[d] = p[n].f_slip[d];
 	p[n].f_slip[d] = 0.0;
       }
       {
-	p[n].omega_old[d] = p[n].omega[d];
-	p[n].omega[d] += dmy_rot * ( 2.* p[n].torque_hydro[d] + 
-				     2.* p[n].torque_slip[d] +
-				     2.* self_torque[d]);
-
 	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
 	p[n].torque_hydro[d] = 0.0;
 
