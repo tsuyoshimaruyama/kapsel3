@@ -48,11 +48,17 @@ inline void MD_solver_orientation_SB2(Particle &p, const double &dt){
 
 void MD_solver_position_Euler(Particle *p, const CTime &jikan)
 {
-#pragma omp parallel for schedule(dynamic, 1)
+  double delta_x;
+#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
   for(int n = 0; n < Particle_Number; n++) {
+
     if(janus_propulsion[p[n].spec] != obstacle){
       for(int d = 0; d < DIM; d++) {
-	p[n].x[d] += jikan.dt_md * p[n].v[d];
+	p[n].x_previous[d] = p[n].x[d];
+
+	delta_x = jikan.dt_md * p[n].v[d];
+	p[n].x_nopbc[d] += delta_x;
+	p[n].x[d] += delta_x;
 	p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
 	
 	assert(p[n].x[d] >= 0);
@@ -67,13 +73,17 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
 
 void MD_solver_position_AB2(Particle *p, const CTime &jikan)
 {
-
-#pragma omp parallel for schedule(dynamic, 1)
+  double delta_x;
+#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
   for(int n = 0; n < Particle_Number; n++) {
 
     if(janus_propulsion[p[n].spec] != obstacle){
       for(int d = 0; d < DIM; d++) {
-	p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
+	p[n].x_previous[d] = p[n].x[d];
+
+	delta_x = jikan.hdt_md * (3.0 * p[n].v[d] - p[n].v_old[d]);
+	p[n].x_nopbc[d] += delta_x;
+	p[n].x[d] += delta_x;
 	p[n].x[d] = fmod(p[n].x[d] + L_particle[d] , L_particle[d]);
 	
 	assert(p[n].x[d] >= 0);
@@ -376,11 +386,15 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 
 //OBL function
 void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
-#pragma omp parallel for schedule(dynamic, 1)
+  double delta_x;
+#pragma omp parallel for schedule(dynamic, 1) private(delta_x);
   for(int n = 0; n < Particle_Number; n++) {
     for(int d = 0; d < DIM; d++) {
       p[n].x_previous[d] = p[n].x[d];
-      p[n].x[d] += jikan.dt_md * p[n].v[d];
+
+      delta_x = jikan.dt_md * p[n].v[d];
+      p[n].x_nopbc[d] += delta_x;
+      p[n].x[d] += delta_x;
 
     }
 
@@ -391,6 +405,7 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
     if (!(sign == 0)) {
       sign = sign / abs(sign);
     }
+    p[n].x_nopbc[0] += -sign * degree_oblique * L_particle[1];
     p[n].x[0] += -sign * degree_oblique * L_particle[1];
     p[n].v[0] -= sign * Shear_rate_eff * L_particle[1];
     p[n].v_old[0] -= sign * Shear_rate_eff * L_particle[1];
@@ -409,11 +424,15 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
 }
 
 void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
-#pragma omp parallel for schedule(dynamic, 1)
+  double delta_x;
+#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
   for(int n = 0; n < Particle_Number; n++) {
     for(int d = 0; d < DIM; d++) {
       p[n].x_previous[d] = p[n].x[d];
-      p[n].x[d] += jikan.hdt_md * (3.*p[n].v[d] - p[n].v_old[d]);
+
+      delta_x = jikan.hdt_md * (3.0 * p[n].v[d] - p[n].v_old[d]);
+      p[n].x_nopbc[d] += delta_x;
+      p[n].x[d] += delta_x;
 
     }
     double signY = p[n].x[1];
@@ -423,6 +442,7 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
     if (!(sign == 0)) {
       sign  = sign / abs(sign);
     }
+    p[n].x_nopbc[0] -= (double)sign * degree_oblique * L_particle[1];
     p[n].x[0] -= (double)sign * degree_oblique * L_particle[1];
     p[n].v[0] -= (double)sign * Shear_rate_eff * L_particle[1];
     p[n].v_old[0] -= (double)sign * Shear_rate_eff * L_particle[1];

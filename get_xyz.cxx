@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
       ufin -> get(target.sub("Particle_number"), pnum[i]);
       ufin -> get(target.sub("janus_slip_vel"), bslip[i]);
       fprintf(stderr, "SLIIIIP: %10.8g ", bslip[i]);
-      bslip[i] = 1.0 / (2./3 * bslip[i]);
+      bslip[i] = (ABS(bslip[i]) > 0 ? 1.0 / (2./3 * bslip[i]) : 0.0);
       fprintf(stderr, " (%10.8g) \n", bslip[i]);
       nmax = MAX(nmax, pnum[i]);
       ntotal += pnum[i];

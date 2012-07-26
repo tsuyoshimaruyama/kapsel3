@@ -202,7 +202,7 @@ output: {
 \end{global_def}
 
 \begin{def}
-class outParticle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d, 
+class outParticle:{R:Vector3d,  R_raw:Vector3d, v:Vector3d, q:Quaternion, omega:Vector3d, 
       		   f_hydro:Vector3d, torque_hydro:Vector3d, f_slip:Vector3d, torque_slip:Vector3d}
 E: float "total kinetic energy of the system"
 t: float "total time"

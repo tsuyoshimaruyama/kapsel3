@@ -169,6 +169,10 @@ void Force_restore_parameters(double **zeta
 		ufin->get(target.sub("R.x"),p[j].x[0]);
 		ufin->get(target.sub("R.y"),p[j].x[1]);
 		ufin->get(target.sub("R.z"),p[j].x[2]);
+		for(int d = 0; d < DIM; d++){
+		  p[j].x_nopbc[d] = p[j].x[d];
+		}
+
 		ufin->get(target.sub("v.x"),p[j].v[0]);
 		ufin->get(target.sub("v.y"),p[j].v[1]);
 		ufin->get(target.sub("v.z"),p[j].v[2]);

@@ -25,6 +25,7 @@ typedef struct Particle {
   int spec;
   double x[DIM];
   double x_previous[DIM];
+  double x_nopbc[DIM];
 
   double v[DIM];
   double v_old[DIM];

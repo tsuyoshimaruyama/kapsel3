@@ -378,6 +378,9 @@ void Output_udf(UDFManager *ufout
     ufout->put(target.sub("R.x"), p[j].x[0]);
     ufout->put(target.sub("R.y"), p[j].x[1]);
     ufout->put(target.sub("R.z"), p[j].x[2]);
+    ufout->put(target.sub("R_raw.x"), p[j].x_nopbc[0]);
+    ufout->put(target.sub("R_raw.y"), p[j].x_nopbc[1]);
+    ufout->put(target.sub("R_raw.z"), p[j].x_nopbc[2]);
     ufout->put(target.sub("v.x"), p[j].v[0]);
     ufout->put(target.sub("v.y"), p[j].v[1]);
     ufout->put(target.sub("v.z"), p[j].v[2]);
