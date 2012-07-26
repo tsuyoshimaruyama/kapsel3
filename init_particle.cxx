@@ -316,11 +316,15 @@ void Init_Particle(Particle *p){
     if(ORIENTATION == random_dir){
       for(int i = 0; i < Particle_Number; i++){
 	random_rqtn(p[i].q);
+	qtn_isnormal(p[i].q);
+	qtn_init(p[i].q_old, p[i].q);
       }
     }else if(ORIENTATION == space_dir ||
 	     (ORIENTATION == user_dir && DISTRIBUTION != user_specify)){
       for(int i = 0; i < Particle_Number; i++){
 	qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
+	qtn_isnormal(p[i].q);
+	qtn_init(p[i].q_old, p[i].q);
       }
     }else{
       fprintf(stderr, "Error: wrong ORIENTATION\n");
@@ -329,10 +333,10 @@ void Init_Particle(Particle *p){
   }else{
     for(int i = 0; i < Particle_Number; i++){
       qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
+      qtn_isnormal(p[i].q);
+      qtn_init(p[i].q_old, p[i].q);
     }
   }
-  qtn_isnormal(p[i].q);
-  qtn_init(p[i].q_old, p[i].q);
 
   // species, velocity, angular velocity
   int offset = 0;
