@@ -3,8 +3,9 @@
 #
 
 ## default options
-#MKL_PATH = /opt/intel/mkl/10.1.1.019/lib/em64t
-#MKL_INCLUDE_PATH = /opt/intel/mkl/10.1.1.019/include
+#MKL_DIR = /home/opt/intel/composer_xe_2011_sp1.6.233/mkl
+#MKL_PATH = ${MKL_DIR}/lib/intel64
+#MKL_INCLUDE_PATH = ${MKL_DIR}/include
 
 ENV=DESK
 #ENV=WORKSTATION
@@ -48,7 +49,8 @@ ifeq ($(ENV), CLUSTER_MKL_OMP)
       CC     = icc 
       CXX    = icpc 
       CCOPT  = -O3 -xSSSE3 -axSSSE3 -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
-      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
+#      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
+      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm 
       GOURMET_HOME_PATH = /home/john/OCTA2010/GOURMET_2010
 endif
 
