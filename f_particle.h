@@ -70,19 +70,5 @@ int im;
 	    }	
   //  }
 }
-inline void Add_f_particle(double **us, double const* const* u,  double const* const* f){
-  int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < NZ; k++){
-	im = (i * NY * NZ_) + (j * NZ_) + k;
-	us[0][im] = u[0][im] + f[0][im];
-	us[1][im] = u[1][im] + f[1][im];
-	us[2][im] = u[2][im] + f[2][im];
-      }
-    }
-  }
-}
 
 #endif
