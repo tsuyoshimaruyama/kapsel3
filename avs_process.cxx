@@ -1,4 +1,14 @@
 #include "avs_process.h"
+
+int Cs[DIM];
+int &CX = Cs[0];
+int &CY = Cs[1];
+int &CZ = Cs[2];
+int HCs[DIM];
+int &HCX = HCs[0];
+int &HCX = HCs[1];
+int &HCX = HCs[2];
+
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
 	    const double &B1, const double &B2);
 void get_image(const int &frame, const int &iso);
@@ -6,37 +16,12 @@ void get_rms(const int &frame);
 
 int main(int argc, char* argv[]){
   int pid;                // id of centered particle
-  int *p_spec;            // species id for all particles
-  JAX *sp_axis;           // janus axis for each species
-  double *sp_slip;        // slip velocity for each species
-  double *sp_slipmode;    // B2 coefficient
-
   UDFManager *udf_in;     // UDF input file
   
-  rms[0] = rms[1] = rms[2] = rms[3] =  0.0;
-  initialize(argc, argv, udf_in, pid);
-  get_system_data(udf_in, p_spec, sp_axis, sp_slip, sp_slipmode);
-  initialize_avs();
+  init_io(argc, argv, udf_in, pid);
+  get_system_data(udf_in);
+  initialize_avs(pid);
 
-  u = (double **)malloc(sizeof(double*)* DIM);
-  for(int d = 0; d < DIM; d++){
-    u[d] = alloc_1d_double(NX*NY*NZ);
-  }
-  assert(pid < Nparticles);
-  //janus axis of centered particle
-  if(sp_axis[p_spec[pid]] == x_axis){
-    e3 = ex;
-    e1 = ey;
-    e2 = ez;
-  }else if(sp_axis[p_spec[pid]] == y_axis){
-    e3 = ey;
-    e1 = ez;
-    e2 = ex;
-  }else if(sp_axis[p_spec[pid]] == z_axis){
-    e3 = ez;
-    e1 = ex;
-    e2 = ey;
-  }
   //slip velocity of centered particle
   B1_real = sp_slip[p_spec[pid]];
   B2 = sp_slipmode[p_spec[pid]];
@@ -50,6 +35,7 @@ int main(int argc, char* argv[]){
     read_p(pid);
     get_rms(i);
     get_image(i, 0);
+    get_image(i, 1);
     get_image(i, 2);
     clear_avs_frame();
   }
