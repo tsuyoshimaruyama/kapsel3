@@ -2,7 +2,10 @@
 
 double ex[DIM] = {1.0, 0.0, 0.0};
 double ey[DIM] = {0.0, 1.0, 0.0};
-double ez[DIM] = {0.0, 0.0, 0.0};
+double ez[DIM] = {0.0, 0.0, 1.0};
+double *e1;
+double *e2;
+double *e3;
 
 // Global Data
 char AVS_dir[cbuffer];
@@ -11,14 +14,14 @@ char Out_name[cbuffer];
 char Outp_dir[cbuffer];
 char Outp_name[cbuffer];
 
-int fluid_veclen;
-int particle_veclen;
-
 FILE *fluid_field;
 FILE *particle_field;
 
 FILE *fluid_cod;
 FILE *particle_cod;
+
+int fluid_veclen;
+int particle_veclen;
 
 int GTS; 
 int Num_snap;
@@ -27,10 +30,10 @@ double A;
 double A_XI;
 double DX;
 
-int NS[DIM];
-int &NX = NS[0];
-int &NY = NS[1];
-int &NZ = NS[2];
+int Ns[DIM];
+int &NX = Ns[0];
+int &NY = Ns[1];
+int &NZ = Ns[2];
 int lbox[DIM];
 
 int Nspec;
@@ -59,6 +62,7 @@ double w0[DIM];
 double f0[DIM];
 double t0[DIM];
 double Q0[DIM][DIM];
+double n0[DIM];
 quaternion q0;
 
 // read filename from avs files
@@ -99,7 +103,7 @@ void get_system_data(UDFManager *ufin){
       Ns[d] = 1 << dmy[d];
       lbox[d] = Ns[d] * DX;
     }
-    fprintf(stderr, "#NS   : %8d %8d %8d\n\n", Ns[0], Ns[1], Ns[2]);
+    fprintf(stderr, "#Ns   : %8d %8d %8d\n\n", Ns[0], Ns[1], Ns[2]);
     
   }
   {  // object data
@@ -127,11 +131,11 @@ void get_system_data(UDFManager *ufin){
       string str2;
       ufin->get(target.sub("janus_axis"), str2);
       if(str2 == "X"){
-	sp_axis[i] = x_axis;
+	p_axis[i] = x_axis;
       }else if(str2 == "Y"){
-	sp_axis[i] = y_axis;
+	p_axis[i] = y_axis;
       }else if(str2 == "Z"){
-	sp_axis[i] = z_axis;
+	p_axis[i] = z_axis;
       }else{
 	fprintf(stderr, "Error: Unknown axis specification\n");
 	exit_job(EXIT_FAILURE);
@@ -139,8 +143,8 @@ void get_system_data(UDFManager *ufin){
 
       ufin->get(target.sub("janus_propulsion"), str2);
       if(str2 == "SLIP"){
-	ufin->get(target.sub("janus_slip_vel"), sp_slip[i]);
-	ufin->get(target.sub("janus_slip_mode"), sp_slipmode[i]);
+	ufin->get(target.sub("janus_slip_vel"), p_slip[i]);
+	ufin->get(target.sub("janus_slip_mode"), p_slipmode[i]);
       }
     }
     p_spec = (int*)malloc(sizeof(int) * Nparticles);
@@ -235,15 +239,15 @@ void initialize(const int &pid){
     u[d] = alloc_1d_double(NX*NY*NZ);
   }
   assert(pid < Nparticles);
-  if(sp_axis[p_spec[pid]] == x_axis){
+  if(p_axis[p_spec[pid]] == x_axis){
     e3 = ex;
     e1 = ey;
     e2 = ez;
-  }else if(sp_axis[p_spec[pid]] == y_axis){
+  }else if(p_axis[p_spec[pid]] == y_axis){
     e3 = ey;
     e1 = ez;
     e2 = ex;
-  }else if(sp_axis[p_spec[pid]] == z_axis){
+  }else if(p_axis[p_spec[pid]] == z_axis){
     e3 = ez;
     e1 = ex;
     e2 = ey;
@@ -287,7 +291,9 @@ void setup_avs_frame(){
   getline(&line, &len, fluid_field);//EOT
   sprintf(fluid_path, "%s/%s", AVS_dir, dmy_fluid);
   fluid_data = filecheckopen(fluid_path, "r");                //fluid data file
-
+  fprintf(stderr, "#Read fluid data: %s\n",
+          fluid_path);
+  
   for(int i = 0; i < particle_veclen; i++){
     getline(&line, &len, particle_field);
     get_filename(line, dmy_particle);
@@ -295,6 +301,8 @@ void setup_avs_frame(){
   getline(&line, &len, particle_field);//EOT
   sprintf(particle_path, "%s/%s", AVS_dir, dmy_particle);
   particle_data = filecheckopen(particle_path, "r");          //particle data file
+  fprintf(stderr, "#Read particle data: %s\n",
+          particle_path);
 }
 
 // reset avs frame
@@ -309,4 +317,80 @@ void clear_avs_frame(){
   fluid_cod = NULL;
   fluid_data = NULL;
   particle_data = NULL;
+}
+
+inline void read_ux(double *ux, FILE *fstream){
+  float dmy;
+  for(int k = 0; k < NZ; k++){
+    for(int j = 0; j < NY; j++){
+      for(int i = 0; i < NX; i++){
+        int im = linear_id(i, j, k);
+        fread(&dmy, sizeof(float), 1, fstream);
+        ux[im] = (double) dmy;
+      }
+    }
+  }
+}
+void read_u(){
+  read_ux(u[0], fluid_data);
+  read_ux(u[1], fluid_data);
+  read_ux(u[2], fluid_data);
+}
+
+// read particle scalar data
+inline void read_pid(const int &pid, double &a, FILE *fstream){
+  float dmy;
+  for(int i = 0; i < Nparticles; i++){
+    fread(&dmy, sizeof(float), 1 ,fstream);
+    if(i == pid){
+      a = (double) dmy;
+    }
+  }
+}
+// read particle vector data
+inline void read_pid(const int &pid, double x[DIM], FILE *fstream){
+  float dmy;
+  for(int d = 0; d < DIM; d++){
+    for(int i = 0; i < Nparticles; i++){
+      fread(&dmy, sizeof(float), 1, fstream);
+      if(i == pid){
+        x[DIM - (d + 1)] = (double) dmy;
+      }
+    }
+  }
+}
+// read particle matrix data
+inline void read_pid(const int &pid, double Q[DIM][DIM], FILE *fstream){
+  float dmy;
+  for(int m = 0; m < DIM; m++){
+    for(int n = 0; n < DIM; n++){
+      for(int i = 0; i < Nparticles; i++){
+        fread(&dmy, sizeof(float), 1, fstream);
+        if(i == pid){
+          Q[n][m] = (double)dmy;
+        }
+      }
+    }
+  }
+}
+void read_p(const int &pid){
+  double A0;
+  float dmy;
+  read_pid(pid, r0, particle_cod);
+  read_pid(pid, A0, particle_data);
+  read_pid(pid, v0, particle_data);
+  read_pid(pid, w0, particle_data);
+  read_pid(pid, f0, particle_data);
+  read_pid(pid, t0, particle_data);
+  read_pid(pid, Q0, particle_data);
+  rm_rqtn(q0, Q0);
+  Particle_cell(r0, DX, r0_int, res0);
+
+  rigid_body_rotation(n0, e3, q0, BODY2SPACE);
+  B1_app = 3.0/2.0 * (n0[0]*v0[0] + n0[1]*v0[1] + n0[2]*v0[2]);
+  B1 = p_slip[p_spec[pid]];
+  B2 = p_slipmode[p_spec[pid]];
+  B2 *= B1;
+  UP = 2./3. * B1;
+  fprintf(stderr, "# Slip U = %8.6E %8.6E %8.6E %8.6E\n\n", UP, B1, B1_app, B2);
 }

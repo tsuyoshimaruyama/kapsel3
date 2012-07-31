@@ -6,13 +6,13 @@ int &CY = Cs[1];
 int &CZ = Cs[2];
 int HCs[DIM];
 int &HCX = HCs[0];
-int &HCX = HCs[1];
-int &HCX = HCs[2];
+int &HCY = HCs[1];
+int &HCZ = HCs[2];
 
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
-	    const double &B1, const double &B2);
-void get_image(const int &frame, const int &iso);
-void get_rms(const int &frame);
+	    const double &B1, const double &B2, const double &RADIUS);
+void get_image(const int &frame, const int &iso, const double &RADIUS);
+void get_rms(const int &frame, const double &RADIUS);
 
 int main(int argc, char* argv[]){
   int pid;                // id of centered particle
@@ -20,46 +20,33 @@ int main(int argc, char* argv[]){
   
   init_io(argc, argv, udf_in, pid);
   get_system_data(udf_in);
-  initialize_avs(pid);
-
-  //slip velocity of centered particle
-  B1_real = sp_slip[p_spec[pid]];
-  B2 = sp_slipmode[p_spec[pid]];
-  B2 = B2*B1_real;
-  UP = 2./3. * B1_real;
-  fprintf(stderr, "# UP = %g (%g)\n",UP,B1_real);
+  initialize(pid);
 
   for(int i = 0; i <= Num_snap; i++){
     setup_avs_frame();
     read_u();
     read_p(pid);
-    get_rms(i);
-    get_image(i, 0);
-    get_image(i, 1);
-    get_image(i, 2);
+    get_image(i, 0, A);
+    get_image(i, 1, A);
+    get_image(i, 2, A);
     clear_avs_frame();
   }
-  fprintf(stderr, "# Error: %8.5e %8.5e %8.5e %8.5e\n", 
-	  rms[0]/(double)Num_snap, 
-	  rms[1]/(double)Num_snap, 
-	  rms[2]/(double)Num_snap,
-	  rms[3]/(double)Num_snap);
   fclose(fluid_field);
   fclose(particle_field);
 }
 
 /////
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
-	    const double &B1, const double &B2){
+	    const double &B1, const double &B2, const double &RADIUS){
   double dmy, cos_theta;
   double jax[DIM], nsin_theta[DIM];
   rigid_body_rotation(jax, e3, q0, BODY2SPACE);
   double nd1[DIM], nd2[DIM], nd3[DIM];
   double ar, ar2, ar3;
 
-  if(rdist >= A + DX){
+  if(rdist >= RADIUS){
     cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
-    ar = (A+DX)/rdist;
+    ar = RADIUS/rdist;
     ar2 = ar*ar;
     ar3 = ar*ar2;
 
@@ -81,12 +68,9 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
       ww[d] = 0.0;
     }
   }
-  for(int d = 0; d < DIM; d++){
-    assert(ww[d] == ww[d]);
-  }
 }
 
-void get_rms(const int &frame){
+void get_rms(const int &frame, const double &RADIUS){
   int ei[DIM], count;
   double rgrid[DIM], nr[DIM], ww[DIM], df[DIM];
   double e0, e1, e2, e3, dmy_r, scale, dmy_e;
@@ -103,12 +87,12 @@ void get_rms(const int &frame){
 	  rgrid[d] = (double)ei[d] * DX;
 	}
 	Distance(r0, rgrid, dmy_r, nr);
-	if(dmy_r >= A + DX){
+	if(dmy_r >= RADIUS){
 	  int im = (i * NY * NZ) + (j * NZ) + k;
-	  scale = dmy_r/(A+DX);
+	  scale = dmy_r/RADIUS;
 	  scale *= scale;
 
-	  v_gold(ww, nr, dmy_r, B1_real, B2);
+	  v_gold(ww, nr, dmy_r, B1, B2, RADIUS);
 	  for(int d = 0; d < DIM; d++){
 	    df[d] = (u[d][im] - ww[d])/UP;
 	  }
@@ -130,80 +114,100 @@ void get_rms(const int &frame){
     e3 = sqrt(e3 / (double)count);
   }
   fprintf(stderr, "%d %8.5g %8.5g %8.5g %8.5g\n", frame, e0, e1, e2, e3);
-  if(frame > 0){
-    rms[0] += e0;
-    rms[1] += e1;
-    rms[2] += e2;
-    rms[3] += e3;
-  }
 }
+
+// plot (jj,kk) 
 void point_id(const int &iso, const int &ii, const int &jj, const int &kk, int *ei){
   switch(iso){
   case 0:
-    ei[0] = ii;
+    ei[0] = ii; //skip
     ei[1] = jj;
     ei[2] = kk;
     break;
   case 1:
     ei[0] = jj;
-    ei[1] = ii;
+    ei[1] = ii; //skip
     ei[2] = kk;
     break;
   case 2:
     ei[0] = jj;
     ei[1] = kk;
-    ei[2] = ii;
+    ei[2] = ii; //skip
     break;
   }
 }
-void get_image(const int &frame, const int &iso){
+void get_image(const int &frame, const int &iso, const double &RADIUS){
   double rp[DIM], vv[DIM], ww[DIM], dmy;
   int ei[DIM], gi[DIM];
   int Nj, Nk;
   char dmy_path[256];
+  char dmy_idpath[256];
   FILE *fstream;
+  FILE *idstream;
 
   double *eu, *ev, *ew;
 
   switch(iso){
   case 0:
-    sprintf(dmy_path, "%s/plots/yz_%d.dat", AVS_dir, frame);
+    sprintf(dmy_path, "%s/plots/yz_%05.0f.dat", 
+            AVS_dir, (double)frame);
+    sprintf(dmy_idpath, "%s/plots/p_yz_%05.0f.dat", 
+            AVS_dir, (double) frame);
     eu = ey;
-    ev = ex;
     ew = ez;
+    ev = ex; //skip
 
     Nj = HCY;
     Nk = HCZ;
     break;
   case 1:
-    sprintf(dmy_path, "%s/plots/xz_%d.dat", AVS_dir, frame);
+    sprintf(dmy_path, "%s/plots/xz_%05.0f.dat", 
+            AVS_dir,(double) frame);
+    sprintf(dmy_idpath, "%s/plots/p_xz_%05.0f.dat",
+            AVS_dir, (double) frame);
     eu = ex;
-    ev = ey;
     ew = ez;
+    ev = ey; //skip
+
 
     Nj = HCX;
     Nk = HCZ;
     break;
   case 2:
-    sprintf(dmy_path, "%s/plots/xy_%d.dat", AVS_dir, frame);
+    sprintf(dmy_path, "%s/plots/xy_%05.0f.dat", 
+            AVS_dir, (double) frame);
+    sprintf(dmy_idpath, "%s/plots/p_xy_%05.0f.dat", 
+            AVS_dir, (double) frame);
     eu = ex;
-    ev = ez;
     ew = ey;
+    ev = ez; //skip
 
     Nj = HCX;
     Nk = HCY;
     break;
   }
   fstream = filecheckopen(dmy_path, "w");
-  double v01 = v_inner_prod(v0, ev);
-  double v02 = v_inner_prod(v0, eu);
-  double v03 = v_inner_prod(v0, ew);
-  double rr1 = v_inner_prod(res0, ev);
-  double rr2 = v_inner_prod(res0, eu);
-  double rr3 = v_inner_prod(res0, ew);
-  double pdomain, fdomain;
 
+
+  double r01, r02, r03;
+  double v01, v02, v03;
+  double pdomain, fdomain;
+  double vscale = 1.0/UP;
   int ii = 0;
+  {   // particle data
+    r01 = v_inner_prod(res0, ev); // skip
+    r02 = v_inner_prod(res0, eu);
+    r03 = v_inner_prod(res0, ew);
+
+    v01 = v_inner_prod(v0, ev);  //skip
+    v02 = v_inner_prod(v0, eu);
+    v03 = v_inner_prod(v0, ew);
+
+    idstream = filecheckopen(dmy_idpath, "w");
+    fprintf(idstream, "%6.4g %6.4g %6.4g %6.4g\n", 
+            r02, r03, v02*vscale, v03*vscale);
+    fclose(idstream);
+  }
   for(int jj = -Nj; jj <= Nj; jj++){
     for(int kk = -Nk; kk <= Nk; kk++){
       point_id(iso, ii, jj, kk, ei);
@@ -222,39 +226,53 @@ void get_image(const int &frame, const int &iso){
       for(int d = 0; d < DIM; d++){
 	rp[d] = (dmy > 0 ? rp[d] / dmy : 0.0);
       }
-      v_gold(ww, rp, dmy, B1_real, B2);
-      pdomain = Phi(dmy, A);
-      if(dmy >= A + DX){
+      v_gold(ww, rp, dmy, B1, B2, RADIUS);
+      pdomain = Phi(dmy, RADIUS);
+      if(dmy >= RADIUS){
 	fdomain = 1.0;
       }else{
 	fdomain = 0.0;
       }
-      
 
       for(int d = 0; d < DIM; d++){
-	vv[d] = fdomain*u[d][im];
+	vv[d] = u[d][im];
       }
 
-
-      double vv1 = v_inner_prod(vv, ev);
+      // fluid data
+      // simulation
+      double xx1 = ii * DX; // ignore
+      double xx2 = jj * DX;
+      double xx3 = kk * DX;
+      double vv1 = v_inner_prod(vv, ev); //ignore
       double vv2 = v_inner_prod(vv, eu);
       double vv3 = v_inner_prod(vv, ew);
 
-      double ww1 = v_inner_prod(ww, ev);
+      // analytical 
+      double ww1 = v_inner_prod(ww, ev); //ignore
       double ww2 = v_inner_prod(ww, eu);
       double ww3 = v_inner_prod(ww, ew);
 
+      double rscale = dmy/RADIUS;
+
+      // particle data
+      if(jj == 0 && kk == 0){
+        xx2 = r02;
+        xx3 = r03;
+        //simulation
+        vv2 = v02;
+        vv3 = v03;
+        //analytical
+        ww2 = UP * v_inner_prod(n0, eu);
+        ww3 = UP * v_inner_prod(n0, ew);
+        rscale = 1.0;
+      }
+
       fprintf(fstream, 
-	      "%3d %3d %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g  %8.5g %8.5g %8.5g %8.5g %8.5f %8.5f\n",
-	      jj, kk, 
-	      dmy, 
-	      vv1, vv2, vv3, 
-	      fdomain*ww1, fdomain*ww2, fdomain*ww3,
-	      fdomain*v01, fdomain*v02, fdomain*v03,
-	      rr1, rr2, rr3, 
-	      fdomain,
-	      UP / sqrt(v0[0]*v0[0] + v0[1]*v0[1] + v0[2]*v0[2])
-	      );
+	      "%6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n",
+	      xx2, xx3, 
+	      vv2*vscale, vv3*vscale, 
+	      ww2*vscale, ww3*vscale,
+              rscale, fdomain);
     }
   }
   fclose(fstream);

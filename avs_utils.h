@@ -5,14 +5,24 @@
 #define AVS_UTILS_H
 
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <dirent.h>
+#include <assert.h>
 #include "alloc.h"
 #include "macro.h"
 #include "parameter_define.h"
+#include "udfmanager.h"
+#include "rigid_body.h"
+#include "quaternion.h"
 
 enum JAX{x_axis, y_axis, z_axis};
 extern double ex[DIM]; //
 extern double ey[DIM]; //
 extern double ez[DIM]; //
+extern double *e1; //
+extern double *e2; //
+extern double *e3; //
 
 //GLOBAL DATA
 const int cbuffer = 128;
@@ -39,7 +49,7 @@ extern double A; //
 extern double A_XI; //
 extern double DX; //
 
-extern int NS[DIM]; //
+extern int Ns[DIM]; //
 extern int &NX; //
 extern int &NY; //
 extern int &NZ; //
@@ -55,22 +65,23 @@ extern JAX *p_axis; //
 // Per Frame Data
 //fluid
 extern FILE *fluid_data;
-extern double **u;
+extern double **u; //
 //particle
 extern FILE *particle_data;
-extern double UP;
-extern double B1;
-extern double B2;
-extern double B1_app;
-extern double r0[DIM]; 
-extern int r0_int[DIM];
-extern double res0[DIM];
-extern double v0[DIM];
-extern double w0[DIM];
-extern double f0[DIM];
-extern double t0[DIM];
-extern double Q0[DIM][DIM];
-extern quaternion q0;
+extern double UP; // 
+extern double B1; //
+extern double B2; //
+extern double B1_app; //
+extern double r0[DIM];  //
+extern int r0_int[DIM]; //
+extern double res0[DIM];//
+extern double v0[DIM]; //
+extern double w0[DIM]; //
+extern double f0[DIM]; //
+extern double t0[DIM]; //
+extern double Q0[DIM][DIM]; //
+extern double n0[DIM];
+extern quaternion q0; //
 
 
 // Get grid point closest to particle
@@ -143,15 +154,22 @@ inline void Distance(const double *x1, const double *x2,
 }
 
 // read system data from udf file used to launch KAPSEL
-void get_system_data(UDFManager *ufin, int *&p_spec, JAX *&sp_axis,
-                     double *&sp_slip, double *&sp_slipmode);
+void get_system_data(UDFManager *ufin);
 
-void initialize();
+// read headers & allocate memory
+void initialize(const int &pid);
 
 // initialize new avs frame from *.fld files
 void setup_avs_frame();
 
+// read fluid velocity data
+void read_u();
+
+// read data for pid particle
+void read_p(const int &pid);
+
 // reset frame data
 void clear_avs_frame();
+
 
 #endif
