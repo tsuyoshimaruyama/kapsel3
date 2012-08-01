@@ -8,6 +8,7 @@ int HCs[DIM];
 int &HCX = HCs[0];
 int &HCY = HCs[1];
 int &HCZ = HCs[2];
+bool error_calc;
 
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
 	    const double &B1, const double &B2, const double &RADIUS);
@@ -20,19 +21,24 @@ int main(int argc, char* argv[]){
   
   init_io(argc, argv, udf_in, pid);
   get_system_data(udf_in);
-  initialize(pid);
-
+  initialize_avs();
+  initialize_avs_p(pid);
+  initialize_avs_mem();
+  if(error_calc && Nparticles > 1){
+    fprintf(stderr, "Error calculation only valid for single squirmer\n");
+    exit_job(EXIT_FAILURE);
+  }
+  
   for(int i = 0; i <= Num_snap; i++){
     setup_avs_frame();
-    read_u();
-    read_p(pid);
+    read_avs_u();
+    read_avs_p(pid);
     get_image(i, 0, A);
     get_image(i, 1, A);
     get_image(i, 2, A);
     clear_avs_frame();
   }
-  fclose(fluid_field);
-  fclose(particle_field);
+  close_avs();
 }
 
 /////

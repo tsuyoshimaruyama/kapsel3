@@ -34,7 +34,6 @@ extern char Outp_name[cbuffer]; //
 
 extern FILE *fluid_field;
 extern FILE *particle_field;
-
 extern FILE *fluid_cod;
 extern FILE *particle_cod;
 
@@ -156,20 +155,33 @@ inline void Distance(const double *x1, const double *x2,
 // read system data from udf file used to launch KAPSEL
 void get_system_data(UDFManager *ufin);
 
-// read headers & allocate memory
-void initialize(const int &pid);
+// read headers from avs *.fld files
+void initialize_avs();
+
+// close *.fld files
+void close_avs();
+
+// restart avs
+void reset_avs();
 
 // initialize new avs frame from *.fld files
 void setup_avs_frame();
 
+// clar frame data
+void clear_avs_frame();
+
+// initialize particle data
+void initialize_avs_p(const int &pid);
+
+// intialize avs mem
+void initialize_avs_mem();
+
 // read fluid velocity data
-void read_u();
+void read_avs_u();
 
 // read data for pid particle
-void read_p(const int &pid);
+void read_avs_p(const int &pid);
 
-// reset frame data
-void clear_avs_frame();
 
 
 #endif

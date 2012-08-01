@@ -10,12 +10,14 @@ extern int HCs[DIM];
 extern int &HCX; //
 extern int &HCY; //
 extern int &HCZ; //
+extern bool error_calc;
 
 void wrong_invocation(){
-  fprintf(stderr, "usage: pavs -p PID -l Ns -i UDF\n");
-  fprintf(stderr, "       -p PID\t ID (1...N) of centered particle\n");
-  fprintf(stderr, "       -l Ns \t Box size length\n");
-  fprintf(stderr, "       -i UDF\t Input file\n");
+  fprintf(stderr, "usage: pavs -p PID -l Ns -i UDF [-rms]\n");
+  fprintf(stderr, "       -p   PID\t ID (1...N) of centered particle\n");
+  fprintf(stderr, "       -l   Ns \t Box size length\n");
+  fprintf(stderr, "       -i   UDF\t Input file\n");
+  fprintf(stderr, "       -err Perform error calculation [optional]\n");
   exit_job(EXIT_FAILURE);
 }
 
@@ -24,6 +26,7 @@ void init_io(int argc, char *argv[], UDFManager* &udf_in, int &pid){
   char* fname;
   int pset, lset, fset, vset;
   pset = lset = fset = vset = 0;
+  error_calc = false;
   for(int i = 1; i < argc; i++){
     if(strcmp(argv[i], "-p") == 0){
       if(i+1 == argc || argv[i+1][0] == '-'){
@@ -65,6 +68,9 @@ void init_io(int argc, char *argv[], UDFManager* &udf_in, int &pid){
 	fprintf(stderr, "Error: Cannot open file\n");
       }
       fset = 1;
+    }else if(strcmp(argv[i], "-err") == 0){
+      i++;
+      error_calc = true;
     }
   }
 

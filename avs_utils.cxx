@@ -190,7 +190,7 @@ void get_system_data(UDFManager *ufin){
   }
 }
 
-void initialize(const int &pid){
+void initialize_avs(){
   char dmy_char[256];
   string dmy_string;
   char* line = NULL;
@@ -232,27 +232,17 @@ void initialize(const int &pid){
   getline(&line, &len, particle_field); //irregular  field
   getline(&line, &len, particle_field); //nstep
   getline(&line, &len, particle_field); //label
-  
-  // allocate init memory
-  u = (double **) malloc(sizeof(double*) * DIM);
-  for(int d = 0; d < DIM; d++){
-    u[d] = alloc_1d_double(NX*NY*NZ);
-  }
-  assert(pid < Nparticles);
-  if(p_axis[p_spec[pid]] == x_axis){
-    e3 = ex;
-    e1 = ey;
-    e2 = ez;
-  }else if(p_axis[p_spec[pid]] == y_axis){
-    e3 = ey;
-    e1 = ez;
-    e2 = ex;
-  }else if(p_axis[p_spec[pid]] == z_axis){
-    e3 = ez;
-    e1 = ex;
-    e2 = ey;
-  }
-  
+}
+void close_avs(){
+  clear_avs_frame();
+  if(fluid_field != NULL) fclose(fluid_field);
+  if(particle_field != NULL) fclose(particle_field);
+  fluid_field = NULL;
+  particle_field = NULL;
+}
+void reset_avs(){
+  close_avs();
+  initialize_avs();
 }
 
 // initialize new avs frame
@@ -307,19 +297,45 @@ void setup_avs_frame(){
 
 // reset avs frame
 void clear_avs_frame(){
-  fclose(fluid_cod);
-  fclose(particle_cod);
-
-  fclose(fluid_data);
-  fclose(particle_data);
-
-
+  if(fluid_cod != NULL)fclose(fluid_cod);
+  if(particle_cod != NULL)fclose(particle_cod);
   fluid_cod = NULL;
+  particle_cod = NULL;
+
+  if(fluid_data != NULL)fclose(fluid_data);
+  if(particle_data != NULL)fclose(particle_data);
   fluid_data = NULL;
   particle_data = NULL;
 }
 
-inline void read_ux(double *ux, FILE *fstream){
+
+void initialize_avs_p(const int &pid){
+  assert(pid >=0 && pid < Nparticles);
+  if(p_axis[p_spec[pid]] == x_axis){
+    e3 = ex;
+    e1 = ey;
+    e2 = ez;
+  }else if(p_axis[p_spec[pid]] == y_axis){
+    e3 = ey;
+    e1 = ez;
+    e2 = ex;
+  }else if(p_axis[p_spec[pid]] == z_axis){
+    e3 = ez;
+    e1 = ex;
+    e2 = ey;
+  }
+}
+
+void initialize_avs_mem(){
+  u = (double **) malloc(sizeof(double*) * DIM);
+  for(int d = 0; d < DIM; d++){
+    u[d] = alloc_1d_double(NX*NY*NZ);
+  }
+}
+
+
+
+inline void read_avs_ux(double *ux, FILE *fstream){
   float dmy;
   for(int k = 0; k < NZ; k++){
     for(int j = 0; j < NY; j++){
@@ -331,14 +347,14 @@ inline void read_ux(double *ux, FILE *fstream){
     }
   }
 }
-void read_u(){
-  read_ux(u[0], fluid_data);
-  read_ux(u[1], fluid_data);
-  read_ux(u[2], fluid_data);
+void read_avs_u(){
+  read_avs_ux(u[0], fluid_data);
+  read_avs_ux(u[1], fluid_data);
+  read_avs_ux(u[2], fluid_data);
 }
 
 // read particle scalar data
-inline void read_pid(const int &pid, double &a, FILE *fstream){
+inline void read_avs_pid(const int &pid, double &a, FILE *fstream){
   float dmy;
   for(int i = 0; i < Nparticles; i++){
     fread(&dmy, sizeof(float), 1 ,fstream);
@@ -348,7 +364,7 @@ inline void read_pid(const int &pid, double &a, FILE *fstream){
   }
 }
 // read particle vector data
-inline void read_pid(const int &pid, double x[DIM], FILE *fstream){
+inline void read_avs_pid(const int &pid, double x[DIM], FILE *fstream){
   float dmy;
   for(int d = 0; d < DIM; d++){
     for(int i = 0; i < Nparticles; i++){
@@ -360,7 +376,7 @@ inline void read_pid(const int &pid, double x[DIM], FILE *fstream){
   }
 }
 // read particle matrix data
-inline void read_pid(const int &pid, double Q[DIM][DIM], FILE *fstream){
+inline void read_avs_pid(const int &pid, double Q[DIM][DIM], FILE *fstream){
   float dmy;
   for(int m = 0; m < DIM; m++){
     for(int n = 0; n < DIM; n++){
@@ -373,16 +389,16 @@ inline void read_pid(const int &pid, double Q[DIM][DIM], FILE *fstream){
     }
   }
 }
-void read_p(const int &pid){
+void read_avs_p(const int &pid){
   double A0;
   float dmy;
-  read_pid(pid, r0, particle_cod);
-  read_pid(pid, A0, particle_data);
-  read_pid(pid, v0, particle_data);
-  read_pid(pid, w0, particle_data);
-  read_pid(pid, f0, particle_data);
-  read_pid(pid, t0, particle_data);
-  read_pid(pid, Q0, particle_data);
+  read_avs_pid(pid, r0, particle_cod);
+  read_avs_pid(pid, A0, particle_data);
+  read_avs_pid(pid, v0, particle_data);
+  read_avs_pid(pid, w0, particle_data);
+  read_avs_pid(pid, f0, particle_data);
+  read_avs_pid(pid, t0, particle_data);
+  read_avs_pid(pid, Q0, particle_data);
   rm_rqtn(q0, Q0);
   Particle_cell(r0, DX, r0_int, res0);
 
