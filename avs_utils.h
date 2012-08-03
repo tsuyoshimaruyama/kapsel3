@@ -46,6 +46,7 @@ extern int Num_snap; //
 
 extern double A; //
 extern double A_XI; //
+extern double HXI; //
 extern double DX; //
 
 extern int Ns[DIM]; //
@@ -53,6 +54,8 @@ extern int &NX; //
 extern int &NY; //
 extern int &NZ; //
 extern int lbox[DIM]; //
+extern double hlbox[DIM]; //
+extern double maxlbox;
 
 extern int Nspec; //
 extern int Nparticles; //
@@ -105,7 +108,6 @@ inline double H(const double x){
   return x > 0 ? exp(-SQ(DX/x)) : 0;
 }
 inline double Phi(const double &x, const double radius){
-  double HXI = A_XI / 2.0;
   double dmy = H(radius + HXI - x);
   return dmy / (dmy + H(x - radius + HXI));
 }
@@ -156,7 +158,7 @@ inline void Distance(const double *x1, const double *x2,
 void get_system_data(UDFManager *ufin);
 
 // read headers from avs *.fld files
-void initialize_avs();
+void init_avs();
 
 // close *.fld files
 void close_avs();
@@ -171,10 +173,10 @@ void setup_avs_frame();
 void clear_avs_frame();
 
 // initialize particle data
-void initialize_avs_p(const int &pid);
+void init_avs_p(const int &pid);
 
 // intialize avs mem
-void initialize_avs_mem();
+void init_avs_mem();
 
 // read fluid velocity data
 void read_avs_u();

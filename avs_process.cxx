@@ -4,126 +4,32 @@ int Cs[DIM];
 int &CX = Cs[0];
 int &CY = Cs[1];
 int &CZ = Cs[2];
+
 int HCs[DIM];
 int &HCX = HCs[0];
 int &HCY = HCs[1];
 int &HCZ = HCs[2];
+
 bool error_calc;
+double RMIN;             // minimum distance for error analysis (= A + DX)
+double RMAX;             // maximum distance for error analysis
+
+int nshells;             // number of shells [cte]
+int npoints;             // total number of points (all shells)
+int* shell_points;       // number of points in shell
+double* shell_chi2;      // relative chi2
+double* shell_rms;       // rms error
+double* shell_avg;       // average velocity
+double* shell_avg2;      // average squared velocity
+double* shell_delta;     // max relative error
+double* shell_abs_delta; // max error
 
 void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
 	    const double &B1, const double &B2, const double &RADIUS);
 void get_image(const int &frame, const int &iso, const double &RADIUS);
-void get_rms(const int &frame, const double &RADIUS);
+void get_error_shells(const int &frame, const double &RADIUS);
 
-int main(int argc, char* argv[]){
-  int pid;                // id of centered particle
-  UDFManager *udf_in;     // UDF input file
-  
-  init_io(argc, argv, udf_in, pid);
-  get_system_data(udf_in);
-  initialize_avs();
-  initialize_avs_p(pid);
-  initialize_avs_mem();
-  if(error_calc && Nparticles > 1){
-    fprintf(stderr, "Error calculation only valid for single squirmer\n");
-    exit_job(EXIT_FAILURE);
-  }
-  
-  for(int i = 0; i <= Num_snap; i++){
-    setup_avs_frame();
-    read_avs_u();
-    read_avs_p(pid);
-    get_image(i, 0, A);
-    get_image(i, 1, A);
-    get_image(i, 2, A);
-    clear_avs_frame();
-  }
-  close_avs();
-}
-
-/////
-void v_gold(double ww[DIM], const double nr[DIM], const double &rdist, 
-	    const double &B1, const double &B2, const double &RADIUS){
-  double dmy, cos_theta;
-  double jax[DIM], nsin_theta[DIM];
-  rigid_body_rotation(jax, e3, q0, BODY2SPACE);
-  double nd1[DIM], nd2[DIM], nd3[DIM];
-  double ar, ar2, ar3;
-
-  if(rdist >= RADIUS){
-    cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
-    ar = RADIUS/rdist;
-    ar2 = ar*ar;
-    ar3 = ar*ar2;
-
-    for(int d = 0; d < DIM; d++){
-      nsin_theta[d] = cos_theta * nr[d] - jax[d];
-    }
-
-    for(int d = 0; d < DIM; d++){
-      nd1[d] = cos_theta * nr[d] - 1.0/3.0 * jax[d];
-      nd2[d] = 2.0 * cos_theta * nsin_theta[d];
-      nd3[d] = (3.0 * cos_theta * cos_theta - 1.0) * nr[d];
-    }
-    for(int d = 0; d < DIM; d++){
-      ww[d] = B1 * ar3 * nd1[d] + 
-	B2/2.0 * ar2 * ( ar2 * nd2[d] + (ar2 - 1.0) * nd3[d] );
-    }
-  }else{
-    for(int d = 0; d < DIM; d++){
-      ww[d] = 0.0;
-    }
-  }
-}
-
-void get_rms(const int &frame, const double &RADIUS){
-  int ei[DIM], count;
-  double rgrid[DIM], nr[DIM], ww[DIM], df[DIM];
-  double e0, e1, e2, e3, dmy_r, scale, dmy_e;
-  e0 = e1 = e2 = e3 = 0.0;
-  count = 0;
-  for(int i = 0; i < NX; i++){
-    ei[0] = i;
-    for(int j = 0; j < NY; j++){
-      ei[1] = j;
-      for(int k = 0; k < NZ; k++){
-	ei[2] = k;
-
-	for(int d = 0; d < DIM; d++){
-	  rgrid[d] = (double)ei[d] * DX;
-	}
-	Distance(r0, rgrid, dmy_r, nr);
-	if(dmy_r >= RADIUS){
-	  int im = (i * NY * NZ) + (j * NZ) + k;
-	  scale = dmy_r/RADIUS;
-	  scale *= scale;
-
-	  v_gold(ww, nr, dmy_r, B1, B2, RADIUS);
-	  for(int d = 0; d < DIM; d++){
-	    df[d] = (u[d][im] - ww[d])/UP;
-	  }
-	  dmy_e = v_inner_prod(df, df);
-
-	  e0 += dmy_e;
-	  e1 += dmy_e * scale;
-	  e2 += dmy_e * scale*scale;
-	  e3 += dmy_e * scale*scale*scale;
-	  count ++;
-	}
-      }
-    }
-  }
-  if(count > 0){
-    e0 = sqrt(e0 / (double)count);
-    e1 = sqrt(e1 / (double)count);
-    e2 = sqrt(e2 / (double)count);
-    e3 = sqrt(e3 / (double)count);
-  }
-  fprintf(stderr, "%d %8.5g %8.5g %8.5g %8.5g\n", frame, e0, e1, e2, e3);
-}
-
-// plot (jj,kk) 
-void point_id(const int &iso, const int &ii, const int &jj, const int &kk, int *ei){
+inline void point_id(const int &iso, const int &ii, const int &jj, const int &kk, int *ei){
   switch(iso){
   case 0:
     ei[0] = ii; //skip
@@ -142,6 +48,132 @@ void point_id(const int &iso, const int &ii, const int &jj, const int &kk, int *
     break;
   }
 }
+
+int main(int argc, char* argv[]){
+  int pid;                // id of centered particle
+  UDFManager *udf_in;     // UDF input file
+  double RADIUS;
+  
+  init_io(argc, argv, udf_in, pid);
+
+  get_system_data(udf_in);
+  init_avs();
+  init_avs_p(pid);
+  init_avs_mem();
+
+  init_error();  
+  for(int i = 0; i <= Num_snap; i++){
+    RADIUS = A;
+    setup_avs_frame();
+    read_avs_u();
+    read_avs_p(pid);
+    get_error_shells(i, RADIUS);
+    get_image(i, 0, RADIUS);
+    get_image(i, 1, RADIUS);
+    get_image(i, 2, RADIUS);
+    clear_avs_frame();
+  }
+  close_avs();
+}
+
+void get_error_shells(const int &frame, const double &RADIUS){
+  int im, dmy_shell;
+  int ei[DIM], gi[DIM];
+  double avw, wnorm, wnorm2, dmy_rms, dmy_r, dmy_r2;
+  double vv[DIM], ww[DIM], nr[DIM], rgrid[DIM], rp[DIM];
+
+  zero_shells();
+  for(int ii = -HCX; ii <= HCX; ii++){
+    ei[0] = ii;
+    for(int jj = -HCY; jj <= HCY; jj++){
+      ei[1] = jj;
+      for(int kk = -HCZ; kk <= HCZ; kk++){
+        ei[2] = kk;
+
+        dmy_r2 = 0.0;
+        for(int d = 0; d < DIM; d++){
+          rgrid[d] = (double)ei[d] * DX;
+          rp[d] = rgrid[d] - res0[d];
+          dmy_r2 += rp[d]*rp[d];
+        }
+        dmy_r2 = sqrt(dmy_r2);
+        Distance(r0, rgrid, dmy_r, nr);
+        equal_mp(dmy_r, dmy_r2);
+        
+        if(dmy_r >= RMIN && dmy_r <= RMAX){
+          dmy_shell = (int) dmy_r / DX;
+          for(int d = 0; d < DIM; d++){
+            gi[d] = r0_int[d] + ei[d];
+          }
+          PBC_ip(gi);
+          v_gold(ww, nr, dmy_r, B1, B2, RADIUS);
+          wnorm2 = SQ(ww[0]) + SQ(ww[1]) + SQ(ww[2]);
+          wnorm = sqrt(wnorm2);
+
+          im = (gi[0] * NY * NZ) + (gi[1] * NZ) + gi[2];
+          for(int d = 0; d < DIM; d++){
+            vv[d] = u[d][im];
+          }
+
+          dmy_rms = 0.0;
+          for(int d = 0; d < DIM; d++){
+            dmy_rms += SQ(vv[d] - ww[d]);
+          }
+          avw = sqrt(dmy_rms);
+
+          shell_delta[dmy_shell] = MAX(shell_delta[dmy_shell], avw / wnorm);
+          shell_abs_delta[dmy_shell] = MAX(shell_abs_delta[dmy_shell], avw);
+
+          shell_chi2[dmy_shell] += dmy_rms / wnorm2;
+          shell_rms[dmy_shell] += dmy_rms;
+          shell_avg[dmy_shell] += wnorm;
+          shell_avg2[dmy_shell] += wnorm2;
+
+          shell_points[dmy_shell]++;
+          npoints++;
+        }
+        
+      }//kk
+    }//jj
+  }//ii
+  double dmy_norm;
+  for(int i = 0; i < nshells; i++){
+    if(shell_points[i] > 0){
+      dmy_norm = 1.0 / (double) shell_points[i];
+      shell_chi2[i] *= dmy_norm;
+      shell_rms[i] *= dmy_norm;
+      shell_avg[i] *= dmy_norm;
+      shell_avg2[i] *= dmy_norm;
+    }
+  }
+
+  char dmy_path[256];
+  FILE *fstream;
+  sprintf(dmy_path, "%s/plots/err_%05.0f.dat", AVS_dir, (double)frame);
+  fstream = filecheckopen(dmy_path, "w");
+  for(int i = 0; i < nshells; i++){
+    if(shell_points[i] > 0){
+      fprintf(fstream, "%6.4g %d %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n", 
+              ((double)i + 0.5) * DX,
+              shell_points[i],
+              shell_chi2[i],
+              shell_rms[i] / shell_avg2[i],
+              shell_rms[i] / SQ(shell_avg[i]),
+              shell_abs_delta[i] / sqrt(shell_avg2[i]),
+              shell_abs_delta[i] / shell_avg[i],
+              shell_delta[i],
+              sqrt(shell_avg2[i]),
+              shell_avg[i]
+              );
+    }else{
+      fprintf(fstream, "%6.4g %d %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n",
+              ((double)i + 0.5) * DX,
+              0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    }
+  }
+  fclose(fstream);
+}
+
 void get_image(const int &frame, const int &iso, const double &RADIUS){
   double rp[DIM], vv[DIM], ww[DIM], dmy;
   int ei[DIM], gi[DIM];
@@ -194,7 +226,6 @@ void get_image(const int &frame, const int &iso, const double &RADIUS){
   }
   fstream = filecheckopen(dmy_path, "w");
 
-
   double r01, r02, r03;
   double v01, v02, v03;
   double pdomain, fdomain;
@@ -234,11 +265,7 @@ void get_image(const int &frame, const int &iso, const double &RADIUS){
       }
       v_gold(ww, rp, dmy, B1, B2, RADIUS);
       pdomain = Phi(dmy, RADIUS);
-      if(dmy >= RADIUS){
-	fdomain = 1.0;
-      }else{
-	fdomain = 0.0;
-      }
+      fdomain = 1.0 - pdomain;
 
       for(int d = 0; d < DIM; d++){
 	vv[d] = u[d][im];
@@ -258,28 +285,43 @@ void get_image(const int &frame, const int &iso, const double &RADIUS){
       double ww2 = v_inner_prod(ww, eu);
       double ww3 = v_inner_prod(ww, ew);
 
+      // error data
       double rscale = dmy/RADIUS;
+      double rms, wmag;
+      if(error_calc && dmy >= RMIN){
+        wmag = SQ(ww1) + SQ(ww2) + SQ(ww3);
+        rms = (SQ(vv1 - ww1) + SQ(vv2 - ww2) + SQ(vv3 - ww3)) / wmag;
+      }else{
+        rms = 0.0;
+        wmag = 0.0;
+      }
 
       // particle data
       if(jj == 0 && kk == 0){
+        xx1 = r01;
         xx2 = r02;
         xx3 = r03;
         //simulation
+        vv1 = v01;
         vv2 = v02;
         vv3 = v03;
         //analytical
+        ww1 = UP * v_inner_prod(n0, ev); // ignore
         ww2 = UP * v_inner_prod(n0, eu);
         ww3 = UP * v_inner_prod(n0, ew);
+        fdomain = 1.0;
         rscale = 1.0;
       }
-
+      
       fprintf(fstream, 
-	      "%6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n",
+	      "%6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n",
 	      xx2, xx3, 
 	      vv2*vscale, vv3*vscale, 
 	      ww2*vscale, ww3*vscale,
-              rscale, fdomain);
+              rscale, fdomain,
+              rms, sqrt(wmag)*vscale);
     }
+    fprintf(fstream, "\n");
   }
   fclose(fstream);
 }

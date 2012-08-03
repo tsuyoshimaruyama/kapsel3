@@ -28,6 +28,7 @@ int Num_snap;
 
 double A;
 double A_XI;
+double HXI;
 double DX;
 
 int Ns[DIM];
@@ -35,6 +36,8 @@ int &NX = Ns[0];
 int &NY = Ns[1];
 int &NZ = Ns[2];
 int lbox[DIM];
+double hlbox[DIM];
+double maxlbox;
 
 int Nspec;
 int Nparticles;
@@ -87,11 +90,14 @@ void get_system_data(UDFManager *ufin){
     ufin->get(target.sub("DX"), DX);
     ufin->get("A", A);
     ufin->get("A_XI", A_XI);
+    A *= DX;
+    A_XI *= DX;
+    HXI = 0.5 * A_XI;
     fprintf(stderr, "#DX   : %8.3f\n", DX);
     fprintf(stderr, "#A    : %8.3f\n", A);
     fprintf(stderr, "#A_XI : %8.3f\n", A_XI);
-    A *= DX;
-    A_XI *= DX;
+    fprintf(stderr, "#HXI : %8.3f\n", HXI);
+
   }
   { // mesh size
     Location target("mesh");
@@ -102,7 +108,10 @@ void get_system_data(UDFManager *ufin){
     for(int d = 0; d < DIM; d++){
       Ns[d] = 1 << dmy[d];
       lbox[d] = Ns[d] * DX;
+      hlbox[d] = lbox[d]/2.0;
     }
+    maxlbox = MIN(hlbox[0], MIN(hlbox[1], hlbox[2]));
+
     fprintf(stderr, "#Ns   : %8d %8d %8d\n\n", Ns[0], Ns[1], Ns[2]);
     
   }
@@ -190,7 +199,7 @@ void get_system_data(UDFManager *ufin){
   }
 }
 
-void initialize_avs(){
+void init_avs(){
   char dmy_char[256];
   string dmy_string;
   char* line = NULL;
@@ -242,7 +251,7 @@ void close_avs(){
 }
 void reset_avs(){
   close_avs();
-  initialize_avs();
+  init_avs();
 }
 
 // initialize new avs frame
@@ -309,7 +318,7 @@ void clear_avs_frame(){
 }
 
 
-void initialize_avs_p(const int &pid){
+void init_avs_p(const int &pid){
   assert(pid >=0 && pid < Nparticles);
   if(p_axis[p_spec[pid]] == x_axis){
     e3 = ex;
@@ -326,7 +335,7 @@ void initialize_avs_p(const int &pid){
   }
 }
 
-void initialize_avs_mem(){
+void init_avs_mem(){
   u = (double **) malloc(sizeof(double*) * DIM);
   for(int d = 0; d < DIM; d++){
     u[d] = alloc_1d_double(NX*NY*NZ);
