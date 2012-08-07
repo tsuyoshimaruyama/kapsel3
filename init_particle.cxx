@@ -326,8 +326,13 @@ void Init_Particle(Particle *p){
 	qtn_isnormal(p[i].q);
 	qtn_init(p[i].q_old, p[i].q);
       }
-    }else{
+    }else if(ORIENTATION == user_dir && DISTRIBUTION == user_specify){
+      // do nothing orientation already read
+    }
+    else{
       fprintf(stderr, "Error: wrong ORIENTATION\n");
+      fprintf(stderr, "%d %d %d\n", ORIENTATION, space_dir, user_dir);
+      fprintf(stderr, "%d %d \n", DISTRIBUTION, user_specify);
       exit_job(EXIT_FAILURE);
     }
   }else{
