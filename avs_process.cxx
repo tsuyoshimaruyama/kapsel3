@@ -295,24 +295,6 @@ void get_image(const int &frame, const int &iso, const double &RADIUS){
         rms = 0.0;
         wmag = 0.0;
       }
-
-      // particle data
-      if(jj == 0 && kk == 0){
-        xx1 = r01;
-        xx2 = r02;
-        xx3 = r03;
-        //simulation
-        vv1 = v01;
-        vv2 = v02;
-        vv3 = v03;
-        //analytical
-        ww1 = UP * v_inner_prod(n0, ev); // ignore
-        ww2 = UP * v_inner_prod(n0, eu);
-        ww3 = UP * v_inner_prod(n0, ew);
-        fdomain = 1.0;
-        rscale = 1.0;
-      }
-      
       fprintf(fstream, 
 	      "%6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g %6.4g\n",
 	      xx2, xx3, 

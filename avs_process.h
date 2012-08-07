@@ -45,6 +45,7 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
   double nd1[DIM], nd2[DIM], nd3[DIM];
   double ar, ar2, ar3;
 
+
   if(rdist >= RADIUS){
     cos_theta = jax[0]*nr[0] + jax[1]*nr[1] + jax[2]*nr[2];
     ar = RADIUS/rdist;
@@ -66,11 +67,10 @@ void v_gold(double ww[DIM], const double nr[DIM], const double &rdist,
     }
   }else{
     for(int d = 0; d < DIM; d++){
-      ww[d] = 0.0;
+      ww[d] = e3[d] * 2./3 * B1;
+      rigid_body_rotation(ww, q0, BODY2SPACE);
     }
   }
-
-
 }
 
 
