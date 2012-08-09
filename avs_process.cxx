@@ -69,8 +69,8 @@ int main(int argc, char* argv[]){
     read_avs_p(pid);
     get_error_shells(i, RADIUS);
     get_image(i, 0, RADIUS);
-    get_image(i, 1, RADIUS);
-    get_image(i, 2, RADIUS);
+    //    get_image(i, 1, RADIUS);
+    //    get_image(i, 2, RADIUS);
     clear_avs_frame();
   }
   close_avs();
