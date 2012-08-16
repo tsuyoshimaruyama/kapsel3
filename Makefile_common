@@ -2,11 +2,6 @@
 # $Id: Makefile,v 2.00 2009/08/04 $
 #
 
-## default options
-#MKL_DIR = /home/opt/intel/composer_xe_2011_sp1.6.233/mkl
-#MKL_PATH = ${MKL_DIR}/lib/intel64
-#MKL_INCLUDE_PATH = ${MKL_DIR}/include
-
 ENV=DESK
 #ENV=WORKSTATION
 #ENV=HOME
@@ -45,11 +40,13 @@ endif
 
 ## options for GCC+MKL+OMP/LINUX
 ifeq ($(ENV), CLUSTER_MKL_OMP)
+      MKL_DIR = /home/opt/intel/composer_xe_2011_sp1.6.233/mkl
+      MKL_PATH = ${MKL_DIR}/lib/intel64
+      MKL_INCLUDE_PATH = ${MKL_DIR}/include
       ARCH   = linux_64 
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axSSSE3 -ip -openmp -parallel -w0 #-L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
-#      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lguide -lm 
+      CCOPT  = -O3 -xSSSE3 -axSSSE3 -ip -openmp -parallel -w0 -L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
       LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm 
       GOURMET_HOME_PATH = /home/john/OCTA2010/GOURMET_2010
 endif
@@ -100,7 +97,7 @@ AVS	   = pavs
 .SUFFIXES: .c .cxx .o .out
 
 ## Build rules
-
+#all: $(TARGET) 
 all: $(TARGET) $(XYZ) $(QUATERNION) $(RIGID_BODY) $(AVS)
 
 $(TARGET): $(OBJS)
@@ -127,8 +124,10 @@ $(RIGID_BODY): rigid_body_test.o rigid_body.o
 	$(CC) -c $< $(CFLAGS) -o $@
 
 ## Clean
-
 clean:
+	rm -f *.o *.bak
+
+cleanall:
 	rm -f *.o *.x
 	rm -f *~ *.bak
 

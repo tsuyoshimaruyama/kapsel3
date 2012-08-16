@@ -387,7 +387,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 //OBL function
 void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
   double delta_x;
-#pragma omp parallel for schedule(dynamic, 1) private(delta_x);
+#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
   for(int n = 0; n < Particle_Number; n++) {
     for(int d = 0; d < DIM; d++) {
       p[n].x_previous[d] = p[n].x[d];

@@ -309,8 +309,12 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 
       if(v_rms(force_p, force_s) > LARGE_TOL_MP||
 	 v_rms(torque_p, torque_s) > LARGE_TOL_MP){
+        fprintf(stderr, "###############################");
 	fprintf(stderr, "# Momentum Conservation Warning : %10.8E %10.8E\n",
 		v_rms(force_p, force_s), v_rms(torque_p, torque_s));
+        fprintf(stderr, "# Force  : %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E\n", force_p[0], force_p[1], force_p[2], force_s[0], force_s[1], force_s[2]);
+        fprintf(stderr, "# Torque : %10.8E %10.8E %10.8E %10.8E %10.8E %10.8E\n", torque_p[0], torque_p[1], torque_p[2], torque_s[0], torque_s[1], torque_s[2]);
+        fprintf(stderr, "###############################");
 	
       }
     }// slip_particle ?

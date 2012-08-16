@@ -165,26 +165,6 @@ inline int Relative_coord_check_stepover_Y(const int *cell
 }
 
 
-inline void Janus_direction(double *polar_axis, const Particle &p){
-  double ex[DIM] = {1.0, 0.0, 0.0};
-  double ey[DIM] = {0.0, 1.0, 0.0};
-  double ez[DIM] = {0.0, 0.0, 1.0};
-  double *e3;
-  int dmy_axis = janus_axis[p.spec];
-
-  if(dmy_axis == z_axis){
-    e3 = ez;
-  }else if(dmy_axis == y_axis){
-    e3 = ey;
-  }else if(dmy_axis == x_axis){
-    e3 = ex;
-  }else{
-    fprintf(stderr, "Error: Invalid Janus axis for Janus_direction");
-    exit_job(EXIT_FAILURE);
-  }
-  rigid_body_rotation(polar_axis, e3, p.q, BODY2SPACE);
-}
-
 inline void Squirmer_coord(const double *x, double *r, double *theta, double *phi, 
 		      double &norm_r, double &theta_angle, double &phi_angle, const Particle &p){
   double ex[DIM] = {1.0, 0.0, 0.0};
@@ -229,7 +209,7 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
   dmy_norm = sqrt(SQ(phi[0]) + SQ(phi[1]) + SQ(phi[2]));
 
   // No tangential velocity at the janus poles !
-  if(non_zero_mp(dmy_norm) && less_than_mp(dot_e3_r, 1.0)){
+  if(non_zero_mp(dmy_norm) && less_than_mp(ABS(dot_e3_r), 1.0)){
 
     dmy_norm = 1.0/dmy_norm;
     for(int d = 0; d < DIM; d++){
@@ -259,9 +239,9 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
 
   }else{ // r parallel to janus axis (tangent vectors not uniquely defined)
     norm_r = sqrt( SQ(x[0]) + SQ(x[1]) + SQ(x[2]) );
-    norm_r = 1.0/norm_r;
+    dmy_norm = 1.0/norm_r;
     for(int d = 0; d < DIM; d++){
-      r[d] *= x[d]*norm_r;
+      r[d] *= x[d]*dmy_norm;
       phi[d] = theta[d] = 0.0;
     }
 
