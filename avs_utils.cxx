@@ -32,9 +32,21 @@ double HXI;
 double DX;
 
 int Ns[DIM];
+int JNs[DIM];
+int HNs[DIM];
+int HJNs[DIM];
 int &NX = Ns[0];
 int &NY = Ns[1];
 int &NZ = Ns[2];
+int &JNX = JNs[0];
+int &JNY = JNs[1];
+int &JNZ = JNs[2];
+int &HNX = HNs[0];
+int &HNY = HNs[1];
+int &HNZ = HNs[2];
+int &HJNX = HJNs[0];
+int &HJNY = HJNs[1];
+int &HJNZ = HJNs[2];
 int lbox[DIM];
 double hlbox[DIM];
 double maxlbox;
@@ -67,6 +79,7 @@ double t0[DIM];
 double Q0[DIM][DIM];
 double n0[DIM];
 quaternion q0;
+JAX ax0;
 
 // read filename from avs files
 inline void get_filename(char* line, char*name){
@@ -107,6 +120,7 @@ void get_system_data(UDFManager *ufin){
     ufin->get(target.sub("NPZ"), dmy[2]);
     for(int d = 0; d < DIM; d++){
       Ns[d] = 1 << dmy[d];
+      HNs[d] = Ns[d] / 2;
       lbox[d] = Ns[d] * DX;
       hlbox[d] = lbox[d]/2.0;
     }
@@ -320,19 +334,46 @@ void clear_avs_frame(){
 
 void init_avs_p(const int &pid){
   assert(pid >=0 && pid < Nparticles);
-  if(p_axis[p_spec[pid]] == x_axis){
+  ax0 = p_axis[p_spec[pid]];
+  if(ax0 == x_axis){
+
     e3 = ex;
     e1 = ey;
     e2 = ez;
-  }else if(p_axis[p_spec[pid]] == y_axis){
+
+    JNX = NY;
+    JNY = NZ;
+    JNZ = NX;
+    HJNX = HNY;
+    HJNY = HNZ;
+    HJNZ = HNX;
+  }else if(ax0 == y_axis){
     e3 = ey;
     e1 = ez;
     e2 = ex;
-  }else if(p_axis[p_spec[pid]] == z_axis){
+
+    JNX = NZ;
+    JNY = NX;
+    JNZ = NY;
+    HJNX = HNZ;
+    HJNY = HNX;
+    HJNZ = HNY;
+  }else if(ax0 == z_axis){
     e3 = ez;
     e1 = ex;
     e2 = ey;
+
+    JNX = NX;
+    JNY = NY;
+    JNZ = NZ;
+    HJNX = HNX;
+    HJNY = HNY;
+    HJNZ = HNZ;
   }
+  B1 = p_slip[p_spec[pid]];
+  B2 = p_slipmode[p_spec[pid]];
+  B2 *= B1;
+  UP = 2./3. * B1;
 }
 
 void init_avs_mem(){
@@ -342,16 +383,16 @@ void init_avs_mem(){
   }
 }
 
-
-
 inline void read_avs_ux(double *ux, FILE *fstream){
   float dmy;
+  int cnt = 0;
   for(int k = 0; k < NZ; k++){
     for(int j = 0; j < NY; j++){
       for(int i = 0; i < NX; i++){
         int im = linear_id(i, j, k);
         fread(&dmy, sizeof(float), 1, fstream);
         ux[im] = (double) dmy;
+        cnt++;
       }
     }
   }
@@ -413,9 +454,6 @@ void read_avs_p(const int &pid){
 
   rigid_body_rotation(n0, e3, q0, BODY2SPACE);
   B1_app = 3.0/2.0 * (n0[0]*v0[0] + n0[1]*v0[1] + n0[2]*v0[2]);
-  B1 = p_slip[p_spec[pid]];
-  B2 = p_slipmode[p_spec[pid]];
-  B2 *= B1;
-  UP = 2./3. * B1;
   fprintf(stderr, "# Slip U = %8.6E %8.6E %8.6E %8.6E\n\n", UP, B1, B1_app, B2);
 }
+

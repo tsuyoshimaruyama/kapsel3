@@ -50,9 +50,21 @@ extern double HXI; //
 extern double DX; //
 
 extern int Ns[DIM]; //
+extern int JNs[DIM];
+extern int HNs[DIM];
+extern int HJNs[DIM];
 extern int &NX; //
 extern int &NY; //
 extern int &NZ; //
+extern int &JNX;
+extern int &JNY;
+extern int &JNZ;
+extern int &HNX; //
+extern int &HNY; //
+extern int &HNZ; //
+extern int &HJNX;
+extern int &HJNY;
+extern int &HJNZ;
 extern int lbox[DIM]; //
 extern double hlbox[DIM]; //
 extern double maxlbox;
@@ -84,6 +96,7 @@ extern double t0[DIM]; //
 extern double Q0[DIM][DIM]; //
 extern double n0[DIM];
 extern quaternion q0; //
+extern JAX ax0;
 
 
 // Get grid point closest to particle
@@ -147,11 +160,6 @@ inline void Distance(const double *x1, const double *x2,
     dmy += SQ(x12[d]);    
   }
   r12 = sqrt(dmy);
-  if(dmy > 0){
-    for(int d = 0; d < DIM; d++){
-      x12[d] /= r12;
-    }
-  }
 }
 
 // read system data from udf file used to launch KAPSEL
