@@ -372,6 +372,29 @@ inline void rqtn_rv(double v[DIM], const quaternion &q){
 }
 
 /*!
+  \brief Computes euler angles from rotation quaternion (z-x-z / 3-1-3 convention)
+ */
+inline void rqtn_euler(double &psi, double &theta, double &phi,
+                       const quaternion &q){
+  const double &q0 = q.s;
+  const double &q1 = q.v[0];
+  const double &q2 = q.v[1];
+  const double &q3 = q.v[2];
+  double dmy_cos;
+
+  dmy_cos = (1.0 - 2.0*(q2*q2 + q1*q1));
+  if(!equal_tol(ABS(dmy_cos), 1.0, TOL_MP)){ // not at poles
+    psi = atan2(2.0*(q1*q3 + q0*q2), 2.0*(q0*q1 - q2*q3));
+    theta = acos(dmy_cos);
+    phi = atan2(2.0*(q1*q3 - q0*q2), 2.0*(q2*q3 + q0*q1));
+  }else {//poles
+    psi = atan2(2.0*(q1*q2 + q0*q3), 1.0 - 2.0 * (q1*q1 + q3*q3));    
+    theta = (dmy_cos > 0 ? 0.0 : M_PI);
+    phi = 0.0;
+  }
+}
+
+/*!
   \brief Compute random rotation quaternion (see Numerical Recipes)
  */
 inline void random_rqtn(quaternion &q){
@@ -388,17 +411,20 @@ inline void random_rqtn(quaternion &q){
  */
 inline void rqtn_rm(double R[DIM][DIM], const quaternion &q){
 
-  R[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
+  //  R[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
+  R[0][0] = q.s*q.s + q.v[0]*q.v[0] - q.v[1]*q.v[1] - q.v[2]*q.v[2];
   R[0][1] = 2.0 * q.v[0] * q.v[1] - 2.0 * q.s * q.v[2];
   R[0][2] = 2.0 * q.s * q.v[1] + 2.0 * q.v[0] * q.v[2];
 
   R[1][0] = 2.0 * q.v[0] * q.v[1] + 2.0 * q.s * q.v[2];
-  R[1][1] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[2] * q.v[2];
+  //  R[1][1] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[2] * q.v[2];
+  R[1][1] = q.s*q.s - q.v[0] * q.v[0] + q.v[1]*q.v[1] - q.v[2]*q.v[2];
   R[1][2] = -2.0 * q.s * q.v[0] + 2.0 * q.v[1] * q.v[2];
 
   R[2][0] = -2.0 * q.s * q.v[1] + 2.0 * q.v[0] * q.v[2];
   R[2][1] = 2.0 * q.s * q.v[0] + 2.0 * q.v[1] * q.v[2];
-  R[2][2] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[1] * q.v[1];
+  //  R[2][2] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[1] * q.v[1];
+  R[2][2] = q.s*q.s - q.v[0]*q.v[0] - q.v[1]*q.v[1] + q.v[2]*q.v[2];
 }
 
 /*!

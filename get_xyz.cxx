@@ -27,6 +27,7 @@ void write_xyz(ofstream &outfile,
 	       const int &sid,
 	       double r[NDIM], 
 	       double r_raw[NDIM],
+               const quaternion &q,
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
 	       double vs[NDIM],
@@ -237,7 +238,7 @@ int main(int argc, char* argv[])
 	if(i == 0){
 	  v_copy(n0, ni);
 	}
-	write_xyz(outfile, t, j+1, spec_id[j], r, r_raw, QR, v, vs, w, frc, frc_slip, tau, tau_slip, ni, n0, ntotal);
+	write_xyz(outfile, t, j+1, spec_id[j], r, r_raw, q, QR, v, vs, w, frc, frc_slip, tau, tau_slip, ni, n0, ntotal);
       }
     }
   }
@@ -259,6 +260,7 @@ void write_xyz(ofstream &outfile,
 	       const int &sid,
 	       double r[NDIM],
 	       double r_raw[NDIM],
+               const quaternion &q,
 	       double QR[NDIM][NDIM],
 	       double v[NDIM],
 	       double vs[NDIM],
@@ -275,6 +277,7 @@ void write_xyz(ofstream &outfile,
   char dmy_str[256];
   double dmy_ndot = ni[0]*n0[0] + ni[1]*n0[1] + ni[2]*n0[2];
   double dmy_theta = (dmy_ndot < 1.0 ? acos(dmy_ndot) : 0.0);
+  double dmy_theta_z = (ni[2] < 1.0 ? acos(ni[2]) : 0.0);
 
   // particle info
   sprintf(str, "%d %d ", pid, sid);
@@ -308,7 +311,14 @@ void write_xyz(ofstream &outfile,
   strcat(str, dmy_str);
 
   // janus vector
-  sprintf(dmy_str, "%.6g %.6g %.6g %.15g %.6g", ni[0], ni[1], ni[2], dmy_ndot, dmy_theta * 180.0 / M_PI);
+  double alpha, beta, gamma;
+  double dmy_angle = 180.0 / M_PI;
+  rqtn_euler(alpha, beta, gamma, q);
+  if(!equal_tol(dmy_theta_z, beta, HUGE_TOL_MP)){
+    fprintf(stderr, "Check euler conversion: %g %g\n", dmy_theta_z, beta);
+  }
+  sprintf(dmy_str, "%.6g  %.6g  %.6g  %.15g  %.6g  %.6g  %.6g  %.6g  ", ni[0], ni[1], ni[2], dmy_ndot, 
+          dmy_theta * dmy_angle, alpha*dmy_angle, beta*dmy_angle, gamma*dmy_angle);
   strcat(str, dmy_str);
 
 
@@ -346,7 +356,7 @@ void init_xyz(ofstream &outfile, char *fname){
   strcat(str, "32:N_x 33:N_y 34:N_z 35:Ns_x 36:Ns_y 37:Ns_z ");
 
   // janus axis
-  strcat(str, "38:e_x 39:e_y 40:e_z 41:c_ee 42:theta");
+  strcat(str, "38:e_x 39:e_y 40:e_z 41:c_ee 42:theta_0 43:alpha 44:beta 45:gamma ");
 
   outfile << str << endl;
 
