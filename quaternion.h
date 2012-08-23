@@ -384,13 +384,19 @@ inline void rqtn_euler(double &psi, double &theta, double &phi,
 
   dmy_cos = (1.0 - 2.0*(q2*q2 + q1*q1));
   if(!equal_tol(ABS(dmy_cos), 1.0, TOL_MP)){ // not at poles
-    psi = atan2(2.0*(q1*q3 + q0*q2), 2.0*(q0*q1 - q2*q3));
+    psi = atan2(2.0*(q1*q3 - q0*q2), 2.0*(q0*q1 + q2*q3));
     theta = acos(dmy_cos);
-    phi = atan2(2.0*(q1*q3 - q0*q2), 2.0*(q2*q3 + q0*q1));
+    phi = atan2(2.0*(q1*q3 + q0*q2), 2.0*(q0*q1 - q2*q3));
   }else {//poles
-    psi = atan2(2.0*(q1*q2 + q0*q3), 1.0 - 2.0 * (q1*q1 + q3*q3));    
-    theta = (dmy_cos > 0 ? 0.0 : M_PI);
-    phi = 0.0;
+    if(dmy_cos > 0){ //north pole
+      psi = atan2(2.0*(q0*q3 - q1*q2), 1.0 - 2.0 * (q1*q1 + q3*q3));
+      theta = 0.0;
+      phi = 0.0;
+    }else{ //south pole
+      psi = atan2(2.0*(q1*q2 - q0*q3), 1.0 - 2.0 * (q1*q1 + q3*q3));
+      theta = M_PI;
+      phi = 0.0;
+    }
   }
 }
 
