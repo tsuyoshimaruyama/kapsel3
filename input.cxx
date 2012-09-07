@@ -5,7 +5,7 @@
 
 /////////////////////
 /////////////////////
-int Fixed_particle = 0;
+int Fixed_particle;
 /////////////////////
 /////////////////////
 
@@ -1366,6 +1366,17 @@ void Gourmet_file_io(const char *infile
 	}
 	
 	{
+            ufin->get(target.sub("pin"), str);
+            ufout->put(target.sub("pin"), str);
+            ufres->put(target.sub("pin"), str);
+            if(str == "YES"){
+              fprintf(stderr, "# Particle MOTION OFF\n");
+              Fixed_particle = 1;
+            }else{
+              fprintf(stderr, "# Particle MOTION ON\n");
+              Fixed_particle = 0;
+            }
+            
 	    target.down("FIX_CELL");
 	    {
 	        const char *xyz[DIM]={"x","y","z"};

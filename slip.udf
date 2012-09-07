@@ -130,14 +130,8 @@ switch:{
  "slip_full"
  0.001
  5
+ "NO"
  {"ON","ON","ON"}
- {
-  "YES",
-  {
-   [2 ]
-   []
-  }
- }
 }
 boundary_condition:{"full_periodic",{0.0,0.0,0.0}}
 output:{250, 5,"OFF",{"avs_ch","data","BINARY","ON"}"ON"}

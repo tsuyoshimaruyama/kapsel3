@@ -164,17 +164,13 @@ switch: {
    JANUS_slip_momentum: select {'slip_full', 'slip_norotation'}
    SLIP_tol: float "Tolerance for iterative slip convergence"
    SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
+   pin: select{'NO','YES'} "pin particles"
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
    }
-   pin: {
-      type: select{"NO","YES"}
-      YES:{pin[]: int
-           pin_rot[]: int
-          }
-   }
+
 }
 									       
 boundary_condition: {

@@ -248,20 +248,20 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	dmy_xi = ABS(dmy_r - radius);
 
 	{//fluid particle domain (droplet with counter flow)
-	  Angular2v(delta_omega, r, delta_v_rot);
-	  for(int d = 0; d < DIM; d++){
-	    dmy_fv[d] = dmy_phi * (delta_v[d] + delta_v_rot[d]);
-	    force_p[d] += dmy_fv[d];
-
+          Angular2v(delta_omega, r, delta_v_rot);
+          for(int d = 0; d < DIM; d++){
+            dmy_fv[d] = dmy_phi * (delta_v[d] + delta_v_rot[d]);
+            force_p[d] += dmy_fv[d];
+            
 #pragma omp atomic
-	    up[d][im] += dmy_fv[d];
-	  }
-	  {
-	    torque_p[0] += (r[1] * dmy_fv[2] - r[2] * dmy_fv[1]);
-	    torque_p[1] += (r[2] * dmy_fv[0] - r[0] * dmy_fv[2]);
-	    torque_p[2] += (r[0] * dmy_fv[1] - r[1] * dmy_fv[0]);
-	  }
-	}
+            up[d][im] += dmy_fv[d];
+          }
+          {
+            torque_p[0] += (r[1] * dmy_fv[2] - r[2] * dmy_fv[1]);
+            torque_p[1] += (r[2] * dmy_fv[0] - r[0] * dmy_fv[2]);
+            torque_p[2] += (r[0] * dmy_fv[1] - r[1] * dmy_fv[0]);
+          }
+        }
 	
 	if(janus_slip_region == surface_slip){
 	  dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
@@ -307,8 +307,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	torque_p[d] = -torque_p[d];
       }
 
-      if(v_rms(force_p, force_s) > LARGE_TOL_MP||
-	 v_rms(torque_p, torque_s) > LARGE_TOL_MP){
+      if((v_rms(force_p, force_s) > LARGE_TOL_MP||
+          v_rms(torque_p, torque_s) > LARGE_TOL_MP) && !Fixed_particle){
         fprintf(stderr, "###############################");
 	fprintf(stderr, "# Momentum Conservation Warning : %10.8E %10.8E\n",
 		v_rms(force_p, force_s), v_rms(torque_p, torque_s));
