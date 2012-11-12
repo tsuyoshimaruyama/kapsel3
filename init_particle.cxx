@@ -1,6 +1,12 @@
-//
-// $Id: init_particle.cxx,v 1.2 2006/07/28 14:49:26 nakayama Exp $
-//
+/*!
+  \file init_particle.cxx
+  \brief Initialize particle properties
+  \details Initializes positions, velocities, forces, torques on particles
+  \author Y. Nakayama
+  \date 2006/07/28
+  \version 1.1
+ */
+
 #include "init_particle.h"
 
 void Init_Particle(Particle *p){

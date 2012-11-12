@@ -1,6 +1,11 @@
-//
-// $Id: sp_3d_ns.h,v 1.9 2006/11/30 14:25:44 nakayama Exp $
-//
+/*!
+  \file sp_3d_ns.h
+  \author Y. Nakayama
+  \date 2006/11/30
+  \version 1.9
+  \brief Main program file (header)
+  \todo documentation
+ */
 #ifndef SP_3D_NS_H
 #define SP_3D_NS_H
 

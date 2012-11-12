@@ -1,10 +1,12 @@
-//
-// $Id: alloc.c,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
-/* ---- memory allocation ---- */
+/*!
+  \file alloc.c
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Memory allocation routines
+ */
+
 #include "alloc.h"
-
-
 #define alloc_error_check(p) { \
     if ((p) == NULL) { \
         fprintf(stderr, "Allocation Failure!\n"); \

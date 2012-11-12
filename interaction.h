@@ -1,6 +1,11 @@
-//
-// $Id: interaction.h,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file interaction.h
+  \brief Compute inter-particle interactions (header file)
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \todo documentation
+ */
 #ifndef INTERACTION_H
 #define INTERACTION_H
 

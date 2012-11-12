@@ -1,6 +1,10 @@
-//
-// $Id: md_force.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file md_force.cxx
+  \brief Routines to compute MD forces on particles
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
 
 #include "md_force.h"
 

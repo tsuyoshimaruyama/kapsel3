@@ -1,6 +1,11 @@
-//
-// $Id: input.h,v 1.3 2006/11/14 20:07:12 nakayama Exp $
-//
+/*!
+  \file input.h
+  \brief Read udf input file to start simulation (header file)
+  \author Y. Nakayama
+  \date 2006/11/14
+  \version 1.3
+  \todo documentation
+ */
 #ifndef INPUT_H
 #define INPUT_H
 

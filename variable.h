@@ -1,6 +1,11 @@
-//
-// $Id: variable.h,v 1.1 2006/06/27 18:41:29 nakayama Exp $
-//
+/*!
+  \file variable.h
+  \brief Defines the global structs
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \todo documentation
+ */
 #ifndef VARIABLE_H
 #define VARIABLE_H
 

@@ -1,6 +1,11 @@
-//
-// $Id: make_phi.h,v 1.3 2006/07/28 17:14:55 nakayama Exp $
-//
+/*!
+  \file make_phi.h
+  \brief Routines to compute smooth profile and grid particle properties (header file)
+  \author Y. Nakayama
+  \date 2006/07/28
+  \version 1.3
+  \see The details on the \ref sec_design_grid_sekibun in the manual
+ */
 #ifndef MAKE_PHI_H
 #define MAKE_PHI_H
 
@@ -17,6 +22,15 @@ extern int NP_domain_interface;
 extern int **Sekibun_cell;
 extern int **Sekibun_cell_interface;
 
+/*!
+  \brief Compute smooth particle position and advection fields
+  \details Advection field maps only the linear velocity of the particles, it ignores the angular velocity (in case \c ROTATION is turned on)
+  \param[out] phi smooth particle field
+  \param[out] up smooth particle advection (linear velocity) field
+  \param[in] p particle data
+  \see Make_phi_u_particle
+  \bug KOBA code (to ensure \f$\phi \in [0,1]\f$ in the case of overlapping particles) is missing
+ */
 void Make_phi_u_advection(double *phi, double **up, Particle *p);
 
 void Make_phi_janus_particle(double *phi,
@@ -26,20 +40,67 @@ void Make_phi_janus_particle_OBL(double *phi,
 				 double *id_phi,
 				 Particle *p);
 
+/*!
+  \brief Compute smooth particle position field
+  \details 
+  \f[
+  \phi_p(\vec{r}) = \sum_i^{N_p} \phi_i(\vec{r})
+  \f]
+  where \f$\phi_i(\vec{r})\f$ is the profile field of the \f$i\f$-th particle
+  \param[out] phi smooth particle position field
+  \param[in] p particel data
+  \param[in] radius particle radius (domain over which profile field is non-zero)
+ */
 void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius = RADIUS
 		       );
+
+/*!
+  \brief Compute smooth particle position and velocity fields
+  \details
+  \f{eqnarray*}{
+  \phi_p(\vec{r}) &=& \sum_i^{N_p} \phi_i(\vec{r}) \\
+  \phi\vec{v}_p(\vec{r}) &=& \sum_i^{N_p} \left[
+  \vec{v}_i + \vec{\omega}_i\times\left(\vec{r} - \vec{r}_i\right)
+  \right]\phi_i(\vec{r})
+  \f}
+  with \f$\vec{r}_i, \vec{v}_i, \vec{\omega}_i\f$ the position, velocity, and angular velocity of the \f$i\f$-th particle.
+  \param[out] phi smooth particle position field
+  \param[out] up smooth particle velocity field
+  \param[in] p particle data
+ */
 void Make_phi_u_particle(double *phi, double **up, Particle *p);
 void Make_phi_particle_OBL(double *phi
 			   ,Particle *p
 			   ,const double radius = RADIUS
     );
 void Make_phi_u_particle_OBL(double *phi, double **up, Particle *p);
+
+/*!
+  \brief Compute surface normal field defined on the interface domain of the particles
+  \param[out] surface_normal surface normal field
+  \param[in] p particle data
+  \bug In case of overlapping interfaces, the surface normal vectors are not actually unitary.
+ */
 void Make_surface_normal(double **surface_normal
 			   ,const Particle *p);
+
+
 void Make_rho_field(double *phi,Particle *p);
 
+/*!
+  \brief Compute the position of the particle on the discrete grid
+  \details Returns the coordinates of grid particle, defined as the coordinates of the back-lower-left edge of the bin which contains the particle center
+  \f[
+  \vec{x}_i = (\text{int}) \vec{x}_p / \df{x}
+  \f]
+  This is the position of the Sekibun_cell used to compute integrals over the particle domain
+  \param[in] xp real space position of the particle
+  \param[in] dx grid spacing
+  \param[out] x_int position of the particle on the discrete grid
+  \param[out] residue displacement vector from the real position to the grid position
+ */
 inline int Particle_cell(const double *xp
 			 ,const double &dx
 			 ,int *x_int
@@ -69,6 +130,18 @@ inline int Particle_cell(const double *xp
   }
   return sw_in_cell;
 }
+
+/*!
+  \brief Returns global (world) coordinates of a given point of the particle Sekibun integration cell
+  \param[in] cell local coordinates of a point in the Sekibun grid
+  \param[in] x_int center of the Sekibun grid (origin of local frame)
+  \param[in] residue offset between particle position and position of Sekibun cell
+  \param[in] sw_in_cell unused
+  \param[in] Nlattice (global) number of lattice points in each direction
+  \param[in] dx grid spacing
+  \param[out] r_mesh global coordinates of \c cell point
+  \param[out] r displacement vector from particle center to \c cell point (i.e. radial vector from the particle to the given mesh point)
+ */
 inline void Relative_coord(const int *cell
 			   ,const int *x_int
 			   ,const double *residue
@@ -257,16 +330,49 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
 }
 
 
+/*!
+  \brief Compute linear velocity due to rigid body rotation (with \c ROTATION OFF)
+  \details Trivial since rotation of the particle is ignored
+  \f[
+  \vec{v} = 0
+  \f]
+  \param[in] omega angular velocity 
+  \param[in] r radial distance vector
+  \param[out] v linear velocity due to rotation
+ */
 inline void Angular2v_rot_off(const double *omega, const double *r, double *v){
     v[0] = 0.0;
     v[1] = 0.0;
     v[2] = 0.0;
 }
+/*!
+  \brief Compute linear velocity of a given point due to rigid body rotation (with \c ROTATION ON)
+  \details
+  \f[
+  \vec{v} = \vec{\omega}\times\vec{r}
+  \f]
+  \param[in] omega angular velocity
+  \param[in] r radial distance vector to given point
+  \param[out] v linear velocity due to rotation
+ */
 inline void Angular2v_rot_on(const double *omega, const double *r, double *v){
     v[0] = omega[1] * r[2] - omega[2] * r[1];
     v[1] = omega[2] * r[0] - omega[0] * r[2];
     v[2] = omega[0] * r[1] - omega[1] * r[0];
 }
+
+/*!
+  \brief Reset scalar field to a given value over specified domain
+  \details
+  \f[
+  \phi(\vec{r}) = a, \qquad \vec{r}\in \mathcal{D}
+  \f]
+  \param[out] phi scalar field to reset
+  \param[in] nx x domain \f$0\ldots N_x - 1\f$
+  \param[in] ny y domain \f$0\ldots N_y - 1\f$
+  \param[in] nz z domain \f$0\ldots N_z - 1\f$
+  \param[in] value scalar value used to reset field
+ */
 inline void Reset_phi_primitive(double *phi
 				,const int nx
 				,const int ny
@@ -284,9 +390,27 @@ inline void Reset_phi_primitive(double *phi
 	}
     }
 }
+
+/*!
+  \brief Reset scalar field to a given value over the whole domain
+  \details \f[\phi(\vec{r}) = a\f]
+  \param[out] phi scalar field to reset
+  \param[in] value scalar value used to reset field
+ */
 inline void Reset_phi(double *phi, const double value = 0.0){
   Reset_phi_primitive(phi, NX, NY, NZ_, value);
 }
+
+/*!
+  \brief Reset scalar and vector field to zero over the whole domain
+  \details 
+  \f{eqnarray*}{
+  \phi(\vec{r}) &=& 0 \\
+  \vec{u}(\vec{r}) &=& (0, 0, 0)
+  \f}
+  \param[out] phi scalar field to reset
+  \param[out] up vector field to reset
+ */
 inline void Reset_phi_u(double *phi, double **up){
     int im;
 //#pragma omp parallel for schedule(dynamic, 8) private(im)

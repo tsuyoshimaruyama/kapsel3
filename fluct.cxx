@@ -1,6 +1,10 @@
-//
-// $Id: fluct.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file fluct.cxx
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Routines to compute random thermal fluctuation forces
+ */
 #include "fluct.h"
 
 void Add_random_force_thermostat(Particle *p, const CTime &jikan){

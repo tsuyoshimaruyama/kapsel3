@@ -1,6 +1,10 @@
-//
-// $Id: sp_3d_ns.cxx,v 1.5 2006/11/14 03:39:36 nakayama Exp $
-//
+/*!
+  \file sp_3d_ns.cxx
+  \author Y. Nakayama
+  \date 2006/11/14
+  \version 1.5
+  \brief Main program file
+ */
 #include "sp_3d_ns.h"
 
 void (*Time_evolution)(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan);

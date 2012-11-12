@@ -1,6 +1,10 @@
-//
-// $Id: fft_wrapper.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file fft_wrapper.cxx
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief FFT wrapper routines for reciprocal space calculations 
+ */
 
 #include "fft_wrapper.h"
 
@@ -275,24 +279,21 @@ void U_k2zeta_k(double **u, double **zeta, double uk_dc[DIM]){
 			 - ks[2] * u[1][im+1]);
 		    omega_im[0] = 
 			-(ks[1] * u[2][im] 
-			  - ks[2] * u[1][im]
-			    );
+			  - ks[2] * u[1][im]);
 		    
 		    omega_re[1] = 
 			(ks[2] * u[0][im+1] 
 			 - ks[0] * u[2][im+1]);
 		    omega_im[1] = 
 			-(ks[2] * u[0][im] 
-			  - ks[0] * u[2][im]
-			    );
+			  - ks[0] * u[2][im]);
 		    
 		    omega_re[2] = 
 			(ks[0] * u[1][im+1] 
 			 - ks[1] * u[0][im+1]);
 		    omega_im[2] = 
 			-(ks[0] * u[1][im] 
-			  - ks[1] * u[0][im]
-			    );
+			  - ks[1] * u[0][im]);
 		    
 		    if(KX_int[im] != 0){
 			zeta[0][im] = omega_re[1];

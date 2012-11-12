@@ -1,6 +1,10 @@
-//
-// $Id: make_phi.cxx,v 1.3 2006/10/20 00:24:36 iwashita Exp $
-//
+/*!
+  \file make_phi.cxx
+  \brief Routines to compute smooth profile and grid particle properties
+  \author T. Iwashita
+  \date 2006/10/20
+  \version 1.3
+ */
 
 #include "make_phi.h"
 

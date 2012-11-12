@@ -1,6 +1,11 @@
-//
-// $Id: profile.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file profile.cxx
+  \brief Smooth particle profile routines
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
+
 #include "profile.h"
 
 inline void Copy_sekibun_cell(const int &np_domain

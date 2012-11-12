@@ -1,6 +1,12 @@
-//
-// $Id: macro.h,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file macro.h
+  \brief Global parameters and macro function definitions
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \todo documentation
+ */
+
 #ifndef MACRO_H_
 #define MACRO_H_
 

@@ -1,6 +1,11 @@
-//
-// $Id: solute_rhs.cxx,v 1.1 2006/06/27 18:41:29 nakayama Exp $
-//
+/*!
+  \file solute_rhs.cxx
+  \brief Routines to compute the terms appearing in the right hand side of the solute advection diffusion equation
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
+
 #include "solute_rhs.h"
 
 double *Valency_e;

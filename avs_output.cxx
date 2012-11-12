@@ -1,6 +1,10 @@
-//
-// $Id: avs_output.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file avs_output.cxx
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Output routines for field data in AVS/Express format
+ */
 
 #include "avs_output.h"
 

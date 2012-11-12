@@ -1,6 +1,11 @@
-//
-// $Id: input.cxx,v 1.3 2006/11/14 20:07:12 nakayama Exp $
-//
+/*!
+  \file input.cxx
+  \brief Read udf input file to start simulation
+  \author Y. Nakayama
+  \date 2006/11/14
+  \version 1.3
+ */
+
 #include "input.h"
 
 /////////////////////

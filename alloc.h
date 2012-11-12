@@ -1,8 +1,11 @@
-//
-// $Id: alloc.h,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
-/* ---- memory allocation ---- */
-
+/*!
+  \file alloc.h
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Memory allocation routines (header file)
+  \todo documentation
+ */
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,6 +1,10 @@
-//
-// $Id: avs_output_p.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file avs_output_p.cxx
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Output routines for particle data in AVS/Express format
+ */
 #include "avs_output_p.h"
 
 const int Veclen_p = 22;

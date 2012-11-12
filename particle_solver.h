@@ -1,6 +1,11 @@
-//
-// $Id: particle_solver.h,v 1.2 2006/10/16 19:05:02 nakayama Exp $
-//
+/*!
+  \file particle_solver.h
+  \brief Solver routines for particle position and velocity (header file)
+  \author Y. Nakayama
+  \date 2006/10/16
+  \version 1.2
+  \todo documentation
+ */
 #ifndef PARTICLE_SOLVER_H
 #define PARTICLE_SOLVER_H
 

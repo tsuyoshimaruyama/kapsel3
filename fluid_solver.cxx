@@ -1,6 +1,10 @@
-//
-// $Id: fluid_solver.cxx,v 1.2 2006/08/15 15:01:35 nakayama Exp $
-//
+/*!
+  \file fluid_solver.cxx
+  \author Y. Nakayama
+  \date 2006/08/15
+  \version 1.2
+  \brief Solver for Navier-Stokes equations 
+ */
 #include "fluid_solver.h"
 
 double *Pressure;
@@ -367,6 +371,7 @@ void NSsolute_solver_Euler(double **zeta
 
 void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p){
  
+  //advection term on the rhs of NS equation (with minus sign)
   Zeta_k2advection_k(zeta, uk_dc, f_ns0);
 
   double dmy0 = -NU*jikan.dt_fluid; 

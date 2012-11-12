@@ -1,6 +1,10 @@
-//
-// $Id: operate_electrolyte.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file operate_electrolyte.cxx
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \brief Routines to compute the charge ditributions and forces
+ */
 #include "operate_electrolyte.h"
 
 double Bjerrum_length;

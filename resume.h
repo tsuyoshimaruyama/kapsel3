@@ -1,6 +1,12 @@
-//
-// $Id: resume.h,v 1.1 2006/06/27 18:41:29 nakayama Exp $
-//
+/*!
+  \file resume.h
+  \brief Routines to read/write restart file (header file)
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \todo documentation
+ */
+
 #ifndef RESUME_H
 #define RESUME_H
 

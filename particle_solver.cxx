@@ -1,6 +1,11 @@
-///
-// $Id: particle_solver.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file particle_solver.cxx
+  \brief Solver routines for particle position and velocity
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
+
 #include "particle_solver.h"
 
 inline void MD_solver_orientation_Euler(Particle &p, const double &dt){
