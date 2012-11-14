@@ -168,8 +168,15 @@ void Omega_k2zeta_k(double **omega, double **zetak){
     }
   }
 }
-  assert(zetak[0][0] == 0.0); 
-  assert(zetak[1][0] == 0.0); 
+/*!
+  \warning If FIX_CELL is not set, the zero wave-number component is
+  allowed to be non-null
+ */
+ if(FIX_CELL){
+   assert(zetak[0][0] == 0.0); 
+   assert(zetak[1][0] == 0.0); 
+ }
+
 }
 
 void Omega_k2zeta_k_OBL(double **omega, double **zetak){
