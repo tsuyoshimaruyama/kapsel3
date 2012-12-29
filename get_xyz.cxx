@@ -305,9 +305,13 @@ void write_xyz(ofstream &outfile,
   strcat(str, dmy_str);
 
   // forces and torques
-  sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", frc[0], frc[1], frc[2], frc_slip[0], frc_slip[1], frc_slip[2]);
+  sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", 
+          frc[0], frc[1], frc[2], frc_slip[0], frc_slip[1], frc_slip[2], 
+          frc[0] + frc_slip[0], frc[1] + frc_slip[1], frc[2] + frc_slip[2]);
   strcat(str, dmy_str);
-  sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", tau[0], tau[1], tau[2], tau_slip[0], tau_slip[1], tau_slip[2]);
+  sprintf(dmy_str, "%.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  %.6g  ", 
+          tau[0], tau[1], tau[2], tau_slip[0], tau_slip[1], tau_slip[2], 
+          tau[0] + tau_slip[0], tau[1] + tau_slip[1], tau[2] + tau_slip[2]);
   strcat(str, dmy_str);
 
   // janus vector
@@ -350,13 +354,13 @@ void init_xyz(ofstream &outfile, char *fname){
   strcat(str, "23:w_x 24:w_y 25:w_z ");
 
   // forces (hydro/slip)
-  strcat(str, "26:F_x 27:F_y 28:F_z 29:Fs_x 30:Fs_y 31:Fs_z ");
+  strcat(str, "26:Fh_x 27:Fh_y 28:Fh_z 29:Fs_x 30:Fs_y 31:Fs_z 32:F_x 33:F_y 34:F_z");
 
   // torques (hydro/slip)
-  strcat(str, "32:N_x 33:N_y 34:N_z 35:Ns_x 36:Ns_y 37:Ns_z ");
+  strcat(str, "35:Nh_x 36:Nh_y 37:Nh_z 38:Ns_x 39:Ns_y 40:Ns_z 41:N_x 42:N_y 43:N_z");
 
   // janus axis
-  strcat(str, "38:e_x 39:e_y 40:e_z 41:c_ee 42:theta_0 43:alpha 44:beta 45:gamma ");
+  strcat(str, "44:e_x 45:e_y 46:e_z 47:c_ee 48:theta_0 49:alpha 50:beta 51:gamma ");
 
   outfile << str << endl;
 
