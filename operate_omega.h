@@ -127,8 +127,22 @@ inline void Zeta_k2u(double **zeta, double uk_dc[DIM], double **u){
   U_k2u(u);
 }
 
+/*!
+  \brief Compute contravariant velocity field (real-space) from
+  reduced vorticity field (reciprocal space). Also returns a copy of
+  the y component of the Fourier transform of the velocity field
+  \details\f[
+  \ft{\zeta}^\alpha(\vec{k})\longrightarrow u^\alpha(\vec{r}), \ft{u}^y(\vec{k})
+  \f]
+  \param[in] zeta reduced contravariant vorticity field (reciprocal
+  space)
+  \param[in] uk_dc zero wavenumber Fourier transform of the
+  contravariant velocity field
+  \param[out] u contravariant velocity field (real space)
+  \param[out] uk_cp contravariant y-velocity field (reciprocal space)
+ */
 inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double *uk_cp){
-  Zeta_k2u_k_OBL(zeta, uk_dc, u);
+  Zeta_k2u_k_OBL(zeta, uk_dc, u);//contra
 
   int im;
   for(int i = 0; i < NX; i++){
@@ -142,6 +156,16 @@ inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double 
   U_k2u(u);
 }
 
+/*!
+  \brief Compute contravariant vorticity field (real space) from
+  contravariant reduced vorticity field (reciprocal space)
+  \details\f[
+  \ft{\zeta}^\alpha(\vec{k}) \longrightarrow \ft{\omega}^\alpha(\vec{r})
+  \f]
+  \param[in] zeta contravariant reduced vorticity field (reciprocal
+  space)
+  \param[out] omega contravariant vorticity field (real space)
+ */
 inline void Zeta_k2omega_OBL(double **zeta, double **omega){
     Zeta_k2omega_k_OBL(zeta, omega);
     

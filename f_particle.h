@@ -20,8 +20,25 @@
 
 extern double **f_particle;
 
+/*!
+  \brief Allocate f_particle working array
+ */
 void Mem_alloc_f_particle(void);
 
+/*!
+  \brief Compute the force density field which imposes the rigidity constraint on the total velocity field
+  \details The force density field \f$\phi\vec{f}_p\f$ is derived assuming momentum conservation between colloids and fluid at each time step
+  \f[
+  \int_{t_n}^{t_n+h} \df{s}\, \phi\vec{f}_p = 
+  \phi^{n+1}\left(\vec{v}_p^{n+1} - \vec{u}\right) - \frac{h}{\rho}\nabla p
+  \f]
+  where \f$\phi^{n+1}\vec{v}_p^{n+1}\f$ represents the particle velocity field and \f$\vec{u}\f$ the intermediate fluid velocity field (obtained from solving the NS equations for the total fluid). 
+  \note It is not necessary to include the pressure term, one just needs to enforce the solenoidal condition on the final velocity field
+  \param[out] f force density field needed to enforce rigidity constraint on the final field
+  \param[in] u total fluid velocity field
+  \param[in] up particle velocity field
+  \param[in] phi particle concentration field
+ */
 inline void Make_f_particle_dt_nonsole(double **f
 				       ,double **u 
 				       ,double **up
@@ -46,6 +63,12 @@ inline void Make_f_particle_dt_nonsole(double **f
     }	
   }
 }
+
+
+/*!
+  \brief Compute the (solenoidal) force density field which imposes the rigidity constraint on the total velocity field
+  \see Make_f_particle_dt_nonsole
+*/				
 inline void Make_f_particle_dt_sole(double **f
 				    ,double **u
 				    ,double **up

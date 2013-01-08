@@ -311,6 +311,8 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
 	U_oblique2u(ucp);
 
+        /*! \bug upper limit on k should be NZ_ (reciprocal space domain)!
+         */
 	for (int i=0; i<NX; i++) {
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ; k++){
