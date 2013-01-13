@@ -197,7 +197,7 @@ inline void Qdot(double dQRdt[DIM][DIM],
 }
 
 // time derivative of angular velocity
-void wdot(double dwdt[DIM], 
+/*void wdot(double dwdt[DIM], 
 	  const double w[DIM],
 	  const double tau[DIM],
 	  const double I[DIM][DIM]){
@@ -217,11 +217,11 @@ inline void wdot(double dwdt[DIM],
   v_copy(w, dwdt);
   wdot(dwdt, w, tau, I);
 }
-
+*/
 
 
 // Rotation operator using rodrigues' formula
-void rodrigues_rotation_formula(double T[DIM][DIM], 
+/*void rodrigues_rotation_formula(double T[DIM][DIM], 
 				const double phi, 
 				const double n[DIM]){
   double Id[DIM][DIM] = {{ONE, ZERO, ZERO}, 
@@ -239,13 +239,13 @@ void rodrigues_rotation_formula(double T[DIM][DIM],
     }
   }
 }
-
+*/
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
 /// TEST ROUTINES
 //////////////////////////////////////////////////
 
-void propagate_wq_RK4(quaternion &q,
+/*void propagate_wq_RK4(quaternion &q,
 		      double omega[DIM],
 		      const double I[DIM][DIM],
 		      const double &dt){
@@ -292,8 +292,8 @@ void propagate_wq_RK4(quaternion &q,
   v_add(dmy_w, kw4);
   v_add(omega, dmy_w, 1.0/6.0);
 }
-
-void propagate_w_RK4_Q_Euler(double QR[DIM][DIM], 
+*/
+/*void propagate_w_RK4_Q_Euler(double QR[DIM][DIM], 
 			     double omega[DIM],
 			     const double I[DIM][DIM],
 			     const double &dt){
@@ -345,4 +345,4 @@ void propagate_w_RK4_Q_Euler(double QR[DIM][DIM],
   v_add(omega, dmy_w, 1.0/6.0);
 
 }
-
+*/

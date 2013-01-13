@@ -1,15 +1,14 @@
-// kapsel v2.10
-//
+// kapsel v3.0
+// 2013/01/13
 
-// $Id: define.udf,v 2.1 2010/03/13 RY $
-//
 \begin{global_def}
 
-class Vector3d:{x: float y: float z: float}
-class Particle:{ R:Vector3d,  v:Vector3d}
+class Vector3d:{x: float, y: float, z: float}
+class Quaternion:{q0: float, q1: float, q2: float, q3: float}
+class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d}
 
 constitutive_eq: {
-   type: select {'Navier_Stokes','Shear_Navier_Stokes','Shear_Navier_Stokes_Lees_Edwards', 'Electrolyte'}
+   type: select {'Navier_Stokes','Shear_Navier_Stokes','Electrolyte'}
  
    Navier_Stokes: { 
       DX: 	double "lattice spacing (=1), fixed for all directions"
@@ -18,7 +17,7 @@ constitutive_eq: {
       kBT:	double "temperature"
       alpha_v: 	double "correction coefficient of V"
       alpha_o: 	double "correction coefficient of Omega"
-   }
+   }//End Navier_Stokes
 
    Shear_Navier_Stokes: { 
       DX: 	double "lattice spacing (=1), fixed for all directions"
@@ -37,26 +36,7 @@ constitutive_eq: {
 	    Frequency: double "alternating frequenct"
 	}
       }
-   }
-
-   Shear_Navier_Stokes_Lees_Edwards: { 
-      DX: 	double "lattice spacing (=1), fixed for all directions"
-      RHO:	double "mass density of solvent" 
-      ETA:	double "shear viscosity of solvent"
-      kBT:	double "temperature"
-      alpha_v: 	double "correction coefficient of V"
-      alpha_o: 	double "correction coefficient of Omega"
-      External_field: {
-	 type: select {"DC","AC"}
-	 DC: {
-	    Shear_rate:double "shear rate"
-	 }
-	 AC: {
-	    Shear_rate:double "shear rate"
-	    Frequency: double "alternating frequenct"
-	}
-      }
-   }
+   }//end Shear_Navier_Stokes
 
    Electrolyte: { 
       DX: 	double "lattice spacing (=1), fixed for all directions"
@@ -80,7 +60,7 @@ constitutive_eq: {
 	    Onsager_coeff_negative_ion: double "Onsager coefficient of negative ion"
 	    Debye_length: double "Deby screening length in the unit of DX"
 	 }
-      }
+      } //End Add_salt
       Electric_field: {
 	 type: select {"ON","OFF"}
 	 ON: {
@@ -97,20 +77,25 @@ constitutive_eq: {
 		Frequency: double
 		}
 	 }
-      }
-   }
-}
+      } //End Electric Field
+   } // End Electrolyte
+} // End constitutive_eq
 
 object_type: {
    type: select {'spherical_particle','chain'}
-
    spherical_particle: { 
       Particle_spec[]:{
          Particle_number: int "number of colloidal particles"
          MASS_RATIO: double "mass density ratio colloid/solvent"
          Surface_charge: double "surface charge of colloid"
+	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
+	 janus_propulsion: select{'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER', 'SLIP', 'OBSTACLE'}
+	 janus_force: Vector3d "self-propulsion force"
+	 janus_torque: Vector3d "self-propulsion torque"
+	 janus_slip_vel: float "Slip velocity coeff B1"
+	 janus_slip_mode: float "Blake squirmer mode B2/B1"
       }
-   }
+   }//end spherical_particle
 
    chain:{
       Chain_spec[]:{
@@ -118,9 +103,10 @@ object_type: {
          Chain_number: int "number of chains"
          MASS_RATIO: double "mass density ratio chain/solvent"
          Surface_charge: double "surface charge of colloid"
+	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
       }
-   }
-}
+   }//end chain
+}//end object_type
 
 A_XI: double "interface thickness in the unit of DX"
 
@@ -171,17 +157,20 @@ switch: {
          Particles[]: Particle
       }
    }
+   INIT_orientation: select {'user_specify', 'random', 'space_align'}
+   JANUS_slip_scale: float "Scale factor for particle slip velocity"
+   JANUS_slip_region: select {'interface_slip', 'surface_slip'}
+   JANUS_slip_boundary: select {'full_boundary', 'tangent_boundary'}
+   JANUS_slip_momentum: select {'slip_full', 'slip_norotation'}
+   SLIP_tol: float "Tolerance for iterative slip convergence"
+   SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
+   pin: select{'NO','YES'} "pin particles"
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
    }
-   pin: {
-      type: select{"NO","YES"}
-      YES:{pin[]: int
-           pin_rot[]: int
-          }
-   }
+
 }
 									       
 boundary_condition: {
@@ -201,6 +190,7 @@ output: {
       Out_dir: string "directory name"
       Out_name: string "prefix name for data file"
       FileType: select {"BINARY","ASCII"} "output data type"
+      AVS_fluid: select {"ON", "OFF"}
    }
    UDF: select {"ON","OFF"}
 }
@@ -208,13 +198,11 @@ output: {
 \end{global_def}
 
 \begin{def}
+class outParticle:{R:Vector3d,  R_raw:Vector3d, v:Vector3d, q:Quaternion, omega:Vector3d, 
+      		   f_hydro:Vector3d, torque_hydro:Vector3d, f_slip:Vector3d, torque_slip:Vector3d}
 E: float "total kinetic energy of the system"
 t: float "total time"
-//class Vector3d:{x: float y: float z: float}
-//class Particle:{ R:Vector3d,  v:Vector3d}      
-//class tensor:{xy: float yz: float zx: float xx: float yy: float}
-//class nspec:{ Concentration: float, Concentration_rhs0: float, Rho_ion: float}
-Particles[]: Particle
+Particles[]: outParticle
 \end{def}
 
 \begin{def}
@@ -223,21 +211,21 @@ class sParticle:{
       v:Vector3d ,
       v_old:Vector3d ,
       f_hydro:Vector3d ,
+      f_hydro_previous:Vector3d ,
       f_hydro1:Vector3d ,
+      f_slip:Vector3d ,
+      f_slip_previous:Vector3d,
       fr:Vector3d ,
       fr_previous:Vector3d ,
-      fv:Vector3d ,
-      fv_previous:Vector3d ,
-      f_collison:Vector3d ,
-      f_collison_previous:Vector3d ,
       omega:Vector3d ,
       omega_old:Vector3d ,
       torque_hydro:Vector3d ,
+      torque_hydro_previous:Vector3d ,
       torque_hydro1:Vector3d ,
-      torquer:Vector3d ,
-      torquer_previous:Vector3d ,
-      torquev:Vector3d ,
-      torquev_previous:Vector3d
+      torque_slip:Vector3d,
+      torque_slip_previous:Vector3d,
+      q:Quaternion,
+      q_old:Quaternion
 }      
 class CTime:{
       ts:int
@@ -258,9 +246,6 @@ resume:{
          }
          uk_dc: Vector3d 
          Concentration[][][][]: {ck:float}
-         oblique: {
-            degree_oblique: float
-         }		
       }
    }
 }

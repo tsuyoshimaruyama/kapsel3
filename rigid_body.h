@@ -134,17 +134,18 @@ inline void Qdot(double dQRdt[DIM][DIM],
   \param[in] QR orientation matrix
   \param[in] I inertia tensor (body frame)
  */
-void wdot(double dwdt[DIM], //rotation matrix represenation
+/*void wdot(double dwdt[DIM],
 	  const double w[DIM],
 	  const double tau[DIM],
 	  const double I[DIM][DIM]);
+*/
 /*!
   \brief Compute time derivative of angular velocity (in place)
  */
-inline void wdot(double dwdt[DIM],
+/*inline void wdot(double dwdt[DIM],
 		 const double tau[DIM],
 		 const double I[DIM][DIM]);
-
+*/
 /*!
   \brief Update orientation/ angular velocity using fourth order RK scheme
   of a free rigid body (torque=0)
@@ -153,12 +154,11 @@ inline void wdot(double dwdt[DIM],
   \param[in] I intertia tensor
   \param[in] dt time step
  */
-void propagate_wq_RK4(quaternion &q, 
+/*void propagate_wq_RK4(quaternion &q, 
 		      double omega[DIM],
 		      const double I[DIM][DIM],
 		      const double &dt);
-
-
+*/
 //Rotation Matrix - Lie Group representation
 /*!
   \brief Update orientation/ angular velocity using fourth order RK scheme 
@@ -169,9 +169,9 @@ void propagate_wq_RK4(quaternion &q,
   \param[in] I inertia tensor
   \param[in] dt time step
  */
-void propagate_w_RK4_Q_Euler(double QR[DIM][DIM], 
+/*void propagate_w_RK4_Q_Euler(double QR[DIM][DIM], 
 			     double omega[DIM],
 			     const double I[DIM][DIM],
 			     const double &dt);
-				    
+*/
 #endif
