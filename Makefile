@@ -125,8 +125,8 @@ $(TARGET): $(OBJS)
 ## Clean
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(TARGET).x
-	rm -f *~ *.bak *.x
+	rm -f $(OBJS) $(TARGET)
+	rm -f *~ *.bak
 
 depend:
 	makedepend -- $(CFLAGS) -- *.cxx *.c *.h

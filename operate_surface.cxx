@@ -66,30 +66,19 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
       //surface properties
       if(janus_propulsion[pspec] == slip &&  less_than_mp(dmy_xi, HXI)){
 
-	slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
+	slip_vel = janus_slip_vel[pspec];
 	slip_mode = janus_slip_mode[pspec];
-	if(janus_slip_region == surface_slip){
-	  dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
-	}else{
-	  dmy_region = (1.0 - dmy_phi);
-	}
+        dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
 	
 	SM0 += dmy_region;
 	Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
 	dmy_sin = sin(dmy_theta);
 	dmy_sin2 = sin(2.0 * dmy_theta);
 	slip_magnitude = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
-	if(janus_slip_boundary == full_boundary){
-	  for(int d = 0; d < DIM; d++){
-	    us[d] = n_theta[d] * slip_magnitude - u_fluid[d];
-	  }
-	}else{ // partial tangential boundary
-	  double dmy_udot = u_fluid[0] * n_theta[0] + u_fluid[1] * n_theta[1] + u_fluid[2] * n_theta[2];
-	  for(int d = 0; d < DIM; d++){
-	    us[d] = n_theta[d] * (slip_magnitude - dmy_udot);
-	  }
-	}
-	
+        for(int d = 0; d < DIM; d++){
+          us[d] = n_theta[d] * slip_magnitude - u_fluid[d];
+        }
+
 	v_cross(r_x_theta, r, n_theta);
 	v_cross(r_x_us, r, us);
 	for(int d = 0; d < DIM; d++){
@@ -121,9 +110,6 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
       for(int l = 0; l < DIM; l++){
 	p[n].inertia[d][l] = M2[d][l];
 	p[n].surface_inertia[d][l] = SM2[d][l];
-	p[n].surfaceT[d][l] = ST[d][l];
-	p[n].surfaceU[d][l] = SU[d][l];
-	p[n].surfaceV[d][l] = SV[d][l];
       }
     }
 
@@ -144,27 +130,15 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
   imass = 1.0 / p.mass;
 
   //momentum change due to slip at boundary
-  if(janus_slip_boundary == full_boundary){
-    double w_x_r[DIM];
-    double r_x_v[DIM];
-    v_cross(w_x_r, wp, p.surface_mass_center);
-    v_cross(r_x_v, p.surface_mass_center, vp);
-    for(int d = 0; d < DIM; d++){
-      dP[d] = -(p.surface_mass * vp[d] + w_x_r[d] + p.surface_dv[d]);
-      dL[d] = -(r_x_v[d] + 
-		p.surface_inertia[d][0] * wp[0] + p.surface_inertia[d][1] * wp[1] + p.surface_inertia[d][2] * wp[2] +
-		p.surface_domega[d]);
-    }
-  }else{//partial_boundary
-    for(int d = 0; d < DIM; d++){
-      dP[d] = -(p.surfaceT[d][0] * vp[0] + p.surfaceT[d][1] * vp[1] + p.surfaceT[d][2] * vp[2] +
-		p.surfaceU[d][0] * wp[0] + p.surfaceU[d][1] * wp[1] + p.surfaceU[d][2] * wp[2] +
-		p.surface_dv[d]);
-      
-      dL[d] = -(p.surfaceU[0][d] * vp[0] + p.surfaceU[1][d] * vp[1] + p.surfaceU[2][d] * vp[2] +
-		p.surfaceV[d][0] * wp[0] + p.surfaceV[d][1] * wp[1] + p.surfaceV[d][2] * wp[2] +
-		p.surface_domega[d]);
-    }
+  double w_x_r[DIM];
+  double r_x_v[DIM];
+  v_cross(w_x_r, wp, p.surface_mass_center);
+  v_cross(r_x_v, p.surface_mass_center, vp);
+  for(int d = 0; d < DIM; d++){
+    dP[d] = -(p.surface_mass * vp[d] + w_x_r[d] + p.surface_dv[d]);
+    dL[d] = -(r_x_v[d] + 
+              p.surface_inertia[d][0] * wp[0] + p.surface_inertia[d][1] * wp[1] + p.surface_inertia[d][2] * wp[2] +
+              p.surface_domega[d]);
   }
 
   // Compute angular velocity of droplet
@@ -225,7 +199,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
     
     if(janus_propulsion[pspec] == slip){
       
-      slip_vel = janus_slip_vel[pspec] * janus_slip_scale;
+      slip_vel = janus_slip_vel[pspec];
       slip_mode = janus_slip_mode[pspec];
       slip_droplet(vp, omega_p, delta_v, delta_omega, p[n]);
       for(int d = 0; d < DIM; d++){
@@ -263,11 +237,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
           }
         }
 	
-	if(janus_slip_region == surface_slip){
-	  dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
-	}else{
-	  dmy_region = (1.0 - dmy_phi);
-	}
+        dmy_region = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
 	if(less_than_mp(dmy_xi, HXI)){//interface domain
 	  Angular2v(omega_p, r, v_rot);
 	  Squirmer_coord(r, n_r, n_theta, n_tau, dmy_r, dmy_theta, dmy_tau, p[n]);
@@ -278,18 +248,10 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	    dmy_fv[d] = (vp[d] + v_rot[d]);
 	  }
 	  dmy_vslip = slip_vel * (dmy_sin + slip_mode * dmy_sin2);
-	  if(janus_slip_boundary == full_boundary){
-	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = dmy_region * (dmy_fv[d] + n_theta[d]*dmy_vslip - u_fluid[d]);
-	    }
-	  }else { //partial tangential boundary
-	    dmy_us = dmy_vslip + 
-	      (dmy_fv[0] - u_fluid[0])*n_theta[0] + (dmy_fv[1] - u_fluid[1])*n_theta[1] + (dmy_fv[2] - u_fluid[2])*n_theta[2]; 
-	    dmy_us *= dmy_region;
-	    for(int d = 0; d < DIM; d++){
-	      dmy_fv[d] = n_theta[d] * dmy_us;
-	    }
-	  }
+          for(int d = 0; d < DIM; d++){
+            dmy_fv[d] = dmy_region * (dmy_fv[d] + n_theta[d]*dmy_vslip - u_fluid[d]);
+          }
+
 	  for(int d = 0; d < DIM; d++){
 	    force_s[d] += dmy_fv[d];
 #pragma omp atomic

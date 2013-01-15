@@ -109,11 +109,8 @@ inline void self_propulsion(Particle &p, double *force, double *torque){
 
   if(SW_JANUS_MOTOR){
     int &spec = p.spec;
-    int self_flag = janus_propulsion[spec];
-    if(self_flag == swimmer || self_flag == tumbler){
+    if(janus_propulsion[spec] == motor){
       rigid_body_rotation(force, janus_force[spec], p.q, BODY2SPACE);
-    }
-    if(self_flag == rotator || self_flag == tumbler){
       rigid_body_rotation(torque, janus_torque[spec], p.q, BODY2SPACE);
     }
   }

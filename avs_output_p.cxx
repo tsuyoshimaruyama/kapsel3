@@ -7,8 +7,8 @@
  */
 #include "avs_output_p.h"
 
-const int Veclen_p = 22;
-const char *Label_p="Radius vx vy vz wx wy wz fx fy fz tx ty tz x1 x2 x3 y1 y2 y3 z1 z2 z3";
+const int Veclen_p = 10;
+const char *Label_p="Radius x1 x2 x3 y1 y2 y3 z1 z2 z3";
 
 void Init_avs_p(const AVS_parameters &Avs_parameters)
 {
@@ -119,31 +119,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
       dmy = (float)RADIUS;
       fwrite(&dmy, sizeof(float), 1, fout);
     }
-    for(int d = 0; d < DIM; d++){                 //velocity
-      for(int n = 0; n < Particle_Number; n++) {
-	dmy = (float)p[n].v[DIM - 1 - d];
-	fwrite(&dmy, sizeof(float), 1, fout);
-      }
-    }
-    for(int d = 0; d < DIM; d++){                 //angular velocity
-      for(int n = 0; n < Particle_Number; n++) { 
-	dmy = (float)p[n].omega[DIM - 1 - d];
-	fwrite(&dmy, sizeof(float), 1, fout);
-      }
-    }
-    for(int d = 0; d < DIM; d++){                 //force
-      for(int n = 0; n < Particle_Number; n++) {
-	dmy = (float)p[n].f_hydro[DIM - 1 -d];
-	fwrite(&dmy, sizeof(float), 1, fout);
-      }
-    }
-    for(int d = 0; d < DIM; d++){                 //torque
-      for(int n = 0; n < Particle_Number; n++) {  
-	dmy = (float)p[n].torque_hydro[DIM - 1 -d];
-	fwrite(&dmy, sizeof(float), 1, fout);
-      }
-    }                                             
-    for(int d1 = 0; d1 < DIM; d1++){              //orientation matrix (ex, ey, ez)
+    for(int d1 = 0; d1 < DIM; d1++){              //body coordinate system (ex, ey, ez)
       for(int d2 = 0; d2 < DIM; d2++){
 	for(int n = 0; n < Particle_Number; n++){
 	  dmy = (float)p[n].QR[d2][d1];
@@ -156,12 +132,8 @@ void Output_avs_p(AVS_parameters &Avs_parameters
   else {
     fprintf(fout, "%s\n", line);
     for(int n = 0; n < Particle_Number; n++) {
-      fprintf(fout, "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n",
+      fprintf(fout, "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n",
 	      RADIUS,
-	      p[n].v[2], p[n].v[1], p[n].v[0],
-	      p[n].omega[2], p[n].omega[1], p[n].omega[0],
-	      p[n].f_hydro[2], p[n].f_hydro[1], p[n].f_hydro[0],
-	      p[n].torque_hydro[2], p[n].torque_hydro[1], p[n].torque_hydro[0],
 	      p[n].QR[0][0], p[n].QR[1][0], p[n].QR[2][0],
 	      p[n].QR[0][1], p[n].QR[1][1], p[n].QR[2][1],
 	      p[n].QR[0][2], p[n].QR[1][2], p[n].QR[2][2]);

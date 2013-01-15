@@ -158,10 +158,6 @@ switch: {
       }
    }
    INIT_orientation: select {'user_specify', 'random', 'space_align'}
-   JANUS_slip_scale: float "Scale factor for particle slip velocity"
-   JANUS_slip_region: select {'interface_slip', 'surface_slip'}
-   JANUS_slip_boundary: select {'full_boundary', 'tangent_boundary'}
-   JANUS_slip_momentum: select {'slip_full', 'slip_norotation'}
    SLIP_tol: float "Tolerance for iterative slip convergence"
    SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
    pin: select{'NO','YES'} "pin particles"
@@ -170,7 +166,6 @@ switch: {
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
    }
-
 }
 									       
 boundary_condition: {

@@ -244,19 +244,13 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
 	p[n].f_slip[d] = (dmy * force[d] * p[n].eff_mass_ratio) * dmy_mass;
       }
       
-      if(janus_slip_momentum != slip_norotation){
-	dmy_mass = 1.0/3.0 * (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2]);
-	dmy_mass = MOI[pspec] / (dmy_mass * dmy_factor);
-	
-	for(int d = 0; d < DIM; d++){
-	  p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
-	}
-      }else{
-	for(int d = 0; d < DIM; d++){
-	  p[n].torque_slip[d] = 0.0;
-	}
+      dmy_mass = 1.0/3.0 * (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2]);
+      dmy_mass = MOI[pspec] / (dmy_mass * dmy_factor);
+      
+      for(int d = 0; d < DIM; d++){
+        p[n].torque_slip[d] = (dmy * torque[d] * p[n].eff_mass_ratio) * dmy_mass;
       }
-
+      
     }//Particle_number
 }
 void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan){

@@ -53,15 +53,10 @@ enum PT {spherical_particle
 	 ,chain
 };
 enum JAX {x_axis, y_axis, z_axis, no_axis};
-enum JP {swimmer,
-	 rotator,
-	 tumbler,
+enum JP {motor,
 	 slip,
          obstacle,
          no_propulsion};
-enum JSR {interface_slip, surface_slip};
-enum JSB {tangent_boundary, full_boundary};
-enum JSM {slip_full, slip_norotation};
 //////  
 extern SW_time SW_TIME;
 //////  
@@ -108,7 +103,6 @@ extern double LJ_dia;
 //////
 /////// avs output;
 extern int SW_AVS;
-extern int SW_AVSFLUID;
 
 extern int SW_JANUS;
 extern int SW_JANUS_MOTOR;
@@ -121,10 +115,6 @@ extern double **janus_force;
 extern double **janus_torque;
 extern double *janus_slip_vel;
 extern double *janus_slip_mode;
-extern double janus_slip_scale;
-extern JSR janus_slip_region;
-extern JSB janus_slip_boundary;
-extern JSM janus_slip_momentum;
 
 extern char Out_dir[];
 extern char Out_name[];

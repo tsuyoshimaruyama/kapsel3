@@ -387,9 +387,6 @@ void Init_Particle(Particle *p){
 	for(int l = 0; l < DIM; l++){
 	  p[i].inertia[d][l] = 0.0;
 	  p[i].surface_inertia[d][l] = 0.0;
-	  p[i].surfaceT[d][l] = 0.0;
-	  p[i].surfaceU[d][l] = 0.0;
-	  p[i].surfaceV[d][l] = 0.0;
 	}
       }
     }
@@ -621,12 +618,10 @@ void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
 	fprintf(fp, "#for AVS (filetype is ascii)\n");
       }
       fprintf(fp, "#directory:%s\n", Out_dir);
-      if(SW_AVSFLUID){
-	fprintf(fp, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
-		,Avs_parameters.out_fld
-		,Avs_parameters.out_cod
-		,Avs_parameters.out_pfx);
-      }
+      fprintf(fp, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
+              ,Avs_parameters.out_fld
+              ,Avs_parameters.out_cod
+              ,Avs_parameters.out_pfx);
       if(Particle_Number > 0){
 	fprintf(fp, "# (particle data)->\t{%s, %s*.cod, %s*.dat}\n"
 		, Avs_parameters.out_pfld

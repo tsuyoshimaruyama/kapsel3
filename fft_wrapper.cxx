@@ -173,9 +173,9 @@ void Omega_k2zeta_k(double **omega, double **zetak){
   allowed to be non-null. Usefull for fixed-particle calculations
  */
  if(FIX_CELL){
-   assert(zetak[0][0] == 0.0); 
-   assert(zetak[1][0] == 0.0); 
- }
+  assert(zetak[0][0] == 0.0); 
+  assert(zetak[1][0] == 0.0); 
+}
 
 }
 
@@ -663,7 +663,6 @@ void U_k2divergence_k(double **u, double *div){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
 	k2=2*k;
-	//	ks[DIM];
 	im0=(i*NY*NZ_)+(j*NZ_)+k2;
 	im1=im0+1;
 

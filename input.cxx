@@ -30,12 +30,11 @@ const char *PT_name[]={"spherical_particle"
 };
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
-const char *JP_name[]={"SWIMMER", "ROTATOR", "TUMBLER", "SLIP", "OBSTACLE", "OFF"};
+const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
 //////
 SW_time SW_TIME;
 //////
 int SW_AVS;
-int SW_AVSFLUID;
 char Out_dir[128];
 char Out_name[128];
 int BINARY;
@@ -136,8 +135,8 @@ int GTS;
 int Num_snap;
 //per species janus specifications
 int SW_JANUS;
-int SW_JANUS_MOTOR;
-int SW_JANUS_SLIP;
+int SW_JANUS_MOTOR;  //body force/torque
+int SW_JANUS_SLIP;   //surface slip velocity
 int MAX_SLIP_ITER;
 double MAX_SLIP_TOL;
 JAX *janus_axis;           
@@ -146,10 +145,6 @@ double **janus_force;
 double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
-double janus_slip_scale;
-JSR janus_slip_region;
-JSB janus_slip_boundary;
-JSM janus_slip_momentum;
 
 //
 double NU;
@@ -891,51 +886,34 @@ void Gourmet_file_io(const char *infile
 		      janus_propulsion[i] = no_propulsion;
 		    }else if(str_in == JP_name[obstacle]){
 		      janus_propulsion[i] = obstacle;
-		    }else if(str_in == JP_name[swimmer]){
-		      janus_propulsion[i] = swimmer;
-		      SW_JANUS_MOTOR = 1;
-		    }else if(str_in == JP_name[rotator]){
-		      janus_propulsion[i] = rotator;
-		      SW_JANUS_MOTOR = 1;
-		    }else if(str_in == JP_name[tumbler]){
-		      janus_propulsion[i] = tumbler;
+		    }else if(str_in == JP_name[motor]){
+		      janus_propulsion[i] = motor;
 		      SW_JANUS_MOTOR = 1;
 		    }else if(str_in == JP_name[slip]){
 		      janus_propulsion[i] = slip;
 		      SW_JANUS_SLIP = 1;
 		    }else{
-		      fprintf(stderr, "ERROR: Unknown Janus mechanism\n");
+		      fprintf(stderr, "ERROR: Unknown propulsion mechanism\n");
 		      exit_job(EXIT_FAILURE);
 		    }
 
-		    // self-force in body coordinates
-		    if(janus_propulsion[i] == swimmer || janus_propulsion[i] == tumbler){
+		    // self-force/torque in body coordinates
+		    if(janus_propulsion[i] == motor){
 		      ufin->get(target.sub("janus_force.x"), janus_force[i][0]);
 		      ufin->get(target.sub("janus_force.y"), janus_force[i][1]);
 		      ufin->get(target.sub("janus_force.z"), janus_force[i][2]);
-		      assert(janus_force[i][0] * janus_force[i][0] + 
-			     janus_force[i][1] * janus_force[i][1] +
-			     janus_force[i][2] * janus_force[i][2] > 0);
+
+                      ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
+                      ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
+                      ufin->get(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    }else{
 		      for(int d = 0; d < DIM; d++){
 			janus_force[i][d] = 0.0;
+                        janus_torque[i][d] = 0.0;
 		      }
 		    }
 
-		    // self-torque in body-coordinates
-		    if(janus_propulsion[i] == rotator || janus_propulsion[i] == tumbler){
-		      ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
-		      ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
-		      ufin->get(target.sub("janus_torque.z"), janus_torque[i][2]);
-		      assert(janus_torque[i][0] * janus_torque[i][0] +
-			     janus_torque[i][1] * janus_torque[i][1] +
-			     janus_torque[i][2] * janus_torque[i][2] > 0);
-		    }else{
-		      for(int d = 0; d < DIM; d++){
-			janus_torque[i][d] = 0.0;
-		      }
-		    }
-
+                    // squirmer with surface slip velocity
 		    if(janus_propulsion[i] == slip){
 		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]);
@@ -1315,50 +1293,6 @@ void Gourmet_file_io(const char *infile
 	      exit_job(EXIT_FAILURE);
 	    }
 
-	    ufin->get(target.sub("JANUS_slip_scale"), janus_slip_scale);
-	    ufout->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
-	    ufres->put(target.sub("JANUS_slip_scale"), janus_slip_scale);
-
-	    ufin->get(target.sub("JANUS_slip_region"), str);
-	    ufout->put(target.sub("JANUS_slip_region"), str);
-	    ufres->put(target.sub("JANUS_slip_region"), str);
-	    if(str == "interface_slip"){
-	      janus_slip_region = interface_slip;
-	    }else if(str == "surface_slip"){
-	      janus_slip_region = surface_slip;
-	    }else{
-	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus region\n");
-	      exit_job(EXIT_FAILURE);
-	    }
-
-	    ufin->get(target.sub("JANUS_slip_boundary"), str);
-	    ufout->put(target.sub("JANUS_slip_boundary"), str);
-	    ufres->put(target.sub("JANUS_slip_boundary"), str);
-	    if(str == "tangent_boundary"){
-	      janus_slip_boundary = tangent_boundary;
-	    }else if(str == "full_boundary"){
-	      janus_slip_boundary = full_boundary;
-	    }else{
-	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus slip boundary\n");
-	      exit_job(EXIT_FAILURE);
-	    }
-
-	    ufin->get(target.sub("JANUS_slip_momentum"), str);
-	    ufout->put(target.sub("JANUS_slip_momentum"), str);
-	    ufres->put(target.sub("JANUS_slip_momentum"), str);
-	    if(str == "slip_full"){
-	      janus_slip_momentum = slip_full;
-	    }else if(str == "slip_norotation"){
-	      janus_slip_momentum = slip_norotation;
-	    }
-	    else{
-	      cerr << str << endl;
-	      fprintf(stderr, "invalid janus momentum conservation\n");
-	      exit_job(EXIT_FAILURE);
-	    }
-
 	    ufin->get(target.sub("SLIP_tol"), MAX_SLIP_TOL);
 	    ufout->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
 	    ufres->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
@@ -1456,18 +1390,6 @@ void Gourmet_file_io(const char *infile
 			fprintf(stderr, "invalid FileType %s\n",str.c_str()); 
 			exit_job(EXIT_FAILURE);
 		    }
-		    ufin->get(target.sub("AVS_fluid"), str);
-		    ufout->put(target.sub("AVS_fluid"), str);
-		    ufres->put(target.sub("AVS_fluid"), str);
-		    if(str == "ON"){
-		      SW_AVSFLUID = 1;
-		    } else if (str == "OFF") {
-		      SW_AVSFLUID = 0;
-		    } else {
-		      fprintf(stderr, "invalid AVS_fluid switch %s\n", str.c_str());
-		      exit_job(EXIT_FAILURE);
-		    }
-
 		}
 		target.up();
 	    }else if(str == "OFF"){

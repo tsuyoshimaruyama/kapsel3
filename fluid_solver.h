@@ -20,10 +20,7 @@ extern double *Pressure;
 extern double **Shear_force;
 extern double **Shear_force_k;
 extern double **f_ns0;
-//extern double **f_ns1;
-//extern double **f_ns2;
-//extern double **f_ns3;
-extern double **f_ns4;
+extern double **f_ns1;
 
 
 //Documentation for inline functions defined in fluid_solver.cxx
@@ -62,7 +59,6 @@ extern double **f_ns4;
 
 /*!
   \brief Allocate workspace variables 
-  \todo Only f_ns0 and f_ns4 are used. The others (1,2,3) should be removed.
  */
 void Mem_alloc_NS_solver(void);
 

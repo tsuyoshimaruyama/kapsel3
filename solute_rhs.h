@@ -44,15 +44,12 @@ void Mem_alloc_solute(void);
   \param[in,out] solute_flux updated solute flux, including the non-linear diffusive current due to electrostatic interactions
   \param[in] valency_e valence charges of the given solute species
   \param[in] Onsager_coeff Onsager coefficient of the given solute species
-  \param[in] omega_rhs unused
-  \todo omega_rhs should be removed for clarity, along with all other calculations under the NS_source term (which is never set)
  */
 void Solute_solver_rhs_nonlinear_x_single(double **grad_potential
 					  ,double *concentration_x
 					  ,double **solute_flux
 					  ,double &valency_e
 					  ,double &Onsager_coeff
-					  ,double *omega_rhs
 					  );
 /*!
   \brief Adds the advection flux contribution (due to solvent motion) to the rhs of the advection-diffusion equation for a given solute species

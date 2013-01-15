@@ -311,11 +311,9 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
 	U_oblique2u(ucp);
 
-        /*! \bug upper limit on k should be NZ_ (reciprocal space domain)!
-         */
 	for (int i=0; i<NX; i++) {
 	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ; k++){
+		for(int k=0; k<NZ_; k++){
 		    im = (i*NY*NZ_)+(j*NZ_) + k;
 
 		    K2[im] =
@@ -459,9 +457,7 @@ int main(int argc, char *argv[]){
 
   Set_avs_parameters(Avs_parameters);
   if(SW_AVS){
-    if(SW_AVSFLUID){
-      Init_avs(Avs_parameters);
-    }
+    Init_avs(Avs_parameters);
     if(Particle_Number > 0){
       Init_avs_p(Avs_parameters);
     }
@@ -538,15 +534,13 @@ int main(int argc, char *argv[]){
 	  if(Particle_Number > 0){
 	    Output_avs_p(Avs_parameters, particles, jikan);
 	  }
-	  if(SW_AVSFLUID){
-	    if(SW_EQ == Navier_Stokes 
-	       || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
-	       ){
-	      Output_avs(Avs_parameters, zeta, uk_dc, particles, jikan);
-	    }else if(SW_EQ==Electrolyte){
-	      Output_avs_charge(Avs_parameters, zeta, uk_dc, Concentration, particles, jikan);
-	    }
-	  }
+          if(SW_EQ == Navier_Stokes 
+             || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
+             ){
+            Output_avs(Avs_parameters, zeta, uk_dc, particles, jikan);
+          }else if(SW_EQ==Electrolyte){
+            Output_avs_charge(Avs_parameters, zeta, uk_dc, Concentration, particles, jikan);
+          }
 	}
 
 	if(SW_UDF){// Output_UDF

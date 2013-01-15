@@ -72,10 +72,6 @@ typedef struct Particle {
   double surface_mass_center[DIM];
   double surface_inertia[DIM][DIM];
 
-  double surfaceT[DIM][DIM];
-  double surfaceU[DIM][DIM];
-  double surfaceV[DIM][DIM];
-
   double surface_dv[DIM];
   double surface_domega[DIM];
 } Particle;

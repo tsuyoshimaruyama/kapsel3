@@ -82,7 +82,7 @@ object_type:{
    1.00000000000000,		//MASS_RATIO
    0.0,				//Surface_charge
    "Z", 			//Janus_axis
-   "SLIP", 			//Propulsion mechanism
+   "SQUIRMER", 			//Propulsion mechanism
    {0.0, 0.0, 0.0}, 		//Propulsion force
    {0.0, 0.0, 0.0}		//Propulsion torque
    0.01500     			//slip coeff
@@ -130,10 +130,6 @@ switch:{
   }
  }
  "space_align"
- 1.0
- "surface_slip"
- "full_boundary"
- "slip_full"
  0.005
  4
  "YES"

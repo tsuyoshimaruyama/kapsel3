@@ -294,18 +294,18 @@ void Output_avs(AVS_parameters &Avs_parameters
 
   A_k2a(Pressure);
   {
-      Reset_phi_u(phi, up);
-      if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-	Make_phi_u_particle_OBL(phi, up, p);
-	if(SW_JANUS){
-	  Make_phi_janus_particle_OBL(phi, work_v1, p); // +1/-1 janus polarity
-	}
-      } else {
-	Make_phi_u_particle(phi, up, p);
-	if(SW_JANUS){
-	  Make_phi_janus_particle(phi, work_v1, p); // +1/-1 janus polarity
-	}
-      }
+    Reset_phi(phi);
+    if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
+	  Make_phi_particle_OBL(phi, p);
+	  if(SW_JANUS){
+	    Make_phi_janus_particle_OBL(phi, work_v1, p); // +1/-1 janus polarity
+	  }
+    }else {
+	  Make_phi_particle(phi, p);
+	  if(SW_JANUS){
+	    Make_phi_janus_particle(phi, work_v1, p); // +1/-1 janus polarity
+	  }
+    }
   }
   
   Add_field_description(Avs_parameters,time, Veclen);
@@ -318,9 +318,6 @@ void Output_avs(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   if(BINARY){
-    //    Binary_write(fout, Avs_parameters, u[0], phi, up[0]);
-    //    Binary_write(fout, Avs_parameters, u[1], phi, up[1]);
-    //    Binary_write(fout, Avs_parameters, u[2], phi, up[2]);
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
@@ -342,12 +339,10 @@ void Output_avs(AVS_parameters &Avs_parameters
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
 	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 		int im=(i*NY*NZ_)+(j*NZ_)+k;
-		double dmy_phi = ABS(phi[im]);
-		double dmy_f = (dmy_phi < 1.0 ? 1.0 / (1.0 - dmy_phi) : 0.0);
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,dmy_f * (u[0][im] - dmy_phi * up[0][im])
-		  ,dmy_f * (u[1][im] - dmy_phi * up[1][im])
-		  ,dmy_f * (u[2][im] - dmy_phi * up[2][im])
+		  ,u[0][im]
+		  ,u[1][im]
+		  ,u[2][im]
 		  ,phi[im]
 		  ,Pressure[im]
 		  ,strain[1][im]
