@@ -127,7 +127,7 @@ inline double Distance(const double *x1
 }
 
 /*!
-  \brief Magnitude of the force for two particles normalized by the
+  \brief Magnitude of the force between two particles normalized by the
   distance between them
   \details The force on particle i, due to particle j,
   \f$\vec{F}_{i,j}\f$is 

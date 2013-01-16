@@ -29,7 +29,7 @@ void U2advection_k(double **u, double **advection);
 
 /*!
   \brief Compute the reduced advection term appearing on the rhs of the NS equation from the reduced vorticity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\vec{\zeta}} = \ft{\vec{\omega}}^* \longrightarrow -\ft{\vec{\Omega}}^*
   \f]
   The vorticity field is converted back to real space and U2advection_k is called
@@ -131,7 +131,7 @@ inline void Zeta_k2u(double **zeta, double uk_dc[DIM], double **u){
   \brief Compute contravariant velocity field (real-space) from
   reduced vorticity field (reciprocal space). Also returns a copy of
   the y component of the Fourier transform of the velocity field
-  \details\f[
+  \details \f[
   \ft{\zeta}^\alpha(\vec{k})\longrightarrow u^\alpha(\vec{r}), \ft{u}^y(\vec{k})
   \f]
   \param[in] zeta reduced contravariant vorticity field (reciprocal
@@ -159,7 +159,7 @@ inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double 
 /*!
   \brief Compute contravariant vorticity field (real space) from
   contravariant reduced vorticity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\zeta}^\alpha(\vec{k}) \longrightarrow \ft{\omega}^\alpha(\vec{r})
   \f]
   \param[in] zeta contravariant reduced vorticity field (reciprocal

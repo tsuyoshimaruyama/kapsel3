@@ -1,11 +1,16 @@
 #ifndef LAD3_H
 #define LAD3_H
+/*!
+  \file lad3.h
+  \brief Basic Matrix / Vector Euclidean 3D routines (not very optimized)
+  \author J. Molina
+  \date 2012/01/08
+  \version 1.0
+ */
 
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
-// Basic Matrix / Vector routines 
-//////////////////////////////////////////////////
-//////////////////////////////////////////////////
+/*!
+  \brief distance between vectors a and b
+ */
 inline double v_rms(const double a[DIM], const double b[DIM]){
   double c[DIM];
   for(int d = 0; d < DIM; d++){
@@ -14,19 +19,26 @@ inline double v_rms(const double a[DIM], const double b[DIM]){
   return sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);
 }
 
-//
 // Copy routines
+/*!
+  \brief copy vector
+ */
 inline void v_copy(double copy[DIM], const double original[DIM]){
   for(int i = 0; i < DIM; i++)
     copy[i] = original[i];
 }
+/*!
+  \brief copy matrix
+ */
 inline void M_copy(double copy[DIM][DIM], const double original[DIM][DIM]){
   for(int i = 0; i < DIM; i++)
     for(int j = 0; j < DIM; j++)
       copy[i][j] = original[i][j];
 }
 
-// Compare two matrices (user specified relative error)
+/*!
+  \brief Compare two matrices (user specified relative error)
+ */
 inline int M_cmp(const double A[DIM][DIM], const double B[DIM][DIM],
 		 const double tol=LARGE_TOL_MP){
   bool mequal = true;
@@ -38,25 +50,34 @@ inline int M_cmp(const double A[DIM][DIM], const double B[DIM][DIM],
   return (mequal ? 1 : 0);
 }
 
-//
-// Scaling routines
+/*!
+  \brief Scale vector
+ */
 inline void v_scale(double v[DIM], const double scale){
   for(int i = 0; i < DIM; i++)
     v[i] *= scale;
 }
+/*!
+  \brief Scale matrix
+ */
 inline void M_scale(double A[DIM][DIM], const double scale){
   for(int i = 0; i < DIM; i++)
     for(int j = 0; j < DIM; j++)
       A[i][j] *= scale;
 }
 
-// 
-// Vector add : c = a + alpha * b
+
+/*! 
+  \brief Vector add : c = a + alpha * b
+ */
 inline void v_add(double c[DIM], const double a[DIM], const double b[DIM],
 		  const double alpha=1.0){
   for(int i = 0; i < DIM; i++)
     c[i] = a[i] + alpha*b[i]; 
 }
+/*!
+  \brief Vector add: c += alpha * b
+ */
 inline void v_add(double c[DIM], const double b[DIM], 
 		  const double alpha=1.0){
   double a[DIM];
@@ -64,14 +85,18 @@ inline void v_add(double c[DIM], const double b[DIM],
   v_add(c, a, b, alpha);
 }
 
-//
-// Matrix add : C = A + alpha*B
+/*! 
+  \brief Matrix add : C = A + alpha*B
+ */
 inline void M_add(double C[DIM][DIM], const double A[DIM][DIM], 
 		  const double B[DIM][DIM], const double alpha=1.0){
   for(int i = 0; i < DIM; i++)
     for(int j = 0; j < DIM; j++)
       C[i][j] = A[i][j] + alpha * B[i][j];
 }
+/*!
+  \brief Matrix add : C += alpha*B
+ */
 inline void M_add(double C[DIM][DIM], const double B[DIM][DIM],
 		  const double alpha=1.0){
   double A[DIM][DIM];
@@ -79,9 +104,10 @@ inline void M_add(double C[DIM][DIM], const double B[DIM][DIM],
   M_add(C, A, B, alpha);
 }
 
-//
-// Matrix Multiply : C = alpha*(A.B)
-inline void M_prod(double AB[DIM][DIM], 
+/*!
+  \brief Matrix Multiply : C = alpha*(A.B)
+ */
+inline void M_prod(double C[DIM][DIM], 
 		   const double A[DIM][DIM],
 		   const double B[DIM][DIM],
 		   const double alpha=1.0){
@@ -92,19 +118,23 @@ inline void M_prod(double AB[DIM][DIM],
       for(int k = 0; k < DIM; k++){
 	dmy += A[i][k]*B[k][j];
       }
-      AB[i][j] = alpha*dmy;
+      C[i][j] = alpha*dmy;
     }
   }
 }
-inline void M_prod(double AB[DIM][DIM], const double B[DIM][DIM],
+/*!
+  \brief Matrix Multiply : C = alpha*(C*B)
+ */
+inline void M_prod(double C[DIM][DIM], const double B[DIM][DIM],
 		   const double alpha=1.0){
   double A[DIM][DIM];
-  M_copy(A, AB);
-  M_prod(AB, A, B, alpha);
+  M_copy(A, C);
+  M_prod(C, A, B, alpha);
 }
 
-//
-// Matrix determinant
+/*!
+  \brief Matrix determinant
+ */
 inline double M_det(const double A[DIM][DIM]){
   assert(DIM == 3);
   return -A[0][2]*A[1][1]*A[2][0] + A[0][1]*A[1][2]*A[2][0] + 
@@ -112,8 +142,9 @@ inline double M_det(const double A[DIM][DIM]){
     A[0][1]*A[1][0]*A[2][2] + A[0][0]*A[1][1]*A[2][2];
 }
 
-//
-// Matrix Inverse : B = alpha*(A^-1)
+/*!
+  \brief Matrix Inverse : B = alpha*(A^(-1))
+ */
 inline void M_inv(double B[DIM][DIM], const double A[DIM][DIM],
 		  const double alpha=1.0){
   assert(DIM == 3);
@@ -133,28 +164,38 @@ inline void M_inv(double B[DIM][DIM], const double A[DIM][DIM],
   B[2][1] = (A[0][1]*A[2][0] - A[0][0]*A[2][1])*idetA;
   B[2][2] = (A[0][0]*A[1][1] - A[0][1]*A[1][0])*idetA;
 }
+
+/*!
+  \brief Matrix Inverse : B = alpha*(B^(-1))
+ */
 inline void M_inv(double B[DIM][DIM], const double alpha=1.0){
   double A[DIM][DIM];
   M_copy(A, B);
   M_inv(B, A, alpha);
 }
 
-//
-// Matrix Transpose
+/*!
+  \brief Matrix Transpose : B = alpha*A^T
+ */
 inline void M_trans(double B[DIM][DIM], const double A[DIM][DIM],
 		    const double alpha=1.0){
   for(int i = 0; i < DIM; i++)
     for(int j = 0; j < DIM; j++)
       B[i][j] = alpha*A[j][i];
 }
+
+/*!
+  \brief Matrix Transpose : B = alpha*B^T
+ */
 inline void M_trans(double B[DIM][DIM], const double alpha=1.0){
   double A[DIM][DIM];
   M_copy(A, B);
   M_trans(B, A, alpha);
 }
 
-//
-// Verify rotation matrix
+/*!
+  \brief Verify that matrix is a valid rotation matrix
+ */
 inline void M_isValidRotation(double QR[DIM][DIM]){
   double ID[DIM][DIM] = {{1.0, 0.0, 0.0},
 		      {0.0, 1.0, 0.0},
@@ -170,8 +211,9 @@ inline void M_isValidRotation(double QR[DIM][DIM]){
   assert(test_det && test_inv);
 }
 
-//
-// Vector cross product: c = a x (alpha * b)
+/*! 
+  \brief Vector cross product: c = a x (alpha * b)
+ */
 inline void v_cross(double c[DIM], 
 		    const double a[DIM],
 		    const double b[DIM], 
@@ -181,6 +223,9 @@ inline void v_cross(double c[DIM],
   c[1] = alpha*(a[2]*b[0] - a[0]*b[2]);
   c[2] = alpha*(a[0]*b[1] - a[1]*b[0]);
 }
+/*!
+ \brief Vector cross product: c = c x (alpha*b)
+ */
 inline void v_cross(double c[DIM],
 		    const double b[DIM],
 		    const double alpha=1.0){
@@ -189,18 +234,23 @@ inline void v_cross(double c[DIM],
   v_cross(c, a, b, alpha);
 }
 
-//
-// Vector inner product: ab = alpha(a.b)
+/*! 
+ \brief Vector inner product
+ */
 inline double v_inner_prod(const double a[DIM],
 		    const double b[DIM]){
   return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
+/*!
+  \brief Vector norm
+ */
 inline double v_norm(const double a[DIM]){
   return sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2]);
 }
 
-//
-// Vector outer product: (AB)_ij = alpha*(a_i*b_j)
+/*!
+  \brief Vector outer product: (AB)_ij = alpha*(a_i*b_j)
+ */
 inline void v_outer_prod(double AB[DIM][DIM],
 		  const double a[DIM],
 		  const double b[DIM],
@@ -210,9 +260,10 @@ inline void v_outer_prod(double AB[DIM][DIM],
       AB[i][j] = alpha*a[i]*b[j];
 }
 
-//
-// Matrix - Vector product : x' = alpha*(A.x)
-inline void M_v_prod(double Ax[DIM],
+/*!
+  \brief Matrix - Vector product : y = alpha*(A.x)
+ */
+inline void M_v_prod(double y[DIM],
 		     const double A[DIM][DIM],
 		     const double x[DIM],
 		     const double alpha=1.0){
@@ -222,10 +273,25 @@ inline void M_v_prod(double Ax[DIM],
     for(int j = 0; j < DIM; j++){
       dmy += A[i][j] * x[j];
     }
-    Ax[i] = alpha*dmy;
+    y[i] = alpha*dmy;
   }
 }
-inline void M_v_prod_add(double Ax[DIM],
+
+/*!
+  \brief Matrix - Vector product : y = alpha*(A.y)
+ */
+inline void M_v_prod(double y[DIM],
+		     const double A[DIM][DIM],
+		     const double alpha=1.0){
+  double x[DIM];
+  v_copy(x, y);
+  M_v_prod(y, A, x, alpha);
+}
+
+/*!
+  \brief Matrix - Vector product and addition : y += alpha*(A.x)
+ */
+inline void M_v_prod_add(double y[DIM],
 			 const double A[DIM][DIM],
 			 const double x[DIM],
 			 const double alpha=1.0){
@@ -235,20 +301,15 @@ inline void M_v_prod_add(double Ax[DIM],
     for(int j = 0; j < DIM; j++){
       dmy += A[i][j] * x[j];
     }
-    Ax[i] += alpha*dmy;
+    y[i] += alpha*dmy;
   }
 }
-inline void M_v_prod(double Ax[DIM],
-		     const double A[DIM][DIM],
-		     const double alpha=1.0){
-  double x[DIM];
-  v_copy(x, Ax);
-  M_v_prod(Ax, A, x, alpha);
-}
 
-//
-// Vector - Matrix product : x' = alpha*(x.A) = alpha*(Transpose(A).x)
-inline void v_M_prod(double xA[DIM],
+
+/*!
+  \brief Vector - Matrix product : y = alpha*(x.A) =  alpha*(Transpose(A).x)
+ */
+inline void v_M_prod(double y[DIM],
 		     const double x[DIM],
 		     const double A[DIM][DIM],
 		     const double alpha=1.0){
@@ -258,15 +319,19 @@ inline void v_M_prod(double xA[DIM],
     for(int j = 0; j < DIM; j++){
       dmy += x[j]*A[j][i];
     }
-    xA[i] = alpha*dmy;
+    y[i] = alpha*dmy;
   }
 }
-inline void v_M_prod(double xA[DIM],
+
+/*!
+  \brief Vector - Matrix product : y = alpha*(y.A)
+ */
+inline void v_M_prod(double y[DIM],
 		     const double A[DIM][DIM],
 		     const double alpha=1.0){
   double x[DIM];
-  v_copy(x, xA);
-  v_M_prod(xA, x, A, alpha);
+  v_copy(x, y);
+  v_M_prod(y, x, A, alpha);
 }
 
 #endif

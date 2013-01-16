@@ -27,22 +27,39 @@ typedef struct quaternion {
   double v[DIM]; //vector part
 } quaternion;
 
-
+/*!
+  \brief Get q0 component of quaternion
+ */
 inline double qtn_q0(const quaternion &q){
   return q.s;
 }
+/*!
+  \brief Get q1 component of quaternion
+ */
 inline double qtn_q1(const quaternion &q){
   return q.v[0];
 }
+/*!
+  \brief Get q2 component of quaternion
+ */
 inline double qtn_q2(const quaternion &q){
   return q.v[1];
 }
+/*!
+  \brief Get q3 component of quaternion
+ */
 inline double qtn_q3(const quaternion &q){
   return q.v[2];
 }
+/*!
+  \brief Get scalar component of quaternion
+ */
 inline void qtn_scalar(double &a, const quaternion &q){
   a = q.s;
 }
+/*!
+  \brief Get vector component of quaternion
+ */
 inline void qtn_vector(double v[DIM], const quaternion &q){
   for(int i = 0; i < DIM; i++){
     v[i] = q.v[i];
@@ -50,7 +67,7 @@ inline void qtn_vector(double v[DIM], const quaternion &q){
 }
 
 /*!
-  \brief Initialize by specifying all four components
+  \brief Initialize by specifying all four components of quaternion
  */
 inline void qtn_init(quaternion &q, const double &a0, const double &a1,
 		     const double &a2, const double &a3){
@@ -60,6 +77,9 @@ inline void qtn_init(quaternion &q, const double &a0, const double &a1,
   q.v[2] = a3;
 }
 
+/*!
+  \brief Initialize using 4D vector
+ */
 inline void qtn_init(quaternion &q, const double v4[4]){
   q.s = v4[0];
   q.v[0] = v4[1];
@@ -68,7 +88,7 @@ inline void qtn_init(quaternion &q, const double v4[4]){
 }
 
 /*!
- \brief Initialize by specyfying scalar, vector parts
+ \brief Initialize by specifying scalar, vector parts
  */
 inline void qtn_init(quaternion &q, const double &si, const double vi[DIM]){
   q.s = si;
@@ -78,7 +98,7 @@ inline void qtn_init(quaternion &q, const double &si, const double vi[DIM]){
 }
 
 /*!
-  \brief Initialize by copy
+  \brief Initialize by copying qa quaternion
  */
 inline void qtn_init(quaternion &q, const quaternion &qa){
   q.s = qa.s;
@@ -120,7 +140,7 @@ inline void qtn_add(quaternion &q, const quaternion &qa,
 }
 
 /*!
-  \brief Add to quaternions in place: q = q + alpha*qb
+  \brief Add two quaternions in place: q = q + alpha*qb
  */
 inline void qtn_add(quaternion &q, const quaternion &qb, 
 		    const double alpha=1.0){
@@ -131,7 +151,7 @@ inline void qtn_add(quaternion &q, const quaternion &qb,
 }
 
 /*!
-  \brief Cuaternion conjugate
+  \brief Cuaternion conjugate: q = qa*
  */
 inline void qtn_conj(quaternion &q, const quaternion &qa){
   q.s = qa.s;
@@ -141,7 +161,7 @@ inline void qtn_conj(quaternion &q, const quaternion &qa){
 }
 
 /*!
-  \brief Cuaternion conjugate in place
+  \brief Cuaternion conjugate in place: q = q*
  */
 inline void qtn_conj(quaternion &q){
   for(int i = 0; i < DIM; i++){
@@ -173,10 +193,10 @@ inline void qtn_prod(quaternion &q, const quaternion &qa,
   \brief Multiply two quaternion in place: q = q.(alpha*qb)
  */
 inline void qtn_prod(quaternion &q, const quaternion &qb, 
-		     const double scale=1.0){
+		     const double alpha=1.0){
   quaternion qa;
   qtn_init(qa, q);
-  qtn_prod(q, qa, qb, scale);
+  qtn_prod(q, qa, qb, alpha);
 }
 
 /*!
@@ -232,7 +252,7 @@ inline void qtn_normalize(quaternion &q){
 }
 
 /*!
-  \brief Compute quaternion inverse: q = alpha*qa^-1
+  \brief Compute quaternion inverse: q = alpha*qa^(-1)
  */
 inline void qtn_inv(quaternion &q, quaternion qa, const double alpha=1.0){
   double q2i = qtn_sqnorm(qa);
@@ -244,7 +264,7 @@ inline void qtn_inv(quaternion &q, quaternion qa, const double alpha=1.0){
 }
 
 /*!
-  \brief Compute quaternion inverse in place: q = alpha*q^-1
+  \brief Compute quaternion inverse in place: q = alpha*q^(-1)
  */
 inline void qtn_inv(quaternion &q, const double alpha=1.0){
   double q2i = qtn_sqnorm(q);
@@ -267,6 +287,9 @@ inline int qtn_cmp(const quaternion &qa, const quaternion &qb,
   return (equalq ? 1 : 0);
 }
 
+/*!
+  \brief Return sinc function
+ */
 inline double sinc(const double &x){
   double sincx;
   if(ABS(x) > QTOL6){
@@ -492,114 +515,5 @@ inline void rm_rqtn(quaternion &q, const double R[DIM][DIM]){
   }
   qtn_init(q, qq);
 }
-
-/*!
-  \brief Compute transpose of rotation matrix given rotation quaternion
- */
-inline void rqtn_rmt(double R_T[DIM][DIM], const quaternion &q){
-  qtn_isnormal(q);
-
-  R_T[0][0] = 1.0 - 2.0 * q.v[1] * q.v[1] - 2.0 * q.v[2] * q.v[2];
-  R_T[0][1] = 2.0 * q.v[0] * q.v[1] + 2.0 * q.s * q.v[2];
-  R_T[0][2] = -2.0 * q.s * q.v[1] + 2.0 * q.v[0] * q.v[2];
-
-  R_T[1][0] = 2.0 * q.v[0] * q.v[1] - 2.0 * q.s * q.v[2];
-  R_T[1][1] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[2] * q.v[2];
-  R_T[1][2] = 2.0 * q.s * q.v[0] + 2.0 * q.v[1] * q.v[2];
-
-  R_T[2][0] = 2.0 * q.s * q.v[1] + 2.0 * q.v[0] * q.v[2];
-  R_T[2][1] = -2.0 * q.s * q.v[0] + 2.0 * q.v[1] * q.v[2];
-  R_T[2][2] = 1.0 - 2.0 * q.v[0] * q.v[0] - 2.0 * q.v[1] * q.v[1];
-}
-
-/*!
-  \brief Compute rotation rate matrix E given quaternion
- */
-inline void rqtn_rm_e(double E[DIM][DIM+1], const quaternion &q){
-  qtn_isnormal(q);
-
-  E[0][0] = -q.v[0];
-  E[0][1] = q.s;
-  E[0][2] = -q.v[2];
-  E[0][3] = q.v[1];
-
-  E[1][0] = -q.v[1];
-  E[1][1] = q.v[2];
-  E[1][2] = q.s;
-  E[1][3] = -q.v[0];
-  
-  E[2][0] = -q.v[2];
-  E[2][1] = -q.v[1];
-  E[2][2] = q.v[0];
-  E[2][3] = q.s;
-}
-/*!
-  \brief Compute transpose of rotation rate matrix E given quaternion
- */
-inline void rqtn_rm_et(double E_T[DIM+1][DIM], const quaternion &q){
-  qtn_isnormal(q);
-
-  E_T[0][0] = -q.v[0];
-  E_T[0][1] = -q.v[1];
-  E_T[0][2] = -q.v[2];
-
-  E_T[1][0] = q.s;
-  E_T[1][1] = q.v[2];
-  E_T[1][2] = -q.v[1];
-
-  E_T[2][0] = -q.v[2];
-  E_T[2][1] = q.s;
-  E_T[2][2] = q.v[0];
-
-  E_T[3][0] = q.v[1];
-  E_T[3][1] = -q.v[0];
-  E_T[3][2] = q.s;
-}
-
-/*!
-  \brief Compute rotation matrix G given quaternion
- */
-inline void rqtn_rm_g(double gmatrix[DIM][DIM+1], const quaternion &q){
-  qtn_isnormal(q);
-
-  gmatrix[0][0] = -q.v[0];
-  gmatrix[0][1] = q.s;
-  gmatrix[0][2] = q.v[2];
-  gmatrix[0][3] = -q.v[1];
-
-  gmatrix[1][0] = -q.v[1];
-  gmatrix[1][1] = -q.v[2];
-  gmatrix[1][2] = q.s;
-  gmatrix[1][3] = q.v[0];
-  
-  gmatrix[2][0] = -q.v[2];
-  gmatrix[2][1] = q.v[1];
-  gmatrix[2][2] = -q.v[0];
-  gmatrix[2][3] = q.s;
-}
-
-/*!
-  \brief Compute transpose of rotation matrix G given quaternion
- */
-inline void rqtn_rm_gt(double gmatrix[DIM+1][DIM], const quaternion &q){
-  qtn_isnormal(q);
-
-  gmatrix[0][0] = -q.v[0];
-  gmatrix[0][1] = -q.v[1];
-  gmatrix[0][2] = -q.v[2];
-
-  gmatrix[1][0] = q.s;
-  gmatrix[1][1] = -q.v[2];
-  gmatrix[1][2] = q.v[1];
-
-  gmatrix[2][0] = q.v[2];
-  gmatrix[2][1] = q.s;
-  gmatrix[2][2] = -q.v[0];
-
-  gmatrix[3][0] = -q.v[1];
-  gmatrix[3][1] = q.v[0];
-  gmatrix[3][2] = q.s;
-}
-
 
 #endif
