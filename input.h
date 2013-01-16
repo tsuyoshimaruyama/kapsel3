@@ -159,7 +159,6 @@ extern int &TRN_QS_Z;
 
 //////
 extern int ROTATION;
-extern int STOKES;
 extern int LJ_truncate;
 extern Particle_IC DISTRIBUTION;
 extern Particle_IO ORIENTATION;

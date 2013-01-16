@@ -80,7 +80,6 @@ int NZ_;
 int HN2Z_;
 int N2Z_;
 int ROTATION;
-int STOKES;
 int LJ_truncate;
 Particle_IC DISTRIBUTION;
 Particle_IO ORIENTATION;
@@ -1199,18 +1198,6 @@ void Gourmet_file_io(const char *infile
 		fprintf(stderr, "invalid ROTATION\n"); 
 		exit_job(EXIT_FAILURE);
 	    }
-	}
-	
-	ufin->get(target.sub("Stokes"),str);
-	ufout->put(target.sub("Stokes"),str);
-	ufres->put(target.sub("Stokes"),str);
-	if(str == "with advection"){
-	    STOKES  = 0;
-	}else if(str == "w/o advection"){
-	    STOKES  = 1;
-	}else{
-	    fprintf(stderr, "invalid switch.Stokes\n"); 
-	    exit_job(EXIT_FAILURE);
 	}
 	
 	ufin->get(target.sub("LJ_truncate"),str);

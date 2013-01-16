@@ -506,11 +506,6 @@ void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
 	}else {
       fprintf(fp, "# w/o rotation of particle\n");
     }
-    if(STOKES) {
-      fprintf(fp, "# fluid advection is OMITTED.\n");
-      }else {
-      fprintf(fp, "# with fluid advection.\n");
-    }
     if(FIX_CELL) {
       fprintf(fp, "# time-dependent average pressure gradient ASSIGNED in");
       for(int d = 0; d < DIM; d++) {

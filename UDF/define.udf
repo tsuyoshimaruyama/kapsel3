@@ -8,7 +8,7 @@ class Quaternion:{q0: float, q1: float, q2: float, q3: float}
 class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d}
 
 constitutive_eq: {
-   type: select {'Navier_Stokes','Shear_Navier_Stokes','Electrolyte'}
+   type: select {'Navier_Stokes','Shear_Navier_Stokes','Shear_Navier_Stokes_Lees_Edwards', 'Electrolyte'}
  
    Navier_Stokes: { 
       DX: 	double "lattice spacing (=1), fixed for all directions"
@@ -37,6 +37,25 @@ constitutive_eq: {
 	}
       }
    }//end Shear_Navier_Stokes
+
+   Shear_Navier_Stokes_Lees_Edwards: { 
+      DX: 	double "lattice spacing (=1), fixed for all directions"
+      RHO:	double "mass density of solvent" 
+      ETA:	double "shear viscosity of solvent"
+      kBT:	double "temperature"
+      alpha_v: 	double "correction coefficient of V"
+      alpha_o: 	double "correction coefficient of Omega"
+      External_field: {
+	 type: select {"DC","AC"}
+	 DC: {
+	    Shear_rate:double "shear rate"
+	 }
+	 AC: {
+	    Shear_rate:double "shear rate"
+	    Frequency: double "alternating frequenct"
+	}
+      }
+   }
 
    Electrolyte: { 
       DX: 	double "lattice spacing (=1), fixed for all directions"
@@ -89,7 +108,7 @@ object_type: {
          MASS_RATIO: double "mass density ratio colloid/solvent"
          Surface_charge: double "surface charge of colloid"
 	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
-	 janus_propulsion: select{'OFF', 'SWIMMER', 'ROTATOR', 'TUMBLER', 'SLIP', 'OBSTACLE'}
+	 janus_propulsion: select{'OFF', 'TUMBLER', 'SQUIRMER', 'OBSTACLE'}
 	 janus_force: Vector3d "self-propulsion force"
 	 janus_torque: Vector3d "self-propulsion torque"
 	 janus_slip_vel: float "Slip velocity coeff B1"
@@ -140,8 +159,6 @@ time_increment: {
 
 switch: {
    ROTATION: select {'ON','OFF'} "OFF: not solve rotation, ON: solve rotation"
-   HYDRO_int: select {'Correct','free draining','squeeze-lubrication and drain'} "(correct hydrodynamic interaction) OR (free draining) OR (free draining and squeeze mode of lubrication)"
-   Stokes: select {'with advection','w/o advection'}
    LJ_truncate: select {'ON','OFF','NONE'} "OFF:normal LJ, ON:WCA, NONE: no-intaction at all"
    INIT_distribution: {
       type: select {'uniform_random','random_walk','FCC','BCC','user_specify'} 
@@ -168,15 +185,6 @@ switch: {
    }
 }
 									       
-boundary_condition: {
-   type: select {"z_dirichlet","full_periodic"}
-   z_dirichlet: {
-      wall_velocity_x: double [cm/s]		
-      wall_velocity_y: double [cm/s]		
-      wall_velocity_z: double [cm/s]		
-   }
-}
-	
 output: {
    GTS: int "interval between snapshots"
    Num_snap: int "number of snapshots"
@@ -185,7 +193,6 @@ output: {
       Out_dir: string "directory name"
       Out_name: string "prefix name for data file"
       FileType: select {"BINARY","ASCII"} "output data type"
-      AVS_fluid: select {"ON", "OFF"}
    }
    UDF: select {"ON","OFF"}
 }
@@ -199,6 +206,7 @@ E: float "total kinetic energy of the system"
 t: float "total time"
 Particles[]: outParticle
 \end{def}
+
 
 \begin{def}
 class sParticle:{ 
@@ -222,6 +230,7 @@ class sParticle:{
       q:Quaternion,
       q_old:Quaternion
 }      
+
 class CTime:{
       ts:int
       time:float
@@ -241,6 +250,9 @@ resume:{
          }
          uk_dc: Vector3d 
          Concentration[][][][]: {ck:float}
+         oblique: {
+            degree_oblique: float
+         }		
       }
    }
 }
