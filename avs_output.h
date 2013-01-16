@@ -4,7 +4,6 @@
   \date 2006/06/27
   \version 1.1
   \brief Output routines for field data in AVS/Express format (header file)
-  \todo documentation
  */
 #ifndef AVS_OUTPUT_H
 #define AVS_OUTPUT_H
@@ -49,15 +48,35 @@ typedef struct AVS_parameters{
 
 extern AVS_parameters Avs_parameters;
 
+/*!
+  \brief Write AVS .fld definition files
+ */
 void Init_avs(const AVS_parameters &Avs_parameters);
+
+/*!
+  \brief Set global AVS parameters
+ */
 void Set_avs_parameters(AVS_parameters &Avs_parameters);
+
+/*!
+  \brief Output field data for current configuration in AVS format
+ */
 void Output_avs(AVS_parameters &Avs_parameters, double **zeta, double *uk_dc, Particle *p, const CTime &time);
+
+/*!
+  \brief Output particle data for current configuration in UDF format
+ */
 void Output_udf(UDFManager *ufout
 		,AVS_parameters &Avs_parameters
 		,double **zeta
 		,double *uk_dc
 		,const Particle *p
 		,const CTime &time);
+
+/*!
+  \brief Output field data of charged system for current configuration
+  in AVS format
+ */
 void Output_avs_charge(AVS_parameters &Avs_parameters, double **zeta, double *uk_dc, double **Concentration, Particle *p, const CTime &time);
 
 #endif

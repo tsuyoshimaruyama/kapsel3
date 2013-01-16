@@ -4,7 +4,6 @@
   \author Y. Nakayama
   \date 2006/11/14
   \version 1.3
-  \todo documentation
  */
 #ifndef INPUT_H
 #define INPUT_H
@@ -255,7 +254,14 @@ extern double degree_oblique;
 extern char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;
 extern UDFManager *ufin, *ufout, *ufres;
 //extern UDFManager *ufsum;
+/*!
+  \brief Read udf files from command line prompt
+ */
 void file_get(const int argc, char *argv[]);
+
+/*!
+  \brief Read udf input file
+ */
 void Gourmet_file_io(const char *infile
 		     ,const char *outfile
 		     ,const char *sumfile

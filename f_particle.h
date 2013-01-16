@@ -4,7 +4,6 @@
   \date 2006/08/15
   \version 1.2
   \brief Compute Hydrodynamic force on particle (header file)
-  \todo documentation
  */
 #ifndef F_PARTICLE_H
 #define F_PARTICLE_H

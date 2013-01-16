@@ -4,7 +4,6 @@
   \author Y. Nakayama
   \date 2006/06/27
   \version 1.1
-  \todo documentation
  */
 #ifndef PARAMETER_DEFINE_H_
 #define PARAMETER_DEFINE_H_

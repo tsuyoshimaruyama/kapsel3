@@ -1,10 +1,10 @@
 /*!
   \file macro.h
   \brief Global parameters and macro function definitions
+  \details Defines various constants and low-level functions
   \author Y. Nakayama
   \date 2006/06/27
   \version 1.1
-  \todo documentation
  */
 
 #ifndef MACRO_H_

@@ -1,10 +1,9 @@
 /*!
   \file variable.h
-  \brief Defines the global structs
+  \brief Defines the global structs (CTime, Particle, Index_range)
   \author Y. Nakayama
   \date 2006/06/27
   \version 1.1
-  \todo documentation
  */
 #ifndef VARIABLE_H
 #define VARIABLE_H

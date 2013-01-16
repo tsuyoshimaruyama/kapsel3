@@ -24,12 +24,10 @@ int *alloc_1d_int(int n1)
     return i;
 }
 
-
 void free_1d_int(int *i)
 {
     free(i);
 }
-
 
 double *alloc_1d_double(int n1)
 {
@@ -40,12 +38,10 @@ double *alloc_1d_double(int n1)
     return d;
 }
 
-
 void free_1d_double(double *d)
 {
     free(d);
 }
-
 
 int **alloc_2d_int(int n1, int n2)
 {
@@ -63,13 +59,11 @@ int **alloc_2d_int(int n1, int n2)
     return ii;
 }
 
-
 void free_2d_int(int **ii)
 {
     free(ii[0]);
     free(ii);
 }
-
 
 double **alloc_2d_double(int n1, int n2)
 {
@@ -87,13 +81,11 @@ double **alloc_2d_double(int n1, int n2)
     return dd;
 }
 
-
 void free_2d_double(double **dd)
 {
     free(dd[0]);
     free(dd);
 }
-
 
 int ***alloc_3d_int(int n1, int n2, int n3)
 {
@@ -117,14 +109,12 @@ int ***alloc_3d_int(int n1, int n2, int n3)
     return iii;
 }
 
-
 void free_3d_int(int ***iii)
 {
     free(iii[0][0]);
     free(iii[0]);
     free(iii);
 }
-
 
 double ***alloc_3d_double(int n1, int n2, int n3)
 {
@@ -147,7 +137,6 @@ double ***alloc_3d_double(int n1, int n2, int n3)
     }
     return ddd;
 }
-
 
 void free_3d_double(double ***ddd)
 {
