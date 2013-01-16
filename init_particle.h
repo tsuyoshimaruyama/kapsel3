@@ -1,6 +1,12 @@
-//
-// $Id: init_particle.h,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file init_particle.h
+  \brief Initialize particle properties (header file)
+  \details Initializes positions, velocities, forces, torques on particles
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
+
 #ifndef INIT_PARTICLE_H
 #define INIT_PARTICLE_H
 

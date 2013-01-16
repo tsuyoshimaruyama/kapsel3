@@ -1,6 +1,11 @@
-//
-// $Id: profile.cxx,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file profile.cxx
+  \brief Smooth particle profile routines
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+ */
+
 #include "profile.h"
 
 inline void Copy_sekibun_cell(const int &np_domain
@@ -40,6 +45,8 @@ void Particle_domain(
   int **dmy_sekibun_cell = alloc_2d_int(n_mesh,DIM);
   int **dmy_sekibun_cell_interface = alloc_2d_int(n_mesh,DIM);
   int **dmy_sekibun_cell_exponential = alloc_2d_int(n_mesh,DIM);
+  double MAX_RADIUS = RADIUS + HXI + 1.80*DX;
+  assert(MAX_RADIUS < nh * DX);
 
   int mesh = 0;
   int mesh_interface = 0;
@@ -65,8 +72,9 @@ void Particle_domain(
 	  dmy_sekibun_cell_exponential[mesh_exponential][2] = k;
 	  mesh_exponential++;
 	}
-	if(dmy_phi > 0.0){
-	  //if(dmy_phi > 1.e-10){
+	//if(dmy_phi > 0.0){
+	//if(dmy_phi > 1.e-10){
+	if(dmy <= MAX_RADIUS){
 	  dmy_sekibun_cell[mesh][0] = i;
 	  dmy_sekibun_cell[mesh][1] = j;
 	  dmy_sekibun_cell[mesh][2] = k;

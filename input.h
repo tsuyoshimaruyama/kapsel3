@@ -1,6 +1,10 @@
-//
-// $Id: input.h,v 1.3 2006/11/14 20:07:12 nakayama Exp $
-//
+/*!
+  \file input.h
+  \brief Read udf input file to start simulation (header file)
+  \author Y. Nakayama
+  \date 2006/11/14
+  \version 1.3
+ */
 #ifndef INPUT_H
 #define INPUT_H
 
@@ -11,6 +15,7 @@
 #include <cfloat>
 #include <sys/types.h>
 #include <dirent.h>
+#include <assert.h>
 #include "macro.h"
 #include "alloc.h"
 #include "udfmanager.h"
@@ -30,6 +35,11 @@ enum Particle_IC {
   ,BCC
   ,user_specify
 };
+enum Particle_IO {
+  random_dir,
+  space_dir,
+  user_dir
+};
 enum SW_time {
     AUTO, MANUAL
 };
@@ -41,14 +51,19 @@ enum EQ {Navier_Stokes
 enum PT {spherical_particle
 	 ,chain
 };
+enum JAX {x_axis, y_axis, z_axis, no_axis};
+enum JP {motor,
+	 slip,
+         obstacle,
+         no_propulsion};
 //////  
 extern SW_time SW_TIME;
 //////  
 extern EQ SW_EQ;
-extern char *EQ_name[];
+extern const char *EQ_name[];
 //////  
 extern PT SW_PT;
-extern char *PT_name[];
+extern const char *PT_name[];
 //////  material parameters
 extern double RHO;
 extern double IRHO;
@@ -87,6 +102,19 @@ extern double LJ_dia;
 //////
 /////// avs output;
 extern int SW_AVS;
+
+extern int SW_JANUS;
+extern int SW_JANUS_MOTOR;
+extern int SW_JANUS_SLIP;
+extern int MAX_SLIP_ITER;
+extern double MAX_SLIP_TOL;
+extern JAX *janus_axis;
+extern JP *janus_propulsion;
+extern double **janus_force;
+extern double **janus_torque;
+extern double *janus_slip_vel;
+extern double *janus_slip_mode;
+
 extern char Out_dir[];
 extern char Out_name[];
 extern int BINARY;
@@ -131,9 +159,9 @@ extern int &TRN_QS_Z;
 
 //////
 extern int ROTATION;
-extern int STOKES;
 extern int LJ_truncate;
 extern Particle_IC DISTRIBUTION;
+extern Particle_IO ORIENTATION;
 extern int N_iteration_init_distribution;
 extern int FIX_CELL;
 extern int FIX_CELLxyz[DIM];
@@ -225,7 +253,14 @@ extern double degree_oblique;
 extern char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;
 extern UDFManager *ufin, *ufout, *ufres;
 //extern UDFManager *ufsum;
+/*!
+  \brief Read udf files from command line prompt
+ */
 void file_get(const int argc, char *argv[]);
+
+/*!
+  \brief Read udf input file
+ */
 void Gourmet_file_io(const char *infile
 		     ,const char *outfile
 		     ,const char *sumfile

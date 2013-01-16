@@ -1,6 +1,11 @@
-//
-// $Id: md_force.h,v 1.1 2006/06/27 18:41:28 nakayama Exp $
-//
+/*!
+  \file md_force.h
+  \brief Routines to compute MD forces on particles (header file)
+  \author Y. Nakayama
+  \date 2006/06/27
+  \version 1.1
+  \todo documentation
+ */
 #ifndef MD_FORCE_H
 #define MD_FORCE_H
 
@@ -21,6 +26,7 @@ enum Particle_BC {
 };
 
 void Add_f_gravity(Particle *p);
+void Calc_f_slip_correct_precision(Particle *p, double **fp, const CTime &jikan);
 void Calc_f_hydro_correct_precision(Particle *p, double **fp, const CTime &jikan);
 void Calc_f_hydro_correct_precision_OBL(Particle *p, double **fp, const CTime &jikan);
 double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p

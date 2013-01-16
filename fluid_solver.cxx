@@ -1,6 +1,10 @@
-//
-// $Id: fluid_solver.cxx,v 1.2 2006/08/15 15:01:35 nakayama Exp $
-//
+/*!
+  \file fluid_solver.cxx
+  \author Y. Nakayama
+  \date 2006/08/15
+  \version 1.2
+  \brief Solver for Navier-Stokes equations 
+ */
 #include "fluid_solver.h"
 
 double *Pressure;
@@ -8,9 +12,6 @@ double **Shear_force;
 double **Shear_force_k;
 double **f_ns0;
 double **f_ns1;
-double **f_ns2;
-double **f_ns3;
-double **f_ns4;
 
 ////////// inline functions
 // Shear_Navier_Stokes
@@ -150,18 +151,12 @@ void Mem_alloc_NS_solver(void){
     Pressure = alloc_1d_double(NX*NY*NZ_);
     f_ns0 = (double **) malloc(sizeof (double *)*DIM-1);
     f_ns1 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns2 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns3 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns4 = (double **) malloc(sizeof (double *)*DIM-1);
 
     Shear_force = (double **) malloc(sizeof (double *)*DIM);
     Shear_force_k = (double **) malloc(sizeof (double *)*DIM);
     for(int d=0;d<DIM-1;d++){
 	f_ns0[d] = alloc_1d_double(NX*NY*NZ_);
 	f_ns1[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns2[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns3[d] = alloc_1d_double(NX*NY*NZ_);
-	f_ns4[d] = alloc_1d_double(NX*NY*NZ_);
     }
     for(int d=0;d<DIM;d++){
 	Shear_force[d] = alloc_1d_double(NX*NY*NZ_);
@@ -353,10 +348,10 @@ void NSsolute_solver_Euler(double **zeta
 			   ){
     double dc_rhs[DIM]; 
 
-    Rhs_NS_Nernst_Planck(p, zeta, uk_dc, u, concentration_k, f_ns4, Concentration_rhs0, ijk_range, n_ijk_range, up, f_particle, Surface_normal, phi, dc_rhs, jikan);
+    Rhs_NS_Nernst_Planck(p, zeta, uk_dc, u, concentration_k, f_ns1, Concentration_rhs0, ijk_range, n_ijk_range, up, f_particle, Surface_normal, phi, dc_rhs, jikan);
 
   for(int n=0;n<n_ijk_range;n++){
-    Field_solver_Euler(DIM-1, zeta, jikan, f_ns4, ijk_range[n]);
+    Field_solver_Euler(DIM-1, zeta, jikan, f_ns1, ijk_range[n]);
     Field_solver_Euler(N_spec, concentration_k, jikan, Concentration_rhs0, ijk_range[n]);
   }
 
@@ -367,6 +362,7 @@ void NSsolute_solver_Euler(double **zeta
 
 void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p){
  
+  //advection term on the rhs of NS equation (with minus sign)
   Zeta_k2advection_k(zeta, uk_dc, f_ns0);
 
   double dmy0 = -NU*jikan.dt_fluid; 

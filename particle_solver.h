@@ -1,6 +1,11 @@
-//
-// $Id: particle_solver.h,v 1.2 2006/10/16 19:05:02 nakayama Exp $
-//
+/*!
+  \file particle_solver.h
+  \brief Solver routines for particle position and velocity (header file)
+  \author Y. Nakayama
+  \date 2006/10/16
+  \version 1.2
+  \todo documentation
+ */
 #ifndef PARTICLE_SOLVER_H
 #define PARTICLE_SOLVER_H
 
@@ -8,13 +13,17 @@
 #include "variable.h"
 #include "input.h"
 #include "md_force.h"
+#include "rigid_body.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+enum ITER {start_iter, new_iter, reset_iter, end_iter};
 void MD_solver_position_Euler(Particle *p, const CTime &jikan);
 void MD_solver_position_AB2(Particle *p, const CTime &jikan);
+void MD_solver_velocity_iter(Particle *p, const CTime &jikan, 
+			     const ITER &iter_flag);
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan);
 void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan);
