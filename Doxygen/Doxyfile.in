@@ -637,6 +637,7 @@ INPUT                  = ../ \
 			 ./design_fsolver.doc \
                          ./design_fsolverOBL.doc \
 			 ./design_ssolver.doc \
+                         ./design_rigid_body.doc \
 			 ./contact.doc \
 		       	 ./license.doc
 
