@@ -63,16 +63,16 @@ typedef struct Particle {
   quaternion q_old;
 
   //working memory for iterative slip implementation
-  double mass;
-  double mass_center[DIM];
-  double inertia[DIM][DIM];
+  double mass;                       //fluid particle mass
+  double mass_center[DIM];           //center of mass of fluid particle
+  double inertia[DIM][DIM];          //moment of inertia of fluid particle
 
-  double surface_mass;
-  double surface_mass_center[DIM];
-  double surface_inertia[DIM][DIM];
+  double surface_mass;               //surface fluid mass
+  double surface_mass_center[DIM];   //surface fluid center of mass
+  double surface_inertia[DIM][DIM];  //surface fluid moment of inertia
 
-  double surface_dv[DIM];
-  double surface_domega[DIM];
+  double surface_dv[DIM];            //momentum change due to slip
+  double surface_dw[DIM];        //ang. momentum change due to slip
 } Particle;
 
 typedef struct Index_range {

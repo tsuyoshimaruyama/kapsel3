@@ -1,9 +1,11 @@
 /*!
   \file operate_surface.h
-  \brief Routines to control slip velocity at particle fluid boundaries
   \author J. Molina
-  \date 22/06/2012
+  \date 2012/06/22
   \version 1.0
+  \brief Routines to control the slip velocity at particle fluid
+  boundaries (header file)
+  \details \see \ref page_design_swimmer for a detailed description
  */
 #ifndef OPERATE_SURFACE_H
 #define OPERATE_SURFACE_H
@@ -12,10 +14,50 @@
 #include "make_phi.h"
 #include "particle_solver.h"
 
+/*!                                             
+  \fn void slip_droplet(double *vp, double *wp, double
+  *delta_v, double *delta_w, Particle p)
+  \brief Computes velocity of fluid droplet needed to ensure momentum
+  conservation if surface slip profile is enforced
+  \details \f[
+  \{\vec{V}_i^\prime, \vec{\Omega}_i^\prime\} \longrightarrow
+  \{\delta\vec{V}_i, \delta\vec{\Omega}_i\}
+  \f]
+  \param[out] vp particle velocity used to enforce surface slip
+  \param[out] wp particle angular velocity used to enforce surface
+  slip
+  \param[out] delta_v velocity of coutner-flow needed to maintain
+  momentum conservation
+  \param[out] delta_w angular velocity of counter-flow needed to
+  momentum conservation
+  \param[in] p particle data
+ */
+
+/*!
+  \brief Computes geometric factors related to particle and surface
+  fluid mass distributions needed for surface slip implementation
+  \param[in] u current velocity field 
+  \param[in] p particle data
+ */
 void Make_particle_momentum_factor(double const* const* u, Particle *p);
 
+/*!
+  \brief Computes the change in the velocity field needed to enforce
+  the slip profile at the particle/fluid boundaries
+  \details \f[
+  u^{**} - u^{*} = \sum_{i=1}^N\varphi_i\left(\vec{V}^\prime_i +
+  \vec{\Omega}^\prime_i\times\vec{r}_i + \vec{u}^s_i -
+  \vec{u}^*\right) + \sum_{i=1}^N\phi_i\left(\delta\vec{V}_i + \delta\vec{\Omega}_i\times\vec{r}_i\right)
+  \f]
+  \param[out] up force density field needed to impose surface slip
+  profiles
+  \param[in] u current velocity field
+  \param[in] p particle data
+  \param[in] jikan time data
+ */
 void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
+
 inline double Slip_particle_convergence(Particle *p){
   double eps,dmy_v, dmy_w, nv, nw;
   eps = 0.0;
@@ -42,6 +84,9 @@ inline double Slip_particle_convergence(Particle *p){
   return sqrt(eps);
 }
 
+/*!
+  \brief Set the velocity to be used for the surface slip at the next iteration
+ */
 inline void Update_slip_particle_velocity(Particle *p, const int &iter){
   if(iter == 0){
 #pragma omp parallel for schedule(dynamic, 1)

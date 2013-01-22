@@ -166,7 +166,7 @@ inline bool equal_tol(const double &a, const double &b, const double &rtol,
 inline bool equal_mp(const double &a, const double &b){
   if(a == b) return true;
   double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;
-  return ABS(a - b) <= eps;
+  return (ABS(a - b) <= eps ? true: false);
 }
 inline bool greater_than_mp(const double &a, const double &b){
   double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;

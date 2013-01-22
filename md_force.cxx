@@ -180,8 +180,8 @@ void Add_f_gravity(Particle *p){
     p[n].fr[G_direction] -= Gravity_on_fluid * (MASS_RATIOS[p[n].spec] -1.0); 
   }
 }
-void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
-    static const double dmy0 = DX3*RHO;
+void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CTime &jikan){
+    static const double dmy0 = DX3*RHO; 
     double dmy = dmy0 /jikan.dt_fluid; 
     int *nlattice;
     nlattice = Ns;
@@ -205,15 +205,12 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
     for(int n = 0; n < Particle_Number; n++){
       for (int d = 0; d < DIM; d++) {
 	xp[d] = p[n].x[d];
+
+        force[d] = torque[d] = 0.0;
       }
       
-      sw_in_cell 
-	= Particle_cell(xp, DX, x_int, residue);
+      sw_in_cell = Particle_cell(xp, DX, x_int, residue);
       sw_in_cell = 1;
-      for(int d=0; d < DIM; d++){
-	force[d] = 0.0;
-	torque[d] = 0.0;
-      }
       
       for(int mesh=0; mesh < NP_domain; mesh++){
 	Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
@@ -253,7 +250,7 @@ void Calc_f_slip_correct_precision(Particle *p, double **u, const CTime &jikan){
       
     }//Particle_number
 }
-void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan){
+void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
     
@@ -347,7 +344,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
     }
 }
 
-void Calc_f_hydro_correct_precision_OBL(Particle *p, double **u, const CTime &jikan){
+void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
     

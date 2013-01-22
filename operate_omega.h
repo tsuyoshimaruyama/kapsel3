@@ -4,7 +4,7 @@
   \date 2006/06/27
   \version 1.1
   \brief High-level routines to handle basic operations on velocity field (header file)
-  \see \link page_design_fsolver Fluid Solver\endlink section of manual for further details
+  \see \ref page_design_fsolver section of manual for further details
  */
 #ifndef OPERATE_OMEGA_H
 #define OPERATE_OMEGA_H

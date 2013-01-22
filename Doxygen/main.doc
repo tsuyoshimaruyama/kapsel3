@@ -15,4 +15,5 @@ Table of contents
 - \subpage page_design_fsolverOBL
 - \subpage page_design_ssolver
 - \subpage page_rigid_body
+- \subpage page_design_swimmer
 */

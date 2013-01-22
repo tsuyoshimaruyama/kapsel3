@@ -383,7 +383,7 @@ void Init_Particle(Particle *p){
 	p[i].mass_center[d] = 0.0;
 	p[i].surface_mass_center[d] = 0.0;
 	p[i].surface_dv[d] = 0.0;
-	p[i].surface_domega[d] = 0.0;
+	p[i].surface_dw[d] = 0.0;
 	for(int l = 0; l < DIM; l++){
 	  p[i].inertia[d][l] = 0.0;
 	  p[i].surface_inertia[d][l] = 0.0;

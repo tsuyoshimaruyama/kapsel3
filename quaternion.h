@@ -4,7 +4,7 @@
   \author J. Molina
   \date 2012/03/28
   \version 1.0
-  \see \link page_rigid_body for more details
+  \see \ref page_rigid_body for more details
 */
 #ifndef QUATERNION_H
 #define QUATERNION_H

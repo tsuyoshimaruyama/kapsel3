@@ -125,7 +125,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	{// Calculation of hydrodynamic force
 
 	  Reset_phi_u(phi, up);	  
-	  Calc_f_hydro_correct_precision(p, u, jikan);
+	  Calc_f_hydro_correct_precision(p, u, jikan); //hydrodynamic force
 
 	  if(!SW_JANUS_SLIP){
 	    if(!Fixed_particle){
@@ -139,15 +139,15 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 
 	    int slip_converge = 0;
 	    int slip_iter = 0;
-	    Make_particle_momentum_factor(u, p);
+	    Make_particle_momentum_factor(u, p);         
 	    Update_slip_particle_velocity(p, slip_iter); // initial particle velocity for slip profile
 	    while(!slip_converge){
 	      Reset_u(up);
 
 	      Make_force_u_slip_particle(up, u, p, jikan);
 	      Solenoidal_u(up);
-	      Calc_f_slip_correct_precision(p, up, jikan);
-	      Add_f_particle(up, u);
+	      Calc_f_slip_correct_precision(p, up, jikan); //slip force
+	      Add_f_particle(up, u); //up += u
 
 	      // Update particle velocity
 	      if(!Fixed_particle){
@@ -168,15 +168,14 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	      }
 	    }//slip_convergence
 	    if(slip_iter == MAX_SLIP_ITER){
-	      fprintf(stderr, "#Warning: increase MAX_SLIP_ITER (%d)\n",
-		      jikan.ts);
+	      fprintf(stderr, "#Warning: increase MAX_SLIP_ITER (%d)\n", jikan.ts);
 	    }
 	    double **u_old=u;
 	    u = up;
 	    up = u_old;
 	    Reset_u(up);
-	  } // slip boundary
-	  
+	  } // slip 
+
 	}
 
 	if(kBT > 0. && SW_EQ != Electrolyte){
@@ -475,16 +474,6 @@ int main(int argc, char *argv[]){
   Init_zeta_k(zeta, uk_dc);
 
   {
-    /* ORIGINAL (non-slip) implementation
-      Reset_phi_u(phi, up);
-      Make_phi_u_particle(phi, up, particles);
-      Zeta_k2u(zeta, uk_dc, u);
-
-      Make_f_particle_dt_sole(f_particle, u, up, phi);
-      Add_f_particle(u, f_particle);
-      U2zeta_k(zeta, uk_dc, u);
-     */
-
     Reset_phi_u(phi, up);    
     Make_phi_u_particle(phi, up, particles);
     Zeta_k2u(zeta, uk_dc, u);
