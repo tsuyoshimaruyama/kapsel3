@@ -8,7 +8,7 @@
 #include "Matrix_Inverse.h"
 
 
-inline void set_xGs(Particle *p){
+inline void init_set_xGs(Particle *p){
 	// initialize xGs[][]
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++) xGs[rigidID][d] = 0.0;
@@ -23,12 +23,56 @@ inline void set_xGs(Particle *p){
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++) xGs[rigidID][d] /= Rigid_Particle_Numbers[rigidID];
 	}
+	for(int n=0; n<Particle_Number; n++){
+		rigidID = Particle_RigidID[n];
+		for(int d=0; d<DIM; d++) GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
+	}
 }
 
+inline void set_xGs(Particle *p){
+	int rigid_first_n = 0;
+	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+		for(int d=0; d<DIM; d++){
+			xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
+			xGs[rigidID][d] = fmod(xGs[rigidID][d] + L_particle[d], L_particle[d]);
+		}
+		rigid_first_n += Rigid_Particle_Numbers[rigidID];
+	}
+	
+	//check(for debug)
+	if(rigid_first_n != Particle_Number) fprintf(stderr, "debug: set_xGs() error");
+}
+
+inline void solver_GRvecs(const CTime &jikan, string CASE){
+	int rigidID;
+	double bufvec[DIM];
+	if(CASE == "Euler"){
+		for(int n=0; n<Particle_Number; n++){
+			rigidID = Particle_RigidID[n];
+			bufvec[0] = (omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1]) * jikan.dt_md;
+			bufvec[1] = (omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2]) * jikan.dt_md;
+			bufvec[2] = (omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0]) * jikan.dt_md;
+			for(int d=0; d<DIM; d++) GRvecs[n][d] += bufvec[d];
+		}
+	}
+	else if(CASE == "AB2"){
+		for(int n=0; n<Particle_Number; n++){
+			rigidID = Particle_RigidID[n];
+			bufvec[0] = ( (3.*omegaGs[rigidID][1]-omegaGs_old[rigidID][1])*GRvecs[n][2] - (3.*omegaGs[rigidID][2]-omegaGs_old[rigidID][2])*GRvecs[n][1] ) * jikan.hdt_md;
+			bufvec[1] = ( (3.*omegaGs[rigidID][2]-omegaGs_old[rigidID][2])*GRvecs[n][0] - (3.*omegaGs[rigidID][0]-omegaGs_old[rigidID][0])*GRvecs[n][2] ) * jikan.hdt_md;
+			bufvec[2] = ( (3.*omegaGs[rigidID][0]-omegaGs_old[rigidID][0])*GRvecs[n][1] - (3.*omegaGs[rigidID][1]-omegaGs_old[rigidID][1])*GRvecs[n][0] ) * jikan.hdt_md;
+			for(int d=0; d<DIM; d++) GRvecs[n][d] += bufvec[d];
+		}
+	}
+	else{
+		fprintf(stderr, "error, string CASE in solver_GRvecs()");
+		exit_job(EXIT_FAILURE);
+	}
+}
 
 // set Rigid_Masses and Rigid_IMasses and Rigid_Moments and Rigid_IMoments
+// dont use it before (init_set_xGs) or (set_xGs and solver_GRvecs)
 inline void set_Rigid_MMs(Particle *p){
-	set_xGs(p);
 	// initialize Rigid_Masses and Rigid_Moments and Rigid_IMoments
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		Rigid_Masses[rigidID] = 0.0;
@@ -40,39 +84,34 @@ inline void set_Rigid_MMs(Particle *p){
 		}
 	}
 	
-	double GRvec[DIM];
 	int rigidID;
 	
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
-		// set GRvec
-		for(int d=0; d<DIM; d++){
-			GRvec[d] = p[n].x[d] - xGs[rigidID][d];
-		}
 		// mass of p[n] adds to Rigid_Masses[rigidID];
 		Rigid_Masses[rigidID] += MASS[ RigidID_Components[rigidID] ];
 		// moment of p[n] adds to Rigid_Moments[rigidID]
 		Rigid_Moments[rigidID][0][0] += MOI[ RigidID_Components[rigidID] ]
 													+ MASS[ RigidID_Components[rigidID] ]
-														* ( GRvec[1]*GRvec[1] + GRvec[2]*GRvec[2] );
+														* ( GRvecs[n][1]*GRvecs[n][1] + GRvecs[n][2]*GRvecs[n][2] );
 		Rigid_Moments[rigidID][0][1] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[0]*GRvec[1] );
+														* ( - GRvecs[n][0]*GRvecs[n][1] );
 		Rigid_Moments[rigidID][0][2] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[0]*GRvec[2] );
+														* ( - GRvecs[n][0]*GRvecs[n][2] );
 		Rigid_Moments[rigidID][1][0] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[1]*GRvec[0] );
+														* ( - GRvecs[n][1]*GRvecs[n][0] );
 		Rigid_Moments[rigidID][1][1] += MOI[ RigidID_Components[rigidID] ]
 													+ MASS[ RigidID_Components[rigidID] ]
-														* ( GRvec[2]*GRvec[2] + GRvec[0]*GRvec[0] );
+														* ( GRvecs[n][2]*GRvecs[n][2] + GRvecs[n][0]*GRvecs[n][0] );
 		Rigid_Moments[rigidID][1][2] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[1]*GRvec[2] );
+														* ( - GRvecs[n][1]*GRvecs[n][2] );
 		Rigid_Moments[rigidID][2][0] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[2]*GRvec[0] );
+														* ( - GRvecs[n][2]*GRvecs[n][0] );
 		Rigid_Moments[rigidID][2][1] += MASS[ RigidID_Components[rigidID] ]
-														* ( - GRvec[2]*GRvec[1] );
+														* ( - GRvecs[n][2]*GRvecs[n][1] );
 		Rigid_Moments[rigidID][2][2] += MOI[ RigidID_Components[rigidID] ]
 													+ MASS[ RigidID_Components[rigidID] ]
-														* ( GRvec[0]*GRvec[0] + GRvec[1]*GRvec[1] );
+														* ( GRvecs[n][0]*GRvecs[n][0] + GRvecs[n][1]*GRvecs[n][1] );
 	}
 	
 	char str[256];
@@ -92,18 +131,17 @@ inline void set_Rigid_MMs(Particle *p){
 }
 
 inline void set_particle_vomegas(Particle *p){
-	set_xGs(p);
-	double GRvec[DIM];
+
 	int rigidID;
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
 		for(int d=0; d<DIM; d++){
 			p[n].omega[d] = omegaGs[rigidID][d];
-			GRvec[d] = p[n].x[d] - xGs[rigidID][d];
+			GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
 		}
-		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 	}
 }
 
@@ -122,6 +160,13 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 			//torqueGrs[rigidID][d] += p[n].torquer[d]; 	//検討が必要。
 			//torqueGvs[rigidID][d] += p[n].torqueGvs[d];	//おそらくtorquerとtorquevを計算しているところで計算して足し合わせるのが確実だが、
 															//その辺りは理解できていないので未実装
+		}
+	}
+	//set olds
+	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+		for(int d=0; d<DIM; d++){
+			velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
+			omegaGs_old[rigidID][d] = omegaGs[rigidID][d];
 		}
 	}
 	

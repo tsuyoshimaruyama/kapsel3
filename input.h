@@ -190,6 +190,9 @@ extern double **torqueGrs_previous;
 extern double **torqueGvs_previous;
 extern int *Particle_RigidID;
 //////
+//// T.K 13/01/21
+extern double **GRvecs;
+//////
 extern int GTS;
 extern int Num_snap;
 extern int MSTEP;

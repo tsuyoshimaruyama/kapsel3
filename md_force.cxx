@@ -207,7 +207,6 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
     double torqueg[DIM];
     int rigidID;
     // T.K 13/01/20
-    double GRvec[DIM];
     // initialize forceGs and torqueGs
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++){
@@ -239,10 +238,6 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    // T.K 13/01/04
 	    forceg[d] = 0.0;
 	    torqueg[d] = 0.0;
-	}
-	// T.K 13/01/20
-	if(SW_PT == rigid){
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
 	//int r_mesh[DIM];
@@ -279,9 +274,9 @@ void Calc_f_hydro_correct_precision(Particle *p, double **u, const CTime &jikan)
 	    // T.K 13/01/04
 	    if(SW_PT == rigid){
 			for(int d=0; d<DIM; d++) forceg[d] += dmy_fp[d];
-			torqueg[0] += ( (GRvec[1] + r[1]) * dmy_fp[2] - (GRvec[2] + r[2]) * dmy_fp[1] );
-			torqueg[1] += ( (GRvec[2] + r[2]) * dmy_fp[0] - (GRvec[0] + r[0]) * dmy_fp[2] );
-			torqueg[2] += ( (GRvec[0] + r[0]) * dmy_fp[1] - (GRvec[1] + r[1]) * dmy_fp[0] );
+			torqueg[0] += ( (GRvecs[n][1] + r[1]) * dmy_fp[2] - (GRvecs[n][2] + r[2]) * dmy_fp[1] );
+			torqueg[1] += ( (GRvecs[n][2] + r[2]) * dmy_fp[0] - (GRvecs[n][0] + r[0]) * dmy_fp[2] );
+			torqueg[2] += ( (GRvecs[n][0] + r[0]) * dmy_fp[1] - (GRvecs[n][1] + r[1]) * dmy_fp[0] );
 		}
 		// T.K end
 	}
@@ -333,8 +328,6 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double **u, const CTime &ji
     double forceg[DIM];
     double torqueg[DIM];
     int rigidID;
-    // T.K 13/01/20
-    double GRvec[DIM];
     // initialize forceGs and torqueGs
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++){
@@ -366,10 +359,6 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double **u, const CTime &ji
 	    // T.K 13/01/04
 	    forceg[d] = 0.0;
 	    torqueg[d] = 0.0;
-	}
-	// T.K 13/01/20
-	if(SW_PT == rigid){
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
 	for(int mesh=0; mesh < NP_domain; mesh++){
@@ -403,9 +392,9 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double **u, const CTime &ji
 	    // T.K 13/01/04
 	    if(SW_PT == rigid){
 			for(int d=0; d<DIM; d++) forceg[d] += dmy_fp[d];
-			torqueg[0] += ( (GRvec[1] + r[1]) * dmy_fp[2] - (GRvec[2] + r[2]) * dmy_fp[1] );
-			torqueg[1] += ( (GRvec[2] + r[2]) * dmy_fp[0] - (GRvec[0] + r[0]) * dmy_fp[2] );
-			torqueg[2] += ( (GRvec[0] + r[0]) * dmy_fp[1] - (GRvec[1] + r[1]) * dmy_fp[0] );
+			torqueg[0] += ( (GRvecs[n][1] + r[1]) * dmy_fp[2] - (GRvecs[n][2] + r[2]) * dmy_fp[1] );
+			torqueg[1] += ( (GRvecs[n][2] + r[2]) * dmy_fp[0] - (GRvecs[n][0] + r[0]) * dmy_fp[2] );
+			torqueg[2] += ( (GRvecs[n][0] + r[0]) * dmy_fp[1] - (GRvecs[n][1] + r[1]) * dmy_fp[0] );
 		}
 		// T.K end
 	    

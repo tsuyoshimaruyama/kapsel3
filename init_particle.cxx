@@ -253,7 +253,7 @@ void Init_Particle(Particle *p){
     }
     // T.K 12/12/29, 13/01/04 initialize rigid status
     if(SW_PT == rigid){
-       set_xGs(p);
+       init_set_xGs(p);
        set_Rigid_MMs(p);
        set_particle_vomegas(p);	// ### caution ### v.x, v.y, v.z are ignored and set Rigid_Velocities and Rigid_Omegas
     }
@@ -691,6 +691,23 @@ void Init_Rigid(Particle *p){	// T.K 13/01/18
 					}
 				}
 				if(m >= n){
+					xGs[rigidID][0] = p[n-1].x[0] + dmy0*sin(dmy1)*cos(dmy2);
+					xGs[rigidID][1] = p[n-1].x[1] + dmy0*sin(dmy1)*sin(dmy2);
+					xGs[rigidID][2] = p[n-1].x[2] + dmy0*cos(dmy1);
+					for(int d=0; d<DIM; d++) xGs[rigidID][d] = fmod(xGs[rigidID][d] + 100.*L_particle[d], L_particle[d]);
+					if(Rigid_Particle_Numbers[rigidID] % 2 == 0){
+						GRvecs[n-1][0] = - (Rigid_Particle_Numbers[rigidID]/2 - 0.5) * dmy0*sin(dmy1)*cos(dmy2);
+						GRvecs[n-1][1] = - (Rigid_Particle_Numbers[rigidID]/2 - 0.5) * dmy0*sin(dmy1)*sin(dmy2);
+						GRvecs[n-1][2] = - (Rigid_Particle_Numbers[rigidID]/2 - 0.5) * dmy0*cos(dmy1);
+					}
+					else{
+						GRvecs[n-1][0] = - (Rigid_Particle_Numbers[rigidID]/2) * dmy0*sin(dmy1)*cos(dmy2);
+						GRvecs[n-1][1] = - (Rigid_Particle_Numbers[rigidID]/2) * dmy0*sin(dmy1)*sin(dmy2);
+						GRvecs[n-1][2] = - (Rigid_Particle_Numbers[rigidID]/2) * dmy0*cos(dmy1);
+					}
+					GRvecs[n][0] = GRvecs[n-1][0] + dmy0*sin(dmy1)*cos(dmy2);
+					GRvecs[n][1] = GRvecs[n-1][1] + dmy0*sin(dmy1)*sin(dmy2);
+					GRvecs[n][2] = GRvecs[n-1][2] + dmy0*cos(dmy1);
 					rn += 1;
 					break;
 				}
@@ -714,6 +731,9 @@ void Init_Rigid(Particle *p){	// T.K 13/01/18
 				}
 				if(rn == 0) break;
 				if(m >= n){
+					GRvecs[n][0] = GRvecs[n-1][0] + dmy0*sin(dmy1)*cos(dmy2);
+					GRvecs[n][1] = GRvecs[n-1][1] + dmy0*sin(dmy1)*sin(dmy2);
+					GRvecs[n][2] = GRvecs[n-1][2] + dmy0*cos(dmy1);
 					rn += 1;
 					break;
 				}
@@ -721,7 +741,7 @@ void Init_Rigid(Particle *p){	// T.K 13/01/18
 		}
 		n += 1;
 	}
-	set_xGs(p);
+	init_set_xGs(p);
 	set_Rigid_MMs(p);
 	set_particle_vomegas(p);
 }

@@ -152,6 +152,9 @@ double **torqueGrs_previous;
 double **torqueGvs_previous;
 int *Particle_RigidID;
 //
+////T.K 13/01/21
+double **GRvecs;
+//
 double NU;
 double IRHO;
 double *RHO_particle;
@@ -1392,6 +1395,10 @@ void Gourmet_file_io(const char *infile
     
     // T.K 12/12/29
 	if(SW_PT == rigid){
+		// T.K 13/01/21
+		//allocation (using Particle_Number)
+		GRvecs = alloc_2d_double(Particle_Number, DIM);
+		
 		// set Particle_RigidID 
 		int rigid_n1 = 0;
 		int rigid_n2 = 0;
@@ -1416,7 +1423,7 @@ void Gourmet_file_io(const char *infile
 			}
 		}
 		
-		// initialize Rigid_Particle_Number[]
+		// initialize Rigid_Particle_Numbers[]
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			Rigid_Particle_Numbers[rigidID] = 0;
 		}

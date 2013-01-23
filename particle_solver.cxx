@@ -14,7 +14,11 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan){
 	    assert(p[n].x[d] < L[d]);
 	}
     }
-    set_xGs(p);		// T.K 13/01/20
+    // T.K 13/01/21
+    if(SW_PT == rigid){
+	    solver_GRvecs(jikan, "Euler");
+		set_xGs(p);
+	}
 }
 void MD_solver_position_AB2(Particle *p, const CTime &jikan){
 #pragma omp parallel for schedule(dynamic, 1)
@@ -27,7 +31,11 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan){
 	    assert(p[n].x[d] < L[d]);
 	}
     }
-    set_xGs(p);		// T.K 13/01/20
+    // T.K 13/01/21
+    if(SW_PT == rigid){
+	    solver_GRvecs(jikan, "AB2");
+		set_xGs(p);
+	}
 }
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
   Force(p);
@@ -36,7 +44,6 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
     double dmy_rot;
     // T.K 13/01/04
     int rigidID;
-    double GRvec[DIM];
     #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
   for(int n=0; n< Particle_Number; n++){
     //double dmy = jikan.dt_md * IMASS[p[n].spec];
@@ -47,7 +54,6 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
     // T.K 13/01/04
 	if(SW_PT == rigid){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
     for(int d=0; d<DIM; d++){  
@@ -56,9 +62,9 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan){
 	
 	// T.K 13/01/04
 	if(SW_PT == rigid){
-		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 	}
 	else{
 		p[n].v[d] += ( dmy * 
@@ -105,7 +111,6 @@ void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
     double dmy_rot;
     // T.K 13/01/04
     int rigidID;
-    double GRvec[DIM];
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
   for(int n=0; n< Particle_Number; n++){
     //static double dmy = jikan.dt_md * IMASS[p[n].spec];
@@ -116,7 +121,6 @@ void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
     // T.K 13/01/04
 	if(SW_PT == rigid){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
     for(int d=0; d<DIM; d++){  
@@ -125,9 +129,9 @@ void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
 	
 	// T.K 13/01/04
 	if(SW_PT == rigid){
-		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 	}
 	else{
 		p[n].v[d] += ( dmy * 
@@ -176,7 +180,6 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
     double dmy_rot;
     // T.K 13/01/04
     int rigidID;
-    double GRvec[DIM];
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
     for(int n=0; n< Particle_Number; n++){
 	//double dmy = jikan.hdt_md * IMASS[p[n].spec];
@@ -187,7 +190,6 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
     // T.K 13/01/04
 	if(SW_PT == rigid){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
 	for(int d=0; d<DIM; d++){  
@@ -195,9 +197,9 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 		p[n].v_old[d] = p[n].v[d];
 		// T.K 13/01/04
 		if(SW_PT == rigid){
-			p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-			p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-			p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+			p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+			p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+			p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 		}
 		else{
 			p[n].v[d] += 
@@ -270,7 +272,11 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
 	    assert(p[n].x[d] < L[d]);
 	}
     }
-    set_xGs(p);		// T.K 13/01/20
+    // T.K 13/01/21
+    if(SW_PT == rigid){
+	    solver_GRvecs(jikan, "Euler");
+		set_xGs(p);
+	}
 }
 void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
 #pragma omp parallel for schedule(dynamic, 1)
@@ -300,7 +306,11 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
 	    assert(p[n].x[d] < L[d]);
 	}
     }
-    set_xGs(p);		// T.K 13/01/20
+    // T.K 13/01/21
+    if(SW_PT == rigid){
+	    solver_GRvecs(jikan, "Euler");
+		set_xGs(p);
+	}
 }
 void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
     Force_OBL(p);
@@ -309,7 +319,6 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
     double dmy_rot;
     // T.K 13/01/04
     int rigidID;
-    double GRvec[DIM];
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
     for(int n=0; n< Particle_Number; n++){
 	//static double dmy = jikan.dt_md * IMASS[p[n].spec];
@@ -320,7 +329,6 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
     // T.K 13/01/04
 	if(SW_PT == rigid){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
 	for(int d=0; d<DIM; d++){  
@@ -329,9 +337,9 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
 		
 		// T.K 13/01/04
 		if(SW_PT == rigid){
-			p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-			p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-			p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+			p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+			p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+			p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 		}
 		else{
 			p[n].v[d] += ( dmy * 
@@ -380,7 +388,6 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
     double dmy_rot;
     // T.K 13/01/04
     int rigidID;
-    double GRvec[DIM];
 #pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot)
     for(int n=0; n< Particle_Number; n++){
 	//double dmy = jikan.hdt_md * IMASS[p[n].spec];
@@ -391,7 +398,6 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
     // T.K 13/01/04
 	if(SW_PT == rigid){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvec[d] = p[n].x[d] - xGs[rigidID][d];
 	}
 	
 	for(int d=0; d<DIM; d++){  
@@ -400,9 +406,9 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
 		
 	// T.K 13/01/04
 	if(SW_PT == rigid){
-		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvec[2] - omegaGs[rigidID][2]*GRvec[1];
-		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvec[0] - omegaGs[rigidID][0]*GRvec[2];
-		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvec[1] - omegaGs[rigidID][1]*GRvec[0];
+		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+		p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
 	}
 	else{
 			p[n].v[d] += 
