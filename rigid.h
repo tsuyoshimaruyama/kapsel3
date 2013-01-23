@@ -137,7 +137,6 @@ inline void set_particle_vomegas(Particle *p){
 		rigidID = Particle_RigidID[n];
 		for(int d=0; d<DIM; d++){
 			p[n].omega[d] = omegaGs[rigidID][d];
-			GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
 		}
 		p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
 		p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];

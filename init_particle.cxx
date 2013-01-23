@@ -741,7 +741,6 @@ void Init_Rigid(Particle *p){	// T.K 13/01/18
 		}
 		n += 1;
 	}
-	init_set_xGs(p);
 	set_Rigid_MMs(p);
 	set_particle_vomegas(p);
 }
