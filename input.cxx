@@ -20,6 +20,7 @@ char *EQ_name[]={"Navier_Stokes"
 PT SW_PT;
 char *PT_name[]={"spherical_particle"
 		 ,"chain"
+		 ,"rigid"		//T.K 12/12/28
 };
 //////
 SW_time SW_TIME;
@@ -122,7 +123,34 @@ int *Beads_Numbers;
 int *Chain_Numbers;
 int GTS;
 int Num_snap;
-
+//// T.K 12/12/28,29
+int Rigid_Number;
+int *Rigid_Motions;// 0(fix) or 1(free)
+double **Rigid_Velocities;
+double **Rigid_Omegas;
+int *Particle_RigidIDs;
+int *RigidID_Components;
+int *Rigid_Particle_Numbers;
+double **xGs;
+double *Rigid_Masses;
+double *Rigid_IMasses;
+double ***Rigid_Moments;
+double ***Rigid_IMoments;
+double **velocityGs;
+double **omegaGs;
+double **forceGs;	//hydro
+double **forceGrs;	//LJ
+double **forceGvs;	//
+double **torqueGs;
+double **torqueGrs;
+double **torqueGvs;
+double **velocityGs_old;
+double **omegaGs_old;
+double **forceGrs_previous;
+double **forceGvs_previous;
+double **torqueGrs_previous;
+double **torqueGvs_previous;
+int *Particle_RigidID;
 //
 double NU;
 double IRHO;
@@ -767,7 +795,33 @@ void Gourmet_file_io(const char *infile
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
 	    }
-	}
+	}else if(str == PT_name[rigid]){	//T.K 12/12/28
+	    SW_PT=rigid;
+	    Component_Number= ufin->size("object_type.rigid.Rigid_spec[]");
+	    {
+		MASS_RATIOS=alloc_1d_double(Component_Number);
+		Particle_Numbers=alloc_1d_int(Component_Number);
+		Beads_Numbers=alloc_1d_int(Component_Number);
+		Chain_Numbers=alloc_1d_int(Component_Number);
+		RHO_particle=alloc_1d_double(Component_Number);
+		MASS=alloc_1d_double(Component_Number);
+		IMASS=alloc_1d_double(Component_Number);
+		IMASS_RATIOS=alloc_1d_double(Component_Number);
+		MOI=alloc_1d_double(Component_Number);
+		IMOI=alloc_1d_double(Component_Number);
+		
+		S_surfaces = alloc_1d_double(Component_Number);
+		W_surfaces = alloc_1d_double(Component_Number);
+		
+		Surface_charge = alloc_1d_double(Component_Number);
+		Surface_charge_e = alloc_1d_double(Component_Number);
+		
+		Rigid_Motions = alloc_1d_int(Component_Number);
+		Rigid_Velocities = alloc_2d_double(Component_Number, DIM);
+		Rigid_Omegas = alloc_2d_double(Component_Number, DIM);
+		
+	    }
+    }
     }
     
     {
@@ -802,6 +856,29 @@ void Gourmet_file_io(const char *infile
 		    fprintf(stderr, " %d:number_of_beads[i]",d++);
 		    fprintf(stderr, " %d:number_of_chain[i]",d++);
 		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		}
+	    }else if(SW_PT == rigid){		// T.K 12/12/28
+		if(SW_EQ == Electrolyte){
+		    int d=1;
+		    fprintf(stderr, "#%d:species",d++);
+		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
+		    fprintf(stderr, " %d:number_of_beads[i]",d++);
+		    fprintf(stderr, " %d:number_of_chain[i]",d++);
+		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		    fprintf(stderr, " %d:Surface_charge[i]",d++);
+		    fprintf(stderr, " %d:Rigid_motion[i](0:fix,1:free)",d++);
+		    fprintf(stderr, " %d:Rigid_velocity[i]",d++);
+		    fprintf(stderr, " %d:Rigid_omega[i]",d++);
+		}else {
+		    int d=1;
+		    fprintf(stderr, "#%d:species",d++);
+		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
+		    fprintf(stderr, " %d:number_of_beads[i]",d++);
+		    fprintf(stderr, " %d:number_of_chain[i]",d++);
+		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		    fprintf(stderr, " %d:Rigid_motion[i](0:fix,1:free)",d++);
+		    fprintf(stderr, " %d:Rigid_velocity[i]",d++);
+		    fprintf(stderr, " %d:Rigid_omega[i]",d++);
 		}
 	    }
 	    fprintf(stderr, "\n");
@@ -890,6 +967,131 @@ void Gourmet_file_io(const char *infile
 	    }
 	    fprintf(stderr, "#\n");
 	    fprintf(stderr, "# Flexible chains selected.\n");
+	}else if(SW_PT == rigid){		// T.K 12/12/28
+	    for(int i=0; i<Component_Number; i++){
+		char str[256];
+		string rigid_str;
+		sprintf(str,"object_type.rigid.Rigid_spec[%d]",i);
+		Location target(str);
+		{
+		    ufin->get(target.sub("Beads_number"),Beads_Numbers[i]);
+		    ufin->get(target.sub("Chain_number"),Chain_Numbers[i]);
+		    ufin->get(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
+		    ufin->get(target.sub("Surface_charge"),Surface_charge[i]);		    
+		    ufin->get(target.sub("Rigid_motion"),rigid_str);
+		    ufin->get(target.sub("Rigid_velocity.x"),Rigid_Velocities[i][0]);
+		    ufin->get(target.sub("Rigid_velocity.y"),Rigid_Velocities[i][1]);
+		    ufin->get(target.sub("Rigid_velocity.z"),Rigid_Velocities[i][2]);
+		    ufin->get(target.sub("Rigid_omega.x"),Rigid_Omegas[i][0]);
+		    ufin->get(target.sub("Rigid_omega.y"),Rigid_Omegas[i][1]);
+		    ufin->get(target.sub("Rigid_omega.z"),Rigid_Omegas[i][2]);
+		}
+		{
+		    ufout->put(target.sub("Beads_number"),Beads_Numbers[i]);
+		    ufout->put(target.sub("Chain_number"),Chain_Numbers[i]);
+		    ufout->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
+		    ufout->put(target.sub("Surface_charge"),Surface_charge[i]);
+		    ufout->put(target.sub("Rigid_motion"),rigid_str);
+		    ufout->put(target.sub("Rigid_velocity.x"),Rigid_Velocities[i][0]);
+		    ufout->put(target.sub("Rigid_velocity.y"),Rigid_Velocities[i][1]);
+		    ufout->put(target.sub("Rigid_velocity.z"),Rigid_Velocities[i][2]);
+		    ufout->put(target.sub("Rigid_omega.x"),Rigid_Omegas[i][0]);
+		    ufout->put(target.sub("Rigid_omega.y"),Rigid_Omegas[i][1]);
+		    ufout->put(target.sub("Rigid_omega.z"),Rigid_Omegas[i][2]);
+		    
+		}
+		{
+		    ufres->put(target.sub("Beads_number"),Beads_Numbers[i]);
+		    ufres->put(target.sub("Chain_number"),Chain_Numbers[i]);
+		    ufres->put(target.sub("MASS_RATIO"),MASS_RATIOS[i]);
+		    ufres->put(target.sub("Surface_charge"),Surface_charge[i]);
+		    ufres->put(target.sub("Rigid_motion"),rigid_str);
+		    ufres->put(target.sub("Rigid_velocity.x"),Rigid_Velocities[i][0]);
+		    ufres->put(target.sub("Rigid_velocity.y"),Rigid_Velocities[i][1]);
+		    ufres->put(target.sub("Rigid_velocity.z"),Rigid_Velocities[i][2]);
+		    ufres->put(target.sub("Rigid_omega.x"),Rigid_Omegas[i][0]);
+		    ufres->put(target.sub("Rigid_omega.y"),Rigid_Omegas[i][1]);
+		    ufres->put(target.sub("Rigid_omega.z"),Rigid_Omegas[i][2]);
+		}
+		if(rigid_str == "fix") Rigid_Motions[i] = 0;
+		else if(rigid_str == "free") Rigid_Motions[i] = 1;
+		else{
+		    fprintf(stderr, "invalid Rigid_motion\n"); 
+		    exit_job(EXIT_FAILURE);
+		}
+		
+		Particle_Numbers[i] = Beads_Numbers[i]*Chain_Numbers[i];
+		
+		if(SW_EQ == Electrolyte){
+		    fprintf(stderr, "#%d %d %d %d %g %g %d (%g, %g, %g) (%g, %g, %g)\n"
+			    ,i
+			    ,Particle_Numbers[i]
+			    ,Beads_Numbers[i]
+			    ,Chain_Numbers[i]
+			    ,MASS_RATIOS[i]
+			    ,Surface_charge[i]
+			    ,Rigid_Motions[i]
+			    ,Rigid_Velocities[i][0], Rigid_Velocities[i][1], Rigid_Velocities[i][2]
+			    ,Rigid_Omegas[i][0], Rigid_Omegas[i][1], Rigid_Omegas[i][2]
+			);
+		}else {
+		    fprintf(stderr, "#%d %d %d %d %f %d (%f, %f, %f) (%f, %f, %f)\n"
+			    ,i
+			    ,Particle_Numbers[i]
+			    ,Beads_Numbers[i]
+			    ,Chain_Numbers[i]
+			    ,MASS_RATIOS[i]
+			    ,Rigid_Motions[i]
+			    ,Rigid_Velocities[i][0], Rigid_Velocities[i][1], Rigid_Velocities[i][2]
+			    ,Rigid_Omegas[i][0], Rigid_Omegas[i][1], Rigid_Omegas[i][2]
+			);
+		}
+	    }	//close for
+	    
+	    Rigid_Number = 0;
+	    for(int rigid_i=0; rigid_i<Component_Number; rigid_i++){
+			Rigid_Number += Chain_Numbers[rigid_i];
+		}
+		
+		//allocation (using Rigid_Number)
+		xGs = alloc_2d_double(Rigid_Number, DIM);
+		RigidID_Components = alloc_1d_int(Rigid_Number);
+		Rigid_Particle_Numbers = alloc_1d_int(Rigid_Number);
+		Rigid_Masses = alloc_1d_double(Rigid_Number);
+		Rigid_IMasses = alloc_1d_double(Rigid_Number);
+		Rigid_Moments = alloc_3d_double(Rigid_Number, DIM, DIM);
+		Rigid_IMoments = alloc_3d_double(Rigid_Number, DIM, DIM);
+		velocityGs = alloc_2d_double(Rigid_Number, DIM);
+		omegaGs = alloc_2d_double(Rigid_Number, DIM);
+		forceGs = alloc_2d_double(Rigid_Number, DIM);
+		forceGrs = alloc_2d_double(Rigid_Number, DIM);
+		forceGvs = alloc_2d_double(Rigid_Number, DIM);
+		torqueGs = alloc_2d_double(Rigid_Number, DIM);
+		torqueGrs = alloc_2d_double(Rigid_Number, DIM);
+		torqueGvs = alloc_2d_double(Rigid_Number, DIM);
+		velocityGs_old = alloc_2d_double(Rigid_Number, DIM);
+		omegaGs_old = alloc_2d_double(Rigid_Number, DIM);
+		forceGrs_previous = alloc_2d_double(Rigid_Number, DIM);
+		forceGvs_previous = alloc_2d_double(Rigid_Number, DIM);
+		torqueGrs_previous = alloc_2d_double(Rigid_Number, DIM);
+		torqueGvs_previous = alloc_2d_double(Rigid_Number, DIM);
+		// initialize
+		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+			for(int d=0; d<DIM; d++){
+				forceGs[rigidID][d] = 0.0;
+				forceGrs[rigidID][d] = 0.0;
+				forceGvs[rigidID][d] = 0.0;
+				torqueGs[rigidID][d] = 0.0;
+				torqueGrs[rigidID][d] = 0.0;
+				torqueGvs[rigidID][d] = 0.0;
+				forceGrs_previous[rigidID][d] = 0.0;
+				forceGvs_previous[rigidID][d] = 0.0;
+				torqueGrs_previous[rigidID][d] = 0.0;
+				torqueGvs_previous[rigidID][d] = 0.0;
+			}
+		}
+	    fprintf(stderr, "#\n");
+	    fprintf(stderr, "# Rigid chains selected.\n");
 	}
     }
     fprintf(stderr, "#\n");
@@ -1188,6 +1390,67 @@ void Gourmet_file_io(const char *infile
     
     Set_global_parameters();
     
+    // T.K 12/12/29
+	if(SW_PT == rigid){
+		// set Particle_RigidID 
+		int rigid_n1 = 0;
+		int rigid_n2 = 0;
+		int rigidID = 0;
+		Particle_RigidID = alloc_1d_int(Particle_Number);
+		for(int rigid_i=0; rigid_i<Component_Number; rigid_i++){
+			for(int rigid_j=0; rigid_j<Chain_Numbers[rigid_i]; rigid_j++){
+				rigid_n2 += Beads_Numbers[rigid_i];
+				for(int n=rigid_n1; n<rigid_n2; n++){
+					Particle_RigidID[n] = rigidID;
+				}
+				rigidID += 1;
+				rigid_n1 = rigid_n2;
+			}
+		}
+		// set RigidID_Components
+		rigidID = 0;
+		for(int rigid_i=0; rigid_i<Component_Number; rigid_i++){
+			for(int rigid_j=0; rigid_j<Chain_Numbers[rigid_i]; rigid_j++){
+				RigidID_Components[rigidID] = rigid_i;
+				rigidID += 1;
+			}
+		}
+		
+		// initialize Rigid_Particle_Number[]
+		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+			Rigid_Particle_Numbers[rigidID] = 0;
+		}
+		// set Rigid_Particle_Numbers[]
+		for(int n=0; n<Particle_Number; n++){
+			Rigid_Particle_Numbers[ Particle_RigidID[n] ] += 1;
+		}
+		if(rigid_n1 != Particle_Number){  //for debug
+			fprintf(stderr, "error: set Particle_RigidID");
+			exit_job(EXIT_FAILURE);
+		}
+		//debug output
+		for(int n=0; n<Particle_Number; n++){
+			fprintf(stderr, "debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
+		}
+		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+			fprintf(stderr, "debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
+		}
+		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+			fprintf(stderr, "debug: Rigid_Particle_Numbers[%d] = %d\n", rigidID, Rigid_Particle_Numbers[rigidID]);
+		}
+		
+		//initialize velocityGs and omegaGs and old 13/01/07
+		int rigid_component;
+		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+			rigid_component = RigidID_Components[rigidID];
+			for(int d=0; d<DIM; d++){
+				velocityGs[rigidID][d] = Rigid_Velocities[rigid_component][d];
+				omegaGs[rigidID][d] = Rigid_Omegas[rigid_component][d];
+				velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
+				omegaGs_old[rigidID][d] = omegaGs[rigidID][d];
+			}
+		}
+	}
 }
 
 char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;

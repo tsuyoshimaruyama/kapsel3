@@ -1,6 +1,4 @@
-// kapsel v2.10
 //
-
 // $Id: define.udf,v 2.1 2010/03/13 RY $
 //
 \begin{global_def}
@@ -102,7 +100,7 @@ constitutive_eq: {
 }
 
 object_type: {
-   type: select {'spherical_particle','chain'}
+   type: select {'spherical_particle','chain','rigid'}
 
    spherical_particle: { 
       Particle_spec[]:{
@@ -118,6 +116,17 @@ object_type: {
          Chain_number: int "number of chains"
          MASS_RATIO: double "mass density ratio chain/solvent"
          Surface_charge: double "surface charge of colloid"
+      }
+   }
+   rigid:{
+      Rigid_spec[]:{
+         Beads_number: int "number of beads in a chain"
+         Chain_number: int "number of chains"
+         MASS_RATIO: double "mass density ratio chain/solvent"
+         Surface_charge: double "surface charge of colloid"
+         Rigid_motion: select {'fix','free'}
+         Rigid_velocity: Vector3d "speed of translation ### fix only ###"
+         Rigid_omega: Vector3d "angular velocity ### fix only ###"
       }
    }
 }

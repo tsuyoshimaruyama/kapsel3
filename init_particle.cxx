@@ -248,8 +248,21 @@ void Init_Particle(Particle *p){
       ufout->put(target.sub("v.x"),p[i].v[0]);
       ufout->put(target.sub("v.y"),p[i].v[1]);
       ufout->put(target.sub("v.z"),p[i].v[2]);
+      
+      //output is shifted other part 13/01/04
+    }
+    // T.K 12/12/29, 13/01/04 initialize rigid status
+    if(SW_PT == rigid){
+       set_xGs(p);
+       set_Rigid_MMs(p);
+       set_particle_vomegas(p);	// ### caution ### v.x, v.y, v.z are ignored and set Rigid_Velocities and Rigid_Omegas
+    }
+    // T.K 13/01/04 output p.x and p.v
+    for(int i=0; i<Particle_Number; i++){
       fprintf(stderr,"# %d-th particle position (p_x, p_y, p_z)=(%g, %g, %g)\n",i,p[i].x[0],p[i].x[1],p[i].x[2]);
       fprintf(stderr,"# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n",i,p[i].v[0],p[i].v[1],p[i].v[2]);
+      for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: xGs[%d] = (%f, %f, %f)\n", rigidID, xGs[rigidID][0], xGs[rigidID][1], xGs[rigidID][2]);
+      for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: Rigid_Masses[%d] = %f\n", rigidID, Rigid_Masses[rigidID]);
     }
     fprintf(stderr,"############################\n");
     if(!RESUMED){
@@ -289,10 +302,10 @@ void Init_Particle(Particle *p){
       int i= offset + n;
       p[i].spec = j;
       for(int d=0; d< DIM; d++){
-	p[i].v[d] = 0.e0 * RA();
+	//p[i].v[d] = 0.e0 * RA();
 	p[i].v_old[d] = 0.e0;
 	p[i].f_hydro[d] = 0.0;
-	//p[i].f_hydro_previous[d] = 0.0;
+	//p[i].f_hydro_previous[d] = 0.0;	//comment out by T.K 13/01/04 (because this part resets p[n].v[d])
 	p[i].f_hydro1[d] = 0.0;
 	p[i].fr[d] = 0.0;
 	p[i].fr_previous[d] = 0.0;
@@ -623,5 +636,93 @@ void Init_Chain(Particle *p){
        }while(overlap);
      }
 
+}
+
+void Init_Rigid(Particle *p){	// T.K 13/01/18
+	fprintf(stderr, "#init_particle: Rigid chain distributed linear ");
+	fprintf(stderr,"(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
+	
+	double dmy, dmy0, dmy1, dmy2;
+	
+	for(int d=0; d<1000; d++) dmy = RAx(PI2);
+	
+	double overlap_length = 0.9 * SIGMA;
+	
+	int rigidID = -1;
+	int m, n = 0, rn = 0;
+	while(n < Particle_Number){
+		if(rigidID != Particle_RigidID[n] || rn == 0){
+			rigidID += 1;
+			while(1){	// set the 1-st particle of a rigid
+				dmy = RAx(L_particle[0]);
+				p[n].x[0] = dmy;
+				dmy = RAx(L_particle[1]);
+				p[n].x[1] = dmy;
+				dmy = RAx(L_particle[2]);
+				p[n].x[2] = dmy;
+				for(int d=0; d<DIM; d++) p[n].x[d] = fmod(p[n].x[d] + L_particle[d], L_particle[d]);
+				fprintf(stderr, "debug0: p[%d]: (%f, %f, %f)\n", n, p[n].x[0], p[n].x[1], p[n].x[2]);
+				for(m=0; m<n; m++){
+					if(Distance(p[m].x, p[n].x) <= overlap_length){
+						fprintf(stderr, "debug0: p[%d] and p[%d] overlap...\n", m, n);
+						break;
+					}
+				}
+				if(m >= n){
+					rn = 1;
+					break;
+				}
+			}
+		}
+		else if(rn == 1){
+			while(1){	// set the 2-nd particle of a rigid
+				dmy0 = 0.96 * SIGMA;
+				dmy1 = RAx(M_PI);
+				dmy2 = RAx(PI2);
+				p[n].x[0] = p[n-1].x[0] + dmy0*sin(dmy1)*cos(dmy2);
+				p[n].x[1] = p[n-1].x[1] + dmy0*sin(dmy1)*sin(dmy2);
+				p[n].x[2] = p[n-1].x[2] + dmy0*cos(dmy1);
+				for(int d=0; d<DIM; d++) p[n].x[d] = fmod(p[n].x[d] + L_particle[d], L_particle[d]);
+				fprintf(stderr, "debug1: p[%d]: (%f, %f, %f)\n", n, p[n].x[0], p[n].x[1], p[n].x[2]);
+				for(m=0; m<n; m++){
+					if(Distance(p[m].x, p[n].x) <= overlap_length){
+						fprintf(stderr, "debug1: p[%d] and p[%d] overlap...\n", m, n);
+						break;
+					}
+				}
+				if(m >= n){
+					rn += 1;
+					break;
+				}
+			}
+		}
+		else{
+			while(1){	// set 3-rd...
+				p[n].x[0] = p[n-1].x[0] + dmy0*sin(dmy1)*cos(dmy2);
+				p[n].x[1] = p[n-1].x[1] + dmy0*sin(dmy1)*sin(dmy2);
+				p[n].x[2] = p[n-1].x[2] + dmy0*cos(dmy1);
+				for(int d=0; d<DIM; d++) p[n].x[d] = fmod(p[n].x[d] + L_particle[d], L_particle[d]);
+				fprintf(stderr, "debug2: p[%d]: (%f, %f, %f)\n", n, p[n].x[0], p[n].x[1], p[n].x[2]);
+				for(m=0; m<n; m++){
+					if(Distance(p[m].x, p[n].x) <= overlap_length){
+						fprintf(stderr, "debug2: p[%d] and p[%d] overlap...\n", m, n);
+						n -= rn + 1;
+						rigidID -= 1;
+						rn = 0;
+						break;
+					}
+				}
+				if(rn == 0) break;
+				if(m >= n){
+					rn += 1;
+					break;
+				}
+			}
+		}
+		n += 1;
+	}
+	set_xGs(p);
+	set_Rigid_MMs(p);
+	set_particle_vomegas(p);
 }
 

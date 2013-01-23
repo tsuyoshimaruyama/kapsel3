@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
-#include <cstring>
 #include <cfloat>
 #include <sys/types.h>
 #include <dirent.h>
+#include <string.h>
 #include "macro.h"
 #include "alloc.h"
 #include "udfmanager.h"
@@ -40,6 +40,7 @@ enum EQ {Navier_Stokes
 };
 enum PT {spherical_particle
 	 ,chain
+	 ,rigid		//T.K 12/12/28
 };
 //////  
 extern SW_time SW_TIME;
@@ -160,6 +161,34 @@ extern int *Chain_Numbers;
 extern double VF;
 extern double VF_LJ;
 extern double Ivolume;
+//// T.K 12/12/28,29
+extern int Rigid_Number;
+extern int *Rigid_Motions;// 0(fix) or 1(free)
+extern double **Rigid_Velocities;
+extern double **Rigid_Omegas;
+extern int *Particle_RigidIDs;
+extern int *RigidID_Components;
+extern int *Rigid_Particle_Numbers;
+extern double **xGs;
+extern double *Rigid_Masses;
+extern double *Rigid_IMasses;
+extern double ***Rigid_Moments;
+extern double ***Rigid_IMoments;
+extern double **velocityGs;
+extern double **omegaGs;
+extern double **forceGs;	//hydro
+extern double **forceGrs;	//LJ
+extern double **forceGvs;	//
+extern double **torqueGs;
+extern double **torqueGrs;
+extern double **torqueGvs;
+extern double **velocityGs_old;
+extern double **omegaGs_old;
+extern double **forceGrs_previous;
+extern double **forceGvs_previous;
+extern double **torqueGrs_previous;
+extern double **torqueGvs_previous;
+extern int *Particle_RigidID;
 //////
 extern int GTS;
 extern int Num_snap;

@@ -420,6 +420,9 @@ int main(int argc, char *argv[]){
       if((SW_PT == chain) && !(DISTRIBUTION == user_specify)){
 	  Init_Chain(particles);
       }
+      else if((SW_PT == rigid) && !(DISTRIBUTION == user_specify)){
+	  Init_Rigid(particles);
+	  }
   }
   
   Init_zeta_k(zeta, uk_dc);

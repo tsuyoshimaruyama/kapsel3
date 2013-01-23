@@ -8,6 +8,7 @@
 #include "variable.h"
 #include "input.h"
 #include "md_force.h"
+#include "rigid.h" // T.K 13/01/04
 
 #ifdef _OPENMP
 #include <omp.h>
