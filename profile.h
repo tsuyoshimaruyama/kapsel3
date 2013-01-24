@@ -201,19 +201,11 @@ inline double DPhi_compact_sin_norm(const double &x,
   \param[in] profile_func profile function used to determine interface/fluid boundary
   \param[out] np_domain number of points in the sekibun_cell list
   \param[out] sekibun_cell list of local grid points to consider for the particle domain
-  \param[out] np_domain_interface (unused) number of points in the sekibun_cell_interface list
-  \param[out] sekibun_cell_interface (unused) list of local grid points to consider for the particle/fluid interface
-  \param[out] np_domain_exponential (unused) number of points in the sekibun_cell_exponential list
-  \param[out] sekibun_cell_exponential (unused) list of local grid points to consider (accordint to the exponential smooth profile function)
  */
 void Particle_domain(
 		     double (*profile_func)(const double &x, const double radius)
 		     ,int &np_domain
 		     ,int** &sekibun_cell
-		     ,int &np_domain_interface
-		     ,int** &sekibun_cell_interface
-		     ,int &np_domain_exponential
-		     ,int** &sekibun_cell_exponential
 		     );
 
 #endif

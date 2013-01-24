@@ -98,8 +98,6 @@ void Calc_f_hydro_correct_precision(Particle *p, //particle list
 \note As convention, we pin the Sekibun cell \f$\vec{x}_i\f$ to the back, lower, left corner of the grid cube containing the particle center \f$\vec{x}_p\f$. This is implemented in \link Particle_cell Particle_cell\endlink.
 \note The Sekibun cell is created in \link Particle_domain Particle_domain\endlink. As of version 2.10 it is not possible to treat size polidispersity (all particles have the same radius, and so use the same Sekibun cell).
 \note The transformation from local (Sekibun) coordinates \f$\vec{x}_s^{\,\prime\prime}\f$ to Global coordinates \f$\vec{x}_s\f$ is implemented in \link Relative_coord Relative_coord\endlink.
-\note We have also defined two similar integration grids, \c Sekibun_cell_interface and \c Sekibun_cell_exponential, but they remain unused (proceed with caution).
-\bug When generating the Sekibun cell we check that \f$\phi > 0\f$ (for a radius \f$a + \Delta\f$) and not that the point is within a distance \f$a_s\f$ of the center. This can cause problems when using both \f$\phi\f$ and \f$\phi_s\f$, particularly for the surface calculations, since the latter has a larger domain over which it is non-zero. Furthermore, we should use the actual interface thickness \f$\zeta/2\f$ and not \f$\Delta\f$ (since they need not be equal)
 
 \section sec_design_grid_ooura Ooura's FFT - Real/Reciprocal space representations
 Under periodic boundary conditions, the solution to the Navier-Stokes equation (with the exception of the advection term) is much easier in reciprocal space than it is in real space. We adopt the following convention for the sign of the direct and inverse tranforms

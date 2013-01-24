@@ -18,9 +18,7 @@
 
 extern void (*Angular2v)(const double *omega, const double *r, double *v);
 extern int NP_domain;
-extern int NP_domain_interface;
 extern int **Sekibun_cell;
-extern int **Sekibun_cell_interface;
 
 /*!
   \brief Compute smooth particle position and advection fields

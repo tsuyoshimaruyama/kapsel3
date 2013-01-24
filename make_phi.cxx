@@ -11,9 +11,7 @@
 void (*Angular2v)(const double *omega, const double *r, double *v);
 
 int NP_domain;
-int NP_domain_interface;
 int **Sekibun_cell;
-int **Sekibun_cell_interface;
 
 /////////////
 void Make_surface_normal(double **surface_normal

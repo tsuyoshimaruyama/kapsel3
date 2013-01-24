@@ -16,8 +16,6 @@ extern int NS_source;//!< (Unused) flag to enable solute source calculations
 
 extern double *Valency_e;//!< Charge valency for each species
 
-extern int NP_domain_exponential;//!< (Unused) Number of points in exponential cell
-extern int **Sekibun_cell_exponential;//!< (Unused) Exponential Sekibun cell
 
 extern double *Total_solute;//!< Total amount of solute for each species
 

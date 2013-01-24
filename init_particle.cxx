@@ -10,11 +10,7 @@
 #include "init_particle.h"
 
 void Init_Particle(Particle *p){
-  Particle_domain(Phi
-		  ,NP_domain, Sekibun_cell
-		  ,NP_domain_interface, Sekibun_cell_interface
-		  ,NP_domain_exponential, Sekibun_cell_exponential
-		  );
+  Particle_domain(Phi, NP_domain, Sekibun_cell);
 
   if(ROTATION) {
     Angular2v = Angular2v_rot_on;
