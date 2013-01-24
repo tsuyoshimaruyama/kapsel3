@@ -16,8 +16,6 @@ extern int NS_source;//!< (Unused) flag to enable solute source calculations
 
 extern double *Valency_e;//!< Charge valency for each species
 
-extern int NP_domain_exponential;//!< (Unused) Number of points in exponential cell
-extern int **Sekibun_cell_exponential;//!< (Unused) Exponential Sekibun cell
 
 extern double *Total_solute;//!< Total amount of solute for each species
 
@@ -75,7 +73,6 @@ void Add_advection_flux(double **solute_flux
   \f]
   where \f$\vec{n}(\vec{r})\f$ is the unit surface-normal vector field defined on the particle interface domain.
   \note The advection contribution to the solute flux should \b NOT be included
-  \bug Inconsistent (unnecessary?) normalization will lead to problems if surface_normal field is not really normalized
  */
 void Solute_impermeability(Particle *p
 			   ,double **solute_flux_x

@@ -78,7 +78,8 @@ inline double RA(){// uniform in [-1, 1]
 inline double RAx(const double &x){ // uniform in [0, x)
     return (double)rand()/RAND_MAX * x;
 }
-inline void RA_circle(double &a, double &b){//random point inside unit circle
+//random point inside unit circle
+inline void RA_circle(double &a, double &b){
   int inside = 0;
   do{
     a = RA();
@@ -88,22 +89,36 @@ inline void RA_circle(double &a, double &b){//random point inside unit circle
     }
   }while(!inside);
 }
+//random point on unit circle
 inline void RA_on_circle(double &a, double &b){
   RA_circle(a, b);
   double norm = 1.0/sqrt(a*a + b*b);
-  a = a * norm;
-  b = b * norm;
+  a *= norm;
+  b *= norm;
 }
-inline void RA_on_sphere(double &a, double &b, double &c){//random point inside sphere
-  double u0, u1, norm, dmy;
+//random point on 3D/4D unit sphere
+// Numerical Recipes, Edition 3, pg. 1130
+inline void RA_on_sphere3D(double &a, double &b, double &c){
+  double u0, u1, sqnorm, dmy;
 
   RA_circle(u0,u1);
-  norm = u0*u0 + u1*u1;
-  dmy = sqrt(1.0 - norm);
+  sqnorm = u0*u0 + u1*u1;
+  dmy = sqrt(1.0 - sqnorm);
 
   a = 2.0 * u0 * dmy;
   b = 2.0 * u1 * dmy;
-  c = 1.0 - 2.0 * norm;
+  c = 1.0 - 2.0 * sqnorm;
+}
+inline void RA_on_sphere4D(double &a, double &b, double &c, double &d){
+  double u0, u1, u2, u3, scale;
+
+  RA_circle(u0,u1);
+  RA_circle(u2,u3);
+  scale = sqrt( (1.0 - (u0*u0 + u1*u1)) / (u2*u2 + u3*u3)  );
+  a = u0;
+  b = u1;
+  c = u2 * scale;
+  d = u3 * scale;
 }
 /////////////////////// macro for simple arithmetics
 inline double POW6(const double x){
@@ -151,7 +166,7 @@ inline bool equal_tol(const double &a, const double &b, const double &rtol,
 inline bool equal_mp(const double &a, const double &b){
   if(a == b) return true;
   double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;
-  return ABS(a - b) <= eps;
+  return (ABS(a - b) <= eps ? true: false);
 }
 inline bool greater_than_mp(const double &a, const double &b){
   double eps = (MAX(ABS(a), ABS(b)) + 10.0)*EPSILON_MP;

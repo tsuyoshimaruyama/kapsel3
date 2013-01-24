@@ -74,7 +74,7 @@ void Mem_alloc_NS_solver(void);
   \param[in] ijk_range field iterator parameters for update
   \param[in] n_ijk_range field iterator parameters for update
   \param[in] p particle data (unused)
-  \see \link page_design_fsolver Fluid Solver\endlink section of manual for further details.
+  \see \ref page_design_fsolver section of manual for further details.
   \todo Specify the difference between ijk_range and n_ijk_range
  */
 void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p);
@@ -111,7 +111,7 @@ void Ion_diffusion_solver_Euler(double **zeta
   \param[in] ijk_range field iterator data
   \param[in] n_ijk_range field iterator data
   \note The solute source term appearing in the rhs of the Navier-Stokes equation has not been included. This section of the code should probably be removed for clarity...
-  \see \link page_design_ssolver Solute Solver\endlink section of manual for furter details.
+  \see \ref page_design_ssolver section of manual for furter details.
  */
 void NSsolute_solver_Euler(double **zeta
 			   ,const CTime &jikan

@@ -1,22 +1,13 @@
 /*!
-  \file ribid_body.h
-  \brief Routines to solve equations of motion for orientation of a 
-  symmetrical sphere
-  \details Details on the quaternion calculations can be found in
-  Graf, B. (2008). Quaternions and dynamics. 
-  http://arxiv.org/abs/0811.2889
-  Details on the Lie-Group representation of rotations and the use of simplectic integrators for rigid body motion are given in
-  Marsden, J. E., & Ratiu, T. S. (2010). Introduction to Mechanics and Symmetry: A Basic Exposition of Classical Mechanical Systems (Texts in Applied Mathematics) (p. 285). Springer.
-  and
-  Dullweber, A., Leimkuhler, B., & McLachlan, R. (1997). Symplectic splitting methods for rigid body molecular dynamics. The Journal of Chemical Physics, 107(15), 5840–5851.
-  and
-  Buss, Samuel (2001). Accurate and efficient simulation of rigid body rotations. 
+  \file rigid_body.h
+  \brief Auxiliary routines to solve equations of motion for rigid
+  bodies (header file)
   \author J. Molina
   \date 2012/03/29
   \version 1.0
  */
-#ifndef RIBID_BODY_H
-#define RIBID_BODY_H
+#ifndef RIGID_BODY_H
+#define RIGID_BODY_H
 
 #include "quaternion.h"
 #include "lad3.h"
@@ -33,13 +24,31 @@ inline void random_rotation(double QR[DIM][DIM]){
   rqtn_rm(QR, dmy_q);
   M_isValidRotation(QR);
 }
+
+
+//
+// Get skew anti-symmetric matrix
+inline void skew(double ws[DIM][DIM], 
+		 const double w[DIM]){
+  assert(DIM == 3);
+  ws[0][0] = 0.0;
+  ws[0][1] = -w[2];
+  ws[0][2] = w[1];
+
+  ws[1][0] = w[2];
+  ws[1][1] = 0.0;
+  ws[1][2] = -w[0];
+
+  ws[2][0] = -w[1];
+  ws[2][1] = w[0];
+  ws[2][2] = 0.0;
+}
+
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
 // Vector Transformation: Space <--> Body Coordinate Frames
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-
-
 /*!
   \brief Transform between body/space and space/body frames given the
   current orientation QUATERNION
@@ -104,7 +113,11 @@ void qdot(quaternion &dqdt,
  */
 inline void qdot(quaternion &dqdt,
 		 const double omega[DIM],
-		 const COORD_SYSTEM &coord);
+		 const COORD_SYSTEM &coord){
+  quaternion q;
+  qtn_init(q, dqdt);
+  qdot(dqdt, q, omega, coord);
+}
 
 /*!
   \brief Compute time derivative of orientation matrix
@@ -122,7 +135,11 @@ void Qdot(double dQRdt[DIM][DIM],
  */
 inline void Qdot(double dQRdt[DIM][DIM],
 		 const double omega[DIM],
-		 const COORD_SYSTEM &coord);
+		 const COORD_SYSTEM &coord){
+  double QR[DIM][DIM];
+  M_copy(QR, dQRdt);
+  Qdot(dQRdt, QR, omega, coord);
+}
 
 /*!
   \brief Compute time derivative of angular velocity given

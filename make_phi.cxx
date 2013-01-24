@@ -11,9 +11,7 @@
 void (*Angular2v)(const double *omega, const double *r, double *v);
 
 int NP_domain;
-int NP_domain_interface;
 int **Sekibun_cell;
-int **Sekibun_cell_interface;
 
 /////////////
 void Make_surface_normal(double **surface_normal
@@ -276,8 +274,6 @@ inline void Make_phi_u_primitive(double *phi
 		}
 	    }
 	}
-	p[n].eff_mass_ratio 
-	    = 1.0;
     }
 
     // koba code //
@@ -366,8 +362,6 @@ inline void Make_phi_u_primitive_OBL(double *phi
 		}
 	    }
 	}
-	p[n].eff_mass_ratio 
-	    = 1.0;
     }
     
     // koba code //
@@ -482,7 +476,5 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p){
 	up[d][(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += ( vp[d] * dmy_phi);
       }
     }
-    p[n].eff_mass_ratio 
-      = 1.0;
   }
 }

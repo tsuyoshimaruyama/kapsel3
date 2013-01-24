@@ -10,9 +10,6 @@
 
 double *Valency_e;
 
-int NP_domain_exponential;
-int **Sekibun_cell_exponential;
-
 double *Total_solute;
 
 double **Surface_normal;

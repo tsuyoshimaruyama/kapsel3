@@ -10,11 +10,7 @@
 #include "init_particle.h"
 
 void Init_Particle(Particle *p){
-  Particle_domain(Phi
-		  ,NP_domain, Sekibun_cell
-		  ,NP_domain_interface, Sekibun_cell_interface
-		  ,NP_domain_exponential, Sekibun_cell_exponential
-		  );
+  Particle_domain(Phi, NP_domain, Sekibun_cell);
 
   if(ROTATION) {
     Angular2v = Angular2v_rot_on;
@@ -383,7 +379,7 @@ void Init_Particle(Particle *p){
 	p[i].mass_center[d] = 0.0;
 	p[i].surface_mass_center[d] = 0.0;
 	p[i].surface_dv[d] = 0.0;
-	p[i].surface_domega[d] = 0.0;
+	p[i].surface_dw[d] = 0.0;
 	for(int l = 0; l < DIM; l++){
 	  p[i].inertia[d][l] = 0.0;
 	  p[i].surface_inertia[d][l] = 0.0;

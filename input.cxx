@@ -370,7 +370,7 @@ inline void Set_global_parameters(void){
     
     if(SW_JANUS_SLIP){
       for(int i = 0; i < Component_Number; i++){
-	janus_slip_mode[i] /= 2.0;
+	janus_slip_mode[i] /= 2.0; // \alpha/2 = B_2/(2*B_1)
       }
     }
 }
@@ -914,8 +914,8 @@ void Gourmet_file_io(const char *infile
 
                     // squirmer with surface slip velocity
 		    if(janus_propulsion[i] == slip){
-		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]);
-		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]);
+		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]); //B1 coeff
+		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]); //alpha=B2/B1
 		      assert(janus_slip_vel > 0);
 		    }else{
 		      janus_slip_vel[i] = 0.0;
