@@ -1,12 +1,13 @@
 /*!
-  \file ribid_body.h
-  \brief Auxiliary routines to solve equations of motion for rigid bodies
+  \file rigid_body.h
+  \brief Auxiliary routines to solve equations of motion for rigid
+  bodies (header file)
   \author J. Molina
   \date 2012/03/29
   \version 1.0
  */
-#ifndef RIBID_BODY_H
-#define RIBID_BODY_H
+#ifndef RIGID_BODY_H
+#define RIGID_BODY_H
 
 #include "quaternion.h"
 #include "lad3.h"

@@ -8,6 +8,8 @@
 
 #include "particle_solver.h"
 
+//Orientation solvers
+//First-order Euler
 inline void MD_solver_orientation_Euler(Particle &p, const double &dt){
   if(ROTATION){
     quaternion dqdt;
@@ -18,10 +20,12 @@ inline void MD_solver_orientation_Euler(Particle &p, const double &dt){
   }
 }
 
+//Simo & Wong second-order scheme
 inline void MD_solver_orientation_AB2(Particle &p, const double &dt){
   if(ROTATION){
     double wb[DIM];
     double wb_old[DIM];
+    //only add angular velocity vectors in body coordinates !
     rigid_body_rotation(wb, p.omega, p.q, SPACE2BODY);
     rigid_body_rotation(wb_old, p.omega_old, p.q_old, SPACE2BODY);
     for(int d = 0; d < DIM; d++){
@@ -35,7 +39,8 @@ inline void MD_solver_orientation_AB2(Particle &p, const double &dt){
     qtn_normalize(p.q);
   }
 }
-
+// Samuel Buss' second-order scheme
+// untested
 inline void MD_solver_orientation_SB2(Particle &p, const double &dt){
   if(ROTATION){
     double wb[DIM];
@@ -51,6 +56,7 @@ inline void MD_solver_orientation_SB2(Particle &p, const double &dt){
   }
 }
 
+//Position solvers
 void MD_solver_position_Euler(Particle *p, const CTime &jikan)
 {
   double delta_x;
@@ -101,6 +107,7 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan)
   }
 }
 
+// self-force and torque in space coordinates 
 inline void self_propulsion(Particle &p, double *force, double *torque){
   for(int d = 0; d < DIM; d++){
     force[d] = 0.0;
@@ -133,11 +140,11 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
     dmy_rot = jikan.dt_md * IMOI[p[n].spec];
 
     if(janus_propulsion[p[n].spec] != obstacle){
-    self_propulsion(p[n], self_force, self_torque);
+      self_propulsion(p[n], self_force, self_torque);
       for(int d = 0; d < DIM; d++) {
 	p[n].v_old[d] = p[n].v[d];
 	p[n].v[d] += ( dmy * (p[n].f_hydro[d] + p[n].f_slip[d] + p[n].fr[d] + self_force[d]) );
-
+        
 	p[n].omega_old[d] = p[n].omega[d];
 	p[n].omega[d] += ( dmy_rot * (p[n].torque_hydro[d] + p[n].torque_slip[d] + self_torque[d]));
       }      
@@ -248,7 +255,7 @@ void MD_solver_velocity_iter(Particle *p, const CTime &jikan,
     }
 
   }//start_iter || new_iter
-  else if(iter_flag == reset_iter){
+  else if(iter_flag == reset_iter){//reset velocities
     #pragma omp parallel for schedule(dynamic, 1)
     for(int n = 0; n < Particle_Number; n++){
       for(int d = 0; d < DIM; d++){
@@ -284,47 +291,6 @@ void MD_solver_velocity_iter(Particle *p, const CTime &jikan,
 
   }//end_iter
 
-}
-
-void MD_solver_velocity_Euler_hydro(Particle *p, const CTime &jikan){
-  Force(p);
-
-  double dmy;
-  double dmy_rot;
-  double self_force[DIM];
-  double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
-  for(int n = 0; n < Particle_Number; n++) {
-    //static double dmy = jikan.dt_md * IMASS[p[n].spec];
-    //static double dmy_rot = jikan.dt_md * IMOI[p[n].spec];
-    dmy = jikan.dt_md * IMASS[p[n].spec];
-    dmy_rot = jikan.dt_md * IMOI[p[n].spec];
-    self_propulsion(p[n], self_force, self_torque);
-
-    for(int d = 0; d < DIM; d++) {
-      {
-	p[n].v_old[d] = p[n].v[d];
-	p[n].v[d] += ( dmy *
-		       ( p[n].f_hydro[d] +
-			 0.5*(p[n].fr[d] + p[n].fr_previous[d] ) +
-			 self_force[d]
-			 )
-		       );
-
-	p[n].fr_previous[d] = p[n].fr[d];
-	p[n].fr[d] = 0.0;
-	p[n].f_hydro_previous[d] = p[n].f_hydro[d];
-	p[n].f_hydro[d] = 0.0;
-      }
-      {
-	p[n].omega_old[d] = p[n].omega[d];
-	p[n].omega[d] += ( dmy_rot * (p[n].torque_hydro[d] + self_torque[d]));
-
-	p[n].torque_hydro_previous[d] = p[n].torque_hydro[d];
-	p[n].torque_hydro[d] = 0.0;
-      }
-    }
-  }
 }
 
 void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){

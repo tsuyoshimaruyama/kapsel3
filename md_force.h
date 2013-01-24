@@ -4,7 +4,6 @@
   \author Y. Nakayama
   \date 2006/06/27
   \version 1.1
-  \todo documentation
  */
 #ifndef MD_FORCE_H
 #define MD_FORCE_H

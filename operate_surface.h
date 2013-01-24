@@ -58,6 +58,18 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p);
 void Make_force_u_slip_particle(double **up, double const* const* u,
 				Particle *p, const CTime &jikan);
 
+/*!
+  \brief Computes convergence factor for iterative slip velocity as
+  maximum of squared relative difference between succesive velocities
+  \details \f[
+  \epsilon =
+  \text{Max}_i\left(
+  \frac{\norm{\vec{V}_i-\vec{V}_i^\prime}}{\norm{\vec{V}_i}}
+  + \frac{\norm{\vec{\Omega}_i - \vec{\Omega}_i^\prime}}{\norm{\vec{\Omega}_i}}
+  \right)
+  \f]
+  \param[in] p particle data
+ */
 inline double Slip_particle_convergence(Particle *p){
   double eps,dmy_v, dmy_w, nv, nw;
   eps = 0.0;

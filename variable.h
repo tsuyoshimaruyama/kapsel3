@@ -25,7 +25,6 @@ typedef struct CTime {
 } CTime;
 
 typedef struct Particle {
-  double eff_mass_ratio;
   int spec;
   double x[DIM];
   double x_previous[DIM];

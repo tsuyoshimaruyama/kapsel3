@@ -90,14 +90,13 @@ inline double DPhi_tanh(const double &x
   \brief Derivative of the smooth profile function \f$\phi(x)\f$
   \details
   \f{eqnarray*}{
-  |\phi(x)| &=& 
+  |\nabla\phi(x)| &=& 
   \frac{h'(a + \zeta/2 -x)h(x - a + \zeta/2) + h'(x - a + \zeta/2) h(a + \zeta/2 -r)}{\left[h(a + \zeta/2 - x) + h(x - a + \zeta/2)\right]^2} \\
   &=& \left[\frac{2\Delta^2}{(\zeta/2 + (a-x))^3} h(\zeta/2 + (a-x))h(\zeta/2 - (a-x))
   + \frac{2\Delta^2}{(\zeta/2 - (a - x))^3} h(\zeta/2 - (a - x)) h(\zeta/2 + (a-x))\right]\\
   &&\times
   \left[h(\zeta/2 + (a-x)) + h(\zeta/2 - (a-x))\right]^{-2}
   \f}
-  \bug Missing factor of \f$(\zeta/2 \pm (a - x))^{-1}\f$ in the numerator
  */
 inline double DPhi_compact(const double &x
 			   ,const double radius = RADIUS
@@ -112,8 +111,8 @@ inline double DPhi_compact(const double &x
 	double dmy2=(hxi-dmy_x)*(hxi-dmy_x);
 	double dmy11 = exp(-DX2/dmy1);
 	double dmy21 = exp(-DX2/dmy2);
-	double dmy3 = DX2_2 * dmy11 / (POW3(dmy1)/SQ(dmy1));
-	double dmy4 = DX2_2 * dmy21 / (POW3(dmy2)/SQ(dmy2));
+	double dmy3 = DX2_2 * dmy11 / (dmy1 * (hxi + dmy_x));
+	double dmy4 = DX2_2 * dmy21 / (dmy2 * (hxi - dmy_x));
 	double dmy5 = dmy11 + dmy21;
 	return (dmy3*dmy21 + dmy4 * dmy11)/(SQ(dmy5));
     }else{

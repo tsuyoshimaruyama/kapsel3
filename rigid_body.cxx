@@ -1,15 +1,12 @@
-#include "rigid_body.h"
 /*!
   \file rigid_body.cxx
-  \brief Routines to solve equations of motion for orientation of a 
-  symmetrical sphere (in 3D space)
+  \brief Auxiliary routines to solve equations of motion for rigid bodies
   \author J. Molina
   \date 2012/04/02
   \version 1.0
 */
+#include "rigid_body.h"
 
-// Perform rigid body rotation
-// (quaternion)
 void rigid_body_rotation(double rotated[DIM], 
 			 const double original[DIM], 
 			 const quaternion &q, 
@@ -36,8 +33,6 @@ void rigid_body_rotation(double rotated[DIM],
   qtn_vector(rotated, q_dmy);
 }
 
-// Perform rigid body rotation
-// (rotation matrix)
 void rigid_body_rotation(double rotated[DIM], 
 			 const double original[DIM],
 			 const double QR[DIM][DIM],
@@ -52,8 +47,6 @@ void rigid_body_rotation(double rotated[DIM],
   }
 }
 
-//
-// time derivative of orientation quaternion
 void qdot(quaternion &dqdt, 
 	  const quaternion &q,
 	  const double omega[DIM], 
@@ -70,8 +63,6 @@ void qdot(quaternion &dqdt,
   }
 }
 
-//
-// time derivative of orientation matrix
 void Qdot(double dQRdt[DIM][DIM],
 	  const double QR[DIM][DIM],
 	  const double omega[DIM],

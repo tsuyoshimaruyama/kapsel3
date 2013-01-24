@@ -73,7 +73,6 @@ void Add_advection_flux(double **solute_flux
   \f]
   where \f$\vec{n}(\vec{r})\f$ is the unit surface-normal vector field defined on the particle interface domain.
   \note The advection contribution to the solute flux should \b NOT be included
-  \bug Inconsistent (unnecessary?) normalization will lead to problems if surface_normal field is not really normalized
  */
 void Solute_impermeability(Particle *p
 			   ,double **solute_flux_x

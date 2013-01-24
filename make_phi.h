@@ -27,7 +27,6 @@ extern int **Sekibun_cell;
   \param[out] up smooth particle advection (linear velocity) field
   \param[in] p particle data
   \see Make_phi_u_particle
-  \bug KOBA code (to ensure \f$\phi \in [0,1]\f$ in the case of overlapping particles) is missing
  */
 void Make_phi_u_advection(double *phi, double **up, Particle *p);
 
@@ -79,7 +78,8 @@ void Make_phi_u_particle_OBL(double *phi, double **up, Particle *p);
   \brief Compute surface normal field defined on the interface domain of the particles
   \param[out] surface_normal surface normal field
   \param[in] p particle data
-  \bug In case of overlapping interfaces, the surface normal vectors are not actually unitary.
+  \warning In case of overlapping interfaces, the surface normal vectors
+  are not actually unitary. 
  */
 void Make_surface_normal(double **surface_normal
 			   ,const Particle *p);
@@ -235,15 +235,27 @@ inline int Relative_coord_check_stepover_Y(const int *cell
     return sign;
 }
 
-
+/*!
+  \brief Returns the orthonormal spherical coordinate basis vectors (in space
+  coordinates) for a given point
+  \param[in] x distance vector of the target point, measured in space
+  frame, with particle center as origin
+  \param[out] r unit radial basis vector
+  \param[out] theta unit tangential (polar) basis vector
+  \param[out] phi unit tangential (azimuthal) basis vector
+  \param[out] norm_r distance from center to the target point
+  \param[out] theta_angle polar angle [0,+pi], measured with respect to the
+  swimming axis of the particle
+  \param[out] phi_angle azimuthal angle [-pi,+pi], measured with respect to the
+  x (e1) particle axis
+  \param[in] p reference particle data
+ */
 inline void Squirmer_coord(const double *x, double *r, double *theta, double *phi, 
 		      double &norm_r, double &theta_angle, double &phi_angle, const Particle &p){
   double ex[DIM] = {1.0, 0.0, 0.0};
   double ey[DIM] = {0.0, 1.0, 0.0};
   double ez[DIM] = {0.0, 0.0, 1.0};
   double *e1, *e2, *e3;
-  double r12[DIM];
-  double dot_e3_r, dot_e1_r12, dmy_norm;
 
   // determine janus (e3) axis
   int dmy_axis = janus_axis[p.spec];
@@ -268,20 +280,21 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
   rigid_body_rotation(r, x, p.q, SPACE2BODY);
   norm_r = sqrt( SQ(r[0]) + SQ(r[1]) + SQ(r[2]) );
   assert(positive_mp(norm_r));
-  dmy_norm = 1.0/norm_r;
+  double dmy_norm = 1.0/norm_r;
   for(int d = 0; d < DIM; d++){
     r[d] *= dmy_norm;
   }
 
-  // phi normal vector
+  //phi vector
   v_cross(phi, e3, r);  
 
-  dot_e3_r = v_inner_prod(e3, r);
+  double dot_e3_r = v_inner_prod(e3, r);
   dmy_norm = sqrt(SQ(phi[0]) + SQ(phi[1]) + SQ(phi[2]));
 
-  // No tangential velocity at the janus poles !
+  // No tangential velocity at the janus poles (set null tangent vectors) !
   if(non_zero_mp(dmy_norm) && less_than_mp(ABS(dot_e3_r), 1.0)){
 
+    //phi normal vector
     dmy_norm = 1.0/dmy_norm;
     for(int d = 0; d < DIM; d++){
       phi[d] *= dmy_norm;
@@ -296,23 +309,25 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
     }    
     
     //phi angle
-    dmy_norm = 0.0;
-    for(int d = 0; d < DIM; d++){
-      r12[d] = r[d] - e3[d] * dot_e3_r;
-      dmy_norm += r12[d]*r12[d];
+    {
+      double r12[DIM];
+      for(int d = 0; d < DIM; d++){
+        r12[d] = r[d] - e3[d] * dot_e3_r;
+      }
+      double dot_e1_r12 = v_inner_prod(e1, r12);
+      double dot_e2_r12 = v_inner_prod(e2, r12);
+      phi_angle = atan2(dot_e2_r12, dot_e1_r12);
     }
-    dot_e1_r12 = v_inner_prod(e1, r12) / sqrt(dmy_norm);
-    phi_angle = acos(dot_e1_r12);
-
+    
     rigid_body_rotation(r, p.q, BODY2SPACE);
     rigid_body_rotation(theta, p.q, BODY2SPACE);
     rigid_body_rotation(phi, p.q, BODY2SPACE);
 
   }else{ // r parallel to janus axis (tangent vectors not uniquely defined)
     norm_r = sqrt( SQ(x[0]) + SQ(x[1]) + SQ(x[2]) );
-    dmy_norm = 1.0/norm_r;
+    dmy_norm = 1.0 / norm_r;
     for(int d = 0; d < DIM; d++){
-      r[d] *= x[d]*dmy_norm;
+      r[d] = x[d]*dmy_norm;
       phi[d] = theta[d] = 0.0;
     }
 
@@ -324,7 +339,6 @@ inline void Squirmer_coord(const double *x, double *r, double *theta, double *ph
       phi_angle = 0.0;
     }
   }
-
 }
 
 

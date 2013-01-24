@@ -1,6 +1,10 @@
-//
-// $Id: resume.cxx,v 1.1 2006/06/27 18:41:29 nakayama Exp $
-//
+/*!
+  \file resume.cxx
+  \brief Routines to read/write restart file
+  \author Y. Nakayama
+  \data 2006/06/27
+  \version 1.1
+*/
 #include "resume.h"
 
 void Save_Restart_udf(

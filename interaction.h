@@ -53,9 +53,6 @@ inline void Distance0_OBL(const double *x1
     r12 = sqrt(dmy);
 }
 
-/*!
-  \todo remove unused function
- */
 inline int Distance0_OBL_stepover(const double *x1
 				  ,const double *x2
 				  ,double &r12
