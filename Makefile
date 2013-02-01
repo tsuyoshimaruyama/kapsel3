@@ -4,6 +4,7 @@
 
 ## default options
 ARCH = linux
+AUX= ./AUX
 GOURMET_HOME_PATH = /usr/local/OCTA2010/GOURMET_2010
 GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
 GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
@@ -66,8 +67,10 @@ ifeq ($(ENV), ICC_MKL_OMP)
       ARCH   = linux_64
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -openmp -parallel -w0 -L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
-      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm 
+      CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2\
+	-ip -openmp -parallel -w0 -L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
+      LINKS  = -lplatform -lcxaguard -lstdc++\
+	-lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm
       GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)_$(CC)
       GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
 endif
@@ -100,7 +103,12 @@ OBJS  	= mt19937ar.o\
 	operate_surface.o\
 	sp_3d_ns.o
 
+XYZ_OBJS= alloc.o\
+	rigid_body.o\
+	$(AUX)/udf2xyz.o
+
 TARGET 	= kapsel
+XYZ	= udf2xyz
 
 ## Implicit rules
 
@@ -108,10 +116,13 @@ TARGET 	= kapsel
 
 ## Build rules
 
-all: $(TARGET)
+all: $(TARGET) $(XYZ)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(OBJS) -o $(TARGET) $(CFLAGS) $(LINKS)
+
+$(XYZ): $(XYZ_OBJS)
+	$(CXX) $(XYZ_OBJS) -o $(XYZ) $(CFLAGS) $(LINKS)
 
 
 ## Compile
@@ -125,9 +136,8 @@ $(TARGET): $(OBJS)
 ## Clean
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) $(XYZ)
 	rm -f *~ *.bak
 
 depend:
 	makedepend -- $(CFLAGS) -- *.cxx *.c *.h
-
