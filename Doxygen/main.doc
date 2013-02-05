@@ -5,6 +5,7 @@ Welcome to the KAPSEL documentation
 \section sec_main_toc Table of Contents
  - \subpage page_intro
  - \subpage page_design
+ - \subpage release_notes
  - \subpage page_license
  - \subpage page_contact
 

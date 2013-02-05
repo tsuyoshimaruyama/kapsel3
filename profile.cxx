@@ -35,10 +35,10 @@ void Particle_domain(double (*profile_func)(const double &x, const double radius
   }
 
 
-  int n_mesh = 8*((int)A + (int)A_XI + 2)*((int)A+(int)A_XI + 2)*((int)A+(int)A_XI+2);
-  int nh = (int)A + (int)A_XI + 1;
+  int n_mesh = 8*((int)A + (int)A_XI + 3)*((int)A+(int)A_XI + 3)*((int)A+(int)A_XI+3);
+  int nh = (int)A + (int)A_XI + 2;
   int **dmy_sekibun_cell = alloc_2d_int(n_mesh,DIM);
-  double MAX_RADIUS = RADIUS + HXI + 1.75*DX;
+  double MAX_RADIUS = RADIUS + HXI + 1.7321*DX;
   assert(MAX_RADIUS < nh * DX);
 
   int mesh = 0;

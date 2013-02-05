@@ -247,13 +247,13 @@ inline void qtn_normalize(quaternion &q){
 /*!
   \brief Compute quaternion inverse: q = alpha*qa^(-1)
  */
-inline void qtn_inv(quaternion &q, quaternion qa, const double alpha=1.0){
+inline void qtn_inv(quaternion &q, const quaternion qa, const double alpha=1.0){
   double q2i = qtn_sqnorm(qa);
   assert(non_zero_mp(q2i));
 
   q2i = 1.0 / q2i;
-  qtn_conj(qa);
-  qtn_scale(q, qa, q2i*alpha);
+  qtn_conj(q, qa);
+  qtn_scale(q, q2i*alpha);
 }
 
 /*!

@@ -73,7 +73,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan);
   particle velocities. Only slip force changes, other quantities
   should only be computed at the first iteration.
  */
-void MD_solver_velocity_iter(Particle *p, const CTime &jikan, const ITER &iter_flag);
+void MD_solver_velocity_slip_iter(Particle *p, const CTime &jikan, const ITER &iter_flag);
 
 
 // Oblique coordinates

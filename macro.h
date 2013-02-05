@@ -98,6 +98,7 @@ inline void RA_on_circle(double &a, double &b){
 }
 //random point on 3D/4D unit sphere
 // Numerical Recipes, Edition 3, pg. 1130
+// G. Marsaglia, Annals of Mathematical Statistics, 43(2), 645-646 (1972)
 inline void RA_on_sphere3D(double &a, double &b, double &c){
   double u0, u1, sqnorm, dmy;
 

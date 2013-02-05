@@ -159,25 +159,6 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters){
   }
 
 }
-inline void Binary_write(FILE *fout, 
-			 AVS_parameters &Avs_parameters,
-			 double *a,
-			 double *phi,
-			 double *ap){
-  int im;
-  double dmy_phi;
-  float dmy;
-  for(int k = Avs_parameters.kstart; k <= Avs_parameters.kend; k++){
-    for(int j = Avs_parameters.jstart; j <= Avs_parameters.jend; j++){
-      for(int i = Avs_parameters.istart; i <= Avs_parameters.iend; i++){
-	im = (i * NY * NZ_) + (j * NZ_) + k;
-	dmy_phi = ABS(phi[im]);
-	dmy = (float) (dmy_phi < 1.0 ? (a[im] - dmy_phi * ap[im])/(1.0 - dmy_phi) : 0.0);
-	fwrite(&dmy, sizeof(float), 1, fout);
-      }
-    }
-  }
-}
 
 inline void Binary_write(FILE *fout
 			 ,AVS_parameters &Avs_parameters

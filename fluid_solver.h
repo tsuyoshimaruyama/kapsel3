@@ -36,12 +36,12 @@ extern double **f_ns1;
  */
 
 /*!
-  \fn void Rhs_solvent(double **u_solvent, double **rhs_solvent, double **grad_potential, double *source_scalar, double rhs_uk_dc[DIM])
+  \fn void Rhs_solvent(double **u_solvent, double **rhs_solvent, double rhs_uk_dc[DIM])
   \brief rhs
 */
 
 /*!
-  \fn void Rhs_NS_solute(Particle *p, double **zeta_k, double uk_dc[DIM], double **u, double **concentration_k, double **rhs_ns, double **rhs_solute, const Index_range *ijk_range, const int &n_ijk_range, double **solute_flux, double **grad_potential, double *omega_rhs_scalar, double **surface_normal, double rhs_uk_dc[DIM])
+  \fn void Rhs_NS_solute(Particle *p, double **zeta_k, double uk_dc[DIM], double **u, double **concentration_k, double **rhs_ns, double **rhs_solute, const Index_range *ijk_range, const int &n_ijk_range, double **solute_flux, double **grad_potential, double **surface_normal, double rhs_uk_dc[DIM])
   \brief rhs + ns
  */
 
@@ -51,7 +51,7 @@ extern double **f_ns1;
  */
 
 /*!
-  \fn Rhs_NS_Nernst_Planck(Particle *p, double **zeta, double uk_dc[DIM], double **u, double **concentration_k, double **rhs_ns, double **rhs_solute, const Index_range *ijk_range, const int &n_ijk_range, double **solute_flux, double **grad_potential, double **surface_normal, double *omega_rhs_scalar, double rhs_uk_dc[DIM], const CTime &jikan)
+  \fn Rhs_NS_Nernst_Planck(Particle *p, double **zeta, double uk_dc[DIM], double **u, double **concentration_k, double **rhs_ns, double **rhs_solute, const Index_range *ijk_range, const int &n_ijk_range, double **solute_flux, double **grad_potential, double **surface_normal, double rhs_uk_dc[DIM], const CTime &jikan)
   \brief ns + np
  */
 

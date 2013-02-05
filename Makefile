@@ -4,7 +4,7 @@
 
 ## default options
 ARCH = linux
-AUX= ./AUX
+AUX= ./Aux
 GOURMET_HOME_PATH = /usr/local/OCTA2010/GOURMET_2010
 GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
 GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
@@ -136,7 +136,7 @@ $(XYZ): $(XYZ_OBJS)
 ## Clean
 
 clean:
-	rm -f $(OBJS) $(TARGET) $(XYZ)
+	rm -f $(OBJS) $(AUX)/$(XYZ_OBJS) $(TARGET) $(XYZ)
 	rm -f *~ *.bak
 
 depend:

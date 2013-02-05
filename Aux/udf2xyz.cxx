@@ -164,7 +164,7 @@ int main(int argc, char* argv[])
       ntotal += pnum[i];
     }
     if(uscale == 0.0) uscale = 1.0;
-    fprintf(stderr, "V_SCALE: %10.8g ", uscale);
+    fprintf(stderr, "V_SCALE: %10.8g \n", uscale);
 
     spec_id = (int*) malloc(sizeof(int) * ntotal);
     int sum = 0;

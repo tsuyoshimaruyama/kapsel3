@@ -633,6 +633,7 @@ INPUT                  = ../ \
 		         ./main.doc \
 			 ./intro.doc \
 			 ./faq.doc \
+                         ./release.doc \
 			 ./design_grid.doc \
 			 ./design_fsolver.doc \
                          ./design_fsolverOBL.doc \

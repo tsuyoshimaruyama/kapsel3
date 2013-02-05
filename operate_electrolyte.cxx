@@ -3,7 +3,7 @@
   \author Y. Nakayama
   \date 2006/06/27
   \version 1.1
-  \brief Routines to compute the charge ditributions and forces
+  \brief Routines to compute the charge distributions and forces
  */
 #include "operate_electrolyte.h"
 
@@ -21,7 +21,7 @@ inline void Add_external_electric_field_x(double *potential
     external[d] = E_ext[d];
     if(AC){
       double time = jikan.time;
-      external[d] = E_ext[d] * sin( Angular_Frequency * time);
+      external[d] *= sin( Angular_Frequency * time);
     }
   }
 
@@ -124,7 +124,7 @@ void Make_Coulomb_force_x_on_fluid(double **force
     external[d] = E_ext[d];
     if(AC){
       double time = jikan.time;
-      external[d] *= E_ext[d] * sin( Angular_Frequency * time);
+      external[d] *= sin( Angular_Frequency * time);
     }
   }
   int im;

@@ -36,8 +36,8 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 #pragma omp parallel for schedule(dynamic, 1) \
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_sr, dmy_phi, dmy_phi_s, xp, \
 	  r, x, residue, u_fluid, dmy_xi, dmy_theta, dmy_tau, \
-	  n_r, n_theta, n_tau, M0, SM0, M1, SM1, dv_s, dw_s, M2, SM2, \
-	  slip_mode, slip_vel, slip_magnitude, r_x_us, us)
+	  n_r, n_theta, n_tau, slip_mode, slip_vel, slip_magnitude, r_x_us, us, \
+          M0, SM0, M1, SM1, M2, SM2, dv_s, dw_s)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
 

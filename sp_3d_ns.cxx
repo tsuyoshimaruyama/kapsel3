@@ -152,19 +152,19 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	      // Update particle velocity
 	      if(!Fixed_particle){
 		if(slip_iter == 0){
-		  MD_solver_velocity_iter(p, jikan, start_iter);
+		  MD_solver_velocity_slip_iter(p, jikan, start_iter);
 		}else{
-		  MD_solver_velocity_iter(p, jikan, new_iter);
+		  MD_solver_velocity_slip_iter(p, jikan, new_iter);
 		}
 	      }
 	      slip_iter++;
 
 	      if(Slip_particle_convergence(p) < MAX_SLIP_TOL || slip_iter == MAX_SLIP_ITER){
 		slip_converge = 1;
-		MD_solver_velocity_iter(p, jikan, end_iter);
+		MD_solver_velocity_slip_iter(p, jikan, end_iter);
 	      }else{
 		Update_slip_particle_velocity(p, slip_iter); // use new particle velocity for new slip profile
-		MD_solver_velocity_iter(p, jikan, reset_iter);
+		MD_solver_velocity_slip_iter(p, jikan, reset_iter);
 	      }
 	    }//slip_convergence
 	    if(slip_iter == MAX_SLIP_ITER){
@@ -173,7 +173,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    double **u_old=u;
 	    u = up;
 	    up = u_old;
-	    Reset_u(up);
 	  } // slip 
 
 	}
