@@ -4,7 +4,7 @@
 
 ## default options
 ARCH = linux
-AUX= ./Aux
+AUX= ./Tools
 GOURMET_HOME_PATH = /usr/local/OCTA2010/GOURMET_2010
 GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
 GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
@@ -12,12 +12,13 @@ GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
 OSTYPE = $(shell uname)
 #ENV = GCC
 #ENV = ICC
-ENV = ICC_MKL_OMP
+#ENV = ICC_MKL_OMP
 #ENV = MINGW
+#ENV = CYGWIN
 
 ## options for GCC/CYGWIN
-#ifeq ($(ENV), CYGWIN)
-ifneq (,$(findstring CYGWIN,$(OSTYPE)))
+ifeq ($(ENV), CYGWIN)
+#ifneq (,$(findstring CYGWIN,$(OSTYPE)))
       ARCH   = cygwin
       CC     = gcc 
       CXX    = g++ 
