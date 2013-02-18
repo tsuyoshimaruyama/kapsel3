@@ -827,13 +827,15 @@ void Gourmet_file_io(const char *infile
 		  fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
 		fprintf(stderr, " %d:janus_axis[i]",d++);
-		fprintf(stderr, " %d:janus_propulsion[i]", d++);
-		fprintf(stderr, " %d:janus_force_x[i]",d++);
-		fprintf(stderr, " %d:janus_force_y[i]",d++);
-		fprintf(stderr, " %d:janus_force_z[i]",d++);
-		fprintf(stderr, " %d:janus_torque_x[i]",d++);
-		fprintf(stderr, " %d:janus_torque_y[i]",d++);
-		fprintf(stderr, " %d:janus_torque_z[i]",d++);
+		fprintf(stderr, " %d:janus_mode[i]", d++);
+		fprintf(stderr, " %d:janus_frc_x[i]",d++);
+		fprintf(stderr, " %d:janus_frc_y[i]",d++);
+		fprintf(stderr, " %d:janus_frc_z[i]",d++);
+		fprintf(stderr, " %d:janus_trq_x[i]",d++);
+		fprintf(stderr, " %d:janus_trq_y[i]",d++);
+		fprintf(stderr, " %d:janus_trq_z[i]",d++);
+                fprintf(stderr, " %d:squirm_b1[i]",d++);
+                fprintf(stderr, " %d:squirm_b2[i]",d++);
 	    }else if(SW_PT == chain){
 	        int d=1;
 		fprintf(stderr, "#%d:species",d++);
@@ -967,7 +969,7 @@ void Gourmet_file_io(const char *infile
 			    ,janus_slip_mode[i]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
+		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]

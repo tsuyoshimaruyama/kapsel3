@@ -61,7 +61,7 @@ inline void wrong_invocation(){
   cout << "Converts udf file format to simple xyz format." << endl;
   cout << "Usage: get_xyz format UDFfile XYZfile" << endl;
   cout << " format:   -dump      dump all particle data"  << endl;
-  cout << "           -pos       xyz file with positions only" << endl;
+  cout << "           -xyz       xyz file with positions only" << endl;
   exit(1);
 }
 
@@ -73,6 +73,7 @@ int main(int argc, char* argv[])
   //check invocation
 
   if(argc != 4){
+    cout << "Error: " << endl;
     wrong_invocation();
   }
 
@@ -82,10 +83,13 @@ int main(int argc, char* argv[])
     ufin = new UDFManager(argv[in_fin]);
   }
   if(strcmp(argv[in_format],in_option[0]) == 0){
+    cout << "Dumping trj data..." << endl;
     xyz_format = 0;
   }else if(strcmp(argv[in_format],in_option[1]) == 0){
+    cout << "Generating xyz file..." << endl;
     xyz_format = 1;
   }else{
+    cout << "Unknown format option" << endl;
     wrong_invocation();
   }
 
@@ -140,26 +144,28 @@ int main(int argc, char* argv[])
       sprintf(str, "object_type.spherical_particle.Particle_spec[%d]",i);
       Location target(str);
       ufin -> get(target.sub("Particle_number"), pnum[i]);
-      ufin -> get(target.sub("janus_slip_vel"), uslip[i]);
-      ufin -> get(target.sub("janus_axis"), dmy_str);
-      if(dmy_str == "X"){
-	janus_axis[i] = ex;
-      }else if(dmy_str == "Y"){
-	janus_axis[i] = ey;
-      }else if(dmy_str == "Z"){
-	janus_axis[i] = ez;
-      }else if(dmy_str == "NONE"){
-	janus_axis[i] = e_none;
-      }else{
-	fprintf(stderr, "Error: Unknown janus axis\n");
-	exit_job(EXIT_FAILURE);
+      if(!xyz_format){
+        ufin -> get(target.sub("janus_slip_vel"), uslip[i]);
+        ufin -> get(target.sub("janus_axis"), dmy_str);
+        if(dmy_str == "X"){
+          janus_axis[i] = ex;
+        }else if(dmy_str == "Y"){
+          janus_axis[i] = ey;
+        }else if(dmy_str == "Z"){
+          janus_axis[i] = ez;
+        }else if(dmy_str == "NONE"){
+          janus_axis[i] = e_none;
+        }else{
+          fprintf(stderr, "Error: Unknown janus axis\n");
+          exit_job(EXIT_FAILURE);
+        }
+        fprintf(stderr, "JANUS AXIS: %3.2f %3.2f %3.2f\n", 
+                janus_axis[i][0], janus_axis[i][1], janus_axis[i][2]);
+        fprintf(stderr, "V_SLIP: %10.8g ", uslip[i]);
+        uslip[i] = (ABS(uslip[i]) > 0.0 ? 1.0 / (2./3 * uslip[i]) : 0.0);
+        uscale = MAX(ABS(uslip[i]), uscale);
+        fprintf(stderr, " (%10.8g) \n", uslip[i]);
       }
-      fprintf(stderr, "JANUS AXIS: %3.2f %3.2f %3.2f\n", 
-	      janus_axis[i][0], janus_axis[i][1], janus_axis[i][2]);
-      fprintf(stderr, "V_SLIP: %10.8g ", uslip[i]);
-      uslip[i] = (ABS(uslip[i]) > 0.0 ? 1.0 / (2./3 * uslip[i]) : 0.0);
-      uscale = MAX(ABS(uslip[i]), uscale);
-      fprintf(stderr, " (%10.8g) \n", uslip[i]);
       nmax = MAX(nmax, pnum[i]);
       ntotal += pnum[i];
     }
@@ -212,66 +218,73 @@ int main(int argc, char* argv[])
 	sprintf(str, "Particles[%d]", j);
 	Location target(str);
 
-	// position
-	ufin -> get(target.sub("R.x"), r[0]);
-	ufin -> get(target.sub("R.y"), r[1]);
-	ufin -> get(target.sub("R.z"), r[2]);
-	ufin -> get(target.sub("R_raw.x"), r_raw[0]);
-	ufin -> get(target.sub("R_raw.y"), r_raw[1]);
-	ufin -> get(target.sub("R_raw.z"), r_raw[2]);
-
-        // orientation
-	ufin -> get(target.sub("q.q0"), q0);
-	ufin -> get(target.sub("q.q1"), q1);
-	ufin -> get(target.sub("q.q2"), q2);
-	ufin -> get(target.sub("q.q3"), q3);
-	qtn_init(q, q0 ,q1, q2, q3);
-        qtn_normalize(q);
-
-	// velocity
-	ufin -> get(target.sub("v.x"), v[0]);
-	ufin -> get(target.sub("v.y"), v[1]);
-	ufin -> get(target.sub("v.z"), v[2]);
-	for(int d = 0; d < NDIM; d++){
-	  vs[d] = v[d] * uscale;
-	}
-	
-	// angular velocity
-	ufin -> get(target.sub("omega.x"), w[0]);
-	ufin -> get(target.sub("omega.y"), w[1]);
-	ufin -> get(target.sub("omega.z"), w[2]);
-	
-	// forces
-	ufin -> get(target.sub("f_hydro.x"), frc[0]);
-	ufin -> get(target.sub("f_hydro.y"), frc[1]);
-	ufin -> get(target.sub("f_hydro.z"), frc[2]);
-	
-	ufin -> get(target.sub("f_slip.x"), frc_slip[0]);
-	ufin -> get(target.sub("f_slip.y"), frc_slip[1]);
-	ufin -> get(target.sub("f_slip.z"), frc_slip[2]);
-	
-	// torques
-	ufin -> get(target.sub("torque_hydro.x"), tau[0]);
-	ufin -> get(target.sub("torque_hydro.y"), tau[1]);
-	ufin -> get(target.sub("torque_hydro.z"), tau[2]);
-	
-	ufin -> get(target.sub("torque_slip.x"), tau_slip[0]);
-	ufin -> get(target.sub("torque_slip.y"), tau_slip[1]);
-	ufin -> get(target.sub("torque_slip.z"), tau_slip[2]);
-
-	rqtn_rm(QR, q);	
-	rigid_body_rotation(ni, janus_axis[spec_id[j]], q, BODY2SPACE);
-	if(i == 0){
-	  v_copy(n0, ni);
-	}
-        if(xyz_format){
-          write_xyz(outfile, j+1, spec_id[j], r);
-        }else{
+        if(!xyz_format){
+          // position
+          ufin -> get(target.sub("R.x"), r[0]);
+          ufin -> get(target.sub("R.y"), r[1]);
+          ufin -> get(target.sub("R.z"), r[2]);
+          
+          ufin -> get(target.sub("R_raw.x"), r_raw[0]);
+          ufin -> get(target.sub("R_raw.y"), r_raw[1]);
+          ufin -> get(target.sub("R_raw.z"), r_raw[2]);
+          
+          // orientation
+          ufin -> get(target.sub("q.q0"), q0);
+          ufin -> get(target.sub("q.q1"), q1);
+          ufin -> get(target.sub("q.q2"), q2);
+          ufin -> get(target.sub("q.q3"), q3);
+          qtn_init(q, q0 ,q1, q2, q3);
+          qtn_normalize(q);
+          
+          // velocity
+          ufin -> get(target.sub("v.x"), v[0]);
+          ufin -> get(target.sub("v.y"), v[1]);
+          ufin -> get(target.sub("v.z"), v[2]);
+          for(int d = 0; d < NDIM; d++){
+            vs[d] = v[d] * uscale;
+          }
+          
+          // angular velocity
+          ufin -> get(target.sub("omega.x"), w[0]);
+          ufin -> get(target.sub("omega.y"), w[1]);
+          ufin -> get(target.sub("omega.z"), w[2]);
+          
+          // forces
+          ufin -> get(target.sub("f_hydro.x"), frc[0]);
+          ufin -> get(target.sub("f_hydro.y"), frc[1]);
+          ufin -> get(target.sub("f_hydro.z"), frc[2]);
+          
+          ufin -> get(target.sub("f_slip.x"), frc_slip[0]);
+          ufin -> get(target.sub("f_slip.y"), frc_slip[1]);
+          ufin -> get(target.sub("f_slip.z"), frc_slip[2]);
+          
+          // torques
+          ufin -> get(target.sub("torque_hydro.x"), tau[0]);
+          ufin -> get(target.sub("torque_hydro.y"), tau[1]);
+          ufin -> get(target.sub("torque_hydro.z"), tau[2]);
+          
+          ufin -> get(target.sub("torque_slip.x"), tau_slip[0]);
+          ufin -> get(target.sub("torque_slip.y"), tau_slip[1]);
+          ufin -> get(target.sub("torque_slip.z"), tau_slip[2]);
+          
+          rqtn_rm(QR, q);	
+          rigid_body_rotation(ni, janus_axis[spec_id[j]], q, BODY2SPACE);
+          if(i == 0){
+            v_copy(n0, ni);
+          }
           write_xyz_dump(outfile, t, j+1, spec_id[j], r, r_raw, q, QR, v, 
                          vs, w, frc, frc_slip, tau, tau_slip, ni, n0, ntotal);
+        }else{//xyz_format
+          ufin -> get(target.sub("R.x"), r[0]);
+          ufin -> get(target.sub("R.y"), r[1]);
+          ufin -> get(target.sub("R.z"), r[2]);
+          ufin -> get(target.sub("v.x"), v[0]);
+          ufin -> get(target.sub("v.y"), v[1]);
+          ufin -> get(target.sub("v.z"), v[2]);
+            write_xyz(outfile, j+1, spec_id[j], r);
         }
-      }
-    }
+      }//j
+    }//i
   }
 
   free_1d_int(pnum);
