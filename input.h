@@ -40,7 +40,7 @@ enum EQ {Navier_Stokes
 };
 enum PT {spherical_particle
 	 ,chain
-	 ,rigid		//T.K 12/12/28
+	 ,rigid
 };
 //////  
 extern SW_time SW_TIME;
@@ -161,7 +161,7 @@ extern int *Chain_Numbers;
 extern double VF;
 extern double VF_LJ;
 extern double Ivolume;
-//// T.K 12/12/28,29
+////
 extern int Rigid_Number;
 extern int *Rigid_Motions;// 0(fix) or 1(free)
 extern double **Rigid_Velocities;
@@ -190,7 +190,7 @@ extern double **torqueGrs_previous;
 extern double **torqueGvs_previous;
 extern int *Particle_RigidID;
 //////
-//// T.K 13/01/21
+////
 extern double **GRvecs;
 //////
 extern int GTS;

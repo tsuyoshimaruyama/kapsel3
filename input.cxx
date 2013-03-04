@@ -20,7 +20,7 @@ char *EQ_name[]={"Navier_Stokes"
 PT SW_PT;
 char *PT_name[]={"spherical_particle"
 		 ,"chain"
-		 ,"rigid"		//T.K 12/12/28
+		 ,"rigid"
 };
 //////
 SW_time SW_TIME;
@@ -123,7 +123,7 @@ int *Beads_Numbers;
 int *Chain_Numbers;
 int GTS;
 int Num_snap;
-//// T.K 12/12/28,29
+////
 int Rigid_Number;
 int *Rigid_Motions;// 0(fix) or 1(free)
 double **Rigid_Velocities;
@@ -152,7 +152,7 @@ double **torqueGrs_previous;
 double **torqueGvs_previous;
 int *Particle_RigidID;
 //
-////T.K 13/01/21
+////
 double **GRvecs;
 //
 double NU;
@@ -798,7 +798,7 @@ void Gourmet_file_io(const char *infile
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
 	    }
-	}else if(str == PT_name[rigid]){	//T.K 12/12/28
+	}else if(str == PT_name[rigid]){
 	    SW_PT=rigid;
 	    Component_Number= ufin->size("object_type.rigid.Rigid_spec[]");
 	    {
@@ -860,7 +860,7 @@ void Gourmet_file_io(const char *infile
 		    fprintf(stderr, " %d:number_of_chain[i]",d++);
 		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		}
-	    }else if(SW_PT == rigid){		// T.K 12/12/28
+	    }else if(SW_PT == rigid){
 		if(SW_EQ == Electrolyte){
 		    int d=1;
 		    fprintf(stderr, "#%d:species",d++);
@@ -970,7 +970,7 @@ void Gourmet_file_io(const char *infile
 	    }
 	    fprintf(stderr, "#\n");
 	    fprintf(stderr, "# Flexible chains selected.\n");
-	}else if(SW_PT == rigid){		// T.K 12/12/28
+	}else if(SW_PT == rigid){
 	    for(int i=0; i<Component_Number; i++){
 		char str[256];
 		string rigid_str;
@@ -1393,9 +1393,7 @@ void Gourmet_file_io(const char *infile
     
     Set_global_parameters();
     
-    // T.K 12/12/29
 	if(SW_PT == rigid){
-		// T.K 13/01/21
 		//allocation (using Particle_Number)
 		GRvecs = alloc_2d_double(Particle_Number, DIM);
 		
@@ -1446,7 +1444,7 @@ void Gourmet_file_io(const char *infile
 			fprintf(stderr, "debug: Rigid_Particle_Numbers[%d] = %d\n", rigidID, Rigid_Particle_Numbers[rigidID]);
 		}
 		
-		//initialize velocityGs and omegaGs and old 13/01/07
+		//initialize velocityGs and omegaGs and
 		int rigid_component;
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			rigid_component = RigidID_Components[rigidID];

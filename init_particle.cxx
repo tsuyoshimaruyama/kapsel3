@@ -249,20 +249,19 @@ void Init_Particle(Particle *p){
       ufout->put(target.sub("v.y"),p[i].v[1]);
       ufout->put(target.sub("v.z"),p[i].v[2]);
       
-      //output is shifted other part 13/01/04
     }
-    // T.K 12/12/29, 13/01/04 initialize rigid status
+    // initialize rigid status
     if(SW_PT == rigid){
        init_set_xGs(p);
        set_Rigid_MMs(p);
        set_particle_vomegas(p);	// ### caution ### v.x, v.y, v.z are ignored and set Rigid_Velocities and Rigid_Omegas
     }
-    // T.K 13/01/04 output p.x and p.v
+    // output p.x and p.v
     for(int i=0; i<Particle_Number; i++){
       fprintf(stderr,"# %d-th particle position (p_x, p_y, p_z)=(%g, %g, %g)\n",i,p[i].x[0],p[i].x[1],p[i].x[2]);
       fprintf(stderr,"# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n",i,p[i].v[0],p[i].v[1],p[i].v[2]);
-      for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: xGs[%d] = (%f, %f, %f)\n", rigidID, xGs[rigidID][0], xGs[rigidID][1], xGs[rigidID][2]);
-      for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: Rigid_Masses[%d] = %f\n", rigidID, Rigid_Masses[rigidID]);
+    //  for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: xGs[%d] = (%f, %f, %f)\n", rigidID, xGs[rigidID][0], xGs[rigidID][1], xGs[rigidID][2]);
+    //  for(int rigidID=0; rigidID<Rigid_Number; rigidID++) fprintf(stderr, "debug: Rigid_Masses[%d] = %f\n", rigidID, Rigid_Masses[rigidID]);
     }
     fprintf(stderr,"############################\n");
     if(!RESUMED){
@@ -305,7 +304,7 @@ void Init_Particle(Particle *p){
 	//p[i].v[d] = 0.e0 * RA();
 	p[i].v_old[d] = 0.e0;
 	p[i].f_hydro[d] = 0.0;
-	//p[i].f_hydro_previous[d] = 0.0;	//comment out by T.K 13/01/04 (because this part resets p[n].v[d])
+	//p[i].f_hydro_previous[d] = 0.0;
 	p[i].f_hydro1[d] = 0.0;
 	p[i].fr[d] = 0.0;
 	p[i].fr_previous[d] = 0.0;
@@ -638,7 +637,7 @@ void Init_Chain(Particle *p){
 
 }
 
-void Init_Rigid(Particle *p){	// T.K 13/01/18
+void Init_Rigid(Particle *p){
 	fprintf(stderr, "#init_particle: Rigid chain distributed linear ");
 	fprintf(stderr,"(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
 	

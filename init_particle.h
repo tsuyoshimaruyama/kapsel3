@@ -11,7 +11,7 @@
 #include "avs_output.h"
 #include "input.h"
 #include "fluct.h"
-#include "rigid.h"	//T.K 12/12/29
+#include "rigid.h"
 
 void Init_Particle(Particle *p);
 void Init_Chain(Particle *p);
