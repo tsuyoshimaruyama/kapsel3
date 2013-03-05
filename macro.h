@@ -76,7 +76,7 @@ inline double RA(){// uniform in [-1, 1]
     return (2.0*((double)rand() - RAND_MAX*0.5)/(RAND_MAX));
 }
 inline double RAx(const double &x){ // uniform in [0, x)
-    return (double)rand()/RAND_MAX * x;
+	return (double)rand()/RAND_MAX * x;
 }
 //random point inside unit circle
 inline void RA_circle(double &a, double &b){

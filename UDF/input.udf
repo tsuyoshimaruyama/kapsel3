@@ -127,6 +127,27 @@ object_type:{
       }
     ]
   }
+  {//rigid_chain
+    [//species 1
+      {
+        5,                              //Beads_number
+        1,                              //Chain_number
+        1.00000000000000,               //MASS_ratio
+        0.0                             //Surface_charge
+        "fix"                           //Rigid_motion
+        {//Rigid_velocity
+          0.0000                        //vx
+          0.0000                        //vy
+          0.0000                        //vz
+        }       
+        {//Rigid_omega
+          0.0000                        //wx
+          0.0000                        //wy    
+          0.0000                        //wz                         
+        }
+      }
+    ]   
+  }
 }//object_type
 
 A_XI:2.00000000000000                   

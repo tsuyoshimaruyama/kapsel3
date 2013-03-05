@@ -101,7 +101,8 @@ constitutive_eq: {
 } // End constitutive_eq
 
 object_type: {
-   type: select {'spherical_particle','chain'}
+   type: select {'spherical_particle','chain','rigid'}
+
    spherical_particle: { 
       Particle_spec[]:{
          Particle_number: int "number of colloidal particles"
@@ -124,8 +125,19 @@ object_type: {
          Surface_charge: double "surface charge of colloid"
 	 janus_axis: select {'NONE', 'X', 'Y', 'Z'} "janus axis in body_fixed frame"
       }
-   }//end chain
-}//end object_type
+   }
+   rigid:{
+      Rigid_spec[]:{
+         Beads_number: int "number of beads in a chain"
+         Chain_number: int "number of chains"
+         MASS_RATIO: double "mass density ratio chain/solvent"
+         Surface_charge: double "surface charge of colloid"
+         Rigid_motion: select {'fix','free'}
+         Rigid_velocity: Vector3d "speed of translation ### fix only ###"
+         Rigid_omega: Vector3d "angular velocity ### fix only ###"
+      }
+   }
+}
 
 A_XI: double "interface thickness in the unit of DX"
 
@@ -183,7 +195,7 @@ switch: {
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
    }
-}
+          }
 									       
 output: {
    GTS: int "interval between snapshots"

@@ -14,6 +14,7 @@
 #include "input.h"
 #include "md_force.h"
 #include "rigid_body.h"
+#include "rigid.h"
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -3,7 +3,7 @@
 #
 
 ## default options
-ARCH = linux
+ARCH   = linux 
 AUX= ./Tools
 GOURMET_HOME_PATH = /usr/local/OCTA2010/GOURMET_2010
 GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
@@ -50,7 +50,7 @@ endif
 ## options for ICC/LINUX
 ifeq ($(ENV), ICC)
       ARCH   = linux_64
-      CC     = icc
+      CC     = icc 
       CXX    = icpc 
       CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -w0
       LINKS  = -lm -lplatform -lcxaguard -lstdc++
