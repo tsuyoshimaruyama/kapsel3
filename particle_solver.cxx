@@ -159,7 +159,7 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
 	p[n].omega_old[d] = p[n].omega[d];
 
         if(SW_PT == rigid){
-          p[n].v[d] = velocityGs[rigidID][0] + dmy_vG[d];
+          p[n].v[d] = velocityGs[rigidID][d] + dmy_vG[d];
           p[n].omega[d] = omegaGs[rigidID][d];
         }else{
           p[n].v[d] += ( dmy * (p[n].f_hydro[d] + p[n].fr[d] + self_force[d]) );

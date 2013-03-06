@@ -147,9 +147,8 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 		for(int d=0; d<DIM; d++){
 			forceGrs[rigidID][d] += p[n].fr[d];
 			//forceGvs[rigidID][d] += p[n].fv[d];
-			//torqueGrs[rigidID][d] += p[n].torquer[d]; 	//検討が必要。
-			//torqueGvs[rigidID][d] += p[n].torqueGvs[d];	//おそらくtorquerとtorquevを計算しているところで計算して足し合わせるのが確実だが、
-															//その辺りは理解できていないので未実装
+			//torqueGrs[rigidID][d] += p[n].torquer[d];
+			//torqueGvs[rigidID][d] += p[n].torquev[d];	//fv, torquer and torquev are constant zero.
 		}
 	}
 	//set olds
@@ -166,9 +165,9 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
 				velocityGs[rigidID][d1] += jikan.dt_md * Rigid_IMasses[rigidID]
-                                  * ( forceGs[rigidID][d1] + forceGrs[rigidID][d1] + forceGvs[rigidID][d1] );
+                                  * ( forceGs[rigidID][d1] + forceGrs[rigidID][d1] );
 				for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]
-                                                              * ( torqueGs[rigidID][d2] + torqueGrs[rigidID][d2] + torqueGvs[rigidID][d2] );
+                                                              * ( torqueGs[rigidID][d2] );
 			}
 		}
 	
@@ -177,13 +176,11 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
 				velocityGs[rigidID][d1] += jikan.dt_md * Rigid_IMasses[rigidID]
-                                  * ( forceGs[rigidID][d1] + forceGvs[rigidID][d1] 
+                                  * ( forceGs[rigidID][d1] 
                                       + 0.5*(forceGrs[rigidID][d1] + forceGrs_previous[rigidID][d1])
                                       );
 				for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]
-                                                              * ( torqueGs[rigidID][d2] + torqueGvs[rigidID][d2]
-                                                                  + 0.5*(torqueGrs[rigidID][d2] + torqueGrs_previous[rigidID][d2])
-                                                                  );
+                                                              * ( torqueGs[rigidID][d2] );
 			}
 		}
 	
@@ -197,10 +194,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
                                       + forceGrs[rigidID][d1] + forceGrs_previous[rigidID][d1]
                                       );
 				for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.hdt_md * Rigid_IMoments[rigidID][d1][d2]
-                                                              * ( 2. * torqueGs[rigidID][d2]
-                                                                  + 3. * torqueGvs[rigidID][d2] - torqueGvs_previous[rigidID][d2]
-                                                                  + torqueGrs[rigidID][d2] + torqueGrs_previous[rigidID][d2]
-                                                                  );
+                                                              * ( 2. * torqueGs[rigidID][d2] );
 			}
 		}
 	
@@ -215,13 +209,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 		for(int d=0; d<DIM; d++){
 			 forceGrs_previous[rigidID][d] = forceGrs[rigidID][d];
 			 forceGrs[rigidID][d] = 0.0;
-			 forceGvs_previous[rigidID][d] = forceGvs[rigidID][d];
-			 forceGvs[rigidID][d] = 0.0;
 			 forceGs[rigidID][d] = 0.0;
-			 torqueGrs_previous[rigidID][d] = torqueGrs[rigidID][d];
-			 torqueGrs[rigidID][d] = 0.0;
-			 torqueGvs_previous[rigidID][d] = torqueGvs[rigidID][d];
-			 torqueGvs[rigidID][d] = 0.0;
 			 torqueGs[rigidID][d] = 0.0;
 		}
 	}

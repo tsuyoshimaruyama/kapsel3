@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
+#include <string.h>
 #include <cfloat>
 #include <sys/types.h>
 #include <dirent.h>
