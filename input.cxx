@@ -146,6 +146,7 @@ double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
 
+int MASS_grid;
 ////
 int Rigid_Number;
 int *Rigid_Motions;// 0(fix) or 1(free)
@@ -1441,8 +1442,7 @@ void Gourmet_file_io(const char *infile
 	}
 	
 	{
-	    Location target("switch.INIT_distribution");
-	    string str;
+            target.down("INIT_distribution");
 	    ufin->get(target.sub("type"),str);
 	    ufout->put(target.sub("type"),str);
 	    ufres->put(target.sub("type"),str);
@@ -1467,11 +1467,10 @@ void Gourmet_file_io(const char *infile
 		fprintf(stderr, "invalid DISTRIBUTION\n"); 
 		exit_job(EXIT_FAILURE);
 	    }
+            target.up();
 	}
 	
 	{
-            Location target("switch");
-	    string str;
 	    ufin->get(target.sub("INIT_orientation"), str);
 	    ufout->put(target.sub("INIT_orientation"), str);
 	    ufres->put(target.sub("INIT_orientation"), str);
@@ -1497,6 +1496,16 @@ void Gourmet_file_io(const char *infile
 	    ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    assert(MAX_SLIP_ITER >= 1);
 	}
+        {
+          ufin->get(target.sub("MASS_GRID"), str);
+          ufout->put(target.sub("MASS_GRID"), str);
+          ufres->put(target.sub("MASS_GRID"), str);
+          if(str == "YES"){
+            MASS_grid = 1;
+          }else{
+            MASS_grid = 0;
+          }
+        }
 	
 	{
             ufin->get(target.sub("pin"), str);
