@@ -10,27 +10,39 @@
 
 inline void init_set_xGs(Particle *p){
 	// initialize xGs[][]
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++) xGs[rigidID][d] = 0.0;
 	}
 	
 	int rigidID;
 	
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) xGs[rigidID][d] += p[n].x[d];
+		for(int d=0; d<DIM; d++) {
+#pragma omp atomic
+                  xGs[rigidID][d] += p[n].x[d];
+                }
 	}
+
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++) xGs[rigidID][d] /= Rigid_Particle_Numbers[rigidID];
 	}
+
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
+		for(int d=0; d<DIM; d++) {
+                  GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
+                }
 	}
 }
 
 inline void set_xGs(Particle *p){
 	int rigid_first_n = 0;
+#pragma omp parallel for schedule(dynamic, 1) reduction(+:rigid_first_n)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++){
 			xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
@@ -47,6 +59,7 @@ inline void solver_GRvecs(const CTime &jikan, string CASE){
 	int rigidID;
 	double bufvec[DIM];
 	if(CASE == "Euler"){
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID, bufvec)
 		for(int n=0; n<Particle_Number; n++){
 			rigidID = Particle_RigidID[n];
 			bufvec[0] = (omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1]) * jikan.dt_md;
@@ -56,6 +69,7 @@ inline void solver_GRvecs(const CTime &jikan, string CASE){
 		}
 	}
 	else if(CASE == "AB2"){
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID, bufvec)
 		for(int n=0; n<Particle_Number; n++){
 			rigidID = Particle_RigidID[n];
 			bufvec[0] = ( (3.*omegaGs[rigidID][1]-omegaGs_old[rigidID][1])*GRvecs[n][2] - (3.*omegaGs[rigidID][2]-omegaGs_old[rigidID][2])*GRvecs[n][1] ) * jikan.hdt_md;
@@ -74,6 +88,7 @@ inline void solver_GRvecs(const CTime &jikan, string CASE){
 // dont use it before (init_set_xGs) or (set_xGs and solver_GRvecs)
 inline void set_Rigid_MMs(Particle *p){
 	// initialize Rigid_Masses and Rigid_Moments and Rigid_IMoments
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		Rigid_Masses[rigidID] = 0.0;
 		for(int row=0; row<DIM; row++){
@@ -86,27 +101,39 @@ inline void set_Rigid_MMs(Particle *p){
 	
 	int rigidID;
 	
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
 		// mass of p[n] adds to Rigid_Masses[rigidID];
+#pragma omp atomic
 		Rigid_Masses[rigidID] += MASS[ RigidID_Components[rigidID] ];
 		// moment of p[n] adds to Rigid_Moments[rigidID]
+#pragma omp atomic
 		Rigid_Moments[rigidID][0][0] += MOI[ RigidID_Components[rigidID] ]
                   + MASS[ RigidID_Components[rigidID] ] * ( GRvecs[n][1]*GRvecs[n][1] + GRvecs[n][2]*GRvecs[n][2] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][0][1] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][0]*GRvecs[n][1] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][0][2] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][0]*GRvecs[n][2] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][1][0] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][1]*GRvecs[n][0] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][1][1] += MOI[ RigidID_Components[rigidID] ]
                   + MASS[ RigidID_Components[rigidID] ] * ( GRvecs[n][2]*GRvecs[n][2] + GRvecs[n][0]*GRvecs[n][0] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][1][2] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][1]*GRvecs[n][2] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][2][0] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][2]*GRvecs[n][0] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][2][1] += MASS[ RigidID_Components[rigidID] ] * ( - GRvecs[n][2]*GRvecs[n][1] );
+#pragma omp atomic
 		Rigid_Moments[rigidID][2][2] += MOI[ RigidID_Components[rigidID] ]
                   + MASS[ RigidID_Components[rigidID] ] * ( GRvecs[n][0]*GRvecs[n][0] + GRvecs[n][1]*GRvecs[n][1] );
 	}
 	
 	char str[256];
 	// inverse
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		Rigid_IMasses[rigidID] = 1. / Rigid_Masses[rigidID];
 		Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
@@ -124,6 +151,7 @@ inline void set_Rigid_MMs(Particle *p){
 inline void set_particle_vomegas(Particle *p){
 
 	int rigidID;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
 		for(int d=0; d<DIM; d++){
@@ -142,9 +170,11 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 	
 	int rigidID;
 	//calc forceGrs, forceGvs
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
 		for(int d=0; d<DIM; d++){
+#pragma omp atomic
 			forceGrs[rigidID][d] += p[n].fr[d];
 			//forceGvs[rigidID][d] += p[n].fv[d];
 			//torqueGrs[rigidID][d] += p[n].torquer[d];
@@ -152,6 +182,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 		}
 	}
 	//set olds
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++){
 			velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
@@ -161,6 +192,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 	
 	//calc velocityGs and omegaGs
 	if(CASE == "Euler"){
+#pragma omp parallel for schedule(dynamic, 1)
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
@@ -171,20 +203,8 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 			}
 		}
 	
-	}else if(CASE == "Euler_hydro"){
-		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
-			for(int d1=0; d1<DIM; d1++){
-				velocityGs[rigidID][d1] += jikan.dt_md * Rigid_IMasses[rigidID]
-                                  * ( forceGs[rigidID][d1] 
-                                      + 0.5*(forceGrs[rigidID][d1] + forceGrs_previous[rigidID][d1])
-                                      );
-				for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]
-                                                              * ( torqueGs[rigidID][d2] );
-			}
-		}
-	
 	}else if(CASE == "AB2_hydro"){
+#pragma omp parallel for schedule(dynamic, 1)
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
@@ -205,6 +225,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 
     
 	// renew old previous and initialize
+#pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		for(int d=0; d<DIM; d++){
 			 forceGrs_previous[rigidID][d] = forceGrs[rigidID][d];
@@ -214,7 +235,4 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 		}
 	}
 }
-			
-
-
 #endif

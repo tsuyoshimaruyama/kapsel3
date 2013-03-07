@@ -284,7 +284,8 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
     }
 
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass,dmy_inertia,pspec) 
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass,dmy_inertia,pspec, \
+          rigidID, forceg, torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
 	//double xp[DIM],vp[DIM],omega_p[DIM];
 	//int x_int[DIM];
@@ -356,7 +357,10 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
 	}
 	if(SW_PT == rigid){
           for(int d=0; d<DIM; d++){
+            #pragma omp atomic
             forceGs[rigidID][d] += dmy * forceg[d];
+
+            #pragma omp atomic
             torqueGs[rigidID][d] += dmy * torqueg[d];
           }
 	}
@@ -401,7 +405,8 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     
     Reset_phi(Hydro_force);
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,volume,sign) 
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,volume,sign,\
+          rigidID, forceg, torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
 		
 	if(SW_PT == rigid) rigidID = Particle_RigidID[n];
@@ -471,7 +476,10 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
 	}
 	if(SW_PT == rigid){
           for(int d=0; d<DIM; d++){
+            #pragma omp atomic
             forceGs[rigidID][d] += dmy * forceg[d];
+
+            #pragma omp atomic
             torqueGs[rigidID][d] += dmy * torqueg[d];
           }
 	}
