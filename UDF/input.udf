@@ -197,8 +197,12 @@ switch:
   0.01                                  //Slip_tolerance
   4                                     //Slip_iterations
   "NO"                                  //Pinned particles
-  "NO"                                  //MASS_grid (debug)
   {"ON","ON","ON"}                      //Fix_cell
+}
+
+debug:
+{
+  "NO"                                  //MASS_grid (debug)   
 }
 
 output:

@@ -146,7 +146,8 @@ double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
 
-int MASS_grid;
+/// debug flags
+int DBG_MASS_GRID;
 ////
 int Rigid_Number;
 int *Rigid_Motions;// 0(fix) or 1(free)
@@ -1495,18 +1496,7 @@ void Gourmet_file_io(const char *infile
 	    ufout->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    assert(MAX_SLIP_ITER >= 1);
-	}
-        {
-          ufin->get(target.sub("MASS_GRID"), str);
-          ufout->put(target.sub("MASS_GRID"), str);
-          ufres->put(target.sub("MASS_GRID"), str);
-          if(str == "YES"){
-            MASS_grid = 1;
-          }else{
-            MASS_grid = 0;
-          }
-        }
-	
+	}	
 	{
             ufin->get(target.sub("pin"), str);
             ufout->put(target.sub("pin"), str);
@@ -1542,6 +1532,19 @@ void Gourmet_file_io(const char *infile
 	    FIX_CELL = (FIX_CELLxyz[0] | FIX_CELLxyz[1] | FIX_CELLxyz[2]);
 	    target.up();
 	}
+    }
+    {
+      Location target("debug");
+      string str;
+      
+      ufin->get(target.sub("MASS_GRID"), str);
+      ufout->put(target.sub("MASS_GRID"), str);
+      ufres->put(target.sub("MASS_GRID"), str);
+      if(str == "YES"){
+        DBG_MASS_GRID = 1;
+      }else{
+        DBG_MASS_GRID = 0;
+      }
     }
     
     { /////// output;

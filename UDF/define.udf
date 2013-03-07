@@ -190,13 +190,16 @@ switch: {
    SLIP_tol: float "Tolerance for iterative slip convergence"
    SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
    pin: select{'NO','YES'} "pin particles"
-   MASS_GRID: select{'NO', 'YES'} "use mass of grid particle (debugging)"
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       }
-   }
+}
+
+debug: {
+   MASS_GRID: select{'NO', 'YES'} "use mass of grid particle"
+}
 									       
 output: {
    GTS: int "interval between snapshots"
