@@ -80,7 +80,7 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
     }
   }
   if(SW_PT == rigid){
-    solver_GRvecs(jikan, "AB2");
+    solver_GRvecs(jikan, "Euler");
     set_xGs(p);
   }
 }
@@ -546,7 +546,7 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
       rigidID = Particle_RigidID[n];
       dmy_vG[0] = omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
       dmy_vG[1] = omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-      p[n].v[2] = omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];      
+      dmy_vG[2] = omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
     }
     for(int d = 0; d < DIM; d++) {
       {
