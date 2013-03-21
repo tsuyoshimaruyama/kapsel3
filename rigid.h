@@ -194,7 +194,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 	if(CASE == "Euler"){
 #pragma omp parallel for schedule(dynamic, 1)
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
+			if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
 				velocityGs[rigidID][d1] += jikan.dt_md * Rigid_IMasses[rigidID]
                                   * ( forceGs[rigidID][d1] + forceGrs[rigidID][d1] );
@@ -206,7 +206,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 	}else if(CASE == "AB2_hydro"){
 #pragma omp parallel for schedule(dynamic, 1)
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
+			if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 			for(int d1=0; d1<DIM; d1++){
 				velocityGs[rigidID][d1] += jikan.hdt_md * Rigid_IMasses[rigidID]
                                   * ( 2. * forceGs[rigidID][d1]
@@ -223,7 +223,8 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 		exit_job(EXIT_FAILURE);
 	}
 
-    
+
+		
 	// renew old previous and initialize
 #pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){

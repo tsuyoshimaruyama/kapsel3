@@ -67,7 +67,7 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
     }
     
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[rigidID] == 0) continue;	// if "fix"
+      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
       for(int d1=0; d1<DIM; d1++){
         velocityGs[rigidID][d1] += forceGsdt[rigidID][d1] * Rigid_IMasses[rigidID];
         for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += Rigid_IMoments[rigidID][d1][d2] * torqueGsdt[rigidID][d2];
