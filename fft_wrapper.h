@@ -90,7 +90,7 @@ void A_k2dza_k(double *a, double *da);
 
 /*!
   \brief Compute reduced vorticity field from full vorticity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\vec{\omega}}(\vec{k})\longrightarrow \ft{\vec{\zeta}}(\vec{k}) = \ft{\vec{\omega}}^*(\vec{k})
   \f]
   \param[in] omega full vorticity field (reciprocal space)
@@ -101,7 +101,7 @@ void Omega_k2zeta_k(double **omega, double **zetak);
 /*!
   \brief Compute contravariant reduced vorticity field from full vorticity field
   (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\omega}^\alpha(\vec{k})\longrightarrow
   \ft{\zeta}^{\alpha}(\vec{k}) = \ft{\omega}^{*\alpha}(\vec{k})
   \f]
@@ -112,7 +112,7 @@ void Omega_k2zeta_k_OBL(double **omega, double **zetak);
 
 /*!
   \brief Compute reduced vorticity field from velocity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\vec{u}}(\vec{k})\longrightarrow \ft{\vec{\zeta}}(\vec{k}) 
   \f]
   \param[in] u velocity field (reciprocal space)
@@ -123,7 +123,7 @@ void U_k2zeta_k(double **u, double **zeta, double uk_dc[DIM]);
 
 /*!
   \brief Compute solenoidal velocity field from reduced vorticity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\vec{\zeta}}(\vec{k})\longrightarrow \ft{\vec{\omega}}(\vec{k}) 
   \underset{\vec{k}\cdot\ft{\vec{u}}=0}{\longrightarrow} \ft{\vec{u}}(\vec{k})
   \f]
@@ -136,7 +136,7 @@ void Zeta_k2u_k(double **zeta, double uk_dc[DIM], double **u);
 /*!
   \brief Compute contravariant vorticity field from reduced vorticity
   field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\zeta}^\alpha(\vec{k}) \longrightarrow
   \ft{\omega}^\alpha(\vec{k})
   \f]
@@ -148,7 +148,7 @@ void Zeta_k2omega_k_OBL(double **zeta, double **omega);
 /*!
   \brief Compute contravariant reduced vorticity field from covariant
   velocity field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{u}_\alpha(\vec{k}) \longrightarrow \ft{\zeta}^\alpha(\vec{k})
   \f]
   \param[in] u covariant velocity field (reciprocal space)
@@ -163,7 +163,7 @@ void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]);
   \brief Compute contravariant solenoidal velocity field from
   contravariant reduced vorticity
   field (reciprocal space)
-  \details\f[
+  \details \f[
   \ft{\zeta}^\alpha(\vec{k})\longrightarrow
   \ft{\omega}^\alpha(\vec{k}) \longrightarrow
   \ft{\omega}_\alpha(\vec{k}) \propto \epsilon_{\alpha\beta\gamma}k^{\beta}\ft{u}^{\gamma}

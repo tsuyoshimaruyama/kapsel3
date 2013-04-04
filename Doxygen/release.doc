@@ -3,7 +3,7 @@
 \section release_v3 Version 3.0
 - Bug fixes
   - added undeclared private variables in omp directive for \link U_k2rotation_k \endlink
-  - fixed incorrect calculation of AC external field for \link Add_external_electric_field\endlink and \link Make_Coulomb_force_x_on_fluid\endlink
+  - fixed incorrect calculation of AC external field for \link Add_external_electric_field_x\endlink and \link Make_Coulomb_force_x_on_fluid\endlink
   - fixed definition of Sekibun_cell in \link Particle_domain \endlink to be independent of the choice of profile function
   - fixed incorrect update of K2 magnitude for Lees-Edwards simulations (Oblique coordinates) in \link Time_evolution_hydro_OBL\endlink
   - fixed calculation of \link DPhi_compact \endlink

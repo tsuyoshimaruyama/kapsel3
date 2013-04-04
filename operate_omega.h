@@ -18,7 +18,7 @@
 
 /*!
   \brief Compute the reduced advection term appearing on the rhs of the NS equation (reciprocal space) from the velocity field (real space)
-  \details\f[
+  \details \f[
   \vec{u}(\bm{r})\longrightarrow -\ft{\vec{\Omega}}^*(\vec{k})
   \f]
   The \f$\vec{u}\vec{u}\f$ term is computed in real space, the result is Fourier transformed, and the derivatives are computed by multiplying by the appropriate wavevector. Only the two linearly independent components of the final result are kept.

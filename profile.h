@@ -133,7 +133,6 @@ inline double DPhi_compact(const double &x
   \f]
   \param[in] x radial distance from particle center
   \param[in] radius (optional) particle radius
-  \param[in] xi (optional) interface thickness
   \note The second derivative is discontinuous at the fluid/interface boundary 
   (\f$x = a + \zeta/2)\f$
  */

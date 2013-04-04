@@ -2,7 +2,7 @@
   \file resume.cxx
   \brief Routines to read/write restart file
   \author Y. Nakayama
-  \data 2006/06/27
+  \date 2006/06/27
   \version 1.1
 */
 #include "resume.h"

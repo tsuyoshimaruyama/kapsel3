@@ -101,7 +101,7 @@ inline void rigid_body_rotation(double rotated[DIM],
   \brief Compute time derivative of orientation quaternion
   \param[out] dqdt time derivative of q
   \param[in] q current orientation quaternion
-  \param[in] w current angular velocity
+  \param[in] omega current angular velocity
   \param[in] coord coordinate system of given angular velocity
  */
 void qdot(quaternion &dqdt, 
