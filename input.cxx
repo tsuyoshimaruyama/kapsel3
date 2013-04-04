@@ -1534,6 +1534,8 @@ void Gourmet_file_io(const char *infile
 	}
     }
     {
+      DBG_MASS_GRID = 0;
+      /*
       Location target("debug");
       string str;
       
@@ -1545,6 +1547,7 @@ void Gourmet_file_io(const char *infile
       }else{
         DBG_MASS_GRID = 0;
       }
+      */
     }
     
     { /////// output;
