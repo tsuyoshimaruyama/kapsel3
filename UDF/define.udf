@@ -194,8 +194,12 @@ switch: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
-   }
-          }
+      }
+}
+
+debug: {
+   MASS_GRID: select{'NO', 'YES'} "use mass of grid particle"
+}
 									       
 output: {
    GTS: int "interval between snapshots"

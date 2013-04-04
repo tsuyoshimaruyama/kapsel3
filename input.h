@@ -116,6 +116,9 @@ extern double **janus_torque;
 extern double *janus_slip_vel;
 extern double *janus_slip_mode;
 
+//debug flags
+extern int DBG_MASS_GRID;
+
 extern char Out_dir[];
 extern char Out_name[];
 extern int BINARY;

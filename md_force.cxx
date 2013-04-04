@@ -235,9 +235,15 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
       
 
       pspec = p[n].spec;
-      dmy_mass = MASS[pspec] / (p[n].mass * DX3 * RHO_particle[pspec]);      //correct mass grid resolution
-      double dmy_mass2 = (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2])/3.0;
-      dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
+      double dmy_mass2;
+      if(DBG_MASS_GRID){//correct mass grid resolution
+        dmy_mass = MASS[pspec] / (p[n].mass * DX3 * RHO_particle[pspec]);      
+        dmy_mass2 = (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2])/3.0;
+        dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
+      }else{
+        dmy_mass = 1.0;
+        dmy_mass2 = 1.0;
+      }
 
       for(int d = 0; d < DIM; d++){
 	p[n].f_slip[d] = (dmy * force[d]) * dmy_mass;
@@ -341,9 +347,15 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
         }// mesh
 
         pspec = p[n].spec;
-        dmy_mass = MASS[pspec] / (dmy_mass * DX3 * RHO_particle[pspec]); //correct for mass grid resolution
-        double dmy_mass2 = (dmy_inertia[0] + dmy_inertia[1] + dmy_inertia[2])/3.0;
-        dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
+        double dmy_mass2;
+        if(DBG_MASS_GRID){ //correct mass grid resolution
+          dmy_mass = MASS[pspec] / (dmy_mass * DX3 * RHO_particle[pspec]);
+          dmy_mass2 = (dmy_inertia[0] + dmy_inertia[1] + dmy_inertia[2])/3.0;
+          dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
+        }else{
+          dmy_mass = 1.0;
+          dmy_mass2 =1.0;
+        }
 
         for(int d = 0; d < DIM; d++){
           p[n].f_hydro[d] = (dmy * force[d]) * dmy_mass;

@@ -200,6 +200,11 @@ switch:
   {"ON","ON","ON"}                      //Fix_cell
 }
 
+debug:
+{
+  "NO"                                  //MASS_grid (debug)   
+}
+
 output:
 {
   200,                                  //GTS snapshot interval
