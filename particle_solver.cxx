@@ -132,7 +132,7 @@ inline void self_propulsion(Particle &p, double *force, double *torque){
 void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
 {
   Force(p);
-  calc_Rigid_VOGs(p, jikan, "Euler");
+  if(SW_PT == rigid) calc_Rigid_VOGs(p, jikan, "Euler");
   double dmy;
   double dmy_rot;
   double self_force[DIM];
@@ -321,7 +321,7 @@ void MD_solver_velocity_slip_iter(Particle *p, const CTime &jikan,
 
 void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
   Force(p);
-  calc_Rigid_VOGs(p, jikan, "AB2_hydro");
+  if(SW_PT == rigid) calc_Rigid_VOGs(p, jikan, "AB2_hydro");
   double dmy;
   double dmy_rot;
   double self_force[DIM];
@@ -474,7 +474,7 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
 
 void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
   Force_OBL(p);
-  calc_Rigid_VOGs(p, jikan, "Euler");
+  if(SW_PT == rigid) calc_Rigid_VOGs(p, jikan, "Euler");
 
   double dmy;
   double dmy_rot;
@@ -526,7 +526,7 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
 
 void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
   Force_OBL(p);
-  calc_Rigid_VOGs(p, jikan, "AB2_hydro");
+  if(SW_PT == rigid) calc_Rigid_VOGs(p, jikan, "AB2_hydro");
 
   double dmy;
   double dmy_rot;
