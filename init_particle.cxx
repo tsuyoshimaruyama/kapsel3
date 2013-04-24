@@ -391,6 +391,8 @@ void Init_Particle(Particle *p){
 	p[i].torque_slip[d] = 0.0;
 	p[i].torque_slip_previous[d] = 0.0;
 
+        p[i].momentum_depend_fr[d] = 0.0;
+
 	p[i].mass_center[d] = 0.0;
 	p[i].surface_mass_center[d] = 0.0;
 	p[i].surface_dv[d] = 0.0;
