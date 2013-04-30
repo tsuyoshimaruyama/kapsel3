@@ -47,9 +47,4 @@ UDF is a general file format used by simulation engines in OCTA. You can view, e
 The UDF file is a text file, but can be treated as a random access storage without paying attention to its file structure. This means that any data in UDF can be read and written in any order from user programs (C/C++, Fortran, Python). To facilitate I/O from/to the UDF file, two service libraries are provided.<br>
 - libplatform: This is the library needed to read and write UDF files from C/C++ and Fortran programs. One can find examples in KAPSEL source codes written in C++.
 - Python UDF Manager: This is the library needed to read and write UDF files from Python scripts. 
-
-<strong> Why are some of the variable names so weird?</strong><br>
-They are not weird, they are in Japanese!
-- Sekibun: integration
-- Jikan: time
 */

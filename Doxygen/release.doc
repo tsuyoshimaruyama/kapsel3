@@ -15,10 +15,10 @@
   - unused interface and exponential Sekibun_cells
   - unused MD_solver_velocity_Euler_hydro routine
 - Additions        
+  - rigid-chain motion
   - rigid-body motion to follow the orientation of particles in space
   - constant body-force/torque for self-propelled motors
   - non-stick boundary conditions to simulate Blake's squirmers
   - non-moving particles (obstacles)
   - non-pbc particle coordinates in output trajectory
-  - particle data to update grid mass, center of mass and moment of intertia
 */

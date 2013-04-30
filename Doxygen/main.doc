@@ -13,7 +13,6 @@ Welcome to the KAPSEL documentation
 Table of contents
 - \subpage page_design_grid
 - \subpage page_design_fsolver
-- \subpage page_design_fsolverOBL
 - \subpage page_design_ssolver
 - \subpage page_rigid_body
 - \subpage page_design_swimmer

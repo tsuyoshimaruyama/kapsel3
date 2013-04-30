@@ -32,8 +32,9 @@ Micro-Fluidics</div>
   agree with the \ref page_license "KAPSEL license agreement".
 
 \section sec_intro_history Kapsel's History
+- \b KAPSEL-3
+  - [30 Apr 2013] Kapsel-3.beta release (implemented self-propelled "squirmers" & rigid bodies, added Doxygen documentation)
 - \b KAPSEL-2
-  - [04 Dec 2012] KAPSEL-2.11 release (vastly improved documentation - no code changes)
   - [30 Mar 2011] KAPSEL-2.10 release (newly implemented Lees-Edwards sheared
      periodic boundary conditions).
   - [10 Aug 2009] KAPSEL-2.00 release
@@ -69,4 +70,11 @@ Micro-Fluidics</div>
   - [7] R. Yamamoto, "Simulating particle dispersions in nematic liquid-crystal
   solvents",<br>
   <a href="http://prl.aps.org/abstract/PRL/v87/i7/e075502"> Phys. Rev. Lett., 87, 075502 (2001) </a>
+- \b Sedimentation
+  - [8] A. Hamid, R. Yamamoto, "Direct numerical simulations of anisotropic diffusion 
+  of spherical particles in sedimentation", <br>
+  <a href="http://pre.aps.org/abstract/PRE/v87/i2/e022310"> Phys. Rev. E., 87, 022310 (2013)</a>
+- \b Self-Propelled Active Particles
+  - [9] J. Molina, Y. Nakayama, R. Yamamoto, "Hydrodynamic interactions of self-propelled swimmers",<br>
+  <a href="http://pubs.rsc.org/en/Content/ArticleLanding/2013/SM/c3sm00140g"> Soft Matter, 9, 4923 (2013)</a>
 */
