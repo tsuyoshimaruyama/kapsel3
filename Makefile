@@ -37,7 +37,7 @@ endif
 
 ## options for GCC/LINUX
 ifeq ($(ENV), GCC)
-      ARCH   = linux_64 
+      ARCH   = linux_64
       CC     = gcc
       CXX    = g++
       CCOPT  = -O3 
