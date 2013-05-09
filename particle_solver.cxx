@@ -555,7 +555,7 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
 
         if(SW_PT == rigid){
           p[n].v[d] = velocityGs[rigidID][d] + dmy_vG[d];
-          p[n].omega_old[d] = p[n].omega[d];
+          p[n].omega[d] = omegaGs[rigidID][d];
         }else{
           p[n].v[d] += dmy * (2.0*(p[n].f_hydro[d] + self_force[d]) 
                               + p[n].fr[d] + p[n].fr_previous[d]); // CN

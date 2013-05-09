@@ -1673,13 +1673,13 @@ void Gourmet_file_io(const char *infile
 		}
 		//debug output
 		for(int n=0; n<Particle_Number; n++){
-			fprintf(stderr, "debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
+			fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
 		}
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			fprintf(stderr, "debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
+			fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
 		}
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			fprintf(stderr, "debug: Rigid_Particle_Numbers[%d] = %d\n", rigidID, Rigid_Particle_Numbers[rigidID]);
+			fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d\n", rigidID, Rigid_Particle_Numbers[rigidID]);
 		}
 		
 		//initialize velocityGs and omegaGs and
