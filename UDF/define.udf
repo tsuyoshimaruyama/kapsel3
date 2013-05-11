@@ -197,10 +197,6 @@ switch: {
       }
 }
 
-debug: {
-   MASS_GRID: select{'NO', 'YES'} "use mass of grid particle"
-}
-									       
 output: {
    GTS: int "interval between snapshots"
    Num_snap: int "number of snapshots"
