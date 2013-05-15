@@ -15,32 +15,24 @@
 /*!
   \brief Initialize the geometry and center of mass position for each
   of the rigid particles
+  \warning possible issue if rigid body crosses box boundaries
  */
 inline void init_set_xGs(Particle *p){
-	// initialize xGs[][]
-#pragma omp parallel for schedule(dynamic, 1)
-	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-		for(int d=0; d<DIM; d++) xGs[rigidID][d] = 0.0;
-	}
-	
-	int rigidID;
-	
         //center of mass
-#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
-	for(int n=0; n<Particle_Number; n++){
-		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++) {
-#pragma omp atomic
-                  xGs[rigidID][d] += p[n].x[d];
-                }
-	}
-
 #pragma omp parallel for schedule(dynamic, 1)
-	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-		for(int d=0; d<DIM; d++) xGs[rigidID][d] /= Rigid_Particle_Numbers[rigidID];
-	}
+        for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+
+          for(int d=0; d<DIM; d++) xGs[rigidID][d] = 0.0;
+
+          for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
+                  for(int d=0; d<DIM; d++) xGs[rigidID][d] += p[n].x[d];
+          }
+
+          for(int d=0; d<DIM; d++) xGs[rigidID][d] /= (double) Rigid_Particle_Numbers[rigidID];
+        }
 
         //position vectors from center of mass to individual beads
+        int rigidID;
 #pragma omp parallel for schedule(dynamic, 1) private(rigidID)
 	for(int n=0; n<Particle_Number; n++){
 		rigidID = Particle_RigidID[n];
@@ -53,28 +45,25 @@ inline void init_set_xGs(Particle *p){
 /*!
   \brief Update center of mass position after all beads have been
   rigidly displaced
+  \warning rigidity of body is never enforced
  */
 inline void set_xGs(Particle *p){
-	int rigid_first_n = 0;
-#pragma omp parallel for ordered schedule(dynamic, 1) reduction(+:rigid_first_n)
-	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-          #pragma omp ordered
-          {
-		for(int d=0; d<DIM; d++){
+
+        int rigid_first_n;
+#pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n)
+        for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+                rigid_first_n = Rigid_Particle_Cumul[rigidID];
+                for(int d = 0; d < DIM; d++){
                         xGs_previous[rigidID][d] = xGs[rigidID][d];
-			xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
-			xGs[rigidID][d] = fmod(xGs[rigidID][d] + L_particle[d], L_particle[d]);
-		}
-		rigid_first_n += Rigid_Particle_Numbers[rigidID];
-                for(int d = 0; d< DIM; d++){
-                  assert(xGs[rigidID][d] >= 0);
-                  assert(xGs[rigidID][d] < L[d]);
+                        xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
+                        xGs[rigidID][d] = fmod(xGs[rigidID][d] + L_particle[d], L_particle[d]);
                 }
-          }
-	}
-	
-	//check(for debug)
-	if(rigid_first_n != Particle_Number) fprintf(stderr, "# debug: set_xGs() error");
+
+                for(int d = 0; d < DIM; d++){
+                        assert(xGs[rigidID][d] >= 0);
+                        assert(xGs[rigidID][d] < L[d]);
+                }
+        }
 }
 
 //diagonalize inertia tensors
@@ -154,9 +143,11 @@ inline void solver_GRvecs(const CTime &jikan, string CASE){
   \note Dont use it before (init_set_xGs) or (set_xGs and solver_GRvecs)
 */
 inline void set_Rigid_MMs(Particle *p){
-	// initialize Rigid_Masses and Rigid_Moments and Rigid_IMoments
-#pragma omp parallel for schedule(dynamic, 1)
+	double dmy_mass, dmy_moi;
+#pragma omp parallel for schedule(dynamic, 1) private(dmy_mass, dmy_moi)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+
+                //initialize
 		Rigid_Masses[rigidID] = 0.0;
 		for(int row=0; row<DIM; row++){
 			for(int column=0; column<DIM; column++){
@@ -164,53 +155,35 @@ inline void set_Rigid_MMs(Particle *p){
 				Rigid_IMoments[rigidID][row][column] = 0.0;
 			}
 		}
-	}
-	
-	int rigidID;
-	double dmy_mass, dmy_moi;
-#pragma omp parallel for schedule(dynamic, 1) private(rigidID, dmy_mass, dmy_moi)
-	for(int n=0; n<Particle_Number; n++){
-		rigidID = Particle_RigidID[n];
+
                 dmy_mass = MASS[ RigidID_Components[rigidID] ];
                 dmy_moi = MOI[ RigidID_Components[rigidID] ];
-                double &ri_x = GRvecs[n][0];
-                double &ri_y = GRvecs[n][1];
-                double &ri_z = GRvecs[n][2];
-                
-		// mass of p[n] adds to Rigid_Masses[rigidID];
-#pragma omp atomic
-		Rigid_Masses[rigidID] += dmy_mass;
 
-		// moment of p[n] adds to Rigid_Moments[rigidID]
-#pragma omp atomic
-		Rigid_Moments[rigidID][0][0] += dmy_moi + dmy_mass * ( ri_y*ri_y + ri_z*ri_z );
-#pragma omp atomic
-		Rigid_Moments[rigidID][0][1] += dmy_mass * ( -ri_x*ri_y );
-#pragma omp atomic
-		Rigid_Moments[rigidID][0][2] += dmy_mass * ( -ri_x*ri_z );
+                //add individual particles contributions to each rigidID
+                for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
+                  double &ri_x = GRvecs[n][0];
+                  double &ri_y = GRvecs[n][1];
+                  double &ri_z = GRvecs[n][2];
+                      
+                  Rigid_Masses[rigidID] += dmy_mass;
 
-#pragma omp atomic
-		Rigid_Moments[rigidID][1][0] += dmy_mass * ( -ri_y*ri_x );
-#pragma omp atomic
-		Rigid_Moments[rigidID][1][1] += dmy_moi + dmy_mass * ( ri_z*ri_z + ri_x*ri_x );
-#pragma omp atomic
-		Rigid_Moments[rigidID][1][2] += dmy_mass * ( -ri_y*ri_z );
+                  Rigid_Moments[rigidID][0][0] += dmy_moi + dmy_mass * ( ri_y*ri_y + ri_z*ri_z );
+                  Rigid_Moments[rigidID][0][1] += dmy_mass * ( -ri_x*ri_y );
+                  Rigid_Moments[rigidID][0][2] += dmy_mass * ( -ri_x*ri_z );
+                  
+                  Rigid_Moments[rigidID][1][0] += dmy_mass * ( -ri_y*ri_x );
+                  Rigid_Moments[rigidID][1][1] += dmy_moi + dmy_mass * ( ri_z*ri_z + ri_x*ri_x );
+                  Rigid_Moments[rigidID][1][2] += dmy_mass * ( -ri_y*ri_z );
 
-#pragma omp atomic
-		Rigid_Moments[rigidID][2][0] += dmy_mass * ( -ri_z*ri_x );
-#pragma omp atomic
-		Rigid_Moments[rigidID][2][1] += dmy_mass * ( -ri_z*ri_y );
-#pragma omp atomic
-		Rigid_Moments[rigidID][2][2] += dmy_moi + dmy_mass * ( ri_x*ri_x + ri_y*ri_y );
-	}
-	
-	char str[256];
-	// inverse
-#pragma omp parallel for schedule(dynamic, 1)
-	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-		Rigid_IMasses[rigidID] = 1. / Rigid_Masses[rigidID];
-		Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
-		check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+                  Rigid_Moments[rigidID][2][0] += dmy_mass * ( -ri_z*ri_x );
+                  Rigid_Moments[rigidID][2][1] += dmy_mass * ( -ri_z*ri_y );
+                  Rigid_Moments[rigidID][2][2] += dmy_moi + dmy_mass * ( ri_x*ri_x + ri_y*ri_y );
+                }
+
+                //inverse
+                Rigid_IMasses[rigidID] = 1.0 / Rigid_Masses[rigidID];
+                Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+                check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
 	}
 }
 
@@ -239,28 +212,27 @@ inline void set_particle_vomegas(Particle *p){
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   //set_Rigid_MMs(p);
 	
-	int rigidID;
 	//calc forceGrs, forceGvs
-#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
-	for(int n=0; n<Particle_Number; n++){
-		rigidID = Particle_RigidID[n];
-		for(int d=0; d<DIM; d++){
-#pragma omp atomic
-			forceGrs[rigidID][d] += p[n].fr[d];
-			//forceGvs[rigidID][d] += p[n].fv[d];
-			//torqueGrs[rigidID][d] += p[n].torquer[d];
-			//torqueGvs[rigidID][d] += p[n].torquev[d];	//fv, torquer and torquev are constant zero.
-		}
-	}
-	//set olds
 #pragma omp parallel for schedule(dynamic, 1)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-		for(int d=0; d<DIM; d++){
-			velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
-			omegaGs_old[rigidID][d] = omegaGs[rigidID][d];
+
+		for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
+                        for(int d=0; d<DIM; d++){
+                                forceGrs[rigidID][d] += p[n].fr[d];
+                                //forceGvs[rigidID][d] += p[n].fv[d];
+                                //torqueGrs[rigidID][d] += p[n].torquer[d];
+                                //torqueGvs[rigidID][d] += p[n].torquev[d];
+                                ////fv, torquer and torquev are constant zero.
+                        }
 		}
+
+              	//set olds
+                for(int d=0; d<DIM; d++){
+                        velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
+                        omegaGs_old[rigidID][d] = omegaGs[rigidID][d];
+                }
 	}
-	
+
 	//calc velocityGs and omegaGs
 	if(CASE == "Euler"){
 #pragma omp parallel for schedule(dynamic, 1)
