@@ -248,6 +248,136 @@ inline void update_GRvecs(Particle *p){
   }
 }
 
+
+/*!
+  \brief Update position and orientation of rigid particles
+ */
+inline void solver_Rigid_Position(Particle *p, const CTime &jikan, string CASE){
+
+  int rigid_first_n;
+  int rigid_last_n;
+  if(CASE == "Euler"){
+#pragma opm parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
+
+      //center of mass
+      for(int d=0; d<DIM; d++){
+        xGs_previous[rigidID][d] = xGs[rigidID][d];
+        xGs[rigidID][d] += jikan.dt_md * velocityGs[rigidID][d];
+      }
+      PBC(xGs[rigidID]);
+
+      //orientation
+      rigid_first_n = Rigid_Particle_Cumul[rigidID];
+      rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
+      MD_solver_orientation_Euler(p[rigid_first_n], jikan.dt_md);
+
+      //broadcast new orientation to all beads
+      for(int n=rigid_first_n+1; n<rigid_last_n; n++){
+        qtn_init(p[n].q_old, p[rigid_first_n].q_old);
+        qtn_init(p[n].q, p[rigid_first_n].q);
+      }
+    }
+
+  }else if(CASE == "AB2"){
+#pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;   // if "fix"
+
+      //center of mass
+      for(int d=0; d<DIM; d++){
+        xGs_previous[rigidID][d] = xGs[rigidID][d];
+        xGs[rigidID][d] += jikan.hdt_md * (3.0 * velocityGs[rigidID][d] - velocityGs_old[rigidID][d]);
+      }
+      PBC(xGs[rigidID]);
+      
+      //orientation
+      rigid_first_n = Rigid_Particle_Cumul[rigidID];
+      rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
+      MD_solver_orientation_AB2(p[rigid_first_n], jikan.hdt_md);
+      
+      //broadcast new orientatiion to all beads
+      for(int n=rigid_first_n+1; n<rigid_last_n; n++){
+        qtn_init(p[n].q_old, p[rigid_first_n].q_old);
+        qtn_init(p[n].q, p[rigid_first_n].q);
+      }
+    }
+
+  }else{
+    fprintf(stderr, "# error: string CASE in solver_Rigid_Position\n");
+    exit_job(EXIT_FAILURE);
+  }
+}
+
+/*!
+  \brief Update position and orientatino of rigid particles under
+  Lees-Edwards boundary conditions
+ */
+inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CASE){
+
+  int sign;
+  int rigid_first_n;
+  int rigid_last_n;
+  double delta_vx;
+  if(CASE == "Euler"){
+#pragma opm parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n, sign, delta_vx)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
+
+      //center of mass
+      for(int d=0; d<DIM; d++){
+        xGs_previous[rigidID][d] = xGs[rigidID][d];
+        xGs[rigidID][d] += jikan.dt_md * velocityGs[rigidID][d];
+      }
+      sign = PBC_OBL(xGs[rigidID], delta_vx);
+      velocityGs[rigidID][0] += delta_vx;
+      velocityGs_old[rigidID][0] += delta_vx;
+
+      //orientation
+      rigid_first_n = Rigid_Particle_Cumul[rigidID];
+      rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
+      MD_solver_orientation_Euler(p[rigid_first_n], jikan.dt_md);
+
+      //broadcast new orientation to all beads
+      for(int n=rigid_first_n+1; n<rigid_last_n; n++){
+        qtn_init(p[n].q_old, p[rigid_first_n].q_old);
+        qtn_init(p[n].q, p[rigid_first_n].q);
+      }
+    }
+
+  }else if(CASE == "AB2"){
+#pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n, sign, delta_vx)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;   // if "fix"
+
+      //center of mass
+      for(int d=0; d<DIM; d++){
+        xGs_previous[rigidID][d] = xGs[rigidID][d];
+        xGs[rigidID][d] += jikan.hdt_md * (3.0 * velocityGs[rigidID][d] - velocityGs_old[rigidID][d]);
+      }
+      sign = PBC_OBL(xGs[rigidID], delta_vx);
+      velocityGs[rigidID][0] += delta_vx;
+      velocityGs_old[rigidID][0] += delta_vx;
+      
+      //orientation
+      rigid_first_n = Rigid_Particle_Cumul[rigidID];
+      rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
+      MD_solver_orientation_AB2(p[rigid_first_n], jikan.hdt_md);
+      
+      //broadcast new orientatiion to all beads
+      for(int n=rigid_first_n+1; n<rigid_last_n; n++){
+        qtn_init(p[n].q_old, p[rigid_first_n].q_old);
+        qtn_init(p[n].q, p[rigid_first_n].q);
+      }
+    }
+
+  }else{
+    fprintf(stderr, "# error: string CASE in solver_Rigid_Position_OBL\n");
+    exit_job(EXIT_FAILURE);
+  }
+}
+
 /*!
   \brief Compute the change in relative bead positions (from COM) due to rotation of
   the rigid body
