@@ -407,7 +407,7 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
   }
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "Euler");
-    set_xGs(p);
+    set_xGs_OBL(p);
     set_Rigid_MMs(p);
   }
 }
@@ -432,7 +432,7 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
   }
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "AB2");
-    set_xGs(p);
+    set_xGs_OBL(p);
     set_Rigid_MMs(p);
   }
 }
@@ -459,6 +459,15 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
       dmy_vG[0] = omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
       dmy_vG[1] = omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
       dmy_vG[2] = omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
+
+      // check which periodic image of rigid body particle belongs to
+      double rG[DIM];
+      double delta_vx;
+      for(int d = 0; d < DIM; d++){
+        rG[d] = xGs[rigidID][d] + GRvecs[n][d];
+    }
+      int sign = PBC_OBL(rG, delta_vx);
+      dmy_vG[0] += delta_vx;
     }
     for(int d = 0; d < DIM; d++) {
       {
@@ -512,6 +521,15 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
       dmy_vG[0] = omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
       dmy_vG[1] = omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
       dmy_vG[2] = omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
+
+      // check which periodic image of rigid body particle belongs to
+      double rG[DIM];
+      double delta_vx;
+      for(int d = 0; d < DIM; d++){
+        rG[d] = xGs[rigidID][d] + GRvecs[n][d];
+      }
+      int sign = PBC_OBL(rG, delta_vx);
+      dmy_vG[0] += delta_vx;
     }
     for(int d = 0; d < DIM; d++) {
       {

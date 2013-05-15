@@ -62,6 +62,47 @@ inline void set_xGs(Particle *p){
         }
 }
 
+/*!
+  \brief Update center of mass position after all beads have been
+  rigidly displaced under Lees-Edwards periodic boundaries
+  \warning rigidity of body is never enforced
+ */
+inline void set_xGs_OBL(Particle *p){
+        int rigid_first_n;
+        int sign;
+        double delta_vx, dmy_r;
+        double r[DIM];
+#pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n, sign, delta_vx, dmy_r, r)
+        for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+                rigid_first_n = Rigid_Particle_Cumul[rigidID];
+                for(int d=0; d<DIM; d++){
+                        xGs_previous[rigidID][d] = xGs[rigidID][d];
+                        xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
+                }
+                sign = PBC_OBL(xGs[rigidID], delta_vx);
+
+                //center of mass displacement
+                Distance0_OBL(xGs_previous[rigidID], xGs[rigidID], dmy_r, r);
+                for(int d=0; d<DIM; d++){
+                        r[d] += xGs_previous[rigidID][d];
+                }
+
+                //shift velocity if COM crossed top/bottom boundaries
+                sign = PBC_OBL(r, delta_vx);
+                velocityGs[rigidID][0] += delta_vx;
+                velocityGs_old[rigidID][0] += delta_vx;
+
+                for(int d=0; d<DIM;d++){
+                        if(r[d] != xGs[rigidID][d]){
+                          fprintf(stderr, "# error: Rigid %d COM (%d) %g != %g\n",
+                                  rigidID, d, xGs[rigidID][d], r[d]
+                                  );
+                          exit_job(EXIT_FAILURE);
+                        }
+                }
+        }
+}
+
 //diagonalize inertia tensors
 inline void set_Rigid_Coordinates(Particle *p){
 #pragma omp parallel for schedule(dynamic, 1)
