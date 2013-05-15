@@ -16,7 +16,7 @@
 /*!
   \brief Initialize the geometry and center of mass position for each
   of the rigid particles
-  \warning possible issue if rigid body crosses box boundaries
+  \warning Input rigid body coordinates should be given without PBC
 */
 inline void init_set_xGs(Particle *p){
   //center of mass
@@ -33,15 +33,108 @@ inline void init_set_xGs(Particle *p){
   }
   
   //position vectors from center of mass to individual beads
-  int rigidID;
-#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
+#pragma omp parallel for schedule(dynamic, 1)
   for(int n=0; n<Particle_Number; n++){
-    rigidID = Particle_RigidID[n];
+    int rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++) {
       GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
     }
   }
+
+  //place rigid particles inside simulation box
+  if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
+#pragma omp parallel for schedule(dynamic, 1)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      PBC(xGs[rigidID]);
+    }
+  }else{
+#pragma omp parallel for schedule(dynamic, 1)
+    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+      double dmy_vx;
+      //rigid velocities are not reset
+      PBC_OBL(xGs[rigidID], dmy_vx);
+    }
+  }
 }
+
+/*!
+  \brief Positions all beads using current rigid positions
+ */
+inline void set_particle_positions(Particle *p){
+  int rigidID;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
+  for(int n=0; n<Particle_Number; n++){
+    rigidID = Particle_RigidID[n];
+    for(int d=0; d<DIM; d++){
+      p[n].x_previous[d] = p[n].x[d];
+      p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
+    }
+
+    PBC(p[n].x);
+  }
+}
+
+/*!
+  \brief Positions all beads using current rigid positions for
+  Lees-Edwards boundary conditions
+ */
+inline void set_particle_positions_OBL(Particle *p){
+  int rigidID, sign;
+  double delta_vx;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID, sign, delta_vx)
+  for(int n=0; n<Particle_Number; n++){
+    rigidID = Particle_RigidID[n];
+    for(int d=0; d<DIM; d++){
+      p[n].x_previous[d] = p[n].x[d];
+      p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
+    }
+    sign = PBC_OBL(p[n].x, delta_vx);
+    p[n].v[0] += delta_vx;
+    p[n].v_old[0] += delta_vx;
+  }
+}
+
+/*!
+  \brief Set particle velocities using current rigid velocities
+ */
+inline void set_particle_velocities(Particle *p){
+  int rigidID;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
+  for(int n=0; n<Particle_Number; n++){
+    rigidID = Particle_RigidID[n];
+    for(int d=0; d<DIM; d++){
+      p[n].omega[d] = omegaGs[rigidID][d];
+    }
+    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
+  }
+}
+
+/*!
+  \brief Set particle velocities using current rigid velocities for 
+  Lees-Edwards boundary conditions
+ */
+inline void set_particle_velocities_OBL(Particle *p){
+  int rigidID, sign;
+  double r[DIM];
+  double delta_vx;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidID, sign, r, delta_vx)
+  for(int n=0; n<Particle_Number; n++){
+    rigidID = Particle_RigidID[n];
+    for(int d=0; d<DIM; d++){
+      p[n].omega[d] = omegaGs[rigidID][d];
+      r[d] = xGs[rigidID][d] + GRvecs[n][d];
+    }
+    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
+    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
+    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
+
+    sign = PBC_OBL(r, delta_vx);
+    p[n].v[0] += delta_vx;
+  }
+}
+
 
 /*!
   \brief Update center of mass position after all beads have been
@@ -103,7 +196,9 @@ inline void set_xGs_OBL(Particle *p){
   }
 }
 
-//diagonalize inertia tensors
+/*!
+  \brief Diagonalize intertia tensor to determine rigid body frame
+ */
 inline void set_Rigid_Coordinates(Particle *p){
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
@@ -125,11 +220,31 @@ inline void set_Rigid_Coordinates(Particle *p){
     for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
       qtn_init(p[n].q, dmy_q);
     }
+    free(eigen_vector);
   }
   
 #pragma omp parallel for schedule(dynamic, 1)
   for(int n = 0; n < Particle_Number; n++){
     rigid_body_rotation(GRvecs_body[n], GRvecs[n], p[n].q, SPACE2BODY);
+  }
+}
+
+/*!
+  \brief rotate GRvecs to match current orientation of rigid body
+ */
+inline void update_GRvecs(Particle *p){
+  int rigid_first_n;
+  int rigid_last_n;
+  quaternion rigidQ;
+#pragma omp parallel for schedule(dynamic, 1) private(rigidQ, rigid_first_n, rigid_last_n)
+  for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+    rigid_first_n = Rigid_Particle_Cumul[rigidID];
+    rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
+    qtn_init(rigidQ, p[rigid_first_n].q);
+
+    for(int n = rigid_first_n; n < rigid_last_n; n++){
+      rigid_body_rotation(GRvecs[n], GRvecs_body[n], rigidQ, BODY2SPACE);
+    }
   }
 }
 
@@ -221,24 +336,6 @@ inline void set_Rigid_MMs(Particle *p){
     Rigid_IMasses[rigidID] = 1.0 / Rigid_Masses[rigidID];
     Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
     check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
-  }
-}
-
-/*!
-  \brief Set rigid body velocities for individual beads
-*/
-inline void set_particle_vomegas(Particle *p){
-  
-  int rigidID;
-#pragma omp parallel for schedule(dynamic, 1) private(rigidID)
-  for(int n=0; n<Particle_Number; n++){
-    rigidID = Particle_RigidID[n];
-    for(int d=0; d<DIM; d++){
-      p[n].omega[d] = omegaGs[rigidID][d];
-    }
-    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
-    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
   }
 }
 

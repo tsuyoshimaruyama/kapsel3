@@ -280,7 +280,9 @@ void Init_Particle(Particle *p){
       init_set_xGs(p);
       set_Rigid_MMs(p);
       set_Rigid_Coordinates(p);
-      set_particle_vomegas(p);	// ### caution ### v.x, v.y, v.z are ignored and set Rigid_Velocities and Rigid_Omegas
+
+      // Caution:  v.x, v.y, v.z are ignored and set to Rigid_Velocities and Rigid_Omegas regardless of boundary conditions
+      set_particle_velocities(p);	
     }
 
     // output p.x and p.v
@@ -816,6 +818,6 @@ void Init_Rigid(Particle *p){
 	}
 	set_Rigid_MMs(p);
         set_Rigid_Coordinates(p);
-	set_particle_vomegas(p);
+	set_particle_velocities(p);
 }
 
