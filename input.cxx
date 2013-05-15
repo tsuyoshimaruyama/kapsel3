@@ -153,9 +153,9 @@ int Rigid_Number;
 int *Rigid_Motions;// 0(fix) or 1(free)
 double **Rigid_Velocities;
 double **Rigid_Omegas;
-int *Particle_RigidIDs;
 int *RigidID_Components;
 int *Rigid_Particle_Numbers;
+int *Rigid_Particle_Cumul;
 double **xGs;
 double *Rigid_Masses;
 double *Rigid_IMasses;
@@ -179,6 +179,7 @@ int *Particle_RigidID;
 //
 ////
 double **GRvecs;
+double **GRvecs_body;
 //
 double NU;
 double IRHO;
@@ -1253,10 +1254,12 @@ void Gourmet_file_io(const char *infile
 		xGs = alloc_2d_double(Rigid_Number, DIM);
 		RigidID_Components = alloc_1d_int(Rigid_Number);
 		Rigid_Particle_Numbers = alloc_1d_int(Rigid_Number);
+                Rigid_Particle_Cumul = alloc_1d_int(Rigid_Number+1);
 		Rigid_Masses = alloc_1d_double(Rigid_Number);
 		Rigid_IMasses = alloc_1d_double(Rigid_Number);
 		Rigid_Moments = alloc_3d_double(Rigid_Number, DIM, DIM);
 		Rigid_IMoments = alloc_3d_double(Rigid_Number, DIM, DIM);
+
 		velocityGs = alloc_2d_double(Rigid_Number, DIM);
 		omegaGs = alloc_2d_double(Rigid_Number, DIM);
 		forceGs = alloc_2d_double(Rigid_Number, DIM);
@@ -1634,6 +1637,7 @@ void Gourmet_file_io(const char *infile
 	if(SW_PT == rigid){
 		//allocation (using Particle_Number)
 		GRvecs = alloc_2d_double(Particle_Number, DIM);
+                GRvecs_body = alloc_2d_double(Particle_Number, DIM);
 		
 		// set Particle_RigidID 
 		int rigid_n1 = 0;
@@ -1663,14 +1667,31 @@ void Gourmet_file_io(const char *infile
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			Rigid_Particle_Numbers[rigidID] = 0;
 		}
-		// set Rigid_Particle_Numbers[]
+
+		// set Rigid_Particle_Numbers[] 
 		for(int n=0; n<Particle_Number; n++){
 			Rigid_Particle_Numbers[ Particle_RigidID[n] ] += 1;
 		}
+		// set Rigid_Particle_Cumul[] 
+                // loop over beads of rigid I: cumul[I] <= i < cumul[I+1]
+                Rigid_Particle_Cumul[0] = 0;
+                for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+                  Rigid_Particle_Cumul[rigidID+1] = Rigid_Particle_Cumul[rigidID] + 
+                    Rigid_Particle_Numbers[rigidID];
+                }
 		if(rigid_n1 != Particle_Number){  //for debug
-			fprintf(stderr, "error: set Particle_RigidID");
+			fprintf(stderr, "error: set Particle_RigidID\n");
 			exit_job(EXIT_FAILURE);
 		}
+                for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+                  for(int n=Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+                    if(Particle_RigidID[n] != rigidID){
+                      fprintf(stderr, "error: set Particle_Cumul\n");
+                      exit_job(EXIT_FAILURE);
+                    }
+                  }
+                }
+
 		//debug output
 		for(int n=0; n<Particle_Number; n++){
 			fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
@@ -1679,7 +1700,9 @@ void Gourmet_file_io(const char *infile
 			fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
 		}
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-			fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d\n", rigidID, Rigid_Particle_Numbers[rigidID]);
+			fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d (%d -> %d)\n", 
+                                rigidID, Rigid_Particle_Numbers[rigidID],
+                                Rigid_Particle_Cumul[rigidID], Rigid_Particle_Cumul[rigidID+1] - 1);
 		}
 		
 		//initialize velocityGs and omegaGs and

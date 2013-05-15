@@ -6,6 +6,7 @@
 
 #include "input.h"
 #include "Matrix_Inverse.h"
+#include "matrix_diagonal.h"
 
 
 inline void init_set_xGs(Particle *p){
@@ -53,6 +54,36 @@ inline void set_xGs(Particle *p){
 	
 	//check(for debug)
 	if(rigid_first_n != Particle_Number) fprintf(stderr, "debug: set_xGs() error");
+}
+
+//diagonalize inertia tensors
+inline void set_Rigid_Coordinates(Particle *p){
+#pragma omp parallel for schedule(dynamic, 1)
+  for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+    double **eigen_vector;
+    double eigen_value[DIM];
+    int iter;
+    double dmy_R[DIM][DIM];
+    quaternion dmy_q;
+    eigen_vector = alloc_2d_double(DIM, DIM);
+    jacobi(Rigid_Moments[rigidID], eigen_vector, eigen_value, iter, DIM);
+    M_coordinate_frame(eigen_vector[2], eigen_vector[0], eigen_vector[1]);
+    for(int i = 0; i < DIM; i++){
+      for(int j = 0; j < DIM; j++){
+        dmy_R[j][i] = eigen_vector[i][j];
+      }
+    }
+    rm_rqtn(dmy_q, dmy_R);
+
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+      qtn_init(p[n].q, dmy_q);
+    }
+  }
+
+#pragma omp parallel for schedule(dynamic, 1)
+  for(int n = 0; n < Particle_Number; n++){
+    rigid_body_rotation(GRvecs_body[n], GRvecs[n], p[n].q, SPACE2BODY);
+  }
 }
 
 inline void solver_GRvecs(const CTime &jikan, string CASE){
@@ -137,15 +168,8 @@ inline void set_Rigid_MMs(Particle *p){
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 		Rigid_IMasses[rigidID] = 1. / Rigid_Masses[rigidID];
 		Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
-		
-//		sprintf(str, "Rigid_Moments[%d].csv", rigidID);
-//		Matrix_output(Rigid_Moments[rigidID], DIM, str); 
-//		sprintf(str, "Rigid_IMoments[%d].csv", rigidID);
-//		Matrix_output(Rigid_IMoments[rigidID], DIM, str); 
-		
 		check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
 	}
-
 }
 
 inline void set_particle_vomegas(Particle *p){

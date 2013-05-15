@@ -279,8 +279,10 @@ void Init_Particle(Particle *p){
     if(SW_PT == rigid){
       init_set_xGs(p);
       set_Rigid_MMs(p);
+      set_Rigid_Coordinates(p);
       set_particle_vomegas(p);	// ### caution ### v.x, v.y, v.z are ignored and set Rigid_Velocities and Rigid_Omegas
     }
+
     // output p.x and p.v
     for(int i=0; i<Particle_Number; i++){
       double phi;
@@ -292,10 +294,6 @@ void Init_Particle(Particle *p){
               i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
       fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)",
               i, p[i].omega[0], p[i].omega[1], p[i].omega[2]);
-      /*for(int rigidID=0; rigidID<Rigid_Number; rigidID++) 
-        fprintf(stderr, "debug: xGs[%d] = (%f, %f, %f)\n", rigidID, xGs[rigidID][0], xGs[rigidID][1], xGs[rigidID][2]);
-        for(int rigidID=0; rigidID<Rigid_Number; rigidID++) 
-        fprintf(stderr, "debug: Rigid_Masses[%d] = %f\n", rigidID, Rigid_Masses[rigidID]);*/
     }
 
     fprintf(stderr,"############################\n");
@@ -817,6 +815,7 @@ void Init_Rigid(Particle *p){
 		n += 1;
 	}
 	set_Rigid_MMs(p);
+        set_Rigid_Coordinates(p);
 	set_particle_vomegas(p);
 }
 
