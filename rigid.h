@@ -11,6 +11,7 @@
 #include "input.h"
 #include "Matrix_Inverse.h"
 #include "matrix_diagonal.h"
+#include "periodic_boundary.h"
 
 /*!
   \brief Initialize the geometry and center of mass position for each
@@ -56,13 +57,8 @@ inline void set_xGs(Particle *p){
                 for(int d = 0; d < DIM; d++){
                         xGs_previous[rigidID][d] = xGs[rigidID][d];
                         xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
-                        xGs[rigidID][d] = fmod(xGs[rigidID][d] + L_particle[d], L_particle[d]);
                 }
-
-                for(int d = 0; d < DIM; d++){
-                        assert(xGs[rigidID][d] >= 0);
-                        assert(xGs[rigidID][d] < L[d]);
-                }
+                PBC(xGs[rigidID]);
         }
 }
 

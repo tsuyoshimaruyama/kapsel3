@@ -15,6 +15,7 @@
 #include "md_force.h"
 #include "rigid_body.h"
 #include "rigid.h"
+#include "periodic_boundary.h"
 
 #ifdef _OPENMP
 #include <omp.h>
