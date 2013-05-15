@@ -157,6 +157,7 @@ int *RigidID_Components;
 int *Rigid_Particle_Numbers;
 int *Rigid_Particle_Cumul;
 double **xGs;
+double **xGs_previous;
 double *Rigid_Masses;
 double *Rigid_IMasses;
 double ***Rigid_Moments;
@@ -1252,6 +1253,7 @@ void Gourmet_file_io(const char *infile
 		
 		//allocation (using Rigid_Number)
 		xGs = alloc_2d_double(Rigid_Number, DIM);
+                xGs_previous = alloc_2d_double(Rigid_Number, DIM);
 		RigidID_Components = alloc_1d_int(Rigid_Number);
 		Rigid_Particle_Numbers = alloc_1d_int(Rigid_Number);
                 Rigid_Particle_Cumul = alloc_1d_int(Rigid_Number+1);
@@ -1679,7 +1681,8 @@ void Gourmet_file_io(const char *infile
                   Rigid_Particle_Cumul[rigidID+1] = Rigid_Particle_Cumul[rigidID] + 
                     Rigid_Particle_Numbers[rigidID];
                 }
-		if(rigid_n1 != Particle_Number){  //for debug
+		if(rigid_n1 != Particle_Number ||
+                   Rigid_Particle_Cumul[Rigid_Number] != Particle_Number){  //for debug
 			fprintf(stderr, "error: set Particle_RigidID\n");
 			exit_job(EXIT_FAILURE);
 		}

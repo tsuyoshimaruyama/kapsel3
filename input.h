@@ -201,6 +201,7 @@ extern int *RigidID_Components;
 extern int *Rigid_Particle_Numbers;
 extern int *Rigid_Particle_Cumul;
 extern double **xGs;
+extern double **xGs_previous;
 extern double *Rigid_Masses;
 extern double *Rigid_IMasses;
 extern double ***Rigid_Moments;

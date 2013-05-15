@@ -82,6 +82,7 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "Euler");
     set_xGs(p);
+    set_Rigid_MMs(p);
   }
 }
 
@@ -110,6 +111,7 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan)
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "AB2");
     set_xGs(p);
+    set_Rigid_MMs(p);
   }
 }
 
@@ -429,6 +431,7 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "Euler");
     set_xGs(p);
+    set_Rigid_MMs(p);
   }
 }
 
@@ -469,6 +472,7 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
   if(SW_PT == rigid){
     solver_GRvecs(jikan, "AB2");
     set_xGs(p);
+    set_Rigid_MMs(p);
   }
 }
 

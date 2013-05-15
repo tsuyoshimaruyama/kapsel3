@@ -56,17 +56,25 @@ inline void init_set_xGs(Particle *p){
  */
 inline void set_xGs(Particle *p){
 	int rigid_first_n = 0;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:rigid_first_n)
+#pragma omp parallel for ordered schedule(dynamic, 1) reduction(+:rigid_first_n)
 	for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+          #pragma omp ordered
+          {
 		for(int d=0; d<DIM; d++){
+                        xGs_previous[rigidID][d] = xGs[rigidID][d];
 			xGs[rigidID][d] = p[rigid_first_n].x[d] - GRvecs[rigid_first_n][d];
 			xGs[rigidID][d] = fmod(xGs[rigidID][d] + L_particle[d], L_particle[d]);
 		}
 		rigid_first_n += Rigid_Particle_Numbers[rigidID];
+                for(int d = 0; d< DIM; d++){
+                  assert(xGs[rigidID][d] >= 0);
+                  assert(xGs[rigidID][d] < L[d]);
+                }
+          }
 	}
 	
 	//check(for debug)
-	if(rigid_first_n != Particle_Number) fprintf(stderr, "debug: set_xGs() error");
+	if(rigid_first_n != Particle_Number) fprintf(stderr, "# debug: set_xGs() error");
 }
 
 //diagonalize inertia tensors
@@ -229,7 +237,7 @@ inline void set_particle_vomegas(Particle *p){
   \note set_Rigid_VOGs() after calculating xGs, Rigid_IMoments, forceGs and torqueGs!!
 */
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
-	set_Rigid_MMs(p);
+  //set_Rigid_MMs(p);
 	
 	int rigidID;
 	//calc forceGrs, forceGvs
