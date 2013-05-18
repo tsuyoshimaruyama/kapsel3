@@ -14,7 +14,10 @@
 #include "input.h"
 #include "md_force.h"
 #include "rigid_body.h"
+#include "particle_rotation_solver.h"
 #include "rigid.h"
+#include "periodic_boundary.h"
+
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -197,10 +197,11 @@ extern int Rigid_Number;
 extern int *Rigid_Motions;// 0(fix) or 1(free)
 extern double **Rigid_Velocities;
 extern double **Rigid_Omegas;
-extern int *Particle_RigidIDs;
 extern int *RigidID_Components;
 extern int *Rigid_Particle_Numbers;
+extern int *Rigid_Particle_Cumul;
 extern double **xGs;
+extern double **xGs_previous;
 extern double *Rigid_Masses;
 extern double *Rigid_IMasses;
 extern double ***Rigid_Moments;
@@ -223,6 +224,7 @@ extern int *Particle_RigidID;
 //////
 ////
 extern double **GRvecs;
+extern double **GRvecs_body;
 //////
 extern int GTS;
 extern int Num_snap;
