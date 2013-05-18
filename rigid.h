@@ -14,6 +14,28 @@
 #include "periodic_boundary.h"
 
 /*!
+  \brief Chain debug info for chains in shear flow (x-y plane)
+ */
+inline void rigid_chain_debug(Particle *p, const double &time, 
+                              const int &rigidID=0){
+  int pid = Rigid_Particle_Cumul[rigidID];
+  fprintf(stdout, "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n"
+          ,time
+          ,-atan2(GRvecs[pid][1], -GRvecs[pid][0])
+          ,p[pid].x[0]
+          ,p[pid].x[1]
+          ,xGs[rigidID][0]
+          ,xGs[rigidID][1]
+          ,p[pid].v[0]
+          ,p[pid].v[1]
+          ,velocityGs[rigidID][0]
+          ,velocityGs[rigidID][1]
+          ,p[pid].omega[2]
+          ,omegaGs[rigidID][2]
+          );
+}
+
+/*!
   \brief Initialize the geometry and center of mass position for each
   of the rigid particles
   \warning Input rigid body coordinates should be given without PBC
@@ -96,47 +118,20 @@ inline void init_Rigid_Coordinates(Particle *p){
       qtn_init(p[n].q, dmy_q);
     }
     free(eigen_vector);
-
-    fprintf(stdout, "diagonalized matrix:\n");
-    fprintf(stdout, "e1: %.g %.g %.g\n", dmy_R[0][0], dmy_R[1][0], dmy_R[2][0]);
-    fprintf(stdout, "e2: %.g %.g %.g\n", dmy_R[0][1], dmy_R[1][1], dmy_R[2][1]);
-    fprintf(stdout, "e3: %.g %.g %.g\n", dmy_R[0][2], dmy_R[1][2], dmy_R[2][2]);
-    double e1[DIM] ={1.0, 0.0, 0.0};
-    double e2[DIM] ={0.0, 1.0, 0.0};
-    double e3[DIM] ={0.0, 0.0, 1.0};
-    double dmy_x[DIM];
-    double dmy_y[DIM];
-    double dmy_z[DIM];
-    fprintf(stdout, "quaternions:\n");
-    rigid_body_rotation(dmy_x, e1, dmy_q, BODY2SPACE);
-    rigid_body_rotation(dmy_y, e2, dmy_q, BODY2SPACE);
-    rigid_body_rotation(dmy_z, e3, dmy_q, BODY2SPACE);
-    fprintf(stdout, "e1: %.g %.g %.g\n", dmy_x[0], dmy_x[1], dmy_x[2]);
-    fprintf(stdout, "e2: %.g %.g %.g\n", dmy_y[0], dmy_y[1], dmy_y[2]);
-    fprintf(stdout, "e3: %.g %.g %.g\n", dmy_z[0], dmy_z[1], dmy_z[2]);
-    
-    fprintf(stdout, "matrices:\n");
-    rigid_body_rotation(dmy_x, e1, dmy_R, BODY2SPACE);
-    rigid_body_rotation(dmy_y, e2, dmy_R, BODY2SPACE);
-    rigid_body_rotation(dmy_z, e3, dmy_R, BODY2SPACE);
-    fprintf(stdout, "e1: %.g %.g %.g\n", dmy_x[0], dmy_x[1], dmy_x[2]);
-    fprintf(stdout, "e2: %.g %.g %.g\n", dmy_y[0], dmy_y[1], dmy_y[2]);
-    fprintf(stdout, "e3: %.g %.g %.g\n", dmy_z[0], dmy_z[1], dmy_z[2]);
   }
 
-  //GRvecs_body gives position of all beads in body-frame  
-  fprintf(stdout, "Geometry:\n");
+  //GRvecs_body gives position of all beads in body-frame
 #pragma omp parallel for schedule(dynamic, 1)
   for(int n = 0; n < Particle_Number; n++){
     rigid_body_rotation(GRvecs_body[n], GRvecs[n], p[n].q, SPACE2BODY);
-    fprintf(stdout, "%d %d\t %.4f %.4f %.4f\t %.4f %.4f %.4f\t %.4f %.4f %.4f %.4f\n"
-            ,Particle_RigidID[n], n
-            ,GRvecs_body[n][0], GRvecs_body[n][1], GRvecs_body[n][2]
-            ,GRvecs[n][0], GRvecs[n][1], GRvecs[n][2]
-            ,qtn_q0(p[n].q), qtn_q1(p[n].q), qtn_q2(p[n].q), qtn_q3(p[n].q));
   }
 }
 
+inline void rigid_Velocity(double *v, double const* r, double const* vg, double const* wg){
+  v[0] = vg[0] + (wg[1]*r[2] - wg[2]*r[1]);
+  v[1] = vg[1] + (wg[2]*r[0] - wg[0]*r[2]);
+  v[2] = vg[2] + (wg[0]*r[1] - wg[1]*r[0]);
+}
 
 /*
   \brief Update individual particle positions and velocities for
@@ -153,10 +148,7 @@ inline void update_Particle_Configuration(Particle *p){
 
       p[n].omega[d] = omegaGs[rigidID][d];
     }
-    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
-    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
-
+    rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
     PBC(p[n].x);
    }
 }
@@ -164,7 +156,6 @@ inline void update_Particle_Configuration(Particle *p){
 /*
   \brief Update individual particle positions and velocities for
   current rigid configuration under Lees-Edwards boundary conditions
-  \details Individual particle velocities 
  */
 inline void update_Particle_Configuration_OBL(Particle *p){
   int rigidID, sign; 
@@ -178,10 +169,7 @@ inline void update_Particle_Configuration_OBL(Particle *p){
 
       p[n].omega[d] = omegaGs[rigidID][d];
     }
-    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
-    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
-
+    rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
     sign = PBC_OBL(p[n].x, delta_vx);
     p[n].v[0] += delta_vx;
    }
@@ -202,9 +190,7 @@ inline void set_Particle_Velocities(Particle *p){
 
       p[n].omega[d] = omegaGs[rigidID][d];
     }
-    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
-    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
+    rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
   }
 }
 
@@ -227,10 +213,7 @@ inline void set_Particle_Velocities_OBL(Particle *p){
       p[n].omega[d] = omegaGs[rigidID][d];
       r[d] = xGs[rigidID][d] + GRvecs[n][d];
     }
-    p[n].v[0] = velocityGs[rigidID][0] + omegaGs[rigidID][1]*GRvecs[n][2] - omegaGs[rigidID][2]*GRvecs[n][1];
-    p[n].v[1] = velocityGs[rigidID][1] + omegaGs[rigidID][2]*GRvecs[n][0] - omegaGs[rigidID][0]*GRvecs[n][2];
-    p[n].v[2] = velocityGs[rigidID][2] + omegaGs[rigidID][0]*GRvecs[n][1] - omegaGs[rigidID][1]*GRvecs[n][0];
-
+    rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
     sign = PBC_OBL(r, delta_vx);
     p[n].v[0] += delta_vx;
   }

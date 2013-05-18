@@ -57,6 +57,7 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
   }else{
     solver_Rigid_Position(p, jikan, "Euler");
     update_Particle_Configuration(p);
+    rigid_chain_debug(p, jikan.ts);
   }
 }
 
@@ -84,6 +85,7 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan)
   }else{
     solver_Rigid_Position(p, jikan, "AB2");
     update_Particle_Configuration(p);
+    rigid_chain_debug(p, jikan.ts);
   }
 }
 
@@ -313,6 +315,7 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
   }else{
     solver_Rigid_Position_OBL(p, jikan, "Euler");
     update_Particle_Configuration_OBL(p);
+    rigid_chain_debug(p, jikan.ts);
   }
 }
 
@@ -339,6 +342,7 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
   }else{
     solver_Rigid_Position_OBL(p, jikan, "AB2");
     update_Particle_Configuration_OBL(p);
+    rigid_chain_debug(p, jikan.ts);
   }
 }
 
