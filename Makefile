@@ -102,6 +102,7 @@ OBJS  	= mt19937ar.o\
 	input.o\
 	rigid_body.o\
 	operate_surface.o\
+	matrix_diagonal.o\
 	sp_3d_ns.o
 
 XYZ_OBJS= alloc.o\
