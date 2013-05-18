@@ -146,6 +146,8 @@ inline void update_Particle_Configuration(Particle *p){
       p[n].x_previous[d] = p[n].x[d];
       p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
 
+      p[n].omega_old[d] = p[n].omega[d];
+      p[n].v_old[d] = p[n].v[d];
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
@@ -167,10 +169,13 @@ inline void update_Particle_Configuration_OBL(Particle *p){
       p[n].x_previous[d] = p[n].x[d];
       p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
 
+      p[n].omega_old[d] = p[n].omega[d];
+      p[n].v_old[d] = p[n].v[d];
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
     sign = PBC_OBL(p[n].x, delta_vx);
+    p[n].v_old[0] += delta_vx;
     p[n].v[0] += delta_vx;
    }
 }
@@ -185,9 +190,6 @@ inline void set_Particle_Velocities(Particle *p){
   for(int n=0; n<Particle_Number; n++){
     rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++){
-      p[n].omega_old[d] = p[n].omega[d];
-      p[n].v_old[d] = p[n].v[d];
-
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
@@ -207,9 +209,6 @@ inline void set_Particle_Velocities_OBL(Particle *p){
   for(int n=0; n<Particle_Number; n++){
     rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++){
-      p[n].omega_old[d] = p[n].omega[d];
-      p[n].v_old[d] = p[n].v[d];
-
       p[n].omega[d] = omegaGs[rigidID][d];
       r[d] = xGs[rigidID][d] + GRvecs[n][d];
     }
