@@ -268,21 +268,62 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 	  {0.,0.,0.},
 	  {0.,0.,0.}
 	};
+
+        double hydro_stress_new[DIM][DIM] = {
+          {0.,0.,0.},
+          {0.,0.,0.},
+          {0.,0.,0.}
+        };
+        double hydro_stress_new_u[DIM][DIM] = {
+          {0.,0.,0.},
+          {0.,0.,0.},
+          {0.,0.,0.}
+        };
+        double hydro_stress_new_p[DIM][DIM] = {
+          {0.,0.,0.},
+          {0.,0.,0.},
+          {0.,0.,0.}
+        };
+        double hydro_stress_new_v[DIM][DIM] = {
+          {0.,0.,0.},
+          {0.,0.,0.},
+          {0.,0.,0.}
+        };
+        double hydro_stress_new_w[DIM][DIM] = {
+          {0.,0.,0.},
+          {0.,0.,0.},
+          {0.,0.,0.}
+        };
+
 	
-	Calc_shear_stress(jikan, p, phi, Shear_force, stress);
-	Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
+
+
 	
 	double strain_output = Shear_strain_realized;
-    
 	if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-	    fprintf(fout, "%g %g %g %g %g\n"
+          Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
+          Calc_hydro_stress(jikan, p, phi, Hydro_force_new, hydro_stress_new);
+          Calc_hydro_stress(jikan, p, phi, Hydro_force_new_u, hydro_stress_new_u);
+          Calc_hydro_stress(jikan, p, phi, Hydro_force_new_p, hydro_stress_new_p);
+          Calc_hydro_stress(jikan, p, phi, Hydro_force_new_v, hydro_stress_new_v);
+          Calc_hydro_stress(jikan, p, phi, Hydro_force_new_w, hydro_stress_new_w);
+	    fprintf(fout, "%g %g %g %g %g %g %g %g %g %g %g %g %g\n"
 		    ,jikan.time
+                    ,-atan2(GRvecs[0][1], -GRvecs[0][0])
 		    ,srate_eff
 		    ,strain_output
+                    ,dev_shear_stress_lj
 		    ,hydro_stress[1][0]
+                    ,hydro_stress_new[1][0]
 		    ,(hydro_stress[1][0] + dev_shear_stress_lj)/srate_eff
+                    ,(hydro_stress_new[1][0] + dev_shear_stress_lj)/srate_eff
+                    ,hydro_stress_new_u[1][0]
+                    ,hydro_stress_new_p[1][0]
+                    ,hydro_stress_new_v[1][0]
+                    ,hydro_stress_new_w[1][0]
 		);
 	} else if(!Shear_AC){
+          Calc_shear_stress(jikan, p, phi, Shear_force, stress);
 	    fprintf(fout, "%g %g %g %g %g\n"
 		    ,jikan.time
 		    ,srate_eff
@@ -291,6 +332,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 		    ,-stress[1][0]/srate_eff
 		);
 	}else{
+          Calc_shear_stress(jikan, p, phi, Shear_force, stress);
 	    fprintf(fout, "%g %g %g %g %g %g\n"
 		    ,jikan.time
 		    ,srate_eff

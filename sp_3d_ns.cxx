@@ -411,6 +411,11 @@ inline void Mem_alloc_var(double **zeta){
   rhop = alloc_1d_double(NX*NY*NZ_);
   work_v1 = alloc_1d_double(NX*NY*NZ_);
   Hydro_force = alloc_1d_double(NX*NY*NZ_);
+  Hydro_force_new = alloc_1d_double(NX*NY*NZ_);
+  Hydro_force_new_u = alloc_1d_double(NX*NY*NZ_);
+  Hydro_force_new_p = alloc_1d_double(NX*NY*NZ_);
+  Hydro_force_new_v = alloc_1d_double(NX*NY*NZ_);
+  Hydro_force_new_w = alloc_1d_double(NX*NY*NZ_);
 }
 
 int main(int argc, char *argv[]){
@@ -566,7 +571,7 @@ int main(int argc, char *argv[]){
 	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
     } else if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
 	Shear_strain_realized += Shear_rate_eff * jikan.dt_fluid;
-	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
+	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate);
     }
 
     //////////////////////////////////////////////////////////

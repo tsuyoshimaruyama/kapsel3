@@ -12,6 +12,12 @@ double Min_rij;
 double Max_force;
 double *Hydro_force;
 
+double *Hydro_force_new;
+double *Hydro_force_new_u;
+double *Hydro_force_new_p;
+double *Hydro_force_new_v;
+double *Hydro_force_new_w;
+
 #define Cell_length 16
 
 double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
@@ -416,6 +422,11 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     }
     
     Reset_phi(Hydro_force);
+    Reset_phi(Hydro_force_new);
+    Reset_phi(Hydro_force_new_u);
+    Reset_phi(Hydro_force_new_p);
+    Reset_phi(Hydro_force_new_v);
+    Reset_phi(Hydro_force_new_w);
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,volume,sign,\
           rigidID, forceg, torqueg) 
