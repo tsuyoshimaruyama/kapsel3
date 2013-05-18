@@ -408,6 +408,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     double dmy_ry;
     double v_rot[DIM];
     double volume[Particle_Number];
+    double Itrace[Particle_Number];
     int sign;
     int im;
     double sum_force = 0.0;
@@ -447,6 +448,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
       }
       
       volume[n] = 0.0;
+      Itrace[n] = 0.0;
       sw_in_cell 
         = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
       sw_in_cell = 1;
@@ -488,9 +490,16 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
 #pragma omp atomic
         Hydro_force[im] += dmy_fp[0]*dmy_ry;//viscocity
-        
+
+#pragma omp atomic
+          Hydro_force_new[im] += dmy_fp[0]*dmy_ry;
+#pragma omp atomic
+          Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry;
+
         volume[n] += dmy_phi;
+        Itrace[n] += dmy_phi*SQ(dmyR);
       }//mesh
+      Itrace[n] *= 2.0/3.0;
       
       for(int d=0; d < DIM; d++ ){ 
         p[n].f_hydro[d] = (dmy * force[d]);
@@ -522,8 +531,24 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         
         im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
+        double dmy_stress_p = p[n].momentum_depend_fr[0] / (volume[n] * dmy_rhop);
+
 #pragma omp atomic
-        Hydro_force[im] -= (p[n].momentum_depend_fr[0])*dmy_ry*dmy_phi/(volume[n] * dmy_rhop);//viscocity
+        Hydro_force[im] -= dmy_stress_p*dmy_ry*dmy_phi;//viscocity
+
+        if(SW_PT != rigid){
+          double dmy_stress_v = -RHO*force[0] / (volume[n] * dmy_rhop);
+          double dmy_stress_w = -RHO*(torque[1]*r[2] - torque[2]*r[1])/(Itrace[n] * dmy_rhop);
+#pragma omp atomic
+          Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi;
+#pragma omp atomic
+          Hydro_force_new_p[im] += dmy_stress_p*dmy_ry*dmy_phi;
+#pragma omp atomic
+          Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi;
+#pragma omp atomic
+          Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi;
+        }
+
       }
       
 # pragma omp critical
