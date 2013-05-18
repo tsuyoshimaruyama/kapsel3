@@ -414,9 +414,10 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     double sum_force = 0.0;
     double sum_volume = 0.0;
     
-    int rigidID;
     double forceg[DIM];
     double torqueg[DIM];
+    double dVg[Rigid_Number][DIM];
+    double dWg[Rigid_Number][DIM];
     // initialize forceGs and torqueGs
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       for(int d=0; d<DIM; d++){
@@ -433,8 +434,9 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     Reset_phi(Hydro_force_new_w);
 #pragma omp parallel for schedule(dynamic, 1)\
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,\
-          dmyR,dmy_phi,dmy_rhop,dmy_ry,v_rot,sign,im,rigidID,forceg,torqueg) 
+          dmyR,dmy_phi,dmy_rhop,dmy_ry,v_rot,sign,im,forceg,torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
+      int rigidID;
       dmy_rhop = RHO_particle[p[n].spec];
       if(SW_PT == rigid) rigidID = Particle_RigidID[n];
       
@@ -490,12 +492,12 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
 #pragma omp atomic
         Hydro_force[im] += dmy_fp[0]*dmy_ry;//viscocity
-
+        
 #pragma omp atomic
-          Hydro_force_new[im] += dmy_fp[0]*dmy_ry;
+        Hydro_force_new[im] += dmy_fp[0]*dmy_ry;
 #pragma omp atomic
-          Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry;
-
+        Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry;
+        
         volume[n] += dmy_phi;
         Itrace[n] += dmy_phi*SQ(dmyR);
       }//mesh
@@ -558,10 +560,23 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
       }
     }// Particle_Number
     sum_volume /= RHO;
+
+    if(SW_PT == rigid){
+#pragma omp parallel for schedule(dynamic, 1)
+      for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+        for(int d = 0; d < DIM; d++){
+          dVg[rigidID][d] = jikan.dt_md * Rigid_IMasses[rigidID] * forceGs[rigidID][d];
+          dWg[rigidID][d] = jikan.dt_md * (Rigid_IMoments[rigidID][d][0] * torqueGs[rigidID][0] +
+                                           Rigid_IMoments[rigidID][d][1] * torqueGs[rigidID][1] +
+                                           Rigid_IMoments[rigidID][d][2] * torqueGs[rigidID][2]);
+        }
+      }
+    }
     
 #pragma omp parallel for schedule(dynamic, 1) \
   private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,dmy_ry,sign,im) 
     for(int n = 0; n < Particle_Number ; n++){
+      int rigidID;
       for (int d = 0; d < DIM; d++) {
         xp[d] = p[n].x[d];
       }
@@ -585,6 +600,15 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
 #pragma omp atomic	
         Hydro_force[im] -= sum_force*dmy_ry*dmy_phi/sum_volume;//viscocity
         
+        if(SW_PT == rigid){
+          rigidID = Particle_RigidID[n];
+          double dmy_stress_v = dVg[rigidID][0];
+          double dmy_stress_w = dWg[rigidID][1]*(GRvecs[n][2] + r[2]) - dWg[rigidID][2]*(GRvecs[n][1] + r[1]);
+#pragma omp atomic
+          Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi;
+          Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi;
+          Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi;
+        }
       }
     }//Particle_Number
 }
