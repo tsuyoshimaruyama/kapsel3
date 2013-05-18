@@ -404,15 +404,18 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     double x[DIM];
     double dmyR;
     double dmy_phi;
+    double dmy_rhop;
+    double dmy_ry;
     double v_rot[DIM];
     double volume[Particle_Number];
     int sign;
+    int im;
     double sum_force = 0.0;
     double sum_volume = 0.0;
     
+    int rigidID;
     double forceg[DIM];
     double torqueg[DIM];
-    int rigidID;
     // initialize forceGs and torqueGs
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       for(int d=0; d<DIM; d++){
@@ -427,137 +430,136 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     Reset_phi(Hydro_force_new_p);
     Reset_phi(Hydro_force_new_v);
     Reset_phi(Hydro_force_new_w);
-#pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,volume,sign,\
-          rigidID, forceg, torqueg) 
+#pragma omp parallel for schedule(dynamic, 1)\
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,\
+          dmyR,dmy_phi,dmy_rhop,dmy_ry,v_rot,sign,im,rigidID,forceg,torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
-		
-	if(SW_PT == rigid) rigidID = Particle_RigidID[n];
-	
-	for (int d = 0; d < DIM; d++) {
-	    xp[d] = p[n].x[d];
-	    vp[d] = p[n].v[d];
-	    omega_p[d] = p[n].omega[d];
-
-            force[d] = torque[d] = 0.0;
-            forceg[d] = torqueg[d] = 0.0;
-	}
-
-	volume[n] = 0.0;
-	sw_in_cell 
-	    = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
-	sw_in_cell = 1;
-	
-	for(int mesh=0; mesh < NP_domain; mesh++){
-	    sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
-	    dmyR = 0.;
-	    for(int d=0;d<DIM;d++){
-		x[d] = r_mesh[d] * DX;
-		dmyR += SQ(r[d]);
-	    }
-	    dmyR = sqrt(dmyR);
-	    dmy_phi= Phi(dmyR, RADIUS);
-	    Angular2v(omega_p, r, v_rot);
-	    
-	    for(int d=0; d < DIM; d++ ){ 
-		if (!(d==0)) {
-		    dmy_fp[d] =
-			((vp[d]+v_rot[d])
-			 - u[d][r_mesh[0]*NY*NZ_+r_mesh[1]*NZ_+r_mesh[2]])*dmy_phi;
-		} else {
-		    dmy_fp[d] =
-			((vp[d] - sign*Shear_rate_eff*L_particle[1] + v_rot[d])
-			 - u[d][r_mesh[0]*NY*NZ_+r_mesh[1]*NZ_+r_mesh[2]])*dmy_phi;
-		}
-		force[d] += dmy_fp[d];
-	    }
-	    {// torque
-		torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
-		torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
-		torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
-	    }
-	    if(SW_PT == rigid){
-              for(int d=0; d<DIM; d++) forceg[d] += dmy_fp[d];
-              torqueg[0] += ( (GRvecs[n][1] + r[1]) * dmy_fp[2] - (GRvecs[n][2] + r[2]) * dmy_fp[1] );
-              torqueg[1] += ( (GRvecs[n][2] + r[2]) * dmy_fp[0] - (GRvecs[n][0] + r[0]) * dmy_fp[2] );
-              torqueg[2] += ( (GRvecs[n][0] + r[0]) * dmy_fp[1] - (GRvecs[n][1] + r[1]) * dmy_fp[0] );
-            }
-	    
-	    Hydro_force[r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]] +=
-		dmy_fp[0]*(r_mesh[1] + sign*L_particle[1]);//viscocity
-
-
-	    volume[n] += dmy_phi;
-	}
-	for(int d=0; d < DIM; d++ ){ 
-	    p[n].f_hydro[d] = (dmy * force[d]);
-	}
-	if(ROTATION){
-	    for(int d=0; d < DIM; d++ ){ 
-		p[n].torque_hydro[d] = ( dmy * torque[d]);
-	    }
-	}
-	if(SW_PT == rigid){
-          for(int d=0; d<DIM; d++){
-            #pragma omp atomic
-            forceGs[rigidID][d] += dmy * forceg[d];
-
-            #pragma omp atomic
-            torqueGs[rigidID][d] += dmy * torqueg[d];
-          }
-	}
-
-	for(int mesh=0; mesh < NP_domain; mesh++){
-          sign =
-            Relative_coord_check_stepover_Y(Sekibun_cell[mesh],
-                                            x_int, residue,
-                                            sw_in_cell, nlattice, DX, r_mesh, r);
-          dmyR = 0.;
-          for(int d=0;d<DIM;d++){
-            dmyR += SQ(r[d]);
-          }
-          dmyR = sqrt(dmyR);
-          dmy_phi= Phi(dmyR, RADIUS);
-          
-          Hydro_force[r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]] -=
-            (p[n].momentum_depend_fr[0])*
-            (r_mesh[1] + sign*L_particle[1])*dmy_phi/volume[n];//viscocity
-          
-	}
+      dmy_rhop = RHO_particle[p[n].spec];
+      if(SW_PT == rigid) rigidID = Particle_RigidID[n];
+      
+      for (int d = 0; d < DIM; d++) {
+        xp[d] = p[n].x[d];
+        vp[d] = p[n].v[d];
+        omega_p[d] = p[n].omega[d];
         
+        force[d] = torque[d] = 0.0;
+        forceg[d] = torqueg[d] = 0.0;
+      }
+      
+      volume[n] = 0.0;
+      sw_in_cell 
+        = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      sw_in_cell = 1;
+      
+      for(int mesh=0; mesh < NP_domain; mesh++){
+        sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue, 
+                                               sw_in_cell, nlattice, DX, r_mesh, r);
+        dmyR = 0.;
+        for(int d=0;d<DIM;d++){
+          x[d] = r_mesh[d] * DX;
+          dmyR += SQ(r[d]);
+        }
+        dmyR = sqrt(dmyR);
+        dmy_phi= Phi(dmyR, RADIUS);
+        Angular2v(omega_p, r, v_rot);
+	
+        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
+        for(int d=0; d < DIM; d++ ){ 
+          if (!(d==0)) {
+            dmy_fp[d] =	((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;
+          } else {
+            dmy_fp[d] =	((vp[d] - sign*Shear_rate_eff*L_particle[1] + v_rot[d]) 
+                         - u[d][im])*dmy_phi;
+          }
+          force[d] += dmy_fp[d];
+        }
+        {// torque
+          torque[0] += (r[1] * dmy_fp[2] - r[2] * dmy_fp[1]);
+          torque[1] += (r[2] * dmy_fp[0] - r[0] * dmy_fp[2]);
+          torque[2] += (r[0] * dmy_fp[1] - r[1] * dmy_fp[0]);
+        }
+        if(SW_PT == rigid){
+          for(int d=0; d<DIM; d++) forceg[d] += dmy_fp[d];
+          torqueg[0] += ( (GRvecs[n][1] + r[1]) * dmy_fp[2] - (GRvecs[n][2] + r[2]) * dmy_fp[1] );
+          torqueg[1] += ( (GRvecs[n][2] + r[2]) * dmy_fp[0] - (GRvecs[n][0] + r[0]) * dmy_fp[2] );
+          torqueg[2] += ( (GRvecs[n][0] + r[0]) * dmy_fp[1] - (GRvecs[n][1] + r[1]) * dmy_fp[0] );
+        }
+	
+        dmy_ry = (r_mesh[1] + sign*L_particle[1]);
+#pragma omp atomic
+        Hydro_force[im] += dmy_fp[0]*dmy_ry;//viscocity
+        
+        volume[n] += dmy_phi;
+      }//mesh
+      
+      for(int d=0; d < DIM; d++ ){ 
+        p[n].f_hydro[d] = (dmy * force[d]);
+      }
+      if(ROTATION){
+        for(int d=0; d < DIM; d++ ){ 
+          p[n].torque_hydro[d] = ( dmy * torque[d]);
+        }
+      }
+      if(SW_PT == rigid){
+        for(int d=0; d<DIM; d++){
+#pragma omp atomic
+          forceGs[rigidID][d] += dmy * forceg[d];
+          
+#pragma omp atomic
+          torqueGs[rigidID][d] += dmy * torqueg[d];
+        }
+      }
+
+      for(int mesh=0; mesh < NP_domain; mesh++){
+        sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue,
+                                               sw_in_cell, nlattice, DX, r_mesh, r);
+        dmyR = 0.;
+        for(int d=0;d<DIM;d++){
+          dmyR += SQ(r[d]);
+        }
+        dmyR = sqrt(dmyR);
+        dmy_phi= Phi(dmyR, RADIUS);
+        
+        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
+        dmy_ry = (r_mesh[1] + sign*L_particle[1]);
+#pragma omp atomic
+        Hydro_force[im] -= (p[n].momentum_depend_fr[0])*dmy_ry*dmy_phi/(volume[n] * dmy_rhop);//viscocity
+      }
+      
 # pragma omp critical
-	{
-          sum_force += force[0];
-          sum_volume += volume[n];
-	}
+      {
+        sum_force += force[0];
+        sum_volume += (volume[n] * dmy_rhop);
+      }
     }// Particle_Number
-
-#pragma omp parallel for schedule(dynamic, 1) private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,sign) 
+    sum_volume /= RHO;
+    
+#pragma omp parallel for schedule(dynamic, 1) \
+  private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,dmy_ry,sign,im) 
     for(int n = 0; n < Particle_Number ; n++){
-	for (int d = 0; d < DIM; d++) {
-	    xp[d] = p[n].x[d];
-	}
-	sw_in_cell 
-	    = Particle_cell(xp, DX, x_int, residue);// {1,0} ‚ª•Ô‚Á‚Ä‚­‚é
-	sw_in_cell = 1;
+      for (int d = 0; d < DIM; d++) {
+        xp[d] = p[n].x[d];
+      }
+      sw_in_cell = Particle_cell(xp, DX, x_int, residue);// {1,0} ‚ª•Ô‚Á‚Ä‚­‚é
+      sw_in_cell = 1;
+      
+      for(int mesh=0; mesh < NP_domain; mesh++){
+        sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue, \
+                                               sw_in_cell, nlattice, DX, r_mesh, r);
 
+        dmyR = 0;
+        for(int d=0;d<DIM;d++){
+          x[d] = r_mesh[d] * DX;
+          dmyR += SQ(r[d]);
+        }
+        dmyR= sqrt(dmyR);
+        dmy_phi = Phi(dmyR, RADIUS);
 
-	for(int mesh=0; mesh < NP_domain; mesh++){
-	    sign =
-		Relative_coord_check_stepover_Y(Sekibun_cell[mesh],
-						x_int, residue,
-						sw_in_cell, nlattice, DX, r_mesh, r);
-	    dmyR = 0;
-	    for(int d=0;d<DIM;d++){
-		x[d] = r_mesh[d] * DX;
-		dmyR += SQ(r[d]);
-	    }
-	    dmyR= sqrt(dmyR);
-	    dmy_phi = Phi(dmyR, RADIUS);
-	    
-	    Hydro_force[r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]] -=
-		sum_force*(r_mesh[1] + sign*L_particle[1])*dmy_phi/sum_volume;//viscocity
-
-	}
-    }
+        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
+        dmy_ry = (r_mesh[1] + sign*L_particle[1]);
+#pragma omp atomic	
+        Hydro_force[im] -= sum_force*dmy_ry*dmy_phi/sum_volume;//viscocity
+        
+      }
+    }//Particle_Number
 }
