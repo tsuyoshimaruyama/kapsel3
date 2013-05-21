@@ -497,7 +497,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         Hydro_force_new[im] += dmy_fp[0]*dmy_ry;
 #pragma omp atomic
         Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry;
-        
+
         volume[n] += dmy_phi;
         Itrace[n] += dmy_phi*SQ(dmyR);
       }//mesh
@@ -611,4 +611,8 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         }
       }
     }//Particle_Number
+
+    if(SW_PT == rigid){
+      rigid_chain_debug(p, degree_oblique);
+    }
 }

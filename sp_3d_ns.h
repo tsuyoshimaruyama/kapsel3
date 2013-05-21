@@ -307,9 +307,13 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_p, hydro_stress_new_p);
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_v, hydro_stress_new_v);
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_w, hydro_stress_new_w);
+          double theta = 0.0;
+          if(SW_PT == rigid){
+            theta = -atan2(GRvecs[0][1], -GRvecs[0][0]);
+          }
 	    fprintf(fout, "%g %g %g %g %g %g %g %g %g %g %g %g %g\n"
 		    ,jikan.time
-                    ,-atan2(GRvecs[0][1], -GRvecs[0][0])
+                    ,theta
 		    ,srate_eff
 		    ,strain_output
                     ,dev_shear_stress_lj

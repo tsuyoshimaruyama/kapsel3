@@ -13,27 +13,6 @@
 #include "matrix_diagonal.h"
 #include "periodic_boundary.h"
 
-/*!
-  \brief Chain debug info for chains in shear flow (x-y plane)
- */
-inline void rigid_chain_debug(Particle *p, const double &time, 
-                              const int &rigidID=0){
-  int pid = Rigid_Particle_Cumul[rigidID];
-  fprintf(stdout, "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n"
-          ,time
-          ,-atan2(GRvecs[pid][1], -GRvecs[pid][0])
-          ,p[pid].x[0]
-          ,p[pid].x[1]
-          ,xGs[rigidID][0]
-          ,xGs[rigidID][1]
-          ,p[pid].v[0]
-          ,p[pid].v[1]
-          ,velocityGs[rigidID][0]
-          ,velocityGs[rigidID][1]
-          ,p[pid].omega[2]
-          ,omegaGs[rigidID][2]
-          );
-}
 
 /*!
   \brief Initialize the geometry and center of mass position for each
@@ -84,7 +63,7 @@ inline void init_set_xGs(Particle *p){
   }
   fprintf(stdout, "# Start Config\n");
   for(int n = 0; n < Particle_Number; n++){
-    fprintf(stdout, "%d %.6g %.6g %.6g\n"
+    fprintf(stdout, "# %d %.6g %.6g %.6g\n"
             ,n
             ,p[n].x[0], p[n].x[1], p[n].x[2]
             );
