@@ -252,7 +252,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	    A_k2a(u[d]);
 	}
 	Shear_rate_eff = Shear_rate;
-
+       
 	//Deformation 
 #pragma omp parallel for schedule(dynamic, 1) private(im)
 	for(int i=0; i<NX; i++){
@@ -271,7 +271,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
 	if (degree_oblique >= 1.) {
 	    
-	    for(int i = 0; i < NX; i++) {
+          for(int i = 0; i < NX; i++){
 		for(int j = 0; j < NY; j++) {
 		    
 		    double sign = j - NY/2;
@@ -281,13 +281,14 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 		    
 		    int i_oblique = (int)(sign*(j - NY/2))*sign;
 		    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-		    for(int k = 0; k < NZ; k++) {
+		    for(int k = 0; k < NZ; k++){
 			im = (i*NY*NZ_)+(j*NZ_) + k;
 			im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
-			
-			for (int d = 0; d < DIM; d++) {
-			    u[d][im_obl] = ucp[d][im];
-			}
+
+                        //Warning: reset grid points AND oblique basis vectors
+                        u[0][im_obl] = ucp[0][im] + ucp[1][im];
+                        u[1][im_obl] = ucp[1][im];
+                        u[2][im_obl] = ucp[2][im];
 		    }
 		}
 	    }
@@ -330,7 +331,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
 	Calc_shear_rate_eff();
 	//End Deformation
-
+	
 	if(!Fixed_particle){
 	    if(jikan.ts == 0){
 		MD_solver_position_Euler_OBL(p, jikan);
