@@ -444,7 +444,13 @@ int main(int argc, char *argv[]){
       fprintf(stdout, "#Evolution type Shear_Navier_Stokes_Lees_Edwards\n");
       Time_evolution = Time_evolution_hydro_OBL;
   } else {
-      fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
+      if(SW_EQ == Navier_Stokes){
+        fprintf(stdout, "#Evolution type Navier_Stokes\n");
+      }else if(SW_EQ == Shear_Navier_Stokes){
+        fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
+      }else if(SW_EQ == Electrolyte){
+        fprintf(stdout, "#Evolution type Electrolyte\n");
+      }
       Time_evolution = Time_evolution_hydro;
   }
 
