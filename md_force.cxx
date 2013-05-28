@@ -33,8 +33,8 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   const double LJ_cutoff = A_R_cutoff * LJ_dia;
   double r_ij_vec[DIM];
   double r_ij;
+  int rigid_pair;
   double shear_stress=0.0;
-
 
 // List Constructor
   int i,j,k;
@@ -95,7 +95,8 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			  while (i != -1){
 			      j = head[cl];
 			      while (j != -1){
-				  if (i > j) {
+                                rigid_pair = rigid_chain(i, j);
+				  if (i > j && !rigid_pair) {
 				      distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
 				      if(SW_minrij){
 					  Min_rij = MIN(r_ij, Min_rij);
@@ -144,6 +145,7 @@ double Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
     //で足す. f の初期値 が正しいと仮定している!!
     const double LJ_cutoff = A_R_cutoff * LJ_dia;
     double shear_stress=0.0;
+    int rigid_pair;
     for(int n=0;n<Particle_Number ; n++){
 	Particle *p_n = &p[n];
 	for(int m=n+1; m < Particle_Number ; m++){
@@ -153,7 +155,8 @@ double Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 	    if(SW_minrij){
 		Min_rij = MIN(r_ij, Min_rij);
 	    }
-	    if(r_ij < LJ_cutoff){
+            rigid_pair = rigid_chain(n, m);
+	    if(r_ij < LJ_cutoff && !rigid_pair){
 		
 		double dmy = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));
 		double dmyf = 0.;
