@@ -234,6 +234,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
                                       ,"shear_rate"
                                       ,"shear_strain_temporal"
                                       ,"lj_dev_stress_temporal"
+                                      ,"rigid_lj_dev_stress_temporal"
                                       ,"shear_stress_temporal_old"
                                       ,"shear_stress_temporal_new"
                                       ,"du_stress_temporal_new"
@@ -287,18 +288,20 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_p, hydro_stress_new_p);
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_v, hydro_stress_new_v);
           Calc_hydro_stress(jikan, p, phi, Hydro_force_new_w, hydro_stress_new_w);
-          fprintf(fout, "%g %g %g %g %g %g %g %g %g %g %g\n"
+          double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
+          fprintf(fout, "%g %g %g %g %g %g %g %g %g %g %g %g\n"
                   ,jikan.time
                   ,srate_eff
                   ,strain_output
                   ,dev_shear_stress_lj
+                  ,rigid_dev_shear_stress_lj
                   ,hydro_stress[1][0]
                   ,hydro_stress_new[1][0]
                   ,hydro_stress_new_u[1][0]
                   ,hydro_stress_new_p[1][0]
                   ,hydro_stress_new_v[1][0]
                   ,hydro_stress_new_w[1][0]
-                  ,(hydro_stress_new[1][0] + dev_shear_stress_lj)/srate_eff + ETA
+                  ,(hydro_stress_new[1][0] + dev_stress)/srate_eff + ETA
 		);
 	} else if(!Shear_AC){
           Calc_shear_stress(jikan, p, phi, Shear_force, stress);
