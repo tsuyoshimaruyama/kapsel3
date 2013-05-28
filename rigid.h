@@ -61,14 +61,6 @@ inline void init_set_xGs(Particle *p){
         PBC_OBL(p[n].x, dmy_vx);
     }
   }
-  fprintf(stdout, "# Start Config\n");
-  for(int n = 0; n < Particle_Number; n++){
-    fprintf(stdout, "# %d %.6g %.6g %.6g\n"
-            ,n
-            ,p[n].x[0], p[n].x[1], p[n].x[2]
-            );
-  }
-  fprintf(stdout, "\n");
 }
 
 /*!

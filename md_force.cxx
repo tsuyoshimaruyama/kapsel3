@@ -611,8 +611,4 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         }
       }
     }//Particle_Number
-
-    if(SW_PT == rigid){
-      rigid_chain_debug(p, degree_oblique);
-    }
 }

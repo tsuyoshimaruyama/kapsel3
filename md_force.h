@@ -131,37 +131,25 @@ inline double Calc_anharmonic_force_chain(Particle *p,
  */
 inline void rigid_chain_debug(Particle *p, const double &time, 
                               const int &rigidID=0){
-  int pid = Rigid_Particle_Cumul[rigidID];
-  fprintf(stdout, "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n"
-          ,time
-          ,-atan2(GRvecs[pid][1], -GRvecs[pid][0])
-          ,p[pid].x[0]
-          ,p[pid].x[1]
-          ,xGs[rigidID][0]
-          ,xGs[rigidID][1]
-          ,p[pid].v[0]
-          ,p[pid].v[1]
-          ,velocityGs[rigidID][0]
-          ,velocityGs[rigidID][1]
-          ,p[pid].omega[2]
-          ,omegaGs[rigidID][2]
-          ,forceGs[rigidID][0]
-          ,forceGs[rigidID][1]
-          ,torqueGs[rigidID][2]
-          );
-}
-
-inline void field_debug(Particle *p, double const* const* u, const double &Shear_Rate, string fname){
-  FILE *ff;
-  ff = filecheckopen(fname.c_str(), "a");
-  int k = HNZ - 1;
-  for(int i = 0; i < NX; i++){
-    for(int  j = 0; j < NY; j++){
-      int im = (i * NY * NZ_) + (j * NZ_) + k;
-      fprintf(ff, "%.4f %.4f %.4f\n", u[0][im], u[0][im] - Shear_Rate*(j-HNY)*DX, u[1][im]);
-    }
+  if(SW_PT == rigid){
+    int pid = Rigid_Particle_Cumul[rigidID];
+    fprintf(stdout, "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n"
+            ,time
+            ,-atan2(GRvecs[pid][1], -GRvecs[pid][0])
+            ,p[pid].x[0]
+            ,p[pid].x[1]
+            ,xGs[rigidID][0]
+            ,xGs[rigidID][1]
+            ,p[pid].v[0]
+            ,p[pid].v[1]
+            ,velocityGs[rigidID][0]
+            ,velocityGs[rigidID][1]
+            ,p[pid].omega[2]
+            ,omegaGs[rigidID][2]
+            ,forceGs[rigidID][0]
+            ,forceGs[rigidID][1]
+            ,torqueGs[rigidID][2]
+            );
   }
-  fclose(ff);
 }
-
 #endif
