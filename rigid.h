@@ -421,9 +421,9 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   
   //calc velocityGs and omegaGs
   double dV[DIM], dVr[DIM], dW[DIM], dWr[DIM];
-  rigid_dev_shear_stress_lj = 0.0;
+  double dmy_shear = 0.0;
   if(CASE == "Euler"){
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:rigid_dev_shear_stress_lj) private(dV, dVr, dW, dWr)
+#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy_shear) private(dV, dVr, dW, dWr)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
@@ -442,12 +442,12 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
         omegaGs[rigidID][d1] += (dW[d1] + dWr[d1]);
       }
       for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        rigid_dev_shear_stress_lj += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
+        dmy_shear += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
       }
     }
     
   }else if(CASE == "AB2"){
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:rigid_dev_shear_stress_lj) private(dV, dVr, dW, dWr)
+#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy_shear) private(dV, dVr, dW, dWr)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
@@ -466,14 +466,14 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
         omegaGs[rigidID][d1] += (dW[d1] + dWr[d1]);
       }
       for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        rigid_dev_shear_stress_lj += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
+        dmy_shear += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
       }
     }
   }else{
     fprintf(stderr, "error, string CASE in calc_Rigid_VOGs()");
     exit_job(EXIT_FAILURE);
   }
-  rigid_dev_shear_stress_lj *= Ivolume/jikan.dt_md;
+  rigid_dev_shear_stress_lj = dmy_shear*Ivolume/jikan.dt_md;
   
   // renew old previous and initialize
 #pragma omp parallel for schedule(dynamic, 1)
