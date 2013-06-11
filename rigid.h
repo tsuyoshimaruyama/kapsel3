@@ -13,27 +13,6 @@
 #include "matrix_diagonal.h"
 #include "periodic_boundary.h"
 
-/*!
-  \brief Chain debug info for chains in shear flow (x-y plane)
- */
-inline void rigid_chain_debug(Particle *p, const double &time, 
-                              const int &rigidID=0){
-  int pid = Rigid_Particle_Cumul[rigidID];
-  fprintf(stdout, "%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f\n"
-          ,time
-          ,-atan2(GRvecs[pid][1], -GRvecs[pid][0])
-          ,p[pid].x[0]
-          ,p[pid].x[1]
-          ,xGs[rigidID][0]
-          ,xGs[rigidID][1]
-          ,p[pid].v[0]
-          ,p[pid].v[1]
-          ,velocityGs[rigidID][0]
-          ,velocityGs[rigidID][1]
-          ,p[pid].omega[2]
-          ,omegaGs[rigidID][2]
-          );
-}
 
 /*!
   \brief Initialize the geometry and center of mass position for each
@@ -82,14 +61,6 @@ inline void init_set_xGs(Particle *p){
         PBC_OBL(p[n].x, dmy_vx);
     }
   }
-  fprintf(stdout, "# Start Config\n");
-  for(int n = 0; n < Particle_Number; n++){
-    fprintf(stdout, "%d %.6g %.6g %.6g\n"
-            ,n
-            ,p[n].x[0], p[n].x[1], p[n].x[2]
-            );
-  }
-  fprintf(stdout, "\n");
 }
 
 /*!
@@ -146,6 +117,8 @@ inline void update_Particle_Configuration(Particle *p){
       p[n].x_previous[d] = p[n].x[d];
       p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
 
+      p[n].omega_old[d] = p[n].omega[d];
+      p[n].v_old[d] = p[n].v[d];
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
@@ -167,10 +140,13 @@ inline void update_Particle_Configuration_OBL(Particle *p){
       p[n].x_previous[d] = p[n].x[d];
       p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
 
+      p[n].omega_old[d] = p[n].omega[d];
+      p[n].v_old[d] = p[n].v[d];
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
     sign = PBC_OBL(p[n].x, delta_vx);
+    p[n].v_old[0] += delta_vx;
     p[n].v[0] += delta_vx;
    }
 }
@@ -185,9 +161,6 @@ inline void set_Particle_Velocities(Particle *p){
   for(int n=0; n<Particle_Number; n++){
     rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++){
-      p[n].omega_old[d] = p[n].omega[d];
-      p[n].v_old[d] = p[n].v[d];
-
       p[n].omega[d] = omegaGs[rigidID][d];
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
@@ -207,9 +180,6 @@ inline void set_Particle_Velocities_OBL(Particle *p){
   for(int n=0; n<Particle_Number; n++){
     rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++){
-      p[n].omega_old[d] = p[n].omega[d];
-      p[n].v_old[d] = p[n].v[d];
-
       p[n].omega[d] = omegaGs[rigidID][d];
       r[d] = xGs[rigidID][d] + GRvecs[n][d];
     }
@@ -429,7 +399,6 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
 */
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   //set_Rigid_MMs(p);
-  
   //calc forceGrs, forceGvs
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
@@ -437,11 +406,10 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
     for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
       for(int d=0; d<DIM; d++){
         forceGrs[rigidID][d] += p[n].fr[d];
-        //forceGvs[rigidID][d] += p[n].fv[d];
-        //torqueGrs[rigidID][d] += p[n].torquer[d];
-        //torqueGvs[rigidID][d] += p[n].torquev[d];
-        ////fv, torquer and torquev are constant zero.
       }
+      torqueGrs[rigidID][0] += GRvecs[n][1]*p[n].fr[2] - GRvecs[n][2]*p[n].fr[1];
+      torqueGrs[rigidID][1] += GRvecs[n][2]*p[n].fr[0] - GRvecs[n][0]*p[n].fr[2];
+      torqueGrs[rigidID][2] += GRvecs[n][0]*p[n].fr[1] - GRvecs[n][1]*p[n].fr[0];
     }
     
     //set olds
@@ -452,44 +420,74 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   }
   
   //calc velocityGs and omegaGs
+  double dV[DIM], dVr[DIM], dW[DIM], dWr[DIM];
+  double dmy_shear = 0.0;
   if(CASE == "Euler"){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy_shear) private(dV, dVr, dW, dWr)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
+
       for(int d1=0; d1<DIM; d1++){
-        velocityGs[rigidID][d1] += jikan.dt_md * Rigid_IMasses[rigidID]
-          * ( forceGs[rigidID][d1] + forceGrs[rigidID][d1] );
-        for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]
-                                      * ( torqueGs[rigidID][d2] );
+        dV[d1] = Rigid_IMasses[rigidID] * forceGs[rigidID][d1];
+        dVr[d1] = Rigid_IMasses[rigidID] * forceGrs[rigidID][d1];
+        dW[d1] = dWr[d1] = 0.0;
+        for(int d2=0; d2<DIM; d2++){
+          dW[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGs[rigidID][d2];
+          dWr[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGrs[rigidID][d2];
+        }
+      }
+
+      for(int d1=0; d1<DIM; d1++){
+        velocityGs[rigidID][d1] += jikan.dt_md*(dV[d1] + dVr[d1]);
+        omegaGs[rigidID][d1] += jikan.dt_md*(dW[d1] + dWr[d1]);
+      }
+      for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
+        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1] 
+                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
       }
     }
     
   }else if(CASE == "AB2"){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy_shear) private(dV, dVr, dW, dWr)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
+
       for(int d1=0; d1<DIM; d1++){
-        velocityGs[rigidID][d1] += jikan.hdt_md * Rigid_IMasses[rigidID]
-          * ( 2. * forceGs[rigidID][d1] + forceGrs[rigidID][d1] + forceGrs_previous[rigidID][d1] );
-        for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += jikan.hdt_md * Rigid_IMoments[rigidID][d1][d2]
-                                      * ( 2. * torqueGs[rigidID][d2] );
+        dV[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGs[rigidID][d1]);
+        dVr[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGrs[rigidID][d1]);
+        dW[d1] = dWr[d1] = 0.0;
+        for(int d2=0; d2<DIM; d2++){
+          dW[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGs[rigidID][d2]);
+          dWr[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGrs[rigidID][d2]);
+        }
+      }
+      
+      for(int d1=0; d1<DIM; d1++){
+        velocityGs[rigidID][d1] += jikan.hdt_md*(dV[d1] + dVr[d1]);
+        omegaGs[rigidID][d1] += jikan.hdt_md*(dW[d1] + dWr[d1]);
+      }
+      for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
+        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]
+                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
       }
     }
-    
   }else{
     fprintf(stderr, "error, string CASE in calc_Rigid_VOGs()");
     exit_job(EXIT_FAILURE);
   }
-  
-  
+  rigid_dev_shear_stress_lj = -dmy_shear*Ivolume;
   
   // renew old previous and initialize
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     for(int d=0; d<DIM; d++){
       forceGrs_previous[rigidID][d] = forceGrs[rigidID][d];
+      torqueGrs_previous[rigidID][d] = torqueGrs[rigidID][d];
+
       forceGrs[rigidID][d] = 0.0;
       forceGs[rigidID][d] = 0.0;
+
+      torqueGrs[rigidID][d] = 0.0;
       torqueGs[rigidID][d] = 0.0;
     }
   }

@@ -104,7 +104,7 @@ inline void Force(Particle *p){
 	Add_f_gravity(p);
     }
     if(SW_PT == chain){
-	Calc_anharmonic_force_chain(p);
+      Calc_anharmonic_force_chain(p, Distance0);
     }
 }
 
@@ -122,7 +122,7 @@ inline void Force_OBL(Particle *p){
     }
     if(SW_PT == chain){
 	dev_shear_stress_lj +=
-	    Calc_anharmonic_force_chain_OBL(p);
+          Calc_anharmonic_force_chain(p, Distance0_OBL);
     }
     dev_shear_stress_lj *= Ivolume;
 }

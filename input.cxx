@@ -107,7 +107,9 @@ double Shear_frequency;
 double Inertia_stress;
 int Shear_strain_int;
 double dev_shear_stress[0];
+double rigid_dev_shear_stress[0];
 double &dev_shear_stress_lj = dev_shear_stress[0];
+double &rigid_dev_shear_stress_lj = rigid_dev_shear_stress[0];
 //////
 double Delta_ETA;
 double Nu_ratio;
