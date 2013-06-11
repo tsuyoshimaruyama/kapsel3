@@ -428,21 +428,22 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
       for(int d1=0; d1<DIM; d1++){
-        dV[d1] = jikan.dt_md * Rigid_IMasses[rigidID] * forceGs[rigidID][d1];
-        dVr[d1] = jikan.dt_md * Rigid_IMasses[rigidID] * forceGrs[rigidID][d1];
+        dV[d1] = Rigid_IMasses[rigidID] * forceGs[rigidID][d1];
+        dVr[d1] = Rigid_IMasses[rigidID] * forceGrs[rigidID][d1];
         dW[d1] = dWr[d1] = 0.0;
         for(int d2=0; d2<DIM; d2++){
-          dW[d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]*torqueGs[rigidID][d2];
-          dWr[d1] += jikan.dt_md * Rigid_IMoments[rigidID][d1][d2]*torqueGrs[rigidID][d2];
+          dW[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGs[rigidID][d2];
+          dWr[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGrs[rigidID][d2];
         }
       }
 
       for(int d1=0; d1<DIM; d1++){
-        velocityGs[rigidID][d1] += (dV[d1] + dVr[d1]);
-        omegaGs[rigidID][d1] += (dW[d1] + dWr[d1]);
+        velocityGs[rigidID][d1] += jikan.dt_md*(dV[d1] + dVr[d1]);
+        omegaGs[rigidID][d1] += jikan.dt_md*(dW[d1] + dWr[d1]);
       }
       for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        dmy_shear += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
+        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1] 
+                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
       }
     }
     
@@ -452,28 +453,29 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
       if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
       for(int d1=0; d1<DIM; d1++){
-        dV[d1] = jikan.hdt_md * Rigid_IMasses[rigidID] * (2.0 * forceGs[rigidID][d1]);
-        dVr[d1] = jikan.hdt_md * Rigid_IMasses[rigidID] * (2.0 * forceGrs[rigidID][d1]);
+        dV[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGs[rigidID][d1]);
+        dVr[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGrs[rigidID][d1]);
         dW[d1] = dWr[d1] = 0.0;
         for(int d2=0; d2<DIM; d2++){
-          dW[d1] += jikan.hdt_md * Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGs[rigidID][d2]);
-          dWr[d1] += jikan.hdt_md * Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGrs[rigidID][d2]);
+          dW[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGs[rigidID][d2]);
+          dWr[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGrs[rigidID][d2]);
         }
       }
       
       for(int d1=0; d1<DIM; d1++){
-        velocityGs[rigidID][d1] += (dV[d1] + dVr[d1]);
-        omegaGs[rigidID][d1] += (dW[d1] + dWr[d1]);
+        velocityGs[rigidID][d1] += jikan.hdt_md*(dV[d1] + dVr[d1]);
+        omegaGs[rigidID][d1] += jikan.hdt_md*(dW[d1] + dWr[d1]);
       }
       for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        dmy_shear += -(dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]*MASS[p[n].spec];
+        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]
+                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
       }
     }
   }else{
     fprintf(stderr, "error, string CASE in calc_Rigid_VOGs()");
     exit_job(EXIT_FAILURE);
   }
-  rigid_dev_shear_stress_lj = dmy_shear*Ivolume/jikan.dt_md;
+  rigid_dev_shear_stress_lj = -dmy_shear*Ivolume;
   
   // renew old previous and initialize
 #pragma omp parallel for schedule(dynamic, 1)

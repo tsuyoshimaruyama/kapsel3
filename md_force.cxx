@@ -443,7 +443,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
       dmy_rhop = RHO_particle[p[n].spec];
       if(SW_PT == rigid) rigidID = Particle_RigidID[n];
       
-      for (int d = 0; d < DIM; d++) {
+      for (int d = 0; d < DIM; d++){
         xp[d] = p[n].x[d];
         vp[d] = p[n].v[d];
         omega_p[d] = p[n].omega[d];
@@ -494,12 +494,12 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
 	
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
 #pragma omp atomic
-        Hydro_force[im] += dmy_fp[0]*dmy_ry;//viscocity
+        Hydro_force[im] += dmy_fp[0]*dmy_ry*dmy_rhop;//viscocity
         
 #pragma omp atomic
-        Hydro_force_new[im] += dmy_fp[0]*dmy_ry;
+        Hydro_force_new[im] += dmy_fp[0]*dmy_ry*dmy_rhop;
 #pragma omp atomic
-        Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry;
+        Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry*dmy_rhop;
 
         volume[n] += dmy_phi;
         Itrace[n] += dmy_phi*SQ(dmyR);
@@ -536,14 +536,14 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
         
         im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
-        double dmy_stress_p = p[n].momentum_depend_fr[0] / (volume[n] * dmy_rhop);
+        double dmy_stress_p = p[n].momentum_depend_fr[0] / volume[n];
 
 #pragma omp atomic
         Hydro_force[im] -= dmy_stress_p*dmy_ry*dmy_phi;//viscocity
 
         if(SW_PT != rigid){
-          double dmy_stress_v = -RHO*force[0] / (volume[n] * dmy_rhop);
-          double dmy_stress_w = -RHO*(torque[1]*r[2] - torque[2]*r[1])/(Itrace[n] * dmy_rhop);
+          double dmy_stress_v = -RHO*force[0] / volume[n];
+          double dmy_stress_w = -RHO*(torque[1]*r[2] - torque[2]*r[1])/Itrace[n];
 #pragma omp atomic
           Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi;
 #pragma omp atomic
@@ -553,13 +553,12 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
 #pragma omp atomic
           Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi;
         }
-
       }
       
 # pragma omp critical
       {
         sum_force += force[0];
-        sum_volume += (volume[n] * dmy_rhop);
+        sum_volume += volume[n];
       }
     }// Particle_Number
     sum_volume /= RHO;
@@ -577,9 +576,10 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     }
     
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,dmy_ry,sign,im) 
+  private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,dmy_ry,sign,im,dmy_rhop) 
     for(int n = 0; n < Particle_Number ; n++){
       int rigidID;
+      dmy_rhop = RHO_particle[p[n].spec];
       for (int d = 0; d < DIM; d++) {
         xp[d] = p[n].x[d];
       }
@@ -608,9 +608,9 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
           double dmy_stress_v = dVg[rigidID][0];
           double dmy_stress_w = dWg[rigidID][1]*(GRvecs[n][2] + r[2]) - dWg[rigidID][2]*(GRvecs[n][1] + r[1]);
 #pragma omp atomic
-          Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi;
-          Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi;
-          Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi;
+          Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi*dmy_rhop;
+          Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi*dmy_rhop;
+          Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi*dmy_rhop;
         }
       }
     }//Particle_Number
