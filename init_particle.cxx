@@ -392,6 +392,12 @@ void Init_Particle(Particle *p){
     set_Particle_Velocities(p);	
   }
 
+  {//set pinned particle velocities to zero
+    if(PINNING){
+      Pinning(p);
+    }
+  }
+
   // output p.x and p.v
   for(int i=0; i<Particle_Number; i++){
     double phi;

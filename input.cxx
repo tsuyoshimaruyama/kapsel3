@@ -87,6 +87,11 @@ Particle_IO ORIENTATION;
 int N_iteration_init_distribution;
 int FIX_CELL;
 int FIX_CELLxyz[DIM];
+int PINNING;
+int N_PIN;
+int *Pinning_Numbers;
+int N_PIN_ROT;
+int *Pinning_ROT_Numbers;
 //////
 double EPSILON;
 double T_LJ;
@@ -449,7 +454,7 @@ void Gourmet_file_io(const char *infile
     else{
 	//if(file_check(deffile)) ufout= new UDFManager(outfile);
 	if(file_check(deffile)) ufout= new UDFManager(outfile, 2);
-    }
+  }
     //if(file_check(resfile)) ufres= new UDFManager(resfile);
     //if(file_check(deffile)) ufres= new UDFManager(resfile,2);
     if(file_check(deffile)) ufres= new UDFManager(resfile,deffile,false);
@@ -882,19 +887,19 @@ void Gourmet_file_io(const char *infile
                 janus_slip_vel = NULL;
                 janus_slip_mode = NULL;
 	    }
-        }
+	}
     }
     
     {
 	{
 	    fprintf(stderr, "#\n");
 	    if(SW_PT == spherical_particle){
-                int d=1;
-                fprintf(stderr, "#%d:species",d++);
-                fprintf(stderr, " %d:number_of_particle[i]",d++);
-                fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		    int d=1;
+		    fprintf(stderr, "#%d:species",d++);
+		    fprintf(stderr, " %d:number_of_particle[i]",d++);
+		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		if(SW_EQ == Electrolyte){
-                  fprintf(stderr, " %d:Surface_charge[i]",d++);
+		    fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
 		fprintf(stderr, " %d:janus_axis[i]",d++);
 		fprintf(stderr, " %d:janus_mode[i]", d++);
@@ -907,23 +912,23 @@ void Gourmet_file_io(const char *infile
                 fprintf(stderr, " %d:squirm_b1[i]",d++);
                 fprintf(stderr, " %d:squirm_b2[i]",d++);
 	    }else if(SW_PT == chain){
-                int d=1;
-                fprintf(stderr, "#%d:species",d++);
-                fprintf(stderr, " %d:total_number_of_particle[i]",d++);
-                fprintf(stderr, " %d:number_of_beads[i]",d++);
-                fprintf(stderr, " %d:number_of_chain[i]",d++);
-                fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		    int d=1;
+		    fprintf(stderr, "#%d:species",d++);
+		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
+		    fprintf(stderr, " %d:number_of_beads[i]",d++);
+		    fprintf(stderr, " %d:number_of_chain[i]",d++);
+		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		if(SW_EQ == Electrolyte){
-                  fprintf(stderr, " %d:Surface_charge[i]",d++);
+		    fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
 		fprintf(stderr, "%d:janus_axis[i]",d++);
 	    }else if(SW_PT == rigid){
-                int d=1;
-                fprintf(stderr, "#%d:species",d++);
-                fprintf(stderr, " %d:total_number_of_particle[i]",d++);
-                fprintf(stderr, " %d:number_of_beads[i]",d++);
-                fprintf(stderr, " %d:number_of_chain[i]",d++);
-                fprintf(stderr, " %d:mass_density_ratio[i]",d++);
+		    int d=1;
+		    fprintf(stderr, "#%d:species",d++);
+		    fprintf(stderr, " %d:total_number_of_particle[i]",d++);
+		    fprintf(stderr, " %d:number_of_beads[i]",d++);
+		    fprintf(stderr, " %d:number_of_chain[i]",d++);
+		    fprintf(stderr, " %d:mass_density_ratio[i]",d++);
 		if(SW_EQ == Electrolyte){
                   fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
@@ -995,7 +1000,7 @@ void Gourmet_file_io(const char *infile
 			janus_force[i][d] = 0.0;
                         janus_torque[i][d] = 0.0;
 		      }
-		    }
+		}
 
                     // squirmer with surface slip velocity
 		    if(janus_propulsion[i] == slip){
@@ -1100,7 +1105,7 @@ void Gourmet_file_io(const char *infile
 		    }else{
 		      fprintf(stderr, "ERROR: Unknown axis specification\n");
 		      exit_job(EXIT_FAILURE);
-                    }
+		}
                     janus_propulsion[i] = no_propulsion;
 		}
 		{
@@ -1292,7 +1297,7 @@ void Gourmet_file_io(const char *infile
 				torqueGrs_previous[rigidID][d] = 0.0;
 				torqueGvs_previous[rigidID][d] = 0.0;
 			}
-		}
+	}
 	    fprintf(stderr, "#\n");
 	    fprintf(stderr, "# Rigid chains selected.\n");
 	}
@@ -1415,7 +1420,7 @@ void Gourmet_file_io(const char *infile
 		exit_job(EXIT_FAILURE);
 	    }
 	}
-	
+
 	ufin->get(target.sub("LJ_truncate"),str);
 	ufout->put(target.sub("LJ_truncate"),str);
 	ufres->put(target.sub("LJ_truncate"),str);
@@ -1492,8 +1497,8 @@ void Gourmet_file_io(const char *infile
 	      cerr << str << endl;
 	      fprintf(stderr, "invalid ORIENTATION\n");
 	      exit_job(EXIT_FAILURE);
-	    }
-
+	}
+	
 	    ufin->get(target.sub("SLIP_tol"), MAX_SLIP_TOL);
 	    ufout->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
 	    ufres->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
@@ -1540,22 +1545,57 @@ void Gourmet_file_io(const char *infile
 	    target.up();
 	}
     }
-    {
+	{
       DBG_MASS_GRID = 0;
       /*
       Location target("debug");
       string str;
-      
+	    
       ufin->get(target.sub("MASS_GRID"), str);
       ufout->put(target.sub("MASS_GRID"), str);
       ufres->put(target.sub("MASS_GRID"), str);
-      if(str == "YES"){
+	    if(str == "YES"){
         DBG_MASS_GRID = 1;
       }else{
         DBG_MASS_GRID = 0;
-      }
+	    }
       */
-    }
+	    if(PINNING){
+		N_PIN = ufin->size("switch.pin.YES.pin[]");
+		{
+		    Pinning_Numbers = alloc_1d_int(N_PIN);
+		    for (int i = 0; i < N_PIN; i++) {
+			int pin_target;
+			char str[256];
+			sprintf(str,"switch.pin.YES.pin[%d]",i);
+			Location target_pin(str);
+			ufin->get(target_pin, pin_target);
+			ufout->put(target_pin, pin_target);
+			ufres->put(target_pin, pin_target);
+
+			Pinning_Numbers[i] = pin_target;
+			fprintf(stderr, "#PINNING %d %d\n", i, pin_target);
+		    }
+		}
+
+		N_PIN_ROT = ufin->size("switch.pin.YES.pin_rot[]");
+		{
+		    Pinning_ROT_Numbers = alloc_1d_int(N_PIN_ROT);
+		    for (int i = 0; i < N_PIN_ROT; i++) {
+			int pin_rot_target;
+			char str_rot[256];
+			sprintf(str_rot,"switch.pin.YES.pin_rot[%d]",i);
+			Location target_pin_rot(str_rot);
+			ufin->get(target_pin_rot, pin_rot_target);
+			ufout->put(target_pin_rot, pin_rot_target);
+			ufres->put(target_pin_rot, pin_rot_target);
+
+			Pinning_ROT_Numbers[i] = pin_rot_target;
+			fprintf(stderr, "#PINNING ROT %d %d\n", i, pin_rot_target);
+		    }
+		}
+	    }
+	}
     
     { /////// output;
 	string str;
@@ -1729,81 +1769,81 @@ char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;
 //GOURMET上で与えられたファイル名を取得します
 
 void file_get(const int argc, char *argv[]){
-    
-    const int Number_of_reuired_arguments = 5;
-    
-    if(argc < Number_of_reuired_arguments){
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "> %s -I[input UDF] -O[output UDF] -D[define UDF] -R[restart UDF]\n",
-		argv[0]);
-	fprintf(stderr, "\n");
-	exit_job(EXIT_FAILURE);
+
+  const int Number_of_reuired_arguments = 5;
+
+  if(argc < Number_of_reuired_arguments){
+    fprintf(stderr, "Usage:\n");
+    fprintf(stderr, "> %s -I[input UDF] -O[output UDF] -D[define UDF] -R[restart UDF]\n",
+	   argv[0]);
+    fprintf(stderr, "\n");
+    exit_job(EXIT_FAILURE);
+  }
+  int R_selected = 0;
+  In_udf=Sum_udf=Out_udf=Def_udf=Ctrl_udf=Def_udf=Res_udf=NULL;
+  for(int i=1; i<argc; i++){
+    char c=' ';
+    char *p=argv[i];
+    if(*p=='-' && *++p) c=*p++;
+    switch(c){
+    case 'I':   //インプットUDF
+      In_udf=p;
+      fprintf(stderr, "#using %s as input\n",p);
+      break;
+    case 'S':   //計算途中経過出力UDF
+      Sum_udf=p;
+      fprintf(stderr,"#using %s as summary\n",p);
+      break;
+    case 'O':   //アウトプットUDF
+      Out_udf=p;
+      fprintf(stderr,"#using %s as output\n",p);
+      break;
+    case 'D':   //定義UDF
+      Def_udf=p;
+      fprintf(stderr, "#using %s as definition\n",p);
+      break;
+    case 'M':   //制御用ファイル
+      Ctrl_udf=p;
+      fprintf(stderr,"#using %s as control\n",p);
+      break;
+    case 'R':   // リスタートUDF
+      Res_udf=p;
+      fprintf(stderr,"#using %s as restart\n",p);
+      R_selected = 1;
+      break;
+    default:
+      break;
     }
-    int R_selected = 0;
-    In_udf=Sum_udf=Out_udf=Def_udf=Ctrl_udf=Def_udf=Res_udf=NULL;
-    for(int i=1; i<argc; i++){
-	char c=' ';
-	char *p=argv[i];
-	if(*p=='-' && *++p) c=*p++;
-	switch(c){
-	case 'I':   //インプットUDF
-	    In_udf=p;
-	    fprintf(stderr, "#using %s as input\n",p);
-	    break;
-	case 'S':   //計算途中経過出力UDF
-	    Sum_udf=p;
-	    fprintf(stderr,"#using %s as summary\n",p);
-	    break;
-	case 'O':   //アウトプットUDF
-	    Out_udf=p;
-	    fprintf(stderr,"#using %s as output\n",p);
-	    break;
-	case 'D':   //定義UDF
-	    Def_udf=p;
-	    fprintf(stderr, "#using %s as definition\n",p);
-	    break;
-	case 'M':   //制御用ファイル
-	    Ctrl_udf=p;
-	    fprintf(stderr,"#using %s as control\n",p);
-	    break;
-	case 'R':   // リスタートUDF
-	    Res_udf=p;
-	    fprintf(stderr,"#using %s as restart\n",p);
-	    R_selected = 1;
-	    break;
-	default:
-	    break;
-	}
+  }
+  if((In_udf==NULL)
+     ||(Out_udf==NULL)
+     ||(Def_udf==NULL)
+     ||(Res_udf==NULL)
+     ){
+    fprintf(stderr, "Program stopped because required udf file(s) is not given.\n");
+    fprintf(stderr, "Usage:\n");
+    fprintf(stderr, "> %s -I[input UDF] -O[output UDF] -D[define UDF] -R[restart UDF]\n",
+	   argv[0]);
+    fprintf(stderr, "\n");
+    exit_job(EXIT_FAILURE);
+  }
+
+  if(0){ // input.udf を restart.udf にコピーしとく
+  //if(R_selected){ // input.udf を restart.udf にコピーしとく
+    FILE *fin, *fout;
+    char s[256];
+    if((fin=fopen(In_udf,"r"))==NULL){
+      printf("cannot open file\n");
+      exit(0);
     }
-    if((In_udf==NULL)
-       ||(Out_udf==NULL)
-       ||(Def_udf==NULL)
-       ||(Res_udf==NULL)
-	){
-	fprintf(stderr, "Program stopped because required udf file(s) is not given.\n");
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "> %s -I[input UDF] -O[output UDF] -D[define UDF] -R[restart UDF]\n",
-		argv[0]);
-	fprintf(stderr, "\n");
-	exit_job(EXIT_FAILURE);
+    if((fout=fopen(Res_udf,"w"))==NULL){
+      printf("cannot open file\n");
+      exit(0);
     }
-    
-    if(0){ // input.udf を restart.udf にコピーしとく
-	//if(R_selected){ // input.udf を restart.udf にコピーしとく
-	FILE *fin, *fout;
-	char s[256];
-	if((fin=fopen(In_udf,"r"))==NULL){
-	    printf("cannot open file\n");
-	    exit(0);
-	}
-	if((fout=fopen(Res_udf,"w"))==NULL){
-	    printf("cannot open file\n");
-	    exit(0);
-	}
-	while(fgets(s,256,fin)!=NULL){
-	    fputs(s,fout);
-	}
-	fclose(fin);
-	fclose(fout);
+    while(fgets(s,256,fin)!=NULL){
+      fputs(s,fout);
     }
+    fclose(fin);
+    fclose(fout);
+  }
 }

@@ -171,6 +171,11 @@ extern Particle_IO ORIENTATION;
 extern int N_iteration_init_distribution;
 extern int FIX_CELL;
 extern int FIX_CELLxyz[DIM];
+extern int PINNING;
+extern int N_PIN;
+extern int *Pinning_Numbers;
+extern int N_PIN_ROT;
+extern int *Pinning_ROT_Numbers;
 //////
 extern double DX;
 extern double DX3;

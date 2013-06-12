@@ -180,6 +180,10 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	if(kBT > 0. && SW_EQ != Electrolyte){
 	    Add_random_force_thermostat(p, jikan); 
 	}
+
+        if(PINNING){
+          Pinning(p);
+        }
 	
 	{
 	    Reset_phi_u(phi, up);
@@ -356,6 +360,10 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	if(kBT > 0. && SW_EQ != Electrolyte){
 	    Add_random_force_thermostat(p, jikan); 
 	}
+
+        if(PINNING){
+          Pinning(p);
+        }
 	
 	{
 	    Reset_phi_u(phi, up);
