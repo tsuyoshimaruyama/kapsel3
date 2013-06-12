@@ -1,5 +1,5 @@
-// kapsel v3.0
-// 2013/01/13
+// kapsel v3.01
+// 2013/06/11
 
 \begin{global_def}
 
@@ -189,12 +189,17 @@ switch: {
    INIT_orientation: select {'user_specify', 'random', 'space_align'}
    SLIP_tol: float "Tolerance for iterative slip convergence"
    SLIP_iter: int "Maximum number of iterations for iterative slip convergence"
-   pin: select{'NO','YES'} "pin particles"
    FIX_CELL: {
       x: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       y: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       z: select{'ON','OFF'}"OFF:w/o DC current, ON:with DC current"
       }
+   pin: {
+      type: select{"NO","YES"}
+      YES:{pin[]: int
+           pin_rot[]: int
+          }
+   }
 }
 
 output: {
