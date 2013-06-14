@@ -128,14 +128,17 @@ inline void Force_OBL(Particle *p){
 }
 
 inline void Pinning(Particle *p){
-  for(int i = 0; i < N_PIN; i++){
-    for(int d = 0; d < DIM; d++){
-      p[Pinning_Numbers[i]].v[d] = 0.0;
+  if(SW_PT != rigid){
+#pragma omp parallel for schedule(dynamic, 1)
+    for(int i = 0; i < N_PIN; i++){
+      for(int d = 0; d < DIM; d++){
+        p[Pinning_Numbers[i]].v[d] = 0.0;
+      }
     }
-  }
-  for(int i = 0; i < N_PIN_ROT; i++){
-    for(int d = 0; d < DIM; d++){
-      p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
+    for(int i = 0; i < N_PIN_ROT; i++){
+      for(int d = 0; d < DIM; d++){
+        p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
+      }
     }
   }
 }

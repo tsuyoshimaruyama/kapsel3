@@ -10,7 +10,7 @@
 
 /////////////////////
 /////////////////////
-int Fixed_particle;
+int Fixed_particle = 0;
 /////////////////////
 /////////////////////
 
@@ -1508,19 +1508,8 @@ void Gourmet_file_io(const char *infile
 	    ufout->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    assert(MAX_SLIP_ITER >= 1);
-	}	
-	{
-            ufin->get(target.sub("pin"), str);
-            ufout->put(target.sub("pin"), str);
-            ufres->put(target.sub("pin"), str);
-            if(str == "YES"){
-              fprintf(stderr, "# Particle MOTION OFF\n");
-              Fixed_particle = 1;
-            }else{
-              fprintf(stderr, "# Particle MOTION ON\n");
-              Fixed_particle = 0;
-            }
-            
+	}
+        {
 	    target.down("FIX_CELL");
 	    {
 	        const char *xyz[DIM]={"x","y","z"};
@@ -1543,24 +1532,24 @@ void Gourmet_file_io(const char *infile
 	    }
 	    FIX_CELL = (FIX_CELLxyz[0] | FIX_CELLxyz[1] | FIX_CELLxyz[2]);
 	    target.up();
-	}
-    }
+        }
 	{
-      DBG_MASS_GRID = 0;
-      /*
-      Location target("debug");
-      string str;
-	    
-      ufin->get(target.sub("MASS_GRID"), str);
-      ufout->put(target.sub("MASS_GRID"), str);
-      ufres->put(target.sub("MASS_GRID"), str);
-	    if(str == "YES"){
-        DBG_MASS_GRID = 1;
-      }else{
-        DBG_MASS_GRID = 0;
-	    }
-      */
+            Location target("switch.pin");
+            ufin->get(target.sub("type"), str);
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+
+            if(str == "YES"){
+              PINNING = 1;
+            }else if(str == "NO"){
+              PINNING = 0;
+            }
+
 	    if(PINNING){
+                if(SW_PT == rigid){
+                  fprintf(stderr, "Error: pinning not yet supported for rigid particles...\n");
+                  exit_job(EXIT_FAILURE);
+                }
 		N_PIN = ufin->size("switch.pin.YES.pin[]");
 		{
 		    Pinning_Numbers = alloc_1d_int(N_PIN);
@@ -1596,6 +1585,23 @@ void Gourmet_file_io(const char *infile
 		}
 	    }
 	}
+    }
+    {
+      DBG_MASS_GRID = 0;
+      /*
+      Location target("debug");
+      string str;
+	    
+      ufin->get(target.sub("MASS_GRID"), str);
+      ufout->put(target.sub("MASS_GRID"), str);
+      ufres->put(target.sub("MASS_GRID"), str);
+	    if(str == "YES"){
+        DBG_MASS_GRID = 1;
+      }else{
+        DBG_MASS_GRID = 0;
+	    }
+      */
+    }
     
     { /////// output;
 	string str;

@@ -157,6 +157,9 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		  MD_solver_velocity_slip_iter(p, jikan, new_iter);
 		}
 	      }
+              if(PINNING){
+                Pinning(p);
+              }
 	      slip_iter++;
 
 	      if(Slip_particle_convergence(p) < MAX_SLIP_TOL || slip_iter == MAX_SLIP_ITER){
