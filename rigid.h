@@ -266,7 +266,6 @@ inline void solver_Rigid_Position(Particle *p, const CTime &jikan, string CASE){
   if(CASE == "Euler"){
 #pragma opm parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
       //center of mass
       for(int d=0; d<DIM; d++){
@@ -290,7 +289,6 @@ inline void solver_Rigid_Position(Particle *p, const CTime &jikan, string CASE){
   }else if(CASE == "AB2"){
 #pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;   // if "fix"
 
       //center of mass
       for(int d=0; d<DIM; d++){
@@ -334,7 +332,6 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   if(CASE == "Euler"){
 #pragma opm parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n, sign, delta_vx)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
 
       //center of mass
       for(int d=0; d<DIM; d++){
@@ -360,7 +357,6 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   }else if(CASE == "AB2"){
 #pragma omp parallel for schedule(dynamic, 1) private(rigid_first_n, rigid_last_n, sign, delta_vx)
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;   // if "fix"
 
       //center of mass
       for(int d=0; d<DIM; d++){
