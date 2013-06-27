@@ -174,16 +174,14 @@ double **velocityGs;
 double **omegaGs;
 double **forceGs;	//hydro
 double **forceGrs;	//LJ
-double **forceGvs;	//
 double **torqueGs;
 double **torqueGrs;
-double **torqueGvs;
 double **velocityGs_old;
 double **omegaGs_old;
+double **forceGs_previous;
 double **forceGrs_previous;
-double **forceGvs_previous;
+double **torqueGs_previous;
 double **torqueGrs_previous;
-double **torqueGvs_previous;
 int *Particle_RigidID;
 //
 ////
@@ -1289,29 +1287,25 @@ void Gourmet_file_io(const char *infile
 		omegaGs = alloc_2d_double(Rigid_Number, DIM);
 		forceGs = alloc_2d_double(Rigid_Number, DIM);
 		forceGrs = alloc_2d_double(Rigid_Number, DIM);
-		forceGvs = alloc_2d_double(Rigid_Number, DIM);
 		torqueGs = alloc_2d_double(Rigid_Number, DIM);
 		torqueGrs = alloc_2d_double(Rigid_Number, DIM);
-		torqueGvs = alloc_2d_double(Rigid_Number, DIM);
 		velocityGs_old = alloc_2d_double(Rigid_Number, DIM);
 		omegaGs_old = alloc_2d_double(Rigid_Number, DIM);
+                forceGs_previous = alloc_2d_double(Rigid_Number, DIM);
 		forceGrs_previous = alloc_2d_double(Rigid_Number, DIM);
-		forceGvs_previous = alloc_2d_double(Rigid_Number, DIM);
+                torqueGs_previous = alloc_2d_double(Rigid_Number, DIM);
 		torqueGrs_previous = alloc_2d_double(Rigid_Number, DIM);
-		torqueGvs_previous = alloc_2d_double(Rigid_Number, DIM);
 		// initialize
 		for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
 			for(int d=0; d<DIM; d++){
 				forceGs[rigidID][d] = 0.0;
 				forceGrs[rigidID][d] = 0.0;
-				forceGvs[rigidID][d] = 0.0;
 				torqueGs[rigidID][d] = 0.0;
 				torqueGrs[rigidID][d] = 0.0;
-				torqueGvs[rigidID][d] = 0.0;
+                                forceGs_previous[rigidID][d] = 0.0;
 				forceGrs_previous[rigidID][d] = 0.0;
-				forceGvs_previous[rigidID][d] = 0.0;
+                                torqueGs_previous[rigidID][d] = 0.0;
 				torqueGrs_previous[rigidID][d] = 0.0;
-				torqueGvs_previous[rigidID][d] = 0.0;
 			}
 	}
 	    fprintf(stderr, "#\n");

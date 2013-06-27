@@ -424,8 +424,6 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   \note set_Rigid_VOGs() after calculating xGs, Rigid_IMoments, forceGs and torqueGs!!
 */
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
-  //set_Rigid_MMs(p);
-  //calc forceGrs, forceGvs
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     
@@ -507,14 +505,17 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     for(int d=0; d<DIM; d++){
+      forceGs_previous[rigidID][d] = forceGs[rigidID][d];
       forceGrs_previous[rigidID][d] = forceGrs[rigidID][d];
+
+      torqueGs_previous[rigidID][d] = torqueGs[rigidID][d];
       torqueGrs_previous[rigidID][d] = torqueGrs[rigidID][d];
 
-      forceGrs[rigidID][d] = 0.0;
       forceGs[rigidID][d] = 0.0;
+      forceGrs[rigidID][d] = 0.0;
 
-      torqueGrs[rigidID][d] = 0.0;
       torqueGs[rigidID][d] = 0.0;
+      torqueGrs[rigidID][d] = 0.0;
     }
   }
 }

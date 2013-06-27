@@ -218,16 +218,14 @@ extern double **velocityGs;
 extern double **omegaGs;
 extern double **forceGs;	//hydro
 extern double **forceGrs;	//LJ
-extern double **forceGvs;	//
 extern double **torqueGs;
 extern double **torqueGrs;
-extern double **torqueGvs;
 extern double **velocityGs_old;
 extern double **omegaGs_old;
+extern double **forceGs_previous;
 extern double **forceGrs_previous;
-extern double **forceGvs_previous;
+extern double **torqueGs_previous;
 extern double **torqueGrs_previous;
-extern double **torqueGvs_previous;
 extern int *Particle_RigidID;
 //////
 ////
