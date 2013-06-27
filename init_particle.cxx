@@ -388,8 +388,7 @@ void Init_Particle(Particle *p){
     set_Rigid_MMs(p);
     init_Rigid_Coordinates(p);
     
-    // Caution:  v.x, v.y, v.z are ignored and set to Rigid_Velocities and Rigid_Omegas regardless of boundary conditions
-    set_Particle_Velocities(p);	
+    init_set_vGs(p);
   }
 
   {//set pinned particle velocities to zero
@@ -775,7 +774,11 @@ void Init_Rigid(Particle *p){
 					xGs[rigidID][0] = p[n-1].x[0] + dmy0*sin(dmy1)*cos(dmy2);
 					xGs[rigidID][1] = p[n-1].x[1] + dmy0*sin(dmy1)*sin(dmy2);
 					xGs[rigidID][2] = p[n-1].x[2] + dmy0*cos(dmy1);
-					for(int d=0; d<DIM; d++) xGs[rigidID][d] = fmod(xGs[rigidID][d] + 100.*L_particle[d], L_particle[d]);
+					for(int d=0; d<DIM; d++) {
+                                          xGs[rigidID][d] = fmod(xGs[rigidID][d] + 100.*L_particle[d], L_particle[d]);
+                                          xGs_nopbc[rigidID][d] = xGs[rigidID][d];
+                                          xGs_previous[rigidID][d] = xGs[rigidID][d];
+                                        }
 					if(Rigid_Particle_Numbers[rigidID] % 2 == 0){
 						GRvecs[n-1][0] = - (Rigid_Particle_Numbers[rigidID]/2 - 0.5) * dmy0*sin(dmy1)*cos(dmy2);
 						GRvecs[n-1][1] = - (Rigid_Particle_Numbers[rigidID]/2 - 0.5) * dmy0*sin(dmy1)*sin(dmy2);
@@ -824,6 +827,6 @@ void Init_Rigid(Particle *p){
 	}
 	set_Rigid_MMs(p);
         init_Rigid_Coordinates(p);
-	set_Particle_Velocities(p);
+	init_set_vGs(p);
 }
 
