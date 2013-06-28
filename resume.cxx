@@ -337,6 +337,30 @@ void Force_restore_parameters(double **zeta
     Location target(str);
     ufin->get(target.sub("degree_oblique"),degree_oblique);
   }
+  
+  if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+    int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+        for(int k = 0; k < NZ; k++){
+          im = (i*NY*NZ_) + (j*NZ_) + k;
+          
+          K2[im] = 
+            SQ(WAVE_X*KX_int[im]) +
+            SQ(WAVE_Y*KY_int[im] -
+               WAVE_X*degree_oblique*KX_int[im]) +
+            SQ(WAVE_Z*KZ_int[im]);
+          if(K2[im] > 0.0){
+            IK2[im] = 1.0/K2[im];
+          }else{
+            IK2[im] = 0.0;
+          }
+        }
+      }
+    }
+  }
+
 }      
 
 void Read_Particle_udf(Particle *p, const int &n_in_particles){
