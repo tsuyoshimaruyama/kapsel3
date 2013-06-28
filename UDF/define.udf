@@ -261,6 +261,7 @@ resume:{
       Saved_Data:{
          jikan: CTime
          Particles[]: sParticle
+         GR_body[]: Vector3d
          Zeta[][][]:{
             zeta0: float
             zeta1: float

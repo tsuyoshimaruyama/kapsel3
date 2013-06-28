@@ -466,7 +466,7 @@ void Gourmet_file_io(const char *infile
     }
     else{
 	//if(file_check(deffile)) ufout= new UDFManager(outfile);
-	if(file_check(deffile)) ufout= new UDFManager(outfile, 2);
+	if(file_check(deffile)) ufout= new UDFManager(outfile,deffile, 2);
   }
     //if(file_check(resfile)) ufres= new UDFManager(resfile);
     //if(file_check(deffile)) ufres= new UDFManager(resfile,2);

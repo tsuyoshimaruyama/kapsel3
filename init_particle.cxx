@@ -240,6 +240,9 @@ void Init_Particle(Particle *p){
       ufout->put(target.sub("R.x"),p[i].x[0]);
       ufout->put(target.sub("R.y"),p[i].x[1]);
       ufout->put(target.sub("R.z"),p[i].x[2]);
+      ufres->put(target.sub("R.x"),p[i].x[0]);
+      ufres->put(target.sub("R.y"),p[i].x[1]);
+      ufres->put(target.sub("R.z"),p[i].x[2]);
 
       ufin->get(target.sub("v.x"),p[i].v[0]);
       ufin->get(target.sub("v.y"),p[i].v[1]);
@@ -247,8 +250,12 @@ void Init_Particle(Particle *p){
       ufout->put(target.sub("v.x"),p[i].v[0]);
       ufout->put(target.sub("v.y"),p[i].v[1]);
       ufout->put(target.sub("v.z"),p[i].v[2]);
+      ufres->put(target.sub("v.x"),p[i].v[0]);
+      ufres->put(target.sub("v.y"),p[i].v[1]);
+      ufres->put(target.sub("v.z"),p[i].v[2]);
 
-      if(ROTATION && ORIENTATION == user_dir){
+
+      if(ROTATION){
 	double q0,q1,q2,q3;
 	ufin->get(target.sub("q.q0"), q0);
 	ufin->get(target.sub("q.q1"), q1);
@@ -258,6 +265,10 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("q.q1"), q1);
 	ufout->put(target.sub("q.q2"), q2);
 	ufout->put(target.sub("q.q3"), q3);
+	ufres->put(target.sub("q.q0"), q0);
+	ufres->put(target.sub("q.q1"), q1);
+	ufres->put(target.sub("q.q2"), q2);
+	ufres->put(target.sub("q.q3"), q3);
 	qtn_init(p[i].q, q0, q1, q2, q3);
 
 	ufin->get(target.sub("omega.x"), p[i].omega[0]);
@@ -266,6 +277,9 @@ void Init_Particle(Particle *p){
 	ufout->put(target.sub("omega.x"), p[i].omega[0]);
 	ufout->put(target.sub("omega.y"), p[i].omega[1]);
 	ufout->put(target.sub("omega.z"), p[i].omega[2]);
+	ufres->put(target.sub("omega.x"), p[i].omega[0]);
+	ufres->put(target.sub("omega.y"), p[i].omega[1]);
+	ufres->put(target.sub("omega.z"), p[i].omega[2]);
         
 	qtn_normalize(p[i].q);
 	qtn_init(p[i].q_old, p[i].q);
@@ -406,7 +420,7 @@ void Init_Particle(Particle *p){
     fprintf(stderr,"# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n",i,p[i].v[0],p[i].v[1],p[i].v[2]);
     fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 
             i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
-    fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)",
+    fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)\n",
               i, p[i].omega[0], p[i].omega[1], p[i].omega[2]);
   }
   fprintf(stderr,"############################\n");
