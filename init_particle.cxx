@@ -254,40 +254,37 @@ void Init_Particle(Particle *p){
       ufres->put(target.sub("v.y"),p[i].v[1]);
       ufres->put(target.sub("v.z"),p[i].v[2]);
 
+      double q0,q1,q2,q3;
+      ufin->get(target.sub("q.q0"), q0);
+      ufin->get(target.sub("q.q1"), q1);
+      ufin->get(target.sub("q.q2"), q2);
+      ufin->get(target.sub("q.q3"), q3);
+      ufout->put(target.sub("q.q0"), q0);
+      ufout->put(target.sub("q.q1"), q1);
+      ufout->put(target.sub("q.q2"), q2);
+      ufout->put(target.sub("q.q3"), q3);
+      ufres->put(target.sub("q.q0"), q0);
+      ufres->put(target.sub("q.q1"), q1);
+      ufres->put(target.sub("q.q2"), q2);
+      ufres->put(target.sub("q.q3"), q3);
+      qtn_init(p[i].q, q0, q1, q2, q3);
+      
+      ufin->get(target.sub("omega.x"), p[i].omega[0]);
+      ufin->get(target.sub("omega.y"), p[i].omega[1]);
+      ufin->get(target.sub("omega.z"), p[i].omega[2]);
+      ufout->put(target.sub("omega.x"), p[i].omega[0]);
+      ufout->put(target.sub("omega.y"), p[i].omega[1]);
+      ufout->put(target.sub("omega.z"), p[i].omega[2]);
+      ufres->put(target.sub("omega.x"), p[i].omega[0]);
+      ufres->put(target.sub("omega.y"), p[i].omega[1]);
+      ufres->put(target.sub("omega.z"), p[i].omega[2]);
 
-      if(ROTATION){
-	double q0,q1,q2,q3;
-	ufin->get(target.sub("q.q0"), q0);
-	ufin->get(target.sub("q.q1"), q1);
-	ufin->get(target.sub("q.q2"), q2);
-	ufin->get(target.sub("q.q3"), q3);
-	ufout->put(target.sub("q.q0"), q0);
-	ufout->put(target.sub("q.q1"), q1);
-	ufout->put(target.sub("q.q2"), q2);
-	ufout->put(target.sub("q.q3"), q3);
-	ufres->put(target.sub("q.q0"), q0);
-	ufres->put(target.sub("q.q1"), q1);
-	ufres->put(target.sub("q.q2"), q2);
-	ufres->put(target.sub("q.q3"), q3);
-	qtn_init(p[i].q, q0, q1, q2, q3);
-
-	ufin->get(target.sub("omega.x"), p[i].omega[0]);
-	ufin->get(target.sub("omega.y"), p[i].omega[1]);
-	ufin->get(target.sub("omega.z"), p[i].omega[2]);
-	ufout->put(target.sub("omega.x"), p[i].omega[0]);
-	ufout->put(target.sub("omega.y"), p[i].omega[1]);
-	ufout->put(target.sub("omega.z"), p[i].omega[2]);
-	ufres->put(target.sub("omega.x"), p[i].omega[0]);
-	ufres->put(target.sub("omega.y"), p[i].omega[1]);
-	ufres->put(target.sub("omega.z"), p[i].omega[2]);
-        
-	qtn_normalize(p[i].q);
-	qtn_init(p[i].q_old, p[i].q);
+      if(ORIENTATION == user_dir){
+        qtn_normalize(p[i].q);
       }else{
         qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
-        qtn_isnormal(p[i].q);
-        qtn_init(p[i].q_old, p[i].q);
       }
+      qtn_init(p[i].q_old, p[i].q);
     }
     if(!RESUMED){
       delete ufin;
