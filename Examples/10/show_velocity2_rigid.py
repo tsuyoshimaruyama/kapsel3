@@ -71,8 +71,8 @@ from math import *
 from string import *
 import os
 import colorsys
-SHOW_VELOCITY = 0
-SHOW_VEC_VOLUME = 1
+SHOW_VELOCITY = 1
+SHOW_VEC_VOLUME = 0
 ### Pressure
 SHOW_PRESSURE = 0
 SHOW_VOLUME = 0
@@ -112,10 +112,8 @@ def showVelocity():
 		for j in range(NY):
 			for i in range(NX):
 				iijk = [i,j,k]
-				if((((i%coord_skip)==0)
-				    and ((j%coord_skip)==0)
-				    and ((k%coord_skip)==0))
-				   and (iijk[view_axes]==slice[view_axes])):
+				#if((((i%coord_skip)==0)and((j%coord_skip)==0)and ((k%coord_skip)==0))and(iijk[view_axes]==slice[view_axes])):
+				if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and((iijk[0]==slice[0])or(iijk[1]==slice[1])or(iijk[2]==slice[2]))):
 					[ux,uy,uz]=[u[offset],u[offset+msize],u[offset+msize*2]]
 					usize = dot([ux,uy,uz],[ux,uy,uz])
 					if(i==0 and j==0 and k==0):
@@ -137,10 +135,8 @@ def showVelocity():
 		for j in range(NY):
 			for i in range(NX):
 				iijk = [i,j,k]
-				if((((i%coord_skip)==0)
-				    and ((j%coord_skip)==0)
-				    and ((k%coord_skip)==0))
-				   and (iijk[view_axes]==slice[view_axes])):
+				#if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and(iijk[view_axes]==slice[view_axes])):
+				if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and((iijk[0]==slice[0])or(iijk[1]==slice[1])or(iijk[2]==slice[2]))):
 					[ux,uy,uz]=[u[offset],u[offset+msize],u[offset+msize*2]]
 					usize = dot([ux,uy,uz],[ux,uy,uz])
 					if(norm):
