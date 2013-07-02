@@ -1,3 +1,4 @@
+showRigidCOM=0
 type=$constitutive_eq.type
 print type
 if type == "Navier_Stokes" :
@@ -44,8 +45,30 @@ spat=[
 	[1,1,1.0,1.0,RAD]
 	]
 n_offset = 0
-for i in range(size_Ns):
-	for n in range(Ns[i][0]):
-		r=$Particles[n_offset+n].R
-		sphere(r,spat[i%len(spat)])
-	n_offset += Ns[i][0]
+if objType=="rigid" or objType=="chain":
+        if showRigidCOM == 0:
+                #species
+                for i in range(size_Ns):
+                        #chains
+                        for m in range(Ns[i][1]):
+                                #beads
+                                for n in range(Ns[i][0]):
+                                        r=$Particles[n_offset+n].R
+                                        sphere(r,spat[i%len(spat)])
+                                n_offset += Ns[i][0]
+        elif showRigidCOM == 1:
+                #species
+                for i in range(size_Ns):
+                        #chains
+                        for m in range(Ns[i][1]):
+                                r=$RigidParticles[n_offset+m].R
+                                sphere(r,spat[i%len(spat)])
+                        n_offset+=Ns[i][1]
+else:
+        #species
+        for i in range(size_Ns):
+                #particles
+                for n in range(Ns[i][0]):
+                        r=$Particles[n_offset+n].R
+                        sphere(r,spat[i%len(spat)])
+                n_offset+=Ns[i][0]
