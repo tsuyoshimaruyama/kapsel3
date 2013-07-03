@@ -1,7 +1,7 @@
 // kapsel v3.0
 // 2013/01/13
 
-\include{"define_3.00.udf"}
+\include{"define.udf"}
 
 
 \begin{data}
