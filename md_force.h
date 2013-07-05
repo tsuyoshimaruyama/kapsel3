@@ -86,43 +86,38 @@ inline double Calc_anharmonic_force_chain(Particle *p,
     const double iR0=1./R0;
     const double iR02=SQ(iR0);
     
-    int rest_Chain_Number[Component_Number];
-    for (int i = 0; i < Component_Number; i++) {
-	rest_Chain_Number[i] = Chain_Numbers[i];
-    }
-    
-    int n = 0;
+    int n_first_chain = 0;    
     double shear_stress = 0.0;
-    while (n < Particle_Number - 1) {
-	for (int i = 0; i < Component_Number; i++) {
-	    if (rest_Chain_Number[i] > 0) {
-		for (int j = 0; j < Beads_Numbers[i]; j++) {
-		    if (j < Beads_Numbers[i] - 1) {
-			int m = n + 1;
-			double dmy_r1[DIM];
-                        double dm_r1 = 0.0;
-                        distance0_func(p[m].x, p[n].x, dm_r1, dmy_r1);
-                        
-			double dm1=1./(1. - SQ(dm_r1)*iR02);
-			
-			if(dm1 < 0.0){
-			    fprintf(stderr,"### anharmonic error\n");
-			}
-			
-			for(int d=0; d<DIM; d++){
-			    double dmy=dm1*dmy_r1[d];
-			    p[n].fr[d] += -anharmonic_spring_cst*dmy;
-			    p[m].fr[d] += anharmonic_spring_cst*dmy;
-			}
-                        shear_stress +=
-                          ((-anharmonic_spring_cst * dm1 * dmy_r1[0]) * (dmy_r1[1]));
-		    }
-		    n++;
-		}
-		rest_Chain_Number[i]--;
-	    }
-	}
-    }
+    for(int i = 0; i < Component_Number; i++){
+
+      for(int j = 0; j < Chain_Numbers[i]; j++){
+
+        for(int k = 0; k < Beads_Numbers[i] - 1; k++){
+          int n = n_first_chain + k;
+          int m = n + 1;
+          //fprintf(stdout, "# %d %d %d %d %d\n", i, j, k, n, m);
+
+          double dmy_r1[DIM];
+          double dm_r1 = 0.0;
+          distance0_func(p[m].x, p[n].x, dm_r1, dmy_r1);
+
+          double dm1 = 1.0/(1.0 - SQ(dm_r1)*iR02);
+          if(dm1 < 0.0){
+            fprintf(stderr, "### anharmonic error: %d %d %g\n", n, m, dm_r1);
+          }
+
+          for(int d = 0; d < DIM; d++){
+            double dmy = dm1 * dmy_r1[d];
+            p[n].fr[d] += (-anharmonic_spring_cst)*dmy;
+            p[m].fr[d] += (anharmonic_spring_cst)*dmy;
+          }
+          shear_stress += ((-anharmonic_spring_cst * dm1 * dmy_r1[0]) * (dmy_r1[1]));
+
+        }// beads
+        n_first_chain += Beads_Numbers[i];
+      }//chains
+
+    }//species
     return shear_stress;
 }
 
