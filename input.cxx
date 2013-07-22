@@ -1283,8 +1283,8 @@ void Gourmet_file_io(const char *infile
 	    
 	    Rigid_Number = 0;
 	    for(int rigid_i=0; rigid_i<Component_Number; rigid_i++){
-			Rigid_Number += Chain_Numbers[rigid_i];
-		}
+              Rigid_Number += (Particle_Numbers[rigid_i] > 0 ? Chain_Numbers[rigid_i] : 0);
+            }
 		
 		//allocation (using Rigid_Number)
 		xGs = alloc_2d_double(Rigid_Number, DIM);
