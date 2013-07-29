@@ -4,6 +4,7 @@ from UDFManager import *
 import os.path
 import math
 import numpy
+import sys
 
 #########################
 # UDFReader Class V3.02
@@ -47,6 +48,7 @@ import numpy
 # numRecords     (total number of records)
 # timestep       (current frame number)
 # t              (current time)
+# dt             (simulation timestep)
 #
 # ----------
 # METHODS:
@@ -57,9 +59,21 @@ import numpy
 #
 # getParticleData("X")
 #   return numpy array with "Particles[].X" data
+# getParticleXData(pid, "X")
+#   return numpy array with "Particles[pid].X" data
 #
 # getRigidData("X")
 #   return numpy array with "RigidParticles[].X" data
+# getRigidXData(pid, "X")
+#   return numpy array with "RigidParticles[pid].X" data
+#
+# getParticleXSeriesData(a, b, pid, "X")
+# return numpy array with "Particles[pid].X" data in time
+# interval (a,b)
+#
+# getRigidXSeriesData(a, b, pid, "X")
+# return numpy array with "RigidParticles[pid].X" dat in time
+# interval (a,b)
 #
 # printDetails()
 #   print summary of simulation parameters
@@ -103,6 +117,7 @@ import numpy
 #
 # r            (positions of beads)
 # r_raw        (positions of beads with no pbc)
+# q            (orientation quaternion)
 # v            (velocities of beads)
 # w            (angular velocity of beads)
 # force_h      (hydrodynamic force on beads)
@@ -116,6 +131,7 @@ import numpy
 #
 # rGs          (positions of beads)
 # rGs_raw      (positions of beads with no pbc)
+# qGs          (orientation quaternion)
 # vGs          (velocities of beads)
 # wGs          (angular velocity of beads)
 # forceGs_h    (hydrodynamic force on beads)
@@ -139,7 +155,7 @@ class UDFReader:
         self.fileName = fileName
         if os.path.isfile("./"+fileName)==False:
             print "UDF file does not exist!"
-            exit(2)
+            sys.exit(2)
         self.uobj = UDFManager("./"+fileName)
 
         ###
@@ -157,12 +173,12 @@ class UDFReader:
         self.eqType = self.uobj.get("constitutive_eq.type")
         self.dx = self.uobj.get("constitutive_eq."+self.eqType+".DX")
         if(self.eqType == "Shear_Navier_Stokes" or self.eqType == "Shear_Navier_Stokes_Lees_Edwards"):
-            self.shearFlow = self.uobj.get("constitutive_eq."+self.eqType+"External_field.type")
+            self.shearFlow = self.uobj.get("constitutive_eq."+self.eqType+".External_field.type")
             if(self.shearFlow == "AC"):
-                self.shearRate = self.uobj.get("constitutive_eq."+self.eqType+"External_field.AC.Shear_rate")
-                self.shearFreq = self.uobj.get("constitutive_eq."+self.eqType+"External_field.AC.Frequency")
+                self.shearRate = self.uobj.get("constitutive_eq."+self.eqType+".External_field.AC.Shear_rate")
+                self.shearFreq = self.uobj.get("constitutive_eq."+self.eqType+".External_field.AC.Frequency")
             else:
-                self.shearRate = self.uobj.get("constitutive_eq."+self.eqType+"External_field.DC.Shear_rate")
+                self.shearRate = self.uobj.get("constitutive_eq."+self.eqType+".External_field.DC.Shear_rate")
                 self.shearFreq = float(0)
         else:
             self.shearFlow = None
@@ -171,13 +187,21 @@ class UDFReader:
 
         ### 
         # Geometry
-        self.nx = self.uobj.get("mesh.NPX")
-        self.ny = self.uobj.get("mesh.NPY")
-        self.nz = self.uobj.get("mesh.NPZ")
-        self.lx = (2**self.nx)*self.dx
-        self.ly = (2**self.ny)*self.dx
-        self.lz = (2**self.ny)*self.dx
+        self.nx = 2**(self.uobj.get("mesh.NPX"))
+        self.ny = 2**(self.uobj.get("mesh.NPY"))
+        self.nz = 2**(self.uobj.get("mesh.NPZ"))
+        self.lx = self.nx*self.dx
+        self.ly = self.ny*self.dx
+        self.lz = self.ny*self.dx
         self.radius = (self.uobj.get("A"))*self.dx
+
+        ###
+        # time step
+        trnx,trny,trnz = numpy.apply_along_axis(int, 0, [[(self.nx+2)/3, (self.ny+2)/3, (self.nz+2)/3]])
+        self.dt = numpy.square(self.dx/(2.0*numpy.pi)) / (numpy.square(float(trnx)/float(self.nx)) + \
+                                                          numpy.square(float(trny)/float(self.ny)) + \
+                                                          numpy.square(float(trnz)/float(self.nz)))
+
 
         ###
         # object type
@@ -248,14 +272,68 @@ class UDFReader:
             self.t = self.uobj.get("t")
         return res
 
+    ### get time series data
+    def getTimeSeriesData(self, start, stop):
+        if(start < 0 or start >= stop or start >= self.numRecords or \
+           stop < 0 or stop > self.numRecords):
+            return
+        np = stop - start
+        tData = numpy.zeros(np)
+        for i in range(np):
+            self.jump(start + i)
+            tData[i] = self.t
+        return tData
+
     ### get particle data as numpy arrays
     def getParticleData(self, tag):
         return numpy.asarray(self.uobj.getArray("Particles[]."+tag))
+    ### get single particle data as numpy array
+    def getParticleXData(self, pid, tag):
+        if(pid < 0 or pid >= self.numBeads):
+            return
+        return numpy.asarray(self.uobj.getArray("Particles["+str(pid)+"]."+tag))
 
     ### get rigid data as numpy arrays
     def getRigidData(self, tag):
         return numpy.asarray(self.uobj.getArray("RigidParticles[]."+tag))
-        
+
+    ### get single particle data as numpy array
+    def getRigidXData(self, pid, tag):
+        if(pid < 0 or pid >= self.numChains):
+            return
+        return numpy.asarray(self.uobj.getArray("RigidParticles["+str(pid)+"]."+tag))
+
+    ### get particle series data
+    def getParticleXSeriesData(self, start, stop, pid, tag):
+        if(start < 0 or start >= stop or start >= self.numRecords or \
+           stop < 0 or stop > self.numRecords or
+           pid < 0 or pid >= self.numBeads):
+            return
+
+        self.jump(0)
+        dp = (self.getParticleXData(pid, tag)).size
+        np = stop - start
+        pData = numpy.zeros(np*dp).reshape(np, dp)
+        for i in range(np):
+            self.jump(start + i)
+            pData[i] = self.getParticleXData(pid, tag)
+        return pData
+
+    ### get rigid particle series data
+    def getRigidXSeriesData(self, start, stop, pid, tag):
+        if(start < 0 or start >= stop or start >= self.numRecords or \
+           stop < 0 or stop > self.numRecords or
+           pid < 0 or pid >= self.numChains):
+            return
+
+        self.jump(0)
+        dp = (self.getRigidXData(pid,tag)).size
+        np = stop - start
+        pData = numpy.zeros(np*dp).reshape(np, dp)
+        for i in range(np):
+            self.jump(start + i)
+            pData[i] = self.getRigidXData(pid, tag)
+        return pData
                                      
     def printDetails(self):
         print "# UDF file name  : ", self.fileName
@@ -291,6 +369,7 @@ class UDFContainer(UDFReader):
         UDFReader.__init__(self, fileName)
         self.r = numpy.zeros(self.numBeads*3, dtype=numpy.float64).reshape(self.numBeads, 3)
         self.r_raw = numpy.zeros(self.numBeads*3, dtype=numpy.float64).reshape(self.numBeads, 3)
+        self.q = numpy.zeros(self.numBeads*4, dtype=numpy.float64).reshape(self.numBeads, 4)
         
         self.v = numpy.zeros(self.numBeads*3, dtype=numpy.float64).reshape(self.numBeads, 3)
         self.w = numpy.zeros(self.numBeads*3, dtype=numpy.float64).reshape(self.numBeads, 3)
@@ -306,6 +385,7 @@ class UDFContainer(UDFReader):
         if(self.isRigid):
             self.rGs = numpy.zeros(self.numChains*3, dtype=numpy.float64).reshape(self.numChains, 3)
             self.rGs_raw = numpy.zeros(self.numChains*3, dtype=numpy.float64).reshape(self.numChains, 3)
+            self.qGs = numpy.zeros(self.numChains*4, dtype=numpy.float64).reshape(self.numChains, 4)
             
             self.vGs = numpy.zeros(self.numChains*3, dtype=numpy.float64).reshape(self.numChains, 3)
             self.wGs = numpy.zeros(self.numChains*3, dtype=numpy.float64).reshape(self.numChains, 3)
@@ -320,6 +400,7 @@ class UDFContainer(UDFReader):
         else:
             self.rGs = None
             self.rGs_raw = None
+            self.qGs = None
             
             self.vGs = None
             self.wGs = None
@@ -336,6 +417,7 @@ class UDFContainer(UDFReader):
         if self.jump(time) == time:
             self.r = self.getParticleData("R")
             self.r_raw = self.getParticleData("R_raw")
+            self.q = self.getParticleData("q")
 
             self.v = self.getParticleData("v")
             self.w = self.getParticleData("omega")
@@ -350,6 +432,7 @@ class UDFContainer(UDFReader):
             if(self.isRigid):
                 self.rGs = self.getRigidData("R")
                 self.rGs_raw = self.getRigidData("R_raw")
+                self.qGs = self.getRigidData("q")
                 
                 self.vGs = self.getRigidData("v")
                 self.wGs = self.getRigidData("omega")
