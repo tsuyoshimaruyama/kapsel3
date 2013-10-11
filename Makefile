@@ -57,7 +57,8 @@ ifeq ($(ENV), ICC)
       CC     = icc 
       CXX    = icpc 
       CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -w0
-      LINKS  = -lm -lplatform -lcxaguard -lstdc++
+#      LINKS  = -lm -lplatform -lcxaguard -lstdc++
+      LINKS  = -lm -lplatform -lstdc++
 
       GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
       GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
@@ -74,7 +75,7 @@ ifeq ($(ENV), ICC_MKL_OMP)
       CXX    = icpc 
       CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2\
 	-ip -openmp -parallel -w0 -L$(MKL_PATH) -I$(MKL_INCLUDE_PATH) 
-      LINKS  = -lplatform -lcxaguard -lstdc++\
+      LINKS  = -lplatform -lstdc++\
 	-lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm
       GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
       GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
