@@ -174,6 +174,36 @@ inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double 
 }
 
 /*!
+  \brief Compute contravariant velocity field (real-space) from
+  reduced vorticity field (reciprocal space). Alto returns a copy of
+  the Fourier transform of the velocity field (x,y components only)
+  \details \f[
+  \ft{\zeta}^\alpha(\vec{k})\longrightarrow u^\alpha(\vec{r}), \ft{u}^{\alpha=x,y}(\vec{k})
+  \f]
+  \param[in] zeta reduced contravariant vorticity field (reciprocal
+  space)
+  \param[in] uk_dc zero wavenumber Fourier transform fo the
+  contravariant velocity field
+  \param[out] u contravariant velocity field (real space)
+  \param[out] uk_cp contravariant (x,y) velocity field (reciprocal space)
+ */
+inline void Zeta_k2u_cpuk(double **zeta, double uk_dc[DIM], double **u, double **uk_cp){
+  Zeta_k2u_k_OBL(zeta, uk_dc, u);//contra
+
+  int im;
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ_; k++){
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+        uk_cp[0][im] = u[0][im];
+        uk_cp[1][im] = u[1][im];
+      }
+    }
+  }
+  U_k2u(u);
+}
+
+/*!
   \brief Compute contravariant vorticity field (real space) from
   contravariant reduced vorticity field (reciprocal space)
   \details \f[

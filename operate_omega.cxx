@@ -118,7 +118,7 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
     for(int d=0; d<(DIM-1); d++){
 	Truncate_two_third_rule_ooura(zeta[d]);
     }
-    Zeta_k2u_cpuky(zeta, uk_dc, u, work_v1);//contra
+    Zeta_k2u_cpuk(zeta, uk_dc, u, work_v2);//contra
     Zeta_k2omega_OBL(zeta, work_v3);//contra
 
     int im;
@@ -157,8 +157,10 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
 	for(int j = 0; j < NY; j++){
 	    for(int k = 0; k < NZ_; k++) {
 		im=(i*NY*NZ_)+(j*NZ_)+k;
-		u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
-		u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
+                //		u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
+                //		u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
+                u[0][im] -= Shear_rate_eff * work_v2[1][im]; //co
+                u[1][im] += Shear_rate_eff * work_v2[0][im]; //co
 	    }
 	}
     }

@@ -421,6 +421,12 @@ inline void Mem_alloc_var(double **zeta){
     up[d] = alloc_1d_double(NX*NY*NZ_);
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);
   }
+
+  work_v2 = (double **) malloc(sizeof(double *) * (DIM - 1));
+  for(int d=0; d < DIM - 1; d++){
+    work_v2[d] = alloc_1d_double(NX*NY*NZ_);
+  }
+
   phi = alloc_1d_double(NX*NY*NZ_);
   rhop = alloc_1d_double(NX*NY*NZ_);
   work_v1 = alloc_1d_double(NX*NY*NZ_);
