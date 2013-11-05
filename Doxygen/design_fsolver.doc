@@ -98,7 +98,7 @@ where we stress the fact that \f$\vec{\zeta}, \vec{\Omega}\f$ are 2D vectors. Th
 \f]
 where we have dropped the \f$\vec{k}\f$ dependence. Assuming the advection term is constant over an interval \f$h\f$, the field can be updated according to
 \f[
-  \ft{\vec{\zeta}}(t_n + h) = \ft{\vec{\zeta}}(t_n) + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}}(t_n) + \frac{\ft{\vec{\Omega}}(t_n)}{\nu(2\pi k)^2}\right]
+  \ft{\vec{\zeta}}(t_n + h) = \ft{\vec{\zeta}}(t_n) + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}}(t_n) + \frac{\ft{\vec{\Omega}}^*(t_n)}{\nu(2\pi k)^2}\right]
 \f]
 
 \note The basic routines to transform among the various velocity field representations \f$(\vec{u}, \vec{\omega}, \vec{\zeta})\f$ are found in \ref operate_omega.h and \ref fft_wrapper.h

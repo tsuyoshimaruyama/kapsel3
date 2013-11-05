@@ -39,6 +39,23 @@ void U2advection_k(double **u, double **advection);
  */
 void Zeta_k2advection_k(double **zeta, double uk_dc[DIM], double **advection);
 
+/*!
+  \brief Compute the reduced advection term (including contributions
+  due to the advection of the grid points) appearing on the rhs of
+  the NS equation in oblique coordinates, from the reduced vorticity
+  field (reciprocal space)
+  \details \f[
+  \ft{\zeta}^\alpha = \ft{\omega}^{\alpha*} \longrightarrow -\ft{\Omega}^{\alpha*} =
+  \fft{\epsilon^{\alpha\beta\gamma}\partial_\beta
+  \left(\vec{u}\times\vec{\omega} - 2\dot\gamma u^2\vec{E}_1\right)_\gamma}^*
+  \f]
+  \param[in] zeta contravariant reduced vorticity field (reciprocal
+  space)
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field
+  \param[out] advection (negative) contravariant components of the
+  reduced advection term (reciprocal space)
+ */
 void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection);
 
 /*!

@@ -65,7 +65,7 @@ void Mem_alloc_NS_solver(void);
 /*!
   \brief Solve Navier-Stokes equation to update reduced vorticity field
   \details \f[
-  \ft{\vec{\zeta}} \longrightarrow \ft{\vec{\zeta}} + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}} + \frac{\ft{\vec{\Omega}}}{\nu(2\pi k)^2}\right]
+  \ft{\vec{\zeta}} \longrightarrow \ft{\vec{\zeta}} + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}} + \frac{\ft{\vec{\Omega}}^*}{\nu(2\pi k)^2}\right]
   \f]
   Analytic solution is valid in the absence of solute terms, with no shear.
   \param[in,out] zeta reduced vorticity field
@@ -79,9 +79,36 @@ void Mem_alloc_NS_solver(void);
  */
 void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p);
 
-// Shear_Navier_Stokes
+/*! 
+  \brief Solve Navier-Stokes equation under zig-zag shear flow to update
+  reduced vorticity field
+  \param[in,out] zeta reduced vorticity field (reciprocal space)
+  \param[in] jikan time data
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field
+  \param[in] ijk_range field iterator parameters for update
+  \param[in] p particle data (unused)
+ */
 void NS_solver_slavedEuler_Shear_PBC(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force);
 
+/*!
+  \brief Solve Navier-Stokes equations with Lees-Edwards PBC under
+  shear flow to update reduced vorticity field
+  \details \f[
+  \ft{\zeta}^\alpha \longrightarrow \ft{\zeta}^{\alpha} + 
+  \left(e^{-\nu(2\pi k)^2 h} - 1\right)\left[\ft{\zeta}^\alpha +
+  \frac{\ft{\Omega}^{\alpha*}}{\nu (2\pi k)^2}\right]
+  \f]
+  \param[in,out] zeta contravariant reduced vorticity field
+  (reciprocal space)
+  \param[in] jikan time data
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field (contravariant)
+  \param[in] ijk_range field iterator parameters for update
+  \param[in] n_ijk_range field iterator parameters for update
+  \param[in] p particle data (unused)
+  \see \ref page_design_fsolverOBL section of manual for further details
+ */
 void NS_solver_slavedEuler_Shear_OBL(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force);
 
 //Type of Rheology 

@@ -68,6 +68,17 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
 				      ,const double cap
 				       );
+
+
+/*!
+  \brief Compute Lennard-Jones pairwise forces, as well as the particle contribution to the elastic stress
+  \details \f[
+  \tensor{J} = -\sum_i \vec{x}_i \vec{F}_i = -\sum_{i<j} \vec{x}_{ij} \vec{F}_{ij}
+  \f]
+  \param[in,out] p particle data (updated with Lennard-Jones forces)
+  \param[in] distance0_func distance function
+  \param[in] cap cutoff value for the force (divided by particle distance)
+ */
 double Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
 				      ,const double cap

@@ -61,7 +61,7 @@ void Init_fft(void);
 /*!
   \brief Compute x-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k}) \longrightarrow -i 2 \pi k_x \ft{A}(\vec{k}) = \ft{\left(\partial_x A(\vec{r})\right)}
+  \ft{A}(\vec{k}) \longrightarrow -i 2 \pi k_x \ft{A}(\vec{k}) = \fft{\partial_x A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -71,7 +71,7 @@ void A_k2dxa_k(double *a, double *da);
 /*!
   \brief Compute y-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_y \ft{A} = \ft{\left(\partial_y A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_y \ft{A} = \fft{\partial_y A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -81,7 +81,7 @@ void A_k2dya_k(double *a, double *da);
 /*!
   \brief Compute z-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_z \ft{A}(\vec{k}) = \ft{\left(\partial_z A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_z \ft{A}(\vec{k}) = \fft{\partial_z A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -103,7 +103,7 @@ void Omega_k2zeta_k(double **omega, double **zetak);
   (reciprocal space)
   \details \f[
   \ft{\omega}^\alpha(\vec{k})\longrightarrow
-  \ft{\zeta}^{\alpha}(\vec{k}) = \ft{\omega}^{*\alpha}(\vec{k})
+  \ft{\zeta}^{\alpha}(\vec{k}) = \ft{\omega}^{\alpha*}(\vec{k})
   \f]
   \param[in] omega contravariant vorticity field (reciprocal space)
   \param[out] zetak contravariant reduced vorticity field (reciprocal space)
@@ -185,7 +185,7 @@ void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]);
   \brief Compute divergence of vector field (in reciprocal space)
   \details \f[
   \ft{\vec{u}}(\vec{k})\longrightarrow -i 2\pi\vec{k}\cdot\ft{\vec{u}} =
-  \ft{\left(\nabla\cdot \vec{u}(\vec{r})\right)}
+  \fft{\nabla\cdot \vec{u}(\vec{r})}
   \f]
   \param[in] u Fourier transform of vector field u
   \param[out] div Fourier transform of divergence of u
@@ -195,7 +195,7 @@ void U_k2divergence_k(double **u, double *div);
 /*!
   \brief Compute the curl of vector field (in reciprocal space)
   \details \f[
-  \ft{u}(\vec{k})\longrightarrow -i 2\pi\vec{k}\times\ft{\vec{u}}(\vec{k}) = \ft{\left(\nabla_{\vec{r}}\vec{u}(\vec{r})\right)}
+  \ft{u}(\vec{k})\longrightarrow -i 2\pi\vec{k}\times\ft{\vec{u}}(\vec{k}) = \fft{\nabla_{\vec{r}}\vec{u}(\vec{r})}
   \f]
   \param[in,out] u Fourier transform of vector field u (in), Fourier transform of curl of u (out)
  */
@@ -207,7 +207,7 @@ inline void U2u_oblique(double **uu) {
     int im_ob;
     int im_ob_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+#pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i <NX; i++) {
 	for (int j = 0; j <NY; j++) {
 	    for (int k = 0; k <NZ; k++) {
@@ -268,7 +268,7 @@ inline void U_oblique2u(double **uu) {
     int im_ob;
     int im_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+#pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i <NX; i++) {
 	for (int j = 0; j <NY; j++) {
 	    for (int k = 0; k <NZ_; k++) {
@@ -673,7 +673,7 @@ inline void A2a_k_out(double *a_x, double *a_k){
 /*!
   \brief Compute (real space) gradient of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2\pi\vec{k}\ft{A}(\vec{k}) = \ft{\left(\nabla_{\vec{r}} A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2\pi\vec{k}\ft{A}(\vec{k}) = \fft{\nabla_{\vec{r}} A(\vec{r})}
   \f]
   \param[in] a Fourier transform of scalar field A
   \param[out] da Fourier transform of gradient of A
