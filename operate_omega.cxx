@@ -152,19 +152,32 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
     for(int d=0;d<DIM;d++){
 	A2a_k(u[d]);
     }
-    
-    for(int i = 0; i < NX; i++){
+
+    if(DBG_LE_SOLVE){
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+      for(int i = 0; i < NX; i++){
 	for(int j = 0; j < NY; j++){
-	    for(int k = 0; k < NZ_; k++) {
-		im=(i*NY*NZ_)+(j*NZ_)+k;
-                //		u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
-                //		u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
-                u[0][im] -= Shear_rate_eff * work_v2[1][im]; //co
-                u[1][im] += Shear_rate_eff * work_v2[0][im]; //co
-	    }
+          for(int k = 0; k < NZ_; k++) {
+            im=(i*NY*NZ_)+(j*NZ_)+k;
+            u[0][im] -= Shear_rate_eff * work_v2[1][im]; //co
+            u[1][im] += Shear_rate_eff * work_v2[0][im]; //co
+          }
 	}
+      }
+    }else{
+#pragma omp parallel for schedule(dynamic, 1) private(im) 
+      for(int i = 0; i < NX; i++){
+	for(int j = 0; j < NY; j++){
+          for(int k = 0; k < NZ_; k++) {
+            im=(i*NY*NZ_)+(j*NZ_)+k;
+            //		u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
+            //		u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
+            u[0][im] -= 2.*Shear_rate_eff*work_v2[1][im];//co
+            u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v2[1][im];//co
+          }
+	}
+      }
     }
-    
     
     U_k2rotation_k(u);//contra
     Omega_k2zeta_k_OBL(u, advection);//contra

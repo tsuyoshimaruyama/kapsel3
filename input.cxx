@@ -156,6 +156,7 @@ double *janus_slip_mode;
 /// debug flags
 int DBG_MASS_GRID;
 int DBG_LE_SHEAR;
+int DBG_LE_SOLVE;
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
@@ -1692,6 +1693,7 @@ void Gourmet_file_io(const char *infile
     {
       DBG_MASS_GRID = 0;
       DBG_LE_SHEAR = 0;
+      DBG_LE_SOLVE = 0;
       int DEBUG_INFO = 0;
       
       Location target("debug");
@@ -1713,10 +1715,19 @@ void Gourmet_file_io(const char *infile
           DEBUG_INFO = 1;
         }
       }
+      if(ufin->get(target.sub("LE_SOLVE"), str)){
+        ufout->put(target.sub("LE_SOLVE"), str);
+        ufres->put(target.sub("LE_SOLVE"), str);
+        if(str == "YES"){
+          DBG_LE_SOLVE = 1;
+          DEBUG_INFO = 1;
+        }
+      }
       if(DEBUG_INFO){
         fprintf(stderr, "################# DEBUGGING ###################\n");
         if(DBG_MASS_GRID) fprintf(stderr, "# Detailed Mass Grid Calculations             #\n");
         if(DBG_LE_SHEAR)  fprintf(stderr, "# Detailed LE Shear Calculations              #\n");
+        if(DBG_LE_SOLVE)  fprintf(stderr, "# Use new LE Sheer Solver                     #\n");
         fprintf(stderr, "################# GNIGGUBED ###################\n");
       }
     }
