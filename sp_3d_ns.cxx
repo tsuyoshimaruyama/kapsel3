@@ -213,9 +213,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
 
-    int im;
-    int im_obl;
-
     // Update of Fluid Velocity Filed	
     //for two-thirds rule 
     const Index_range ijk_range[] = {
@@ -250,58 +247,21 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	    Truncate_two_third_rule_ooura(zeta[d]);
 	}
 	*/
-	Zeta_k2u_k_OBL(zeta, uk_dc, u);
 
+	Zeta_k2u_k_OBL(zeta, uk_dc, u);
 	// This function force all area ideal shear flow.
 	//Mean_shear_sustaining_force_PBC_OBL(u);
+        U_k2u(u);
 
-	for (int d =0; d < DIM; d++) {
-	    A_k2a(u[d]);
-	}
 	Shear_rate_eff = Shear_rate;
        
         Copy_v3(ucp, u);
 
-
 	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
 	if (degree_oblique >= 1.) {
-	    
-          for(int i = 0; i < NX; i++){
-		for(int j = 0; j < NY; j++) {
-		    
-		    double sign = j - NY/2;
-		    if (!(sign == 0)) {
-			sign = sign/fabs(sign);
-		    }
-		    
-		    int i_oblique = (int)(sign*(j - NY/2))*sign;
-		    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-		    for(int k = 0; k < NZ; k++){
-			im = (i*NY*NZ_)+(j*NZ_) + k;
-			im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
-
-                        //Warning: reset grid points AND oblique basis vectors
-                        u[0][im_obl] = ucp[0][im] + ucp[1][im];
-                        u[1][im_obl] = ucp[1][im];
-                        u[2][im_obl] = ucp[2][im];
-		    }
-		}
-	    }
-	    
-	    degree_oblique -= 1.;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	    for(int i = 0; i < NX; i++){
-		for(int j = 0; j < NY; j++){
-		    for(int k = 0; k < NZ; k++){
-			im = (i*NY*NZ_)+(j*NZ_) + k;
-			
-			for(int d = 0; d < DIM; d++){
-			    ucp[d][im] = u[d][im];
-			    //u_previous[d][im] = u[d][im];
-			}
-		    }
-		}
-	    }
+          Reset_U_OBL(u, ucp);
+          degree_oblique -= 1.;
+          Copy_v3(ucp, u);
 	}
 
 	U_oblique2u(ucp);
@@ -348,9 +308,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	    Add_f_particle(u, f);
 	}
 	
-	for (int d = 0; d < DIM; d++) {
-	    A2a_k(u[d]);
-	}
+        U2u_k(u);
 	Solenoidal_uk_OBL(u);
 
 	contra2co(u);
