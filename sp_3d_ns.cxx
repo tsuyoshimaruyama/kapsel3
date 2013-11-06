@@ -248,25 +248,41 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	}
 	*/
 
-	Zeta_k2u_k_OBL(zeta, uk_dc, u);
-	// This function force all area ideal shear flow.
-	//Mean_shear_sustaining_force_PBC_OBL(u);
-        U_k2u(u);
+        if(DBG_LE_SOLVE){
+          degree_oblique += Shear_rate*jikan.dt_fluid;
+          Update_K2_OBL();
 
-	Shear_rate_eff = Shear_rate;
-       
-        Copy_v3(ucp, u);
+          Zeta_k2u_k_OBL(zeta, uk_dc, u);
+          U_k2u(u);
+          
+          Shear_rate_eff = Shear_rate;
+          
+          Copy_v3(ucp, u);          
 
-	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
-	if (degree_oblique >= 1.) {
-          Reset_U_OBL(u, ucp);
-          degree_oblique -= 1.;
+          if (degree_oblique >= 1.) {
+            Reset_U_OBL(u, ucp);
+            degree_oblique -= 1.;
+            Copy_v3(ucp, u);
+          }
+          U_oblique2u(ucp);
+        }else{
+          Zeta_k2u_k_OBL(zeta, uk_dc, u);
+          U_k2u(u);
+          
+          Shear_rate_eff = Shear_rate;
+          
           Copy_v3(ucp, u);
-	}
-
-	U_oblique2u(ucp);
-
-        Update_K2_OBL();
+          
+          degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+          if (degree_oblique >= 1.) {
+            Reset_U_OBL(u, ucp);
+            degree_oblique -= 1.;
+            Copy_v3(ucp, u);
+          }
+          U_oblique2u(ucp);
+          
+          Update_K2_OBL();
+        }
 
 	Calc_shear_rate_eff();
 	//End Deformation
