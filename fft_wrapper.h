@@ -14,6 +14,7 @@
 
 #include "variable.h"
 #include "input.h"
+#include "aux_field.h"
 #include "alloc.h"
 #include "macro.h"
 
@@ -207,18 +208,7 @@ inline void U2u_oblique(double **uu) {
     int im_ob;
     int im_ob_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i <NX; i++) {
-	for (int j = 0; j <NY; j++) {
-	    for (int k = 0; k <NZ; k++) {
-		im = (i*NY*NZ_) + (j*NZ_)+k;
-
-		work_v3[0][im] = uu[0][im];
-		work_v3[1][im] = uu[1][im];
-		work_v3[2][im] = uu[2][im];
-	    }
-	}
-    }
+    Copy_v3(work_v3, uu);
     
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
     for (int i = 0; i < NX; i++) {
@@ -268,18 +258,7 @@ inline void U_oblique2u(double **uu) {
     int im_ob;
     int im_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i <NX; i++) {
-	for (int j = 0; j <NY; j++) {
-	    for (int k = 0; k <NZ_; k++) {
-		im = (i*NY*NZ_) + (j*NZ_)+k;
-
-		work_v3[0][im] = uu[0][im];
-		work_v3[1][im] = uu[1][im];
-		work_v3[2][im] = uu[2][im];
-	    }
-	}
-    }
+    Copy_v3(work_v3, uu);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
     for (int i = 0; i < NX; i++) {
@@ -328,18 +307,7 @@ inline void contra2co(double **contra) {
 
     int im;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-	    for (int k = 0; k < NZ_; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
-		
-		work_v3[0][im] = contra[0][im];
-		work_v3[1][im] = contra[1][im];
-		work_v3[2][im] = contra[2][im];
-	    }
-	}
-    }
+    Copy_v3_k(work_v3, contra);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i < NX; i++) {
@@ -363,18 +331,8 @@ inline void contra2co(double **contra) {
 inline void co2contra(double **contra) {
 
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-	    for (int k = 0; k < NZ_; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
 
-		work_v3[0][im] = contra[0][im];
-		work_v3[1][im] = contra[1][im];
-		work_v3[2][im] = contra[2][im];
-	    }
-	}
-    }
+    Copy_v3_k(work_v3, contra);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i < NX; i++) {
@@ -637,16 +595,7 @@ a[im]=x_in[i][j][l]*scale;
   \param[out] a_x A in real space
  */
 inline void A_k2a_out(double *a_k, double *a_x){ 
-  int im;
-#pragma omp parallel for schedule(dynamic,1) private(im)
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ_; k++){
-		im=(i*NY*NZ_)+(j*NZ_)+k;
-	    a_x[im] = a_k[im]; 
-      }
-    }
-  }
+  Copy_v1_k(a_x, a_k);
   A_k2a(a_x);
 }
 
@@ -657,16 +606,7 @@ inline void A_k2a_out(double *a_k, double *a_x){
   \param[out] a_k Fourier transform of A
  */
 inline void A2a_k_out(double *a_x, double *a_k){ 
-  int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ; k++){
-	    im=(i*NY*NZ_)+(j*NZ_)+k;
-	    a_k[im] = a_x[im]; 
-      }
-    }
-  }
+  Copy_v1(a_k, a_x);
   A2a_k(a_k);
 }
 

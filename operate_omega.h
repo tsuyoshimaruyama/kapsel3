@@ -190,16 +190,7 @@ inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double 
 inline void Zeta_k2u_cpuk(double **zeta, double uk_dc[DIM], double **u, double **uk_cp){
   Zeta_k2u_k_OBL(zeta, uk_dc, u);//contra
 
-  int im;
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < NZ_; k++){
-        im = (i*NY*NZ_) + (j*NZ_) + k;
-        uk_cp[0][im] = u[0][im];
-        uk_cp[1][im] = u[1][im];
-      }
-    }
-  }
+  Copy_v2_k(uk_cp, u);
   U_k2u(u);
 }
 

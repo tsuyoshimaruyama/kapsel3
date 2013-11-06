@@ -21,6 +21,7 @@
 #include "macro.h"
 #include "input.h"
 #include "variable.h"
+#include "aux_field.h"
 #include "make_phi.h"
 #include "avs_output.h"
 #include "avs_output_p.h"
@@ -306,7 +307,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
           }
           double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
           if(DBG_LE_SHEAR){
-            fprintf(fout, "%g %g %g %g %g %g %g %g %g %g %g %g\n"
+            fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
                     ,jikan.time
                     ,srate_eff
                     ,strain_output
@@ -321,7 +322,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
                     ,(hydro_stress_new[1][0] + dev_stress)/srate_eff + ETA
                     );
           }else{
-            fprintf(fout, "%g %g %g %g %g %g %g\n"
+            fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
                     ,jikan.time
                     ,srate_eff
                     ,strain_output
@@ -333,7 +334,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
           }
 	} else if(!Shear_AC){
           Calc_shear_stress(jikan, p, phi, Shear_force, stress);
-	    fprintf(fout, "%g %g %g %g %g\n"
+	    fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		    ,jikan.time
 		    ,srate_eff
 		    ,strain_output
@@ -342,7 +343,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 		);
 	}else{
           Calc_shear_stress(jikan, p, phi, Shear_force, stress);
-	    fprintf(fout, "%g %g %g %g %g %g\n"
+	    fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		    ,jikan.time
 		    ,srate_eff
 		    ,strain_output

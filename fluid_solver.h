@@ -249,6 +249,31 @@ inline void Calc_hydro_stress(const CTime &jikan
     stress[1][0]=-stress_yx*dmy;
     
 }
+
+inline void Update_K2_OBL(void){
+  int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ_; k++){
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+
+        K2[im] =
+          SQ(WAVE_X * KX_int[im]) +
+          SQ(WAVE_Y * KY_int[im] -
+             WAVE_X * KX_int[im] * degree_oblique) +
+          SQ(WAVE_Z * KZ_int[im]);
+        
+        if(K2[im] > 0.0){
+          IK2[im] = 1.0/K2[im];
+        }else{
+          IK2[im] = 0.0;
+        }
+
+      }
+    }
+  }
+}
 #endif
 
 

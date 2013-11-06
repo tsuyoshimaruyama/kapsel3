@@ -260,20 +260,8 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	}
 	Shear_rate_eff = Shear_rate;
        
-	//Deformation 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	for(int i=0; i<NX; i++){
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ; k++){
-		    im = (i*NY*NZ_)+(j*NZ_) + k;
+        Copy_v3(ucp, u);
 
-		    for (int d = 0; d < DIM; d++) {
-			ucp[d][im]=u[d][im];
-			//u_previous[d][im] = u[d][im];
-		    }
-		}
-	    }
-	}
 
 	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
 	if (degree_oblique >= 1.) {
@@ -318,25 +306,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
 	U_oblique2u(ucp);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	for (int i=0; i<NX; i++) {
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ_; k++){
-		    im = (i*NY*NZ_)+(j*NZ_) + k;
-
-		    K2[im] =
-			SQ(WAVE_X*KX_int[im]) +
-			SQ(WAVE_Y*KY_int[im] -
-			   WAVE_X*degree_oblique*KX_int[im]) +
-			SQ(WAVE_Z*KZ_int[im]);
-		    if(K2[im] > 0.0){
-			IK2[im] = 1./K2[im];
-		    }else{
-			IK2[im] = 0.0;
-		    }
-		}
-	    }
-	}
+        Update_K2_OBL();
 
 	Calc_shear_rate_eff();
 	//End Deformation
