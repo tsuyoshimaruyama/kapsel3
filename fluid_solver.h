@@ -256,7 +256,7 @@ inline void Calc_hydro_stress(const CTime &jikan
 inline void Reset_U_OBL(double **u, double const* const* ucp){
   int im, im_obl;
 
-#pragma omp paralle for schedule(dynamic, 1) private(im, im_obl)
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++) {
       
