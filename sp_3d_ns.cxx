@@ -35,14 +35,6 @@ void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Par
 	NS_solver_slavedEuler_Shear_PBC(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
 	/////////////////	
 	
-	{
-	    static const double iLx = 1./L[0];
-	    Shear_strain = -Shear_rate * LY * jikan.dt_fluid * jikan.ts; 
-	    double dmy = fmod(Shear_strain, L[0]);
-	    Shear_strain_int += (int)((Shear_strain - dmy) * iLx);
-	    Shear_strain = dmy;
-	}
-	
     }else if(SW_EQ == Electrolyte){
 	//for two-thirds rule 
 	const Index_range ijk_range[] = {
@@ -226,14 +218,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
     /////////////////	
     
-    {
-	static const double iLx = 1./L[0];
-	Shear_strain = -Shear_rate * LY * jikan.dt_fluid * jikan.ts; 
-	double dmy = fmod(Shear_strain, L[0]);
-	Shear_strain_int += (int)((Shear_strain - dmy) * iLx);
-	Shear_strain = dmy;
-    }
-    
     if(Particle_Number >= 0){
 	if(FIX_CELL){ // time-dependent average pressure gradient
 	    for(int d=0;d<DIM;d++){
@@ -249,21 +233,20 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	*/
 
         if(DBG_LE_SOLVE){
-          degree_oblique += Shear_rate*jikan.dt_fluid;
+          Shear_rate_eff = Shear_rate;
+          degree_oblique += Shear_rate_eff*jikan.dt_fluid;
           Update_K2_OBL();
 
           Zeta_k2u_k_OBL(zeta, uk_dc, u);
           U_k2u(u);
           
-          Shear_rate_eff = Shear_rate;
-          
           Copy_v3(ucp, u);          
-
           if (degree_oblique >= 1.) {
             Reset_U_OBL(u, ucp);
             degree_oblique -= 1.;
             Copy_v3(ucp, u);
           }
+
           U_oblique2u(ucp);
         }else{
           Zeta_k2u_k_OBL(zeta, uk_dc, u);
@@ -282,7 +265,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           U_oblique2u(ucp);
           
           Update_K2_OBL();
-        }
+        }//Default LE solver
 
 	Calc_shear_rate_eff();
 	//End Deformation
@@ -317,11 +300,11 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         }
 	
 	{
-	    Reset_phi_u(phi, up);
-	    Make_phi_u_particle_OBL(phi, up, p);
-	    Make_f_particle_dt_nonsole(f, ucp, up, phi);
-	    U2u_oblique(f);
-	    Add_f_particle(u, f);
+          Reset_phi_u(phi, up);
+          Make_phi_u_particle_OBL(phi, up, p);
+          Make_f_particle_dt_nonsole(f, ucp, up, phi);
+          U2u_oblique(f);
+          Add_f_particle(u, f);
 	}
 	
         U2u_k(u);

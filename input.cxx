@@ -107,10 +107,8 @@ double ikBT;
 double Shear_rate;
 double Shear_rate_eff;
 double Shear_strain_realized;
-double Shear_strain;
 double Shear_frequency;
 double Inertia_stress;
-int Shear_strain_int;
 double dev_shear_stress[0];
 double rigid_dev_shear_stress[0];
 double &dev_shear_stress_lj = dev_shear_stress[0];
@@ -550,8 +548,6 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("alpha_o"),alpha_o);
 		}
 		Shear_strain_realized = 0.0;
-		Shear_strain = 0.0;
-		Shear_strain_int = 0;
 		{
 		    Srate_depend_LJ_cap = DBL_MAX;
 		}
@@ -612,8 +608,6 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("alpha_o"),alpha_o);
 		}
 		Shear_strain_realized = 0.0;
-		Shear_strain = 0.0;
-		Shear_strain_int = 0;
 		{
 		    Srate_depend_LJ_cap = DBL_MAX;
 		}
@@ -1727,7 +1721,7 @@ void Gourmet_file_io(const char *infile
         fprintf(stderr, "################# DEBUGGING ###################\n");
         if(DBG_MASS_GRID) fprintf(stderr, "# Detailed Mass Grid Calculations             #\n");
         if(DBG_LE_SHEAR)  fprintf(stderr, "# Detailed LE Shear Calculations              #\n");
-        if(DBG_LE_SOLVE)  fprintf(stderr, "# Use new LE Sheer Solver                     #\n");
+        if(DBG_LE_SOLVE)  fprintf(stderr, "# Use new LE Shear Solver                     #\n");
         fprintf(stderr, "################# GNIGGUBED ###################\n");
       }
     }

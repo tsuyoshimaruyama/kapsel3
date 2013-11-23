@@ -253,7 +253,7 @@ inline void Calc_hydro_stress(const CTime &jikan
 /*!
   \brief Reset velocity field when oblique degree is equal to one
  */
-inline void Reset_U_OBL(double **u, double **ucp){
+inline void Reset_U_OBL(double **u, double const* const* ucp){
   int im, im_obl;
 
 #pragma omp paralle for schedule(dynamic, 1) private(im, im_obl)
