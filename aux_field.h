@@ -78,4 +78,16 @@ inline void Copy_v3_k(double **ucp, double const* const* u){
   Copy_v3_Primitive(ucp, u, K_SPACE);
 }
 
+inline void Swap_mem(double* &unew, double* &uold){
+  double* temp = unew;
+  unew = uold;
+  uold = temp;
+}
+
+inline void Swap_mem(double** &unew, double ** &uold){
+  double** temp = unew;
+  unew = uold;
+  uold = temp;
+}
+
 #endif

@@ -165,9 +165,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    if(slip_iter == MAX_SLIP_ITER){
 	      fprintf(stderr, "#Warning: increase MAX_SLIP_ITER (%d)\n", jikan.ts);
 	    }
-	    double **u_old=u;
-	    u = up;
-	    up = u_old;
+
+            Swap_mem(u, up);
 	  } // slip 
 
 	}
@@ -240,32 +239,33 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           Zeta_k2u_k_OBL(zeta, uk_dc, u);
           U_k2u(u);
           
-          Copy_v3(ucp, u);          
           if (degree_oblique >= 1.) {
-            Reset_U_OBL(u, ucp);
+            Reset_U_OBL(ucp, u);
+            Swap_mem(u, ucp);
             degree_oblique -= 1.;
-            Copy_v3(ucp, u);
           }
 
+          Copy_v3(ucp, u);
           U_oblique2u(ucp);
         }else{
           Zeta_k2u_k_OBL(zeta, uk_dc, u);
           U_k2u(u);
           
           Shear_rate_eff = Shear_rate;
-          
-          Copy_v3(ucp, u);
-          
           degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+
           if (degree_oblique >= 1.) {
-            Reset_U_OBL(u, ucp);
+            Reset_U_OBL(ucp, u);
+            Swap_mem(u, ucp);
             degree_oblique -= 1.;
-            Copy_v3(ucp, u);
           }
+
+          Copy_v3(ucp, u);
           U_oblique2u(ucp);
-          
           Update_K2_OBL();
         }//Default LE solver
+        // u   -> velocity field in oblique coordinates
+        // ucp -> velocity fild in cartesian coordinates
 
 	Calc_shear_rate_eff();
 	//End Deformation
