@@ -111,6 +111,8 @@ void NS_solver_slavedEuler_Shear_PBC(double **zeta, const CTime &jikan, double u
  */
 void NS_solver_slavedEuler_Shear_OBL(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force);
 
+void NS_solver_realEuler_Shear_OBL(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force, double **u);
+
 //Type of Rheology 
 void Mean_shear_sustaining_yforce_PBC(double **u, double **force,const CTime &jikan);
 

@@ -428,3 +428,101 @@ void NS_solver_slavedEuler_Shear_OBL(double **zeta
 	}
     }
 }
+
+void NS_solver_realEuler_Shear_OBL(double **zeta
+                                   , const CTime &jikan
+                                   , double uk_dc[DIM]
+                                   , const Index_range *ijk_range
+                                   , const int &n_ijk_range
+                                   , Particle *p
+                                   , double **force
+                                   , double **u){
+
+  //Compute advection term in Fourier Space
+  Zeta_k2advection_k_OBL(zeta, uk_dc, f_ns0);
+  int im;
+  double dmy = jikan.dt_fluid;
+
+  for(int n = 0; n < n_ijk_range; n++){
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+    for(int i = ijk_range[n].istart; i <= ijk_range[n].iend; i++){
+
+      for(int j = ijk_range[n].jstart; j <= ijk_range[n].jend; j++){
+
+        for(int k = ijk_range[n].kstart; k <= ijk_range[n].kend; k++){
+          im = (i * NY * NZ_) + (j * NZ_) + k;
+
+          f_ns1[0][im] = dmy * (f_ns0[0][im] - NU * K2[im] * zeta[0][im]);
+          f_ns1[1][im] = dmy * (f_ns0[1][im] - NU * K2[im] * zeta[1][im]);
+        }//k
+      }//j
+    }//i
+  }//n
+
+  //Euler update for vorticity in Real Space
+  Zeta_k2omega_OBL(zeta, u);
+  Zeta_k2omega_OBL(f_ns1, force);
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+        int im = (i * NY * NZ_) + (j * NZ_) + k;
+        u[0][im] += force[0][im];
+        u[1][im] += force[1][im];
+        u[2][im] += force[2][im];
+      }
+    }
+  }
+
+  Shear_rate_eff = Shear_rate;
+  degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+  Update_K2_OBL();
+
+
+  //Compute solenoidal u from vorticity
+  U2u_k(u);
+  double omega_re[DIM], omega_im[DIM];
+  double kx, ky, kz, k2, ik2;
+#pragma omp parallel for schedule(dynamic, 1) private(kx, ky, kz, k2, ik2, omega_re, omega_im, im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < HNZ_; k++){
+        k2 = 2*k;
+        im = (i*NY*NZ_) + (j*NZ_) + k2;
+        ik2 = IK2[im];
+        kx = WAVE_X * KX_int[im]*ik2;
+        ky = WAVE_Y * KY_int[im]*ik2;
+        kz = WAVE_Z * KZ_int[im]*ik2;
+
+        
+        for(int d = 0; d < DIM; d++){
+          omega_re[d] = u[d][im];
+          omega_im[d] = u[d][im+1];
+        }
+        contra2co_single(omega_re);
+        contra2co_single(omega_im);
+
+        u[0][im]  = (ky * omega_im[2] - kz * omega_im[1]);
+        u[0][im+1]=-(ky * omega_re[2] - kz * omega_re[1]);
+        
+        u[1][im]  = (kz * omega_im[0] - kx * omega_im[2]);
+        u[1][im+1]=-(kz * omega_re[0] - kx * omega_re[2]);
+
+        u[2][im]  = (kx * omega_im[1] - ky * omega_im[0]);
+        u[2][im+1]=-(kx * omega_re[1] - ky * omega_re[0]);
+      }
+    }
+  }
+  if(Particle_Number >= 0){
+    if(FIX_CELL){
+      for(int d = 0; d < DIM; d++){
+        if(FIX_CELLxyz[d]) uk_dc[d] = 0.0;
+      }
+    }
+  }
+  for(int d = 0; d < DIM; d++){
+    u[d][0] = uk_dc[d];
+  }
+
+  U_k2u(u);
+}

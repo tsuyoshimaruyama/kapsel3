@@ -214,7 +214,11 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
     };
     const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
     /////////////////	
-    NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
+    if(DBG_LE_SOLVE){
+      NS_solver_realEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force, u);
+    }else{
+      NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
+    }
     /////////////////	
     
     if(Particle_Number >= 0){
@@ -232,13 +236,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	*/
 
         if(DBG_LE_SOLVE){
-          Shear_rate_eff = Shear_rate;
-          degree_oblique += Shear_rate_eff*jikan.dt_fluid;
-          Update_K2_OBL();
-
-          Zeta_k2u_k_OBL(zeta, uk_dc, u);
-          U_k2u(u);
-          
           if (degree_oblique >= 1.) {
             Reset_U_OBL(ucp, u);
             Swap_mem(u, ucp);
