@@ -152,9 +152,9 @@ double *janus_slip_vel;
 double *janus_slip_mode;
 
 /// debug flags
-int DBG_MASS_GRID;
-int DBG_LE_SHEAR;
-int DBG_LE_SOLVE;
+int DBG_MASS_GRID = 0;
+int DBG_LE_SHEAR = 0;
+int DBG_LE_SOLVE = 0;
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
