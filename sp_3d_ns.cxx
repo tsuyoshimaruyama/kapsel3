@@ -314,29 +314,26 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 }
 
 inline void Mem_alloc_var(double **zeta){
-  if(SW_EQ == Navier_Stokes){
-    Mem_alloc_NS_solver();
-	ucp = (double **) malloc(sizeof (double *)*DIM);
-    for(int d=0;d<DIM;d++){
-	  ucp[d] = alloc_1d_double(NX*NY*NZ_);
+
+  Mem_alloc_NS_solver();
+
+  if(SW_EQ == Navier_Stokes ||
+     SW_EQ == Shear_Navier_Stokes ||
+     SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+    ucp = (double **) malloc(sizeof (double *) * DIM);
+    for(int d=0; d<DIM; d++){
+      ucp[d] = alloc_1d_double(NX*NY*NZ_);
     }
-  }else if(SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
-    Mem_alloc_NS_solver();
-	ucp = (double **) malloc(sizeof (double *)*DIM);
-    for(int d=0;d<DIM;d++){
-	  ucp[d] = alloc_1d_double(NX*NY*NZ_);
-    }
-  }else if(SW_EQ==Electrolyte){
-    Mem_alloc_NS_solver();
+  }else if(SW_EQ == Electrolyte){
     Mem_alloc_charge();
   }
-
+  
   Mem_alloc_f_particle();
-
+  
   for(int d=0;d<DIM-1;d++){
     zeta[d] = alloc_1d_double(NX*NY*NZ_);
   }
-
+  
   u = (double **) malloc(sizeof(double *) * DIM);
   up = (double **) malloc(sizeof(double *) * DIM);
   work_v3 = (double **) malloc(sizeof(double *) * DIM);
@@ -345,12 +342,12 @@ inline void Mem_alloc_var(double **zeta){
     up[d] = alloc_1d_double(NX*NY*NZ_);
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);
   }
-
+  
   work_v2 = (double **) malloc(sizeof(double *) * (DIM - 1));
   for(int d=0; d < DIM - 1; d++){
     work_v2[d] = alloc_1d_double(NX*NY*NZ_);
   }
-
+  
   phi = alloc_1d_double(NX*NY*NZ_);
   rhop = alloc_1d_double(NX*NY*NZ_);
   work_v1 = alloc_1d_double(NX*NY*NZ_);
@@ -391,17 +388,17 @@ int main(int argc, char *argv[]){
   
   // Main time evolution type 
   if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-      fprintf(stdout, "#Evolution type Shear_Navier_Stokes_Lees_Edwards\n");
-      Time_evolution = Time_evolution_hydro_OBL;
+    fprintf(stdout, "#Evolution type Shear_Navier_Stokes_Lees_Edwards\n");
+    Time_evolution = Time_evolution_hydro_OBL;
   } else {
-      if(SW_EQ == Navier_Stokes){
-        fprintf(stdout, "#Evolution type Navier_Stokes\n");
-      }else if(SW_EQ == Shear_Navier_Stokes){
-        fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
-      }else if(SW_EQ == Electrolyte){
-        fprintf(stdout, "#Evolution type Electrolyte\n");
-      }
-      Time_evolution = Time_evolution_hydro;
+    if(SW_EQ == Navier_Stokes){
+      fprintf(stdout, "#Evolution type Navier_Stokes\n");
+    }else if(SW_EQ == Shear_Navier_Stokes){
+      fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
+    }else if(SW_EQ == Electrolyte){
+      fprintf(stdout, "#Evolution type Electrolyte\n");
+    }
+    Time_evolution = Time_evolution_hydro;
   }
 
   MT_seed(GIVEN_SEED,0);
@@ -582,6 +579,11 @@ int main(int argc, char *argv[]){
   fprintf(stderr, "#Average Step Time  (s): %10.2f\n", global_time);
   fprintf(stderr, "#                   (m): %10.2f\n", global_time/60.0);
   fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
+
+  for(int d = 0; d < DIM - 1; d++){
+    free_1d_double(zeta[d]);
+  }
+  free(zeta);
   delete [] particles;
   return EXIT_SUCCESS;
 }

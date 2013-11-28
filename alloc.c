@@ -21,7 +21,6 @@ int *alloc_1d_int(int n1)
     
     i = (int *) malloc(sizeof(int) * n1);
     alloc_error_check(i);
-    memset(i, 0, sizeof(int) * n1);
     return i;
 }
 
@@ -36,7 +35,6 @@ double *alloc_1d_double(int n1)
     
     d = (double *) malloc(sizeof(double) * n1);
     alloc_error_check(d);
-    memset(d, 0.0, sizeof(double) * n1);
     return d;
 }
 
@@ -54,7 +52,6 @@ int **alloc_2d_int(int n1, int n2)
     alloc_error_check(ii);
     i = (int *) malloc(sizeof(int) * n1 * n2);
     alloc_error_check(i);
-    memset(i, 0, sizeof(int) * n1 * n2);
 
     ii[0] = i;
     for (j = 1; j < n1; j++) {
@@ -78,7 +75,6 @@ double **alloc_2d_double(int n1, int n2)
     alloc_error_check(dd);
     d = (double *) malloc(sizeof(double) * n1 * n2);
     alloc_error_check(d);
-    memset(d, 0.0, sizeof(double) * n1 * n2);
 
     dd[0] = d;
     for (j = 1; j < n1; j++) {
@@ -108,7 +104,6 @@ int ***alloc_3d_int(int n1, int n2, int n3)
     }
     i = (int *) malloc(sizeof(int) * n1 * n2 * n3);
     alloc_error_check(i);
-    memset(i, 0, sizeof(int) * n1 * n2 * n3);
 
     ii[0] = i;
     for (j = 1; j < n1 * n2; j++) {
@@ -139,7 +134,6 @@ double ***alloc_3d_double(int n1, int n2, int n3)
     }
     d = (double *) malloc(sizeof(double) * n1 * n2 * n3);
     alloc_error_check(d);
-    memset(d, 0.0, sizeof(double) * n1 * n2 * n3);
 
     dd[0] = d;
     for (j = 1; j < n1 * n2; j++) {

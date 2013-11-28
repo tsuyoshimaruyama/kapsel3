@@ -149,8 +149,8 @@ inline void Rhs_NS(double **zeta
 ////////// inline functions end
 void Mem_alloc_NS_solver(void){
     Pressure = alloc_1d_double(NX*NY*NZ_);
-    f_ns0 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns1 = (double **) malloc(sizeof (double *)*DIM-1);
+    f_ns0 = (double **) malloc(sizeof (double *)*(DIM-1));
+    f_ns1 = (double **) malloc(sizeof (double *)*(DIM-1));
 
     Shear_force = (double **) malloc(sizeof (double *)*DIM);
     Shear_force_k = (double **) malloc(sizeof (double *)*DIM);
@@ -442,6 +442,8 @@ void NS_solver_realEuler_Shear_OBL(double **zeta
   Zeta_k2advection_k_OBL(zeta, uk_dc, f_ns0);
   int im;
   double dmy = jikan.dt_fluid;
+
+  for(int d = 0; d < DIM - 1; d++) Reset_phi(f_ns1[d]);
 
   for(int n = 0; n < n_ijk_range; n++){
 #pragma omp parallel for schedule(dynamic, 1) private(im)
