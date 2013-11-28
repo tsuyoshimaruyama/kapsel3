@@ -435,7 +435,7 @@ void NS_solver_realEuler_Shear_OBL(double **zeta
                                    , const Index_range *ijk_range
                                    , const int &n_ijk_range
                                    , Particle *p
-                                   , double **force
+                                   , double **omega
                                    , double **u){
 
   //Compute advection term in Fourier Space
@@ -462,59 +462,24 @@ void NS_solver_realEuler_Shear_OBL(double **zeta
   }//n
 
   //Euler update for vorticity in Real Space
-  Zeta_k2omega_OBL(zeta, u);
-  Zeta_k2omega_OBL(f_ns1, force);
+  Zeta_k2omega_OBL(zeta, omega);
+  Zeta_k2omega_OBL(f_ns1, u);
 #pragma omp parallel for schedule(dynamic, 1) private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZ; k++){
         int im = (i * NY * NZ_) + (j * NZ_) + k;
-        u[0][im] += force[0][im];
-        u[1][im] += force[1][im];
-        u[2][im] += force[2][im];
+        omega[0][im] += u[0][im];
+        omega[1][im] += u[1][im];
+        omega[2][im] += u[2][im];
       }
     }
   }
 
+  //Update metric tensor and oblique basis vectors
   Shear_rate_eff = Shear_rate;
   degree_oblique += Shear_rate_eff*jikan.dt_fluid;
   Update_K2_OBL();
-
-
-  //Compute solenoidal u from vorticity
-  U2u_k(u);
-  double omega_re[DIM], omega_im[DIM];
-  double kx, ky, kz, k2, ik2;
-#pragma omp parallel for schedule(dynamic, 1) private(kx, ky, kz, k2, ik2, omega_re, omega_im, im)
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < HNZ_; k++){
-        k2 = 2*k;
-        im = (i*NY*NZ_) + (j*NZ_) + k2;
-        ik2 = IK2[im];
-        kx = WAVE_X * KX_int[im]*ik2;
-        ky = WAVE_Y * KY_int[im]*ik2;
-        kz = WAVE_Z * KZ_int[im]*ik2;
-
-        
-        for(int d = 0; d < DIM; d++){
-          omega_re[d] = u[d][im];
-          omega_im[d] = u[d][im+1];
-        }
-        contra2co_single(omega_re);
-        contra2co_single(omega_im);
-
-        u[0][im]  = (ky * omega_im[2] - kz * omega_im[1]);
-        u[0][im+1]=-(ky * omega_re[2] - kz * omega_re[1]);
-        
-        u[1][im]  = (kz * omega_im[0] - kx * omega_im[2]);
-        u[1][im+1]=-(kz * omega_re[0] - kx * omega_re[2]);
-
-        u[2][im]  = (kx * omega_im[1] - ky * omega_im[0]);
-        u[2][im+1]=-(kx * omega_re[1] - ky * omega_re[0]);
-      }
-    }
-  }
   if(Particle_Number >= 0){
     if(FIX_CELL){
       for(int d = 0; d < DIM; d++){
@@ -522,9 +487,9 @@ void NS_solver_realEuler_Shear_OBL(double **zeta
       }
     }
   }
-  for(int d = 0; d < DIM; d++){
-    u[d][0] = uk_dc[d];
-  }
 
-  U_k2u(u);
+  //Compute solenoidal u from vorticity
+  U2u_k(omega);
+  Omega_k2u_k_OBL(omega, uk_dc, u);
+  U_k2u(u);//u in real-space oblique coordinates
 }

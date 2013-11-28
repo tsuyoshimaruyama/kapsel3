@@ -307,8 +307,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         U2u_k(u);
 	Solenoidal_uk_OBL(u);
 
-	contra2co(u);
-
 	U_k2zeta_k_OBL(u, zeta, uk_dc);
     }
 }

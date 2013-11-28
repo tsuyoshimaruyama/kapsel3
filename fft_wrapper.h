@@ -147,12 +147,25 @@ void Zeta_k2u_k(double **zeta, double uk_dc[DIM], double **u);
 void Zeta_k2omega_k_OBL(double **zeta, double **omega);
 
 /*!
-  \brief Compute contravariant reduced vorticity field from covariant
+  \brief Compute contravariant vorticity field from contravariant
   velocity field (reciprocal space)
   \details \f[
-  \ft{u}_\alpha(\vec{k}) \longrightarrow \ft{\zeta}^\alpha(\vec{k})
+  \ft{u}^\alpha(\vec{k}) \longrightarrow \ft{\omega}^\alpha(\vec{k})
   \f]
-  \param[in] u covariant velocity field (reciprocal space)
+  \param[in] u contravariant velocity field (reciprocal space)
+  \param[out] omega contravariant vorticity field (reciprocal space)
+  \param[out] uk_dc zero-wavenumbe Fourier transfrom of the
+  contravariant velocity field
+ */
+void U_k2omega_k_OBL(double **u, double **omega, double uk_dc[DIM]);
+
+/*!
+  \brief Compute contravariant reduced vorticity field from contravariant
+  velocity field (reciprocal space)
+  \details \f[
+  \ft{u}^\alpha(\vec{k}) \longrightarrow \ft{\zeta}^\alpha(\vec{k})
+  \f]
+  \param[in] u contravariant velocity field (reciprocal space)
   \param[out] zeta contravariant reduced vorticity field (reciprocal
   space)
   \param[out] uk_dc zero-wavenumber Fourier transform of the
@@ -160,6 +173,18 @@ void Zeta_k2omega_k_OBL(double **zeta, double **omega);
  */
 void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]);
 
+/*!
+  \brief Compute contravariant colenoidal velocity field from
+  contravariant vorticity field (reciprocal space)
+  \details \f[
+  \ft{\omega}^\alpha(\vec{k}) \longrightarrow \ft{u}^{\alpha}(\vec{k})
+  \f]
+  \param[in] omega contravariant vorticity field (reciprocal space)
+  \param[in] uk_dc zero_wavenumber Fourier transform of the
+  contravariant velocity field
+  \param[out] u contravariant velocity field (reciprocal space)
+ */
+void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u);
 /*!
   \brief Compute contravariant solenoidal velocity field from
   contravariant reduced vorticity
