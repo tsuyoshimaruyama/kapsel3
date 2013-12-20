@@ -97,7 +97,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	if(SW_EQ == Electrolyte){
 	    {
 		Reset_phi_u(phi, up);
-		Calc_f_hydro_correct_precision(p, f, jikan);
+		Calc_f_hydro_correct_precision(p, u, jikan);
 		for(int n=0;n<Particle_Number;n++){
 		    for(int d=0;d<DIM;d++){
 			p[n].f_hydro1[d] = p[n].f_hydro[d];
