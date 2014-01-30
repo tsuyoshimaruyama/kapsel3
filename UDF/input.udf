@@ -132,6 +132,12 @@ switch:{
    []
   }
  }
+ {
+  "YES"
+  {
+   [{0, {"NO", "NO", "NO"}, {"NO", "NO", "YES"}}]
+  }
+ }
 }
 output:{10,100,"OFF",{"avs_ch","data","BINARY"}"ON"}
 resume:{

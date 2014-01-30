@@ -210,6 +210,16 @@ switch: {
            pin_rot[]: int
           }
    }
+   free_rigid:{
+     type: select{'NO', 'YES'}  "Free rigid degress of freedom"
+     YES:{
+       DOF[]:{
+         spec_id: int           "Rigid body species id"
+         vel:{x:select{'NO', 'YES'}, y:select{'NO', 'YES'}, z:select{'NO', 'YES'}} "Free velocity components"
+         omega:{x:select{'NO', 'YES'}, y:select{'NO', 'YES'}, z:select{'NO', 'YES'}} "Free omega components"
+       }
+     }
+   }
 }
 
 output: {
