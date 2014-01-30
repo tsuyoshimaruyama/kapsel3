@@ -158,7 +158,8 @@ int DBG_MASS_GRID;
 int DBG_LE_SHEAR;
 ////
 int Rigid_Number;
-int *Rigid_Motions;// 0(fix) or 1(free)
+int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
+int **Rigid_Motions_omega; // 0 (fix) or 1 (free)
 double **Rigid_Velocities;
 double **Rigid_Omegas;
 int *RigidID_Components;
@@ -904,7 +905,8 @@ void Gourmet_file_io(const char *infile
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
 		
-		Rigid_Motions = alloc_1d_int(Component_Number);
+		Rigid_Motions_vel = alloc_2d_int(Component_Number, DIM);
+                Rigid_Motions_omega = alloc_2d_int(Component_Number, DIM);
 		Rigid_Velocities = alloc_2d_double(Component_Number, DIM);
 		Rigid_Omegas = alloc_2d_double(Component_Number, DIM);
 
@@ -960,7 +962,6 @@ void Gourmet_file_io(const char *infile
 		if(SW_EQ == Electrolyte){
                   fprintf(stderr, " %d:Surface_charge[i]",d++);
 		}
-                fprintf(stderr, " %d:Rigid_motion[i](0:fix,1:free)",d++);
                 fprintf(stderr, " %d:Rigid_velocity[i]",d++);
                 fprintf(stderr, " %d:Rigid_omega[i]",d++);
 	    }
@@ -1243,8 +1244,17 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("Rigid_omega.y"),Rigid_Omegas[i][1]);
 		    ufres->put(target.sub("Rigid_omega.z"),Rigid_Omegas[i][2]);
 		}
-		if(rigid_str == "fix") Rigid_Motions[i] = 0;
-		else if(rigid_str == "free") Rigid_Motions[i] = 1;
+
+		if(rigid_str == "fix") {
+                  Rigid_Motions_vel[i][0] = Rigid_Motions_omega[i][0] = 0;
+                  Rigid_Motions_vel[i][1] = Rigid_Motions_omega[i][1] = 0;
+                  Rigid_Motions_vel[i][2] = Rigid_Motions_omega[i][2] = 0;
+                }
+		else if(rigid_str == "free"){
+                  Rigid_Motions_vel[i][0] = Rigid_Motions_omega[i][0] = 1;
+                  Rigid_Motions_vel[i][1] = Rigid_Motions_omega[i][1] = 1;
+                  Rigid_Motions_vel[i][2] = Rigid_Motions_omega[i][2] = 1;
+                }
 		else{
 		    fprintf(stderr, "invalid Rigid_motion\n"); 
 		    exit_job(EXIT_FAILURE);
@@ -1256,25 +1266,23 @@ void Gourmet_file_io(const char *infile
 		Particle_Numbers[i] = Beads_Numbers[i]*Chain_Numbers[i];
 		
 		if(SW_EQ == Electrolyte){
-		    fprintf(stderr, "#%d %d %d %d %g %g %d (%g, %g, %g) (%g, %g, %g)\n"
+		    fprintf(stderr, "#%d %d %d %d %g %g (%g, %g, %g) (%g, %g, %g)\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,Beads_Numbers[i]
 			    ,Chain_Numbers[i]
 			    ,MASS_RATIOS[i]
 			    ,Surface_charge[i]
-			    ,Rigid_Motions[i]
 			    ,Rigid_Velocities[i][0], Rigid_Velocities[i][1], Rigid_Velocities[i][2]
 			    ,Rigid_Omegas[i][0], Rigid_Omegas[i][1], Rigid_Omegas[i][2]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %d %d %f %d (%f, %f, %f) (%f, %f, %f)\n"
+		    fprintf(stderr, "#%d %d %d %d %f (%f, %f, %f) (%f, %f, %f)\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,Beads_Numbers[i]
 			    ,Chain_Numbers[i]
 			    ,MASS_RATIOS[i]
-			    ,Rigid_Motions[i]
 			    ,Rigid_Velocities[i][0], Rigid_Velocities[i][1], Rigid_Velocities[i][2]
 			    ,Rigid_Omegas[i][0], Rigid_Omegas[i][1], Rigid_Omegas[i][2]
 			);
@@ -1610,6 +1618,76 @@ void Gourmet_file_io(const char *infile
 		}
 	    }
 	}
+        {
+          if(SW_PT == rigid){
+            fprintf(stderr, "#\n");
+            fprintf(stderr, "# Rigid Body Degrees of Freedom DOF: 0 (fix) or 1 (free) :\n");
+            fprintf(stderr, "# [spec_id] vx vy vz wx wy wz\n");
+            for(int i = 0; i < Component_Number; i++){
+              fprintf(stderr, "# [%d] %d %d %d %d %d %d\n", 
+                      i,
+                      Rigid_Motions_vel[i][0], Rigid_Motions_vel[i][1], Rigid_Motions_vel[i][2],
+                      Rigid_Motions_omega[i][0], Rigid_Motions_omega[i][1], Rigid_Motions_omega[i][2]);
+            }
+          }
+
+          Location target("switch.free_rigid");
+          if(ufin->get(target.sub("type"), str)){
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+
+            if(str == "YES"){
+              if(SW_PT == rigid) fprintf(stderr, "# WARNING: Switching individual Rigid Body DOF !\n");
+              const char *vflag[DIM]={"vel.x","vel.y","vel.z"};
+              const char *wflag[DIM]={"omega.x","omega.y","omega.z"};
+
+              int N_DOF = ufin->size("switch.free_rigid.YES.DOF[]");
+              int target_spec;
+              char buffer[256];
+              string flag;
+
+              for(int i = 0; i < N_DOF; i++){
+                sprintf(buffer, "switch.free_rigid.YES.DOF[%d]", i);
+                Location target_flag(buffer);
+                ufin->get(target_flag.sub("spec_id"), target_spec);
+                ufout->put(target_flag.sub("spec_id"), target_spec);
+                ufres->put(target_flag.sub("spec_id"), target_spec);
+                if(target_spec < 0 || target_spec >= Component_Number){
+                  fprintf(stderr, "# Error: species id out of bounds in %s !\n", buffer);
+                  exit_job(EXIT_FAILURE);
+                }
+
+                //switch velocity components on/off
+                for(int d = 0; d < DIM; d++){
+                  ufin->get(target_flag.sub(vflag[d]), flag);
+                  ufout->put(target_flag.sub(vflag[d]), flag);
+                  ufres->put(target_flag.sub(vflag[d]), flag);
+
+                  if(SW_PT == rigid) Rigid_Motions_vel[target_spec][d] = (flag == "YES" ? 1 : 0);
+                }
+
+                //switch omega components on/off
+                for(int d = 0; d < DIM; d++){
+                  ufin->get(target_flag.sub(wflag[d]), flag);
+                  ufout->put(target_flag.sub(wflag[d]), flag);
+                  ufres->put(target_flag.sub(wflag[d]), flag);
+
+                  if(SW_PT == rigid) Rigid_Motions_omega[target_spec][d] = (flag == "YES" ? 1 : 0);
+                }
+
+                if(SW_PT == rigid){
+                  fprintf(stderr, "# [%d] %d %d %d %d %d %d (new values)\n", 
+                          target_spec,
+                          Rigid_Motions_vel[i][0], Rigid_Motions_vel[i][1], Rigid_Motions_vel[i][2],
+                          Rigid_Motions_omega[i][0], Rigid_Motions_omega[i][1], Rigid_Motions_omega[i][2]);
+                }
+
+              }
+
+            }
+          }
+        }
+
     }
     {
       DBG_MASS_GRID = 0;

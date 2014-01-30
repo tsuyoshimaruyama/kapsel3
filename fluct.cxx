@@ -65,11 +65,18 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
       torqueGsdt[rigidID][1] += GRvecs[n][2] * fdt[0] - GRvecs[n][0] * fdt[2];
       torqueGsdt[rigidID][2] += GRvecs[n][0] * fdt[1] - GRvecs[n][1] * fdt[0];
     }
-    
+
+    int rigid_spec;
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      if(Rigid_Motions[ RigidID_Components[rigidID] ] == 0) continue;	// if "fix"
+      rigid_spec = RigidID_Components[rigidID];
+
       for(int d1=0; d1<DIM; d1++){
+        if(Rigid_Motions_vel[rigid_spec][d1] == 0) continue; // if "fix"
         velocityGs[rigidID][d1] += forceGsdt[rigidID][d1] * Rigid_IMasses[rigidID];
+      }
+
+      for(int d1=0; d1<DIM; d1++){
+        if(Rigid_Motions_omega[rigid_spec][d1] == 0) continue; // if "fix"
         for(int d2=0; d2<DIM; d2++) omegaGs[rigidID][d1] += Rigid_IMoments[rigidID][d1][d2] * torqueGsdt[rigidID][d2];
       }
     }

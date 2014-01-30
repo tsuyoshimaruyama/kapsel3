@@ -202,7 +202,8 @@ extern double VF_LJ;
 extern double Ivolume;
 ////
 extern int Rigid_Number;
-extern int *Rigid_Motions;// 0(fix) or 1(free)
+extern int **Rigid_Motions_vel;     // 0 (fix) or 1 (free)
+extern int **Rigid_Motions_omega;   // 0 (fix) or 1 (free)
 extern double **Rigid_Velocities;
 extern double **Rigid_Omegas;
 extern int *RigidID_Components;
