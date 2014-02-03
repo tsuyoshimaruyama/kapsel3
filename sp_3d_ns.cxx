@@ -236,6 +236,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         
         Shear_rate_eff = Shear_rate;
         degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+        if(DBG_LE_SOLVE_UPDT) Update_Obl_Coord(u, Shear_rate_eff*jikan.dt_fluid);
         
         if (degree_oblique >= 1.) {
           Reset_U_OBL(ucp, u);

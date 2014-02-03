@@ -307,6 +307,21 @@ inline void Update_K2_OBL(void){
     }
   }
 }
+
+inline void Update_Obl_Coord(double **u, const double &delta_gamma){
+  int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+
+        u[0][im] -= delta_gamma * u[1][im];
+      }
+    }
+  }
+}
+
 #endif
 
 

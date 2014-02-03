@@ -154,7 +154,8 @@ double *janus_slip_mode;
 /// debug flags
 int DBG_MASS_GRID = 0;
 int DBG_LE_SHEAR = 0;
-int DBG_LE_SOLVE = 0;
+int DBG_LE_SOLVE_ALPHA = 0;
+int DBG_LE_SOLVE_UPDT = 0;
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
@@ -1687,7 +1688,8 @@ void Gourmet_file_io(const char *infile
     {
       DBG_MASS_GRID = 0;
       DBG_LE_SHEAR = 0;
-      DBG_LE_SOLVE = 0;
+      DBG_LE_SOLVE_ALPHA = 2;
+      DBG_LE_SOLVE_UPDT = 0;
       int DEBUG_INFO = 0;
       
       Location target("debug");
@@ -1709,19 +1711,41 @@ void Gourmet_file_io(const char *infile
           DEBUG_INFO = 1;
         }
       }
-      if(ufin->get(target.sub("LE_SOLVE"), str)){
-        ufout->put(target.sub("LE_SOLVE"), str);
-        ufres->put(target.sub("LE_SOLVE"), str);
+
+      int flag = DBG_LE_SOLVE_ALPHA;
+      if(ufin->get(target.sub("LE_SOLVE_ALPHA"), flag)){
+        ufout->put(target.sub("LE_SOLVE_ALPHA"), flag);
+        ufres->put(target.sub("LE_SOLVE_ALPHA"), flag);
+        assert(flag == 0 || flag == 1 || flag == 2);
+        DBG_LE_SOLVE_ALPHA = flag;
+        DEBUG_INFO = 1;
+      }
+
+
+      if(ufin->get(target.sub("LE_SOLVE_UPDATE"), str)){
+        ufout->put(target.sub("LE_SOLVE_UPDATE"), str);
+        ufres->put(target.sub("LE_SOLVE_UPDATE"), str);
         if(str == "YES"){
-          DBG_LE_SOLVE = 1;
+          DBG_LE_SOLVE_UPDT = 1;
           DEBUG_INFO = 1;
         }
       }
+
+      assert(DBG_MASS_GRID == 0 || DBG_MASS_GRID == 1);
+      assert(DBG_LE_SHEAR == 0 || DBG_LE_SHEAR == 1);
+      assert(DBG_LE_SOLVE_ALPHA == 0 || DBG_LE_SOLVE_ALPHA == 1 || DBG_LE_SOLVE_ALPHA == 2);
+      assert(DBG_LE_SOLVE_UPDT == 0 || DBG_LE_SOLVE_UPDT == 1);
       if(DEBUG_INFO){
         fprintf(stderr, "################# DEBUGGING ###################\n");
         if(DBG_MASS_GRID) fprintf(stderr, "# Detailed Mass Grid Calculations             #\n");
         if(DBG_LE_SHEAR)  fprintf(stderr, "# Detailed LE Shear Calculations              #\n");
-        if(DBG_LE_SOLVE)  fprintf(stderr, "# Use new LE Shear Solver                     #\n");
+        if(DBG_LE_SOLVE_ALPHA != 2 || DBG_LE_SOLVE_UPDT == 1){
+          fprintf(stderr, "# Use new LE Shear Solver                     #\n");
+        }else{
+          fprintf(stderr, "# Use old LE Shear Solver                     #\n");
+        }
+        fprintf(stderr, "#     Gdot multiplier:                    %1d#\n", DBG_LE_SOLVE_ALPHA);
+        fprintf(stderr, "#     E_alpha update :                    %1d#\n", DBG_LE_SOLVE_UPDT);
         fprintf(stderr, "################# GNIGGUBED ###################\n");
       }
     }
