@@ -336,6 +336,8 @@ inline void Set_global_parameters(void){
 	    Tdump=1./(NU * KMAX2);
 	    fprintf(stderr, "# aaaaa :vis_time 2:shearCFLtime 3:shearstokestime 4:LJstokestime\n");
 	    fprintf(stderr, "# %g %g %g %g\n" , Tdump*Axel, shear_CFL_time, shear_stokes_time, LJ_stokes_time);
+            fprintf(stderr, "# Delta gamma = %.6g * %.6g = %.6g\n", Shear_rate, Tdump*Axel, 
+                    Shear_rate*Tdump*Axel);
 	    //Tdump = MIN(Tdump, shear_CFL_time);
 	    //Tdump = MIN(Tdump, shear_stokes_time);
 	}else if(SW_EQ == Electrolyte){
@@ -1703,6 +1705,7 @@ void Gourmet_file_io(const char *infile
           DEBUG_INFO = 1;
         }
       }
+
       if(ufin->get(target.sub("LE_SHEAR"), str)){
         ufout->put(target.sub("LE_SHEAR"), str);
         ufres->put(target.sub("LE_SHEAR"), str);
@@ -1712,15 +1715,21 @@ void Gourmet_file_io(const char *infile
         }
       }
 
-      int flag = DBG_LE_SOLVE_ALPHA;
-      if(ufin->get(target.sub("LE_SOLVE_ALPHA"), flag)){
-        ufout->put(target.sub("LE_SOLVE_ALPHA"), flag);
-        ufres->put(target.sub("LE_SOLVE_ALPHA"), flag);
-        assert(flag == 0 || flag == 1 || flag == 2);
-        DBG_LE_SOLVE_ALPHA = flag;
+      if(ufin->get(target.sub("LE_SOLVE_ALPHA"), str)){
+        ufout->put(target.sub("LE_SOLVE_ALPHA"), str);
+        ufres->put(target.sub("LE_SOLVE_ALPHA"), str);
+        if(str == "0"){
+          DBG_LE_SOLVE_ALPHA = 0;
+        }else if (str == "1"){
+          DBG_LE_SOLVE_ALPHA = 1;
+        }else if (str == "2"){
+          DBG_LE_SOLVE_ALPHA = 2;
+        }else{
+          fprintf(stderr, "# ERROR: LE_SOLVE_ALPHA\n");
+          exit_job(EXIT_FAILURE);
+        }
         DEBUG_INFO = 1;
       }
-
 
       if(ufin->get(target.sub("LE_SOLVE_UPDATE"), str)){
         ufout->put(target.sub("LE_SOLVE_UPDATE"), str);
@@ -1744,8 +1753,8 @@ void Gourmet_file_io(const char *infile
         }else{
           fprintf(stderr, "# Use old LE Shear Solver                     #\n");
         }
-        fprintf(stderr, "#     Gdot multiplier:                    %1d#\n", DBG_LE_SOLVE_ALPHA);
-        fprintf(stderr, "#     E_alpha update :                    %1d#\n", DBG_LE_SOLVE_UPDT);
+        fprintf(stderr, "#     Gdot multiplier:                       %1d#\n", DBG_LE_SOLVE_ALPHA);
+        fprintf(stderr, "#     E_alpha update :                       %1d#\n", DBG_LE_SOLVE_UPDT);
         fprintf(stderr, "################# GNIGGUBED ###################\n");
       }
     }
