@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <cfloat>
 #include <sys/types.h>
 #include <dirent.h>
@@ -74,10 +74,8 @@ extern double ikBT;
 extern double Shear_rate;
 extern double Shear_rate_eff;
 extern double Shear_strain_realized;
-extern double Shear_strain;
 extern double Shear_frequency;
 extern double Inertia_stress;
-extern int Shear_strain_int;
 extern double dev_shear_stress[];
 extern double rigid_dev_shear_stress[];
 extern double &dev_shear_stress_lj;
@@ -121,6 +119,8 @@ extern double *janus_slip_mode;
 //debug flags
 extern int DBG_MASS_GRID;
 extern int DBG_LE_SHEAR;
+extern int DBG_LE_SOLVE_ALPHA;
+extern int DBG_LE_SOLVE_UPDT;
 
 extern char Out_dir[];
 extern char Out_name[];

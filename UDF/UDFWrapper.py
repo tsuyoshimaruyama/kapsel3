@@ -153,10 +153,10 @@ class UDFReader:
     'Wrapper Class for UDFManager'
     def __init__(self, fileName):
         self.fileName = fileName
-        if os.path.isfile("./"+fileName)==False:
+        if os.path.isfile(fileName)==False:
             print "UDF file does not exist!"
             sys.exit(2)
-        self.uobj = UDFManager("./"+fileName)
+        self.uobj = UDFManager(fileName)
 
         ###
         # Check udf version

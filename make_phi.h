@@ -97,7 +97,8 @@ void Make_rho_field(double *phi,Particle *p);
   \param[in] xp real space position of the particle
   \param[in] dx grid spacing
   \param[out] x_int position of the particle on the discrete grid
-  \param[out] residue displacement vector from the real position to the grid position
+  \param[out] residue displacement vector from the (center) grid
+  position to the real particle position
  */
 inline int Particle_cell(const double *xp
 			 ,const double &dx
@@ -133,7 +134,8 @@ inline int Particle_cell(const double *xp
   \brief Returns global (world) coordinates of a given point of the particle Sekibun integration cell
   \param[in] cell local coordinates of a point in the Sekibun grid
   \param[in] x_int center of the Sekibun grid (origin of local frame)
-  \param[in] residue offset between particle position and position of Sekibun cell
+  \param[in] residue offset between position of Sekibun cell and
+  particle position
   \param[in] sw_in_cell unused
   \param[in] Nlattice (global) number of lattice points in each direction
   \param[in] dx grid spacing
@@ -158,6 +160,8 @@ inline void Relative_coord(const int *cell
 	r[d] = (double)cell[d] * dx - residue[d]; 
     }
 }
+
+//never used
 inline void Relative_coord_OBL(const int *cell
 			       ,const int *x_int
 			       ,const double *residue
@@ -195,6 +199,28 @@ inline void Relative_coord_OBL(const int *cell
     r[1] = (double)cell[1] * dx - residue[1];
     r[2] = (double)cell[2] * dx - residue[2];   
 }
+
+
+/*!
+  \brief Returns global (world) coordinates of a given point of the
+  particle Sekibun integration cell for a system with Lees-Edwards
+  boundary conditions
+  \warning \c cell points are calculated with respect to an auxiliary
+  Sekibun grid, displaced by \c residue[0] in the x direction
+  \f[
+  \vec{r} \ne \vec{r}_{\text{cell}} - \vec{r}_{\text{residue}}
+  \f]
+  \param[in] cell local coordinates of a point in the Sekibun grid
+  \param[in] x_int center of the Sekibun grid
+  \param[in] residue offset between position of SEkibun cell and
+  particle positions
+  \param[in] sw_in_cell unused
+  \param[in] dx grid spacing
+  \param[out] r_mesh global coordinates of \c cell point
+  \param[out] r displacement vector from particle center to \c cell
+  point
+  \retval stepover +1/-1 if top/bottom Y boundaries are crossed (zero otherwise)
+ */
 inline int Relative_coord_check_stepover_Y(const int *cell
 					   ,const int *x_int
 					   ,const double *residue

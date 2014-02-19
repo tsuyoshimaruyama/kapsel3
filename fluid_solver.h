@@ -65,7 +65,7 @@ void Mem_alloc_NS_solver(void);
 /*!
   \brief Solve Navier-Stokes equation to update reduced vorticity field
   \details \f[
-  \ft{\vec{\zeta}} \longrightarrow \ft{\vec{\zeta}} + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}} + \frac{\ft{\vec{\Omega}}}{\nu(2\pi k)^2}\right]
+  \ft{\vec{\zeta}} \longrightarrow \ft{\vec{\zeta}} + \left(e^{-\nu (2\pi k)^2 h} - 1\right)\left[\ft{\vec{\zeta}} + \frac{\ft{\vec{\Omega}}^*}{\nu(2\pi k)^2}\right]
   \f]
   Analytic solution is valid in the absence of solute terms, with no shear.
   \param[in,out] zeta reduced vorticity field
@@ -79,9 +79,36 @@ void Mem_alloc_NS_solver(void);
  */
 void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p);
 
-// Shear_Navier_Stokes
+/*! 
+  \brief Solve Navier-Stokes equation under zig-zag shear flow to update
+  reduced vorticity field
+  \param[in,out] zeta reduced vorticity field (reciprocal space)
+  \param[in] jikan time data
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field
+  \param[in] ijk_range field iterator parameters for update
+  \param[in] p particle data (unused)
+ */
 void NS_solver_slavedEuler_Shear_PBC(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force);
 
+/*!
+  \brief Solve Navier-Stokes equations with Lees-Edwards PBC under
+  shear flow to update reduced vorticity field
+  \details \f[
+  \ft{\zeta}^\alpha \longrightarrow \ft{\zeta}^{\alpha} + 
+  \left(e^{-\nu(2\pi k)^2 h} - 1\right)\left[\ft{\zeta}^\alpha +
+  \frac{\ft{\Omega}^{\alpha*}}{\nu (2\pi k)^2}\right]
+  \f]
+  \param[in,out] zeta contravariant reduced vorticity field
+  (reciprocal space)
+  \param[in] jikan time data
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field (contravariant)
+  \param[in] ijk_range field iterator parameters for update
+  \param[in] n_ijk_range field iterator parameters for update
+  \param[in] p particle data (unused)
+  \see \ref page_design_fsolverOBL section of manual for further details
+ */
 void NS_solver_slavedEuler_Shear_OBL(double **zeta, const CTime &jikan, double uk_dc[DIM], const Index_range *ijk_range, const int &n_ijk_range, Particle *p, double **force);
 
 //Type of Rheology 
@@ -222,6 +249,79 @@ inline void Calc_hydro_stress(const CTime &jikan
     stress[1][0]=-stress_yx*dmy;
     
 }
+
+/*!
+  \brief Reset velocity field when oblique degree is equal to one
+ */
+inline void Reset_U_OBL(double **u, double const* const* ucp){
+  int im, im_obl;
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++) {
+      
+      double sign = j - NY/2;
+      if (!(sign == 0)) {
+        sign = sign/fabs(sign);
+      }
+      
+      int i_oblique = (int)(sign*(j - NY/2))*sign;
+      i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+      for(int k = 0; k < NZ; k++){
+        im = (i*NY*NZ_)+(j*NZ_) + k;
+        im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
+        
+        //Warning: reset grid points AND oblique basis vectors
+        u[0][im_obl] = ucp[0][im] + ucp[1][im];
+        u[1][im_obl] = ucp[1][im];
+        u[2][im_obl] = ucp[2][im];
+      }
+    }
+  }
+}
+
+/*!
+  \brief Update magnitude of k vectors 
+ */
+inline void Update_K2_OBL(void){
+  int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ_; k++){
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+
+        K2[im] =
+          SQ(WAVE_X * KX_int[im]) +
+          SQ(WAVE_Y * KY_int[im] -
+             WAVE_X * KX_int[im] * degree_oblique) +
+          SQ(WAVE_Z * KZ_int[im]);
+        
+        if(K2[im] > 0.0){
+          IK2[im] = 1.0/K2[im];
+        }else{
+          IK2[im] = 0.0;
+        }
+
+      }
+    }
+  }
+}
+
+inline void Update_Obl_Coord(double **u, const double &delta_gamma){
+  int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < NZ; k++){
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+
+        u[0][im] -= delta_gamma * u[1][im];
+      }
+    }
+  }
+}
+
 #endif
 
 

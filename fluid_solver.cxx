@@ -149,8 +149,8 @@ inline void Rhs_NS(double **zeta
 ////////// inline functions end
 void Mem_alloc_NS_solver(void){
     Pressure = alloc_1d_double(NX*NY*NZ_);
-    f_ns0 = (double **) malloc(sizeof (double *)*DIM-1);
-    f_ns1 = (double **) malloc(sizeof (double *)*DIM-1);
+    f_ns0 = (double **) malloc(sizeof (double *)*(DIM-1));
+    f_ns1 = (double **) malloc(sizeof (double *)*(DIM-1));
 
     Shear_force = (double **) malloc(sizeof (double *)*DIM);
     Shear_force_k = (double **) malloc(sizeof (double *)*DIM);

@@ -15,7 +15,7 @@ double *t;
 
 double **ucp;
 double *phi, **up, **u, *rhop;
-double **work_v3, *work_v1;
+double **work_v3, **work_v2, *work_v1;
 
 int *KX_int, *KY_int, *KZ_int;
 double *K2, *IK2;
@@ -338,18 +338,18 @@ void U_k2zeta_k(double **u, double **zeta, double uk_dc[DIM]){
     assert(zeta[1][0] == 0.0); 
 }
 
-void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]){
-    double ks[DIM];
-    double omega_re[DIM];
-    double omega_im[DIM];
-    int k2;
-    int im;
-    {
-	uk_dc[0] = u[0][0]; 
-	uk_dc[1] = u[1][0]; 
-	uk_dc[2] = u[2][0]; 
-	co2contra_single(uk_dc);
-#pragma omp parallel for schedule(dynamic, 1) private(ks, omega_re, omega_im, k2, im)
+void U_k2omega_k_OBL(double **u, double **omega, double uk_dc[DIM]){
+  double u_re[DIM];
+  double u_im[DIM];
+  double ks[DIM];
+  int k2;
+  int im;
+
+  uk_dc[0] = u[0][0]; 
+  uk_dc[1] = u[1][0]; 
+  uk_dc[2] = u[2][0]; 
+  {
+#pragma omp parallel for schedule(dynamic, 1) private(u_re, u_im, ks, k2, im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<HNZ_; k++){
@@ -358,29 +358,77 @@ void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]){
 		    ks[0] = KX_int[im] * WAVE_X;
 		    ks[1] = KY_int[im] * WAVE_Y;
 		    ks[2] = KZ_int[im] * WAVE_Z;
-		    omega_re[0] = 
-			(ks[1] * u[2][im+1] 
-			 - ks[2] * u[1][im+1]);
-		    omega_im[0] = 
-			-(ks[1] * u[2][im] 
-			  - ks[2] * u[1][im]
-			    );
+
+                    u_re[0] = u[0][im];
+                    u_im[0] = u[0][im+1];
+                    u_re[1] = u[1][im];
+                    u_im[1] = u[1][im+1];
+                    u_re[2] = u[2][im];
+                    u_im[2] = u[2][im+1];
+                    contra2co_single(u_re);
+                    contra2co_single(u_im);
+
+		    omega[0][im]   =  (ks[1] * u_im[2] - ks[2] * u_im[1]);
+		    omega[0][im+1] = -(ks[1] * u_re[2] - ks[2] * u_re[1]);
 		    
-		    omega_re[1] = 
-			(ks[2] * u[0][im+1] 
-			 - ks[0] * u[2][im+1]);
-		    omega_im[1] = 
-			-(ks[2] * u[0][im] 
-			  - ks[0] * u[2][im]
-			    );
+		    omega[1][im]   =  (ks[2] * u_im[0] - ks[0] * u_im[2]);
+		    omega[1][im+1] = -(ks[2] * u_re[0] - ks[0] * u_re[2]);
 		    
-		    omega_re[2] = 
-			(ks[0] * u[1][im+1] 
-			 - ks[1] * u[0][im+1]);
-		    omega_im[2] = 
-			-(ks[0] * u[1][im] 
-			  - ks[1] * u[0][im]
-			    );
+		    omega[2][im]   =  (ks[0] * u_im[1] - ks[1] * u_im[0]);
+		    omega[2][im+1] = -(ks[0] * u_re[1] - ks[1] * u_re[0]);
+
+		}//k
+	    }//j
+	}//i
+  }
+  assert(omega[0][0] == 0.0);
+  assert(omega[1][0] == 0.0);
+  assert(omega[2][0] == 0.0);
+}
+
+void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]){
+    double ks[DIM];
+    double u_re[DIM];
+    double u_im[DIM];
+    double omega_re[DIM];
+    double omega_im[DIM];
+    int k2;
+    int im;
+
+
+    uk_dc[0] = u[0][0]; 
+    uk_dc[1] = u[1][0]; 
+    uk_dc[2] = u[2][0]; 
+    {
+#pragma omp parallel for schedule(dynamic, 1) private(ks, u_re, u_im, omega_re, omega_im, k2, im)
+	for(int i=0; i<NX; i++){
+	    for(int j=0; j<NY; j++){
+		for(int k=0; k<HNZ_; k++){
+		    k2=2*k;
+		    im=(i*NY*NZ_)+(j*NZ_)+k2;
+		    ks[0] = KX_int[im] * WAVE_X;
+		    ks[1] = KY_int[im] * WAVE_Y;
+		    ks[2] = KZ_int[im] * WAVE_Z;
+
+                    u_re[0] = u[0][im];
+                    u_im[0] = u[0][im+1];
+                    u_re[1] = u[1][im];
+                    u_im[1] = u[1][im+1];
+                    u_re[2] = u[2][im];
+                    u_im[2] = u[2][im+1];
+                    contra2co_single(u_re);
+                    contra2co_single(u_im);
+
+		    omega_re[0] =  (ks[1] * u_im[2] - ks[2] * u_im[1]);
+		    omega_im[0] = -(ks[1] * u_re[2] - ks[2] * u_re[1]);
+		    
+		    omega_re[1] =  (ks[2] * u_im[0] - ks[0] * u_im[2]);
+		    omega_im[1] = -(ks[2] * u_re[0] - ks[0] * u_re[2]);
+		    
+		    omega_re[2] =  (ks[0] * u_im[1] - ks[1] * u_im[0]);
+		    omega_im[2] = -(ks[0] * u_re[1] - ks[1] * u_re[0]);
+                    
+
 		    if(KX_int[im] != 0){
 			zeta[0][im] = omega_re[1];
 			zeta[0][im + 1] = omega_im[1];
@@ -573,18 +621,15 @@ void Zeta_k2u_k_OBL(double **zeta, double uk_dc[DIM], double **u){
 		  kx *= ik2;
 		  ky *= ik2;
 		  kz *= ik2;
-		  u[0][im] = 
-		      (ky * omega_im[2] - kz * omega_im[1]);//contra
-		  u[0][im+1] = 
-		      -(ky * omega_re[2] - kz * omega_re[1]);//contra
-		  u[1][im] = 
-		      (kz * omega_im[0] - kx * omega_im[2]);//contra 
-		  u[1][im+1] = 
-		      -(kz * omega_re[0] - kx * omega_re[2]);//contra
-		  u[2][im] = 
-		      (kx * omega_im[1] - ky * omega_im[0]);//contra
-		  u[2][im+1] = 
-		      -(kx * omega_re[1] - ky * omega_re[0]);//contra
+
+		  u[0][im]   =  (ky * omega_im[2] - kz * omega_im[1]);//contra
+		  u[0][im+1] = -(ky * omega_re[2] - kz * omega_re[1]);//contra
+
+		  u[1][im]   =  (kz * omega_im[0] - kx * omega_im[2]);//contra 
+		  u[1][im+1] = -(kz * omega_re[0] - kx * omega_re[2]);//contra
+
+		  u[2][im] =    (kx * omega_im[1] - ky * omega_im[0]);//contra
+		  u[2][im+1] = -(kx * omega_re[1] - ky * omega_re[0]);//contra
 	      }
 	  }
       }
@@ -594,17 +639,67 @@ void Zeta_k2u_k_OBL(double **zeta, double uk_dc[DIM], double **u){
   }
 }
 
+
+void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u){
+  double omega_re[DIM];
+  double omega_im[DIM];
+  double kx;
+  double ky;
+  double kz;
+  double ik2;
+  int k2;
+  int im;
+
+#pragma omp parallel for schedule(dynamic, 1) private(omega_re,omega_im,kx,ky,kz,ik2,k2,im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      for(int k = 0; k < HNZ_; k++){
+        k2 = 2*k;
+        im = (i * NY * NZ_) + (j * NZ_) + k2;
+        
+        ik2 = IK2[im];
+        kx = WAVE_X * KX_int[im] * ik2;
+        ky = WAVE_Y * KY_int[im] * ik2;
+        kz = WAVE_Z * KZ_int[im] * ik2;
+        
+        omega_re[0] = omega[0][im];
+        omega_im[0] = omega[0][im+1];
+        omega_re[1] = omega[1][im];
+        omega_im[1] = omega[1][im+1];
+        omega_re[2] = omega[2][im];
+        omega_im[2] = omega[2][im+1];
+
+        //From contravariant to covariant
+        contra2co_single(omega_re);
+        contra2co_single(omega_im);
+
+        u[0][im]   =  (ky * omega_im[2] - kz * omega_im[1]);//contra
+        u[0][im+1] = -(ky * omega_re[2] - kz * omega_re[1]);//contra
+        
+        u[1][im]   =  (kz * omega_im[0] - kx * omega_im[2]);//contra 
+        u[1][im+1] = -(kz * omega_re[0] - kx * omega_re[2]);//contra
+        
+        u[2][im] =    (kx * omega_im[1] - ky * omega_im[0]);//contra
+        u[2][im+1] = -(kx * omega_re[1] - ky * omega_re[0]);//contra
+      }//k
+    }//j
+  }//i
+  
+  u[0][0] = uk_dc[0];
+  u[1][0] = uk_dc[1];
+  u[2][0] = uk_dc[2];
+}
+
 void Zeta_k2omega_k_OBL(double **zeta, double **omega){
     double dmy1, dmy2;
     double kx;
     double ky;
     double kz;
     int im;
-    int k2;
     double dmy;
     
     {
-#pragma omp parallel for schedule(dynamic, 1) private(dmy1, dmy2, kx, ky, kz, im, k2, dmy)
+#pragma omp parallel for schedule(dynamic, 1) private(dmy1, dmy2, kx, ky, kz, im, dmy)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ_; k++){

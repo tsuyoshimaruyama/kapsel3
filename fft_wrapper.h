@@ -14,6 +14,7 @@
 
 #include "variable.h"
 #include "input.h"
+#include "aux_field.h"
 #include "alloc.h"
 #include "macro.h"
 
@@ -42,7 +43,7 @@ extern double *t;
 
 extern double **ucp;
 extern double *phi,**up,**u,*rhop;
-extern double **work_v3, *work_v1;
+extern double **work_v3, **work_v2, *work_v1;
 
 extern int *KX_int, *KY_int, *KZ_int;
 extern double *K2,*IK2;
@@ -61,7 +62,7 @@ void Init_fft(void);
 /*!
   \brief Compute x-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k}) \longrightarrow -i 2 \pi k_x \ft{A}(\vec{k}) = \ft{\left(\partial_x A(\vec{r})\right)}
+  \ft{A}(\vec{k}) \longrightarrow -i 2 \pi k_x \ft{A}(\vec{k}) = \fft{\partial_x A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -71,7 +72,7 @@ void A_k2dxa_k(double *a, double *da);
 /*!
   \brief Compute y-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_y \ft{A} = \ft{\left(\partial_y A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_y \ft{A} = \fft{\partial_y A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -81,7 +82,7 @@ void A_k2dya_k(double *a, double *da);
 /*!
   \brief Compute z-derivative of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_z \ft{A}(\vec{k}) = \ft{\left(\partial_z A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2 \pi k_z \ft{A}(\vec{k}) = \fft{\partial_z A(\vec{r})}
   \f]
   \param[in] a Fourier transform of a scalar field A
   \param[out] da Fourier transform of x-derivative of A
@@ -103,7 +104,7 @@ void Omega_k2zeta_k(double **omega, double **zetak);
   (reciprocal space)
   \details \f[
   \ft{\omega}^\alpha(\vec{k})\longrightarrow
-  \ft{\zeta}^{\alpha}(\vec{k}) = \ft{\omega}^{*\alpha}(\vec{k})
+  \ft{\zeta}^{\alpha}(\vec{k}) = \ft{\omega}^{\alpha*}(\vec{k})
   \f]
   \param[in] omega contravariant vorticity field (reciprocal space)
   \param[out] zetak contravariant reduced vorticity field (reciprocal space)
@@ -146,12 +147,25 @@ void Zeta_k2u_k(double **zeta, double uk_dc[DIM], double **u);
 void Zeta_k2omega_k_OBL(double **zeta, double **omega);
 
 /*!
-  \brief Compute contravariant reduced vorticity field from covariant
+  \brief Compute contravariant vorticity field from contravariant
   velocity field (reciprocal space)
   \details \f[
-  \ft{u}_\alpha(\vec{k}) \longrightarrow \ft{\zeta}^\alpha(\vec{k})
+  \ft{u}^\alpha(\vec{k}) \longrightarrow \ft{\omega}^\alpha(\vec{k})
   \f]
-  \param[in] u covariant velocity field (reciprocal space)
+  \param[in] u contravariant velocity field (reciprocal space)
+  \param[out] omega contravariant vorticity field (reciprocal space)
+  \param[out] uk_dc zero-wavenumbe Fourier transfrom of the
+  contravariant velocity field
+ */
+void U_k2omega_k_OBL(double **u, double **omega, double uk_dc[DIM]);
+
+/*!
+  \brief Compute contravariant reduced vorticity field from contravariant
+  velocity field (reciprocal space)
+  \details \f[
+  \ft{u}^\alpha(\vec{k}) \longrightarrow \ft{\zeta}^\alpha(\vec{k})
+  \f]
+  \param[in] u contravariant velocity field (reciprocal space)
   \param[out] zeta contravariant reduced vorticity field (reciprocal
   space)
   \param[out] uk_dc zero-wavenumber Fourier transform of the
@@ -159,6 +173,18 @@ void Zeta_k2omega_k_OBL(double **zeta, double **omega);
  */
 void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]);
 
+/*!
+  \brief Compute contravariant colenoidal velocity field from
+  contravariant vorticity field (reciprocal space)
+  \details \f[
+  \ft{\omega}^\alpha(\vec{k}) \longrightarrow \ft{u}^{\alpha}(\vec{k})
+  \f]
+  \param[in] omega contravariant vorticity field (reciprocal space)
+  \param[in] uk_dc zero_wavenumber Fourier transform of the
+  contravariant velocity field
+  \param[out] u contravariant velocity field (reciprocal space)
+ */
+void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u);
 /*!
   \brief Compute contravariant solenoidal velocity field from
   contravariant reduced vorticity
@@ -185,7 +211,7 @@ void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]);
   \brief Compute divergence of vector field (in reciprocal space)
   \details \f[
   \ft{\vec{u}}(\vec{k})\longrightarrow -i 2\pi\vec{k}\cdot\ft{\vec{u}} =
-  \ft{\left(\nabla\cdot \vec{u}(\vec{r})\right)}
+  \fft{\nabla\cdot \vec{u}(\vec{r})}
   \f]
   \param[in] u Fourier transform of vector field u
   \param[out] div Fourier transform of divergence of u
@@ -195,7 +221,7 @@ void U_k2divergence_k(double **u, double *div);
 /*!
   \brief Compute the curl of vector field (in reciprocal space)
   \details \f[
-  \ft{u}(\vec{k})\longrightarrow -i 2\pi\vec{k}\times\ft{\vec{u}}(\vec{k}) = \ft{\left(\nabla_{\vec{r}}\vec{u}(\vec{r})\right)}
+  \ft{u}(\vec{k})\longrightarrow -i 2\pi\vec{k}\times\ft{\vec{u}}(\vec{k}) = \fft{\nabla_{\vec{r}}\vec{u}(\vec{r})}
   \f]
   \param[in,out] u Fourier transform of vector field u (in), Fourier transform of curl of u (out)
  */
@@ -207,18 +233,7 @@ inline void U2u_oblique(double **uu) {
     int im_ob;
     int im_ob_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
-    for (int i = 0; i <NX; i++) {
-	for (int j = 0; j <NY; j++) {
-	    for (int k = 0; k <NZ; k++) {
-		im = (i*NY*NZ_) + (j*NZ_)+k;
-
-		work_v3[0][im] = uu[0][im];
-		work_v3[1][im] = uu[1][im];
-		work_v3[2][im] = uu[2][im];
-	    }
-	}
-    }
+    Copy_v3(work_v3, uu);
     
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
     for (int i = 0; i < NX; i++) {
@@ -268,18 +283,7 @@ inline void U_oblique2u(double **uu) {
     int im_ob;
     int im_p;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
-    for (int i = 0; i <NX; i++) {
-	for (int j = 0; j <NY; j++) {
-	    for (int k = 0; k <NZ_; k++) {
-		im = (i*NY*NZ_) + (j*NZ_)+k;
-
-		work_v3[0][im] = uu[0][im];
-		work_v3[1][im] = uu[1][im];
-		work_v3[2][im] = uu[2][im];
-	    }
-	}
-    }
+    Copy_v3(work_v3, uu);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
     for (int i = 0; i < NX; i++) {
@@ -328,18 +332,7 @@ inline void contra2co(double **contra) {
 
     int im;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-	    for (int k = 0; k < NZ_; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
-		
-		work_v3[0][im] = contra[0][im];
-		work_v3[1][im] = contra[1][im];
-		work_v3[2][im] = contra[2][im];
-	    }
-	}
-    }
+    Copy_v3_k(work_v3, contra);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i < NX; i++) {
@@ -363,18 +356,8 @@ inline void contra2co(double **contra) {
 inline void co2contra(double **contra) {
 
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-	    for (int k = 0; k < NZ_; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
 
-		work_v3[0][im] = contra[0][im];
-		work_v3[1][im] = contra[1][im];
-		work_v3[2][im] = contra[2][im];
-	    }
-	}
-    }
+    Copy_v3_k(work_v3, contra);
 
 #pragma omp parallel for schedule(dynamic, 1) private(im)
     for (int i = 0; i < NX; i++) {
@@ -637,16 +620,7 @@ a[im]=x_in[i][j][l]*scale;
   \param[out] a_x A in real space
  */
 inline void A_k2a_out(double *a_k, double *a_x){ 
-  int im;
-#pragma omp parallel for schedule(dynamic,1) private(im)
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ_; k++){
-		im=(i*NY*NZ_)+(j*NZ_)+k;
-	    a_x[im] = a_k[im]; 
-      }
-    }
-  }
+  Copy_v1_k(a_x, a_k);
   A_k2a(a_x);
 }
 
@@ -657,23 +631,14 @@ inline void A_k2a_out(double *a_k, double *a_x){
   \param[out] a_k Fourier transform of A
  */
 inline void A2a_k_out(double *a_x, double *a_k){ 
-  int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ; k++){
-	    im=(i*NY*NZ_)+(j*NZ_)+k;
-	    a_k[im] = a_x[im]; 
-      }
-    }
-  }
+  Copy_v1(a_k, a_x);
   A2a_k(a_k);
 }
 
 /*!
   \brief Compute (real space) gradient of scalar field (in reciprocal space)
   \details \f[
-  \ft{A}(\vec{k})\longrightarrow -i 2\pi\vec{k}\ft{A}(\vec{k}) = \ft{\left(\nabla_{\vec{r}} A(\vec{r})\right)}
+  \ft{A}(\vec{k})\longrightarrow -i 2\pi\vec{k}\ft{A}(\vec{k}) = \fft{\nabla_{\vec{r}} A(\vec{r})}
   \f]
   \param[in] a Fourier transform of scalar field A
   \param[out] da Fourier transform of gradient of A

@@ -107,10 +107,8 @@ double ikBT;
 double Shear_rate;
 double Shear_rate_eff;
 double Shear_strain_realized;
-double Shear_strain;
 double Shear_frequency;
 double Inertia_stress;
-int Shear_strain_int;
 double dev_shear_stress[0];
 double rigid_dev_shear_stress[0];
 double &dev_shear_stress_lj = dev_shear_stress[0];
@@ -154,8 +152,10 @@ double *janus_slip_vel;
 double *janus_slip_mode;
 
 /// debug flags
-int DBG_MASS_GRID;
-int DBG_LE_SHEAR;
+int DBG_MASS_GRID = 0;
+int DBG_LE_SHEAR = 0;
+int DBG_LE_SOLVE_ALPHA = 0;
+int DBG_LE_SOLVE_UPDT = 0;
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
@@ -336,6 +336,8 @@ inline void Set_global_parameters(void){
 	    Tdump=1./(NU * KMAX2);
 	    fprintf(stderr, "# aaaaa :vis_time 2:shearCFLtime 3:shearstokestime 4:LJstokestime\n");
 	    fprintf(stderr, "# %g %g %g %g\n" , Tdump*Axel, shear_CFL_time, shear_stokes_time, LJ_stokes_time);
+            fprintf(stderr, "# Delta gamma = %.6g * %.6g = %.6g\n", Shear_rate, Tdump*Axel, 
+                    Shear_rate*Tdump*Axel);
 	    //Tdump = MIN(Tdump, shear_CFL_time);
 	    //Tdump = MIN(Tdump, shear_stokes_time);
 	}else if(SW_EQ == Electrolyte){
@@ -549,8 +551,6 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("alpha_o"),alpha_o);
 		}
 		Shear_strain_realized = 0.0;
-		Shear_strain = 0.0;
-		Shear_strain_int = 0;
 		{
 		    Srate_depend_LJ_cap = DBL_MAX;
 		}
@@ -611,8 +611,6 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("alpha_o"),alpha_o);
 		}
 		Shear_strain_realized = 0.0;
-		Shear_strain = 0.0;
-		Shear_strain_int = 0;
 		{
 		    Srate_depend_LJ_cap = DBL_MAX;
 		}
@@ -1692,6 +1690,8 @@ void Gourmet_file_io(const char *infile
     {
       DBG_MASS_GRID = 0;
       DBG_LE_SHEAR = 0;
+      DBG_LE_SOLVE_ALPHA = 2;
+      DBG_LE_SOLVE_UPDT = 0;
       int DEBUG_INFO = 0;
       
       Location target("debug");
@@ -1705,6 +1705,7 @@ void Gourmet_file_io(const char *infile
           DEBUG_INFO = 1;
         }
       }
+
       if(ufin->get(target.sub("LE_SHEAR"), str)){
         ufout->put(target.sub("LE_SHEAR"), str);
         ufres->put(target.sub("LE_SHEAR"), str);
@@ -1713,10 +1714,47 @@ void Gourmet_file_io(const char *infile
           DEBUG_INFO = 1;
         }
       }
+
+      if(ufin->get(target.sub("LE_SOLVE_ALPHA"), str)){
+        ufout->put(target.sub("LE_SOLVE_ALPHA"), str);
+        ufres->put(target.sub("LE_SOLVE_ALPHA"), str);
+        if(str == "0"){
+          DBG_LE_SOLVE_ALPHA = 0;
+        }else if (str == "1"){
+          DBG_LE_SOLVE_ALPHA = 1;
+        }else if (str == "2"){
+          DBG_LE_SOLVE_ALPHA = 2;
+        }else{
+          fprintf(stderr, "# ERROR: LE_SOLVE_ALPHA\n");
+          exit_job(EXIT_FAILURE);
+        }
+        DEBUG_INFO = 1;
+      }
+
+      if(ufin->get(target.sub("LE_SOLVE_UPDATE"), str)){
+        ufout->put(target.sub("LE_SOLVE_UPDATE"), str);
+        ufres->put(target.sub("LE_SOLVE_UPDATE"), str);
+        if(str == "YES"){
+          DBG_LE_SOLVE_UPDT = 1;
+          DEBUG_INFO = 1;
+        }
+      }
+
+      assert(DBG_MASS_GRID == 0 || DBG_MASS_GRID == 1);
+      assert(DBG_LE_SHEAR == 0 || DBG_LE_SHEAR == 1);
+      assert(DBG_LE_SOLVE_ALPHA == 0 || DBG_LE_SOLVE_ALPHA == 1 || DBG_LE_SOLVE_ALPHA == 2);
+      assert(DBG_LE_SOLVE_UPDT == 0 || DBG_LE_SOLVE_UPDT == 1);
       if(DEBUG_INFO){
         fprintf(stderr, "################# DEBUGGING ###################\n");
         if(DBG_MASS_GRID) fprintf(stderr, "# Detailed Mass Grid Calculations             #\n");
         if(DBG_LE_SHEAR)  fprintf(stderr, "# Detailed LE Shear Calculations              #\n");
+        if(DBG_LE_SOLVE_ALPHA != 2 || DBG_LE_SOLVE_UPDT == 1){
+          fprintf(stderr, "# Use new LE Shear Solver                     #\n");
+        }else{
+          fprintf(stderr, "# Use old LE Shear Solver                     #\n");
+        }
+        fprintf(stderr, "#     Gdot multiplier:                       %1d#\n", DBG_LE_SOLVE_ALPHA);
+        fprintf(stderr, "#     E_alpha update :                       %1d#\n", DBG_LE_SOLVE_UPDT);
         fprintf(stderr, "################# GNIGGUBED ###################\n");
       }
     }

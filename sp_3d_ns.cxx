@@ -35,14 +35,6 @@ void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Par
 	NS_solver_slavedEuler_Shear_PBC(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
 	/////////////////	
 	
-	{
-	    static const double iLx = 1./L[0];
-	    Shear_strain = -Shear_rate * LY * jikan.dt_fluid * jikan.ts; 
-	    double dmy = fmod(Shear_strain, L[0]);
-	    Shear_strain_int += (int)((Shear_strain - dmy) * iLx);
-	    Shear_strain = dmy;
-	}
-	
     }else if(SW_EQ == Electrolyte){
 	//for two-thirds rule 
 	const Index_range ijk_range[] = {
@@ -173,9 +165,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	    if(slip_iter == MAX_SLIP_ITER){
 	      fprintf(stderr, "#Warning: increase MAX_SLIP_ITER (%d)\n", jikan.ts);
 	    }
-	    double **u_old=u;
-	    u = up;
-	    up = u_old;
+
+            Swap_mem(u, up);
 	  } // slip 
 
 	}
@@ -213,9 +204,6 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
 
-    int im;
-    int im_obl;
-
     // Update of Fluid Velocity Filed	
     //for two-thirds rule 
     const Index_range ijk_range[] = {
@@ -228,14 +216,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
     /////////////////	
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
     /////////////////	
-    
-    {
-	static const double iLx = 1./L[0];
-	Shear_strain = -Shear_rate * LY * jikan.dt_fluid * jikan.ts; 
-	double dmy = fmod(Shear_strain, L[0]);
-	Shear_strain_int += (int)((Shear_strain - dmy) * iLx);
-	Shear_strain = dmy;
-    }
     
     if(Particle_Number >= 0){
 	if(FIX_CELL){ // time-dependent average pressure gradient
@@ -250,93 +230,25 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	    Truncate_two_third_rule_ooura(zeta[d]);
 	}
 	*/
-	Zeta_k2u_k_OBL(zeta, uk_dc, u);
 
-	// This function force all area ideal shear flow.
-	//Mean_shear_sustaining_force_PBC_OBL(u);
-
-	for (int d =0; d < DIM; d++) {
-	    A_k2a(u[d]);
-	}
-	Shear_rate_eff = Shear_rate;
-       
-	//Deformation 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	for(int i=0; i<NX; i++){
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ; k++){
-		    im = (i*NY*NZ_)+(j*NZ_) + k;
-
-		    for (int d = 0; d < DIM; d++) {
-			ucp[d][im]=u[d][im];
-			//u_previous[d][im] = u[d][im];
-		    }
-		}
-	    }
-	}
-
-	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
-	if (degree_oblique >= 1.) {
-	    
-          for(int i = 0; i < NX; i++){
-		for(int j = 0; j < NY; j++) {
-		    
-		    double sign = j - NY/2;
-		    if (!(sign == 0)) {
-			sign = sign/fabs(sign);
-		    }
-		    
-		    int i_oblique = (int)(sign*(j - NY/2))*sign;
-		    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-		    for(int k = 0; k < NZ; k++){
-			im = (i*NY*NZ_)+(j*NZ_) + k;
-			im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
-
-                        //Warning: reset grid points AND oblique basis vectors
-                        u[0][im_obl] = ucp[0][im] + ucp[1][im];
-                        u[1][im_obl] = ucp[1][im];
-                        u[2][im_obl] = ucp[2][im];
-		    }
-		}
-	    }
-	    
-	    degree_oblique -= 1.;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	    for(int i = 0; i < NX; i++){
-		for(int j = 0; j < NY; j++){
-		    for(int k = 0; k < NZ; k++){
-			im = (i*NY*NZ_)+(j*NZ_) + k;
-			
-			for(int d = 0; d < DIM; d++){
-			    ucp[d][im] = u[d][im];
-			    //u_previous[d][im] = u[d][im];
-			}
-		    }
-		}
-	    }
-	}
-
-	U_oblique2u(ucp);
-
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-	for (int i=0; i<NX; i++) {
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ_; k++){
-		    im = (i*NY*NZ_)+(j*NZ_) + k;
-
-		    K2[im] =
-			SQ(WAVE_X*KX_int[im]) +
-			SQ(WAVE_Y*KY_int[im] -
-			   WAVE_X*degree_oblique*KX_int[im]) +
-			SQ(WAVE_Z*KZ_int[im]);
-		    if(K2[im] > 0.0){
-			IK2[im] = 1./K2[im];
-		    }else{
-			IK2[im] = 0.0;
-		    }
-		}
-	    }
-	}
+        Zeta_k2u_k_OBL(zeta, uk_dc, u);
+        U_k2u(u);
+        
+        Shear_rate_eff = Shear_rate;
+        degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+        if(DBG_LE_SOLVE_UPDT) Update_Obl_Coord(u, Shear_rate_eff*jikan.dt_fluid);
+        
+        if (degree_oblique >= 1.) {
+          Reset_U_OBL(ucp, u);
+          Swap_mem(u, ucp);
+          degree_oblique -= 1.;
+        }
+        
+        Copy_v3(ucp, u);
+        U_oblique2u(ucp);
+        Update_K2_OBL();
+        // u   -> velocity field in oblique coordinates
+        // ucp -> velocity fild in cartesian coordinates
 
 	Calc_shear_rate_eff();
 	//End Deformation
@@ -371,48 +283,41 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         }
 	
 	{
-	    Reset_phi_u(phi, up);
-	    Make_phi_u_particle_OBL(phi, up, p);
-	    Make_f_particle_dt_nonsole(f, ucp, up, phi);
-	    U2u_oblique(f);
-	    Add_f_particle(u, f);
+          Reset_phi_u(phi, up);
+          Make_phi_u_particle_OBL(phi, up, p);
+          Make_f_particle_dt_nonsole(f, ucp, up, phi);
+          U2u_oblique(f);
+          Add_f_particle(u, f);
 	}
 	
-	for (int d = 0; d < DIM; d++) {
-	    A2a_k(u[d]);
-	}
+        U2u_k(u);
 	Solenoidal_uk_OBL(u);
-
-	contra2co(u);
 
 	U_k2zeta_k_OBL(u, zeta, uk_dc);
     }
 }
 
 inline void Mem_alloc_var(double **zeta){
-  if(SW_EQ == Navier_Stokes){
-    Mem_alloc_NS_solver();
-	ucp = (double **) malloc(sizeof (double *)*DIM);
-    for(int d=0;d<DIM;d++){
-	  ucp[d] = alloc_1d_double(NX*NY*NZ_);
+
+  Mem_alloc_NS_solver();
+
+  if(SW_EQ == Navier_Stokes ||
+     SW_EQ == Shear_Navier_Stokes ||
+     SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+    ucp = (double **) malloc(sizeof (double *) * DIM);
+    for(int d=0; d<DIM; d++){
+      ucp[d] = alloc_1d_double(NX*NY*NZ_);
     }
-  }else if(SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
-    Mem_alloc_NS_solver();
-	ucp = (double **) malloc(sizeof (double *)*DIM);
-    for(int d=0;d<DIM;d++){
-	  ucp[d] = alloc_1d_double(NX*NY*NZ_);
-    }
-  }else if(SW_EQ==Electrolyte){
-    Mem_alloc_NS_solver();
+  }else if(SW_EQ == Electrolyte){
     Mem_alloc_charge();
   }
-
+  
   Mem_alloc_f_particle();
-
+  
   for(int d=0;d<DIM-1;d++){
     zeta[d] = alloc_1d_double(NX*NY*NZ_);
   }
-
+  
   u = (double **) malloc(sizeof(double *) * DIM);
   up = (double **) malloc(sizeof(double *) * DIM);
   work_v3 = (double **) malloc(sizeof(double *) * DIM);
@@ -421,6 +326,12 @@ inline void Mem_alloc_var(double **zeta){
     up[d] = alloc_1d_double(NX*NY*NZ_);
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);
   }
+  
+  work_v2 = (double **) malloc(sizeof(double *) * (DIM - 1));
+  for(int d=0; d < DIM - 1; d++){
+    work_v2[d] = alloc_1d_double(NX*NY*NZ_);
+  }
+  
   phi = alloc_1d_double(NX*NY*NZ_);
   rhop = alloc_1d_double(NX*NY*NZ_);
   work_v1 = alloc_1d_double(NX*NY*NZ_);
@@ -461,17 +372,17 @@ int main(int argc, char *argv[]){
   
   // Main time evolution type 
   if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-      fprintf(stdout, "#Evolution type Shear_Navier_Stokes_Lees_Edwards\n");
-      Time_evolution = Time_evolution_hydro_OBL;
+    fprintf(stdout, "#Evolution type Shear_Navier_Stokes_Lees_Edwards\n");
+    Time_evolution = Time_evolution_hydro_OBL;
   } else {
-      if(SW_EQ == Navier_Stokes){
-        fprintf(stdout, "#Evolution type Navier_Stokes\n");
-      }else if(SW_EQ == Shear_Navier_Stokes){
-        fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
-      }else if(SW_EQ == Electrolyte){
-        fprintf(stdout, "#Evolution type Electrolyte\n");
-      }
-      Time_evolution = Time_evolution_hydro;
+    if(SW_EQ == Navier_Stokes){
+      fprintf(stdout, "#Evolution type Navier_Stokes\n");
+    }else if(SW_EQ == Shear_Navier_Stokes){
+      fprintf(stdout, "#Evolution type Shear_Navier_Stokes\n");
+    }else if(SW_EQ == Electrolyte){
+      fprintf(stdout, "#Evolution type Electrolyte\n");
+    }
+    Time_evolution = Time_evolution_hydro;
   }
 
   MT_seed(GIVEN_SEED,0);
@@ -652,6 +563,11 @@ int main(int argc, char *argv[]){
   fprintf(stderr, "#Average Step Time  (s): %10.2f\n", global_time);
   fprintf(stderr, "#                   (m): %10.2f\n", global_time/60.0);
   fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
+
+  for(int d = 0; d < DIM - 1; d++){
+    free_1d_double(zeta[d]);
+  }
+  free(zeta);
   delete [] particles;
   return EXIT_SUCCESS;
 }

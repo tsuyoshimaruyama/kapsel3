@@ -39,6 +39,23 @@ void U2advection_k(double **u, double **advection);
  */
 void Zeta_k2advection_k(double **zeta, double uk_dc[DIM], double **advection);
 
+/*!
+  \brief Compute the reduced advection term (including contributions
+  due to the advection of the grid points) appearing on the rhs of
+  the NS equation in oblique coordinates, from the reduced vorticity
+  field (reciprocal space)
+  \details \f[
+  \ft{\zeta}^\alpha = \ft{\omega}^{\alpha*} \longrightarrow -\ft{\Omega}^{\alpha*} =
+  \fft{\epsilon^{\alpha\beta\gamma}\partial_\beta
+  \left(\vec{u}\times\vec{\omega} - 2\dot\gamma u^2\vec{E}_1\right)_\gamma}^*
+  \f]
+  \param[in] zeta contravariant reduced vorticity field (reciprocal
+  space)
+  \param[in] uk_dc zero-wavenumber Fourier transform of the velocity
+  field
+  \param[out] advection (negative) contravariant components of the
+  reduced advection term (reciprocal space)
+ */
 void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection);
 
 /*!
@@ -144,15 +161,28 @@ inline void Zeta_k2u(double **zeta, double uk_dc[DIM], double **u){
 inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double *uk_cp){
   Zeta_k2u_k_OBL(zeta, uk_dc, u);//contra
 
-  int im;
-  for(int i = 0; i < NX; i++){
-      for(int j = 0; j < NY; j++){
-	  for(int k = 0; k < NZ_; k++){
-	      im=(i*NY*NZ_)+(j*NZ_)+k;
-	      uk_cp[im] = u[1][im];
-	  }
-      }
-  }
+  Copy_v1_k(uk_cp, u[1]);
+  U_k2u(u);
+}
+
+/*!
+  \brief Compute contravariant velocity field (real-space) from
+  reduced vorticity field (reciprocal space). Alto returns a copy of
+  the Fourier transform of the velocity field (x,y components only)
+  \details \f[
+  \ft{\zeta}^\alpha(\vec{k})\longrightarrow u^\alpha(\vec{r}), \ft{u}^{\alpha=x,y}(\vec{k})
+  \f]
+  \param[in] zeta reduced contravariant vorticity field (reciprocal
+  space)
+  \param[in] uk_dc zero wavenumber Fourier transform fo the
+  contravariant velocity field
+  \param[out] u contravariant velocity field (real space)
+  \param[out] uk_cp contravariant (x,y) velocity field (reciprocal space)
+ */
+inline void Zeta_k2u_cpukxy(double **zeta, double uk_dc[DIM], double **u, double **uk_cp){
+  Zeta_k2u_k_OBL(zeta, uk_dc, u);//contra
+
+  Copy_v2_k(uk_cp, u);
   U_k2u(u);
 }
 
