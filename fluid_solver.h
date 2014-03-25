@@ -251,6 +251,34 @@ inline void Calc_hydro_stress(const CTime &jikan
 }
 
 /*!
+  \brief Reset phi field when oblique degree is equal to one
+ */
+inline void Reset_phi_OBL(double *phi, double const* work_v1){
+  int im, im_obl;
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++) {
+      
+      double sign = j - NY/2;
+      if (!(sign == 0)) {
+        sign = sign/fabs(sign);
+      }
+      
+      int i_oblique = (int)(sign*(j - NY/2))*sign;
+      i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+      for(int k = 0; k < NZ; k++){
+        im = (i*NY*NZ_)+(j*NZ_) + k;
+        im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
+        
+        //Warning: reset grid points AND oblique basis vectors
+        phi[im_obl] = work_v1[im];
+      }
+    }
+  }
+}
+
+/*!
   \brief Reset velocity field when oblique degree is equal to one
  */
 inline void Reset_U_OBL(double **u, double const* const* ucp){

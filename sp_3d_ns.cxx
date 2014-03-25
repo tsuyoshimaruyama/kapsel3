@@ -233,22 +233,45 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
         Zeta_k2u_k_OBL(zeta, uk_dc, u);
         U_k2u(u);
-        
+	
         Shear_rate_eff = Shear_rate;
         degree_oblique += Shear_rate_eff*jikan.dt_fluid;
+
         if(DBG_LE_SOLVE_UPDT) Update_Obl_Coord(u, Shear_rate_eff*jikan.dt_fluid);
         
         if (degree_oblique >= 1.) {
+	  //AC/DC
+	  Reset_phi_u(phi, up);
+	  Make_phi_u_particle_OBL(phi, up, p);
+	  Remove_shear_U(up);
+	  phi2phi_oblique(phi);
+	  U2u_oblique(up);	
+	  Plot_phi_u(phi, up, u, degree_oblique, "xbl", jikan.ts);
+
           Reset_U_OBL(ucp, u);
           Swap_mem(u, ucp);
           degree_oblique -= 1.;
+	  fprintf(stdout, "#gamma reset: %d\n", jikan.ts);
         }
+
+	//AC/DC
+	Reset_phi_u(phi, up);
+	Make_phi_u_particle_OBL(phi, up, p);
+	Remove_shear_U(up);
+	phi2phi_oblique(phi);
+	U2u_oblique(up);	
+	Plot_phi_u(phi, up, u, degree_oblique, "obl", jikan.ts);
         
         Copy_v3(ucp, u);
         U_oblique2u(ucp);
         Update_K2_OBL();
         // u   -> velocity field in oblique coordinates
         // ucp -> velocity fild in cartesian coordinates
+
+	//AC/DC
+	Reset_phi_u(phi, up);
+	Make_phi_u_particle_OBL(phi, up, p);
+	Plot_phi_u(phi, up, ucp, degree_oblique, "rct", jikan.ts);
 
 	Calc_shear_rate_eff();
 	//End Deformation

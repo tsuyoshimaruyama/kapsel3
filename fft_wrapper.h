@@ -227,6 +227,96 @@ void U_k2divergence_k(double **u, double *div);
  */
 void U_k2rotation_k(double **u);
 
+inline void phi2phi_oblique(double *phi){
+    
+    int im;
+    int im_ob;
+    int im_ob_p;
+
+    Copy_v1(work_v1, phi);
+    
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+
+	    double sign = j - NY/2;
+	    if (!(sign == 0)) {
+		sign = sign/fabs(sign);
+	    }
+
+	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2))*sign;
+	    double alpha = (degree_oblique*(j - NY/2) - i_oblique)*sign;
+	    double beta  = 1. - alpha;
+
+	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+	    int i_oblique_plus = (int) fmod(i_oblique + sign + 4.*NX, NX);
+
+	    
+	    for (int k = 0; k < NZ; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+		im_ob_p = (i_oblique_plus*NY*NZ_) + (j*NZ_) + k;
+
+		phi[im] = (beta*work_v1[im_ob]+alpha*work_v1[im_ob_p]);
+	    }
+	}
+    }
+}
+inline void Remove_shear_U(double **u){
+  int im;
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      double sign = j - NY/2;
+      if(!(sign == 0)){
+	sign = sign / fabs(sign);
+      }
+
+      for(int k = 0; k < NZ; k++){
+	im = (i*NY*NZ_) + (j*NZ_) + k;
+	u[0][im] -= Shear_rate_eff*(j - NY/2.0);
+      }
+    }
+  }
+}
+inline void phi_oblique2phi(double *phi) {
+
+    int im;
+    int im_ob;
+    int im_p;
+
+    Copy_v1(work_v1, phi);
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+
+	    double sign = j - NY/2;
+	    //int sign = j - NY/2;
+	    if (!(sign == 0)) {
+		sign = sign/fabs(sign);
+	    }
+
+	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
+	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
+	    double beta  = 1. - alpha;
+	    
+	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+
+	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
+
+	    for (int k = 0; k < NZ; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+		im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
+
+		phi[im_ob] = beta*work_v1[im] + alpha*work_v1[im_p];
+	    }
+	}
+    }
+}
+
+
 inline void U2u_oblique(double **uu) {
     
     int im;
