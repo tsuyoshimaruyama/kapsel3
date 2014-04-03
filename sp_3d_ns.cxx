@@ -243,7 +243,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	  //AC/DC
 	  Reset_phi_u(phi, up);
 	  Make_phi_u_particle_OBL(phi, up, p);
-	  Remove_shear_U(up);
+	  Remove_shear_U(up, phi);
 	  phi2phi_oblique(phi);
 	  U2u_oblique(up);	
 	  Plot_phi_u(phi, up, u, degree_oblique, "xbl", jikan.ts);
@@ -257,7 +257,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	//AC/DC
 	Reset_phi_u(phi, up);
 	Make_phi_u_particle_OBL(phi, up, p);
-	Remove_shear_U(up);
+	Remove_shear_U(up, phi);
 	phi2phi_oblique(phi);
 	U2u_oblique(up);	
 	Plot_phi_u(phi, up, u, degree_oblique, "obl", jikan.ts);

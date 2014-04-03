@@ -262,7 +262,7 @@ inline void phi2phi_oblique(double *phi){
 	}
     }
 }
-inline void Remove_shear_U(double **u){
+inline void Remove_shear_U(double **u, double* phi){
   int im;
 #pragma omp parallel for schedule(dynamic, 1) private(im)
   for(int i = 0; i < NX; i++){
@@ -274,7 +274,7 @@ inline void Remove_shear_U(double **u){
 
       for(int k = 0; k < NZ; k++){
 	im = (i*NY*NZ_) + (j*NZ_) + k;
-	u[0][im] -= Shear_rate_eff*(j - NY/2.0);
+	u[0][im] -= Shear_rate_eff*(j - NY/2.0)*phi[im];
       }
     }
   }
