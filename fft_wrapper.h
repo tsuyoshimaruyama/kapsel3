@@ -12,6 +12,7 @@
 #include <assert.h> 
 #include <math.h>
 
+#include "periodic_spline.h"
 #include "variable.h"
 #include "input.h"
 #include "aux_field.h"
@@ -41,7 +42,7 @@ extern int *ip;
 extern double *w;
 extern double *t;
 
-extern double **ucp;
+extern double **ucp, **uaux;
 extern double *phi,**up,**u,*rhop;
 extern double **work_v3, **work_v2, *work_v1;
 
@@ -315,7 +316,70 @@ inline void phi_oblique2phi(double *phi) {
 	}
     }
 }
+inline void Plot_ux(double const* x, double const* const* u, const string &tag, const int &id){
+  FILE* fout;
+  char buffer[256];
+  
+  sprintf(buffer, "./images/ux_%s-%d.dat", tag.c_str(), id);
+  fout = filecheckopen(buffer, "w");
+  int j = NY/2 + (int)(A/DX) + 1;
+  int k = NZ/2;
+  double ushear = Shear_rate_eff*(j - NY/2.0);
+  for(int i = 0; i < NX; i++){
+    fprintf(fout, "%.5g %.5g %.5g %.5g %.5g %.5g\n",
+            i*DX, x[i], u[0][i], u[1][i], u[2][i], ushear
+            );
+  }
+  fclose(fout);
+}
 
+inline void Transform_obl_u(double **uu, const int flag, const int &id){
+  int im, im_ob;
+  double rt[DIM];
+  //+1 : rectangular -> oblique
+  //-1 : rectangular <- oblique
+  double sign = (flag >= 0 ? 1.0 : -1.0);
+  double dy;
+
+  for(int j = 0; j < NY; j++){ 
+    rt[1] = j*DX;
+    dy = (double)(j - NY/2)*DX;
+
+    for(int k = 0; k < NZ; k++){ 
+      rt[2] = k*DX;
+
+      //setup interpolation points
+      for(int i = 0; i < NX; i++){//original coordinates
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+        rt[0] = fmod(i*DX - sign*degree_oblique*dy + 4.0*LX, LX); //transformed
+
+        work_v2[0][i] = rt[0];
+        work_v3[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
+        work_v3[1][i] = uu[1][im];
+        work_v3[2][i] = uu[2][im];
+      }
+
+      for(int d = DIM - 1; d >= 0; d--){
+        splineReset(work_v3[d]);
+        for(int i = 0; i < NX; i++){//transformed
+          im = (i*NY*NZ_) + (j*NZ_) + k;
+          work_v2[1][i] = i*DX;
+          rt[0] = fmod(i*DX + sign*degree_oblique*dy + 4.0*LX, LX); // original
+          uu[d][im] = uaux[d][i] = fspline(rt[0]);
+          if(d == 0 && sign < 0) uu[d][im] += Shear_rate_eff*dy;
+        }
+      }
+
+      if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2 && sign < 0){
+        Plot_ux(work_v2[0], work_v3, "raw", id);
+        Plot_ux(work_v2[1], uaux, "spl", id);
+      }
+
+    }//k
+
+  }//j
+
+}
 
 inline void U2u_oblique(double **uu) {
     
@@ -367,7 +431,7 @@ inline void U2u_oblique(double **uu) {
     
 }
 
-inline void U_oblique2u(double **uu) {
+inline void U_oblique2u(double **uu, const int &id, const int&flag) {
 
     int im;
     int im_ob;
@@ -385,11 +449,12 @@ inline void U_oblique2u(double **uu) {
 		sign = sign/fabs(sign);
 	    }
 
-	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
+            int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
 	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
 	    double beta  = 1. - alpha;
 	    
 	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+            if(j == NY/2 + (int)(A/DX) + 1) work_v2[1][i] = i_oblique*DX;
 
 	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
 
@@ -412,10 +477,16 @@ inline void U_oblique2u(double **uu) {
 		uu[2][im_ob] =
 		    beta*work_v3[2][im] +
 		    alpha*work_v3[2][im_p];
+
+                if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2){
+                  uaux[0][i] = uu[0][im_ob] - Shear_rate_eff*(j - NY/2.0);
+                  uaux[1][i] = uu[1][im_ob];
+                  uaux[2][i] = uu[2][im_ob];
+                }
 	    }
 	}
     }
-    
+    if(flag) Plot_ux(work_v2[1], uaux, "lin", id);
 }
 
 inline void contra2co(double **contra) {

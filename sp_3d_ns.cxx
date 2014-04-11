@@ -241,37 +241,25 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         
         if (degree_oblique >= 1.) {
 	  //AC/DC
-	  Reset_phi_u(phi, up);
-	  Make_phi_u_particle_OBL(phi, up, p);
-	  Remove_shear_U(up, phi);
-	  phi2phi_oblique(phi);
-	  U2u_oblique(up);	
-	  Plot_phi_u(phi, up, u, degree_oblique, "xbl", jikan.ts);
+	  //{
+          //Reset_phi_u(phi, up);
+	  //Make_phi_u_particle_OBL(phi, up, p);
+	  //Remove_shear_U(up, phi);
+	  //phi2phi_oblique(phi);
+	  //U2u_oblique(up);	
+	  //Plot_phi_u(phi, up, u, degree_oblique, "xbl", jikan.ts);
+          //}
 
           Reset_U_OBL(ucp, u);
           Swap_mem(u, ucp);
           degree_oblique -= 1.;
-	  fprintf(stdout, "#gamma reset: %d\n", jikan.ts);
         }
 
-	//AC/DC
-	Reset_phi_u(phi, up);
-	Make_phi_u_particle_OBL(phi, up, p);
-	Remove_shear_U(up, phi);
-	phi2phi_oblique(phi);
-	U2u_oblique(up);	
-	Plot_phi_u(phi, up, u, degree_oblique, "obl", jikan.ts);
-        
         Copy_v3(ucp, u);
-        U_oblique2u(ucp);
+        Transform_obl_u(ucp, -1, jikan.ts);
         Update_K2_OBL();
         // u   -> velocity field in oblique coordinates
         // ucp -> velocity fild in cartesian coordinates
-
-	//AC/DC
-	Reset_phi_u(phi, up);
-	Make_phi_u_particle_OBL(phi, up, p);
-	Plot_phi_u(phi, up, ucp, degree_oblique, "rct", jikan.ts);
 
 	Calc_shear_rate_eff();
 	//End Deformation
@@ -309,7 +297,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           Reset_phi_u(phi, up);
           Make_phi_u_particle_OBL(phi, up, p);
           Make_f_particle_dt_nonsole(f, ucp, up, phi);
-          U2u_oblique(f);
+          Transform_obl_u(f, 1, jikan.ts);
           Add_f_particle(u, f);
 	}
 	
@@ -328,8 +316,10 @@ inline void Mem_alloc_var(double **zeta){
      SW_EQ == Shear_Navier_Stokes ||
      SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
     ucp = (double **) malloc(sizeof (double *) * DIM);
+    uaux= (double **) malloc(sizeof (double *) * DIM);
     for(int d=0; d<DIM; d++){
       ucp[d] = alloc_1d_double(NX*NY*NZ_);
+      uaux[d]= alloc_1d_double(NX*NY*NZ_);
     }
   }else if(SW_EQ == Electrolyte){
     Mem_alloc_charge();

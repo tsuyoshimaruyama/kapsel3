@@ -13,7 +13,7 @@ double *w;
 double *t;
 
 
-double **ucp;
+double **ucp, **uaux;
 double *phi, **up, **u, *rhop;
 double **work_v3, **work_v2, *work_v1;
 
@@ -98,6 +98,7 @@ void Init_fft(void){
     fprintf(stderr,"specify SW_FFT correctly.\n");
     exit_job(EXIT_FAILURE);
   }
+  splineInit(NX, DX);
 }
 
 inline void A_k2dja_k_primitive(double *a
@@ -199,7 +200,7 @@ void Omega_k2zeta_k_OBL(double **omega, double **zetak){
 }
 
 void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]){
-  // Strain_k $B$O(B 5$B@.J,(B
+  // Strain_k は 5成分
   double dmy[DIM]={0.,0.,0.};
   int k2;
   int im0;
