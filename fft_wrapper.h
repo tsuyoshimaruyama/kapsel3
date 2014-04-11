@@ -49,6 +49,8 @@ extern double **work_v3, **work_v2, *work_v1;
 extern int *KX_int, *KY_int, *KZ_int;
 extern double *K2,*IK2;
 
+extern splineSystem* splineOblique;
+
 extern int (*Calc_KX)( const int &i, const int &j, const int &k);
 extern int (*Calc_KY)( const int &i, const int &j, const int &k);
 extern int (*Calc_KZ)( const int &i, const int &j, const int &k);
@@ -333,52 +335,105 @@ inline void Plot_ux(double const* x, double const* const* u, const string &tag, 
   fclose(fout);
 }
 
+inline void Init_Transform_obl(){
+#ifndef _OPENMP
+  splineInit(splineOblique, NX, DX);
+#endif
+}
+inline void Free_Transform_obl(){
+#ifndef _OPENMP
+  splineFree(splineOblique);
+#endif
+}
+inline void Transform_obl_init_mem(splineSystem* &spl, double** &u0, double** &u1, double* &x0, double* &x1){
+  splineInit(spl, NX, DX);
+  u0 = (double**)malloc(sizeof(double*) * DIM);
+  u1 = (double**)malloc(sizeof(double*) * DIM);
+  for(int d = 0; d < DIM; d++){
+    u0[d] = alloc_1d_double(NX);
+    u1[d] = alloc_1d_double(NX);
+  }
+  x0 = alloc_1d_double(NX);
+  x1 = alloc_1d_double(NX);
+}
+inline void Transform_obl_free_mem(splineSystem* &spl, double** &u0, double** &u1, double* &x0, double* &x1){
+  splineFree(spl);
+  for(int d = 0; d < DIM; d++){
+    free_1d_double(u0[d]);
+    free_1d_double(u1[d]);
+  }
+  free(u0);
+  free(u1);
+  free(x0);
+  free(x1);
+  spl = NULL;
+  u0  = u1 = NULL;
+  x0 = x1 = NULL;
+}
+//+1 : rectangular -> oblique
+//-1 : rectangular <- oblique
 inline void Transform_obl_u(double **uu, const int flag, const int &id){
   int im, im_ob;
-  double rt[DIM];
-  //+1 : rectangular -> oblique
-  //-1 : rectangular <- oblique
   double sign = (flag >= 0 ? 1.0 : -1.0);
-  double dy;
+  double dmy_x;
+  double delta_y;
+  splineSystem *spl;
+  double *x0, *x1;
+  double **u0, **u1;
 
-  for(int j = 0; j < NY; j++){ 
-    rt[1] = j*DX;
-    dy = (double)(j - NY/2)*DX;
 
-    for(int k = 0; k < NZ; k++){ 
-      rt[2] = k*DX;
+#ifndef _OPENMP
+  spl = splineOblique;
+  u0  = work_v3;
+  u1  = uaux;
+  x0  = work_v2[0];
+  x1  = work_v2[1];
+#endif
 
-      //setup interpolation points
-      for(int i = 0; i < NX; i++){//original coordinates
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, sign, dmy_x, delta_y, spl, x0, x1, u0, u1)
+  for(int j = 0; j < NY; j++){//original coor
+#ifdef _OPENMP
+    Transform_obl_init_mem(spl, u0, u1, x0, x1);
+#endif
+    delta_y = (double)(j - NY/2)*DX;
+
+    for(int k = 0; k < NZ; k++){ //original coord
+
+      //setup interpolation grid
+      for(int i = 0; i < NX; i++){//original coord
         im = (i*NY*NZ_) + (j*NZ_) + k;
-        rt[0] = fmod(i*DX - sign*degree_oblique*dy + 4.0*LX, LX); //transformed
+        dmy_x = fmod(i*DX - sign*degree_oblique*delta_y + 4.0*LX, LX); //transformed coord
 
-        work_v2[0][i] = rt[0];
-        work_v3[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
-        work_v3[1][i] = uu[1][im];
-        work_v3[2][i] = uu[2][im];
+        x0[i] = dmy_x;
+        u0[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
+        u0[1][i] = uu[1][im];
+        u0[2][i] = uu[2][im];
       }
 
       for(int d = DIM - 1; d >= 0; d--){
-        splineReset(work_v3[d]);
+        splineCompute(spl, u0[d]);
+
         for(int i = 0; i < NX; i++){//transformed
           im = (i*NY*NZ_) + (j*NZ_) + k;
-          work_v2[1][i] = i*DX;
-          rt[0] = fmod(i*DX + sign*degree_oblique*dy + 4.0*LX, LX); // original
-          uu[d][im] = uaux[d][i] = fspline(rt[0]);
-          if(d == 0 && sign < 0) uu[d][im] += Shear_rate_eff*dy;
+          dmy_x = fmod(i*DX + sign*degree_oblique*delta_y + 4.0*LX, LX); // original
+
+          x1[i]     = i*DX;
+          u1[d][i]  = splineFx(spl, dmy_x);
+          uu[d][im] = u1[d][i];
+          if(d == 0 && sign < 0) uu[d][im] += Shear_rate_eff*delta_y;
         }
       }
 
       if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2 && sign < 0){
-        Plot_ux(work_v2[0], work_v3, "raw", id);
-        Plot_ux(work_v2[1], uaux, "spl", id);
+        Plot_ux(x0, u0, "raw", id);
+        Plot_ux(x1, u1, "spl", id);
       }
 
     }//k
-
+#ifdef _OPENMP
+    Transform_obl_free_mem(spl, u0, u1, x0, x1);
+#endif
   }//j
-
 }
 
 inline void U2u_oblique(double **uu) {

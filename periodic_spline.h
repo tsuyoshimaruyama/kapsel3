@@ -17,20 +17,37 @@ using std::string;
   \author J. Molina
   \date 2014/04/03
   \version 1.0
-  \brief Spline interpolation for 1D periodic systems using equally
+  \brief Spline interpolation for 1D periodic systems [0,L] using equally
   spaced sample points
  */
 
-extern int     splN;       //number of interpolation points
-extern int     splDim;     //interpolation order + 1 (= 4)
-extern double  splDx;      //grid spacing for interpolating points
-extern double *splQ;       //solution vector
-extern double *splAii;     //diagonal of coefficient matrix
-extern double *splAin;     //last column of coefficient matrix
-extern double **splC;      //spline coefficienst a,b,c,d
+//f(x) = S_i(x) = a_i + b_i*(x-x_i) + c_i*(x-x_i)**2 + d_i*(x-x_i)**3
+typedef struct splineSystem{
+  int      n;
+  double   dx;
+  double*  a;
+  double*  b;
+  double*  c;
+  double*  d;
+  double*  Q;
+  double*  Aii;
+  double*  Ain;
+} splineSystem;
 
-void splineInit(const int &n, const double &dx);
-void splineFree();
-void splineReset(const double *fx);
-double fspline(const double &x);
+inline double splineFx(const splineSystem* spl, const double &x){
+  assert(x >= 0.0 && x < (spl->n) * (spl->dx));
+  int i = x / (spl->dx);
+  double delta = (x - (double)i*spl->dx);
+  double delta2= delta*delta;
+  return (spl->a[i]) + (spl->b[i])*delta + 
+    (spl->c[i])*delta2 + (spl->d[i])*delta2*delta;
+}
+
+void splineInit(splineSystem* &spl, const int &n, const double &dx);
+
+void splineFree(splineSystem* &spl);
+
+void splineCompute(splineSystem* spl, const double* fx);
+
+
 #endif

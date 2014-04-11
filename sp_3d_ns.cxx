@@ -401,6 +401,7 @@ int main(int argc, char *argv[]){
   MT_seed(GIVEN_SEED,0);
   //MT_seed(RANDOM_SEED,0);
   Init_fft();
+  Init_Transform_obl();
   double uk_dc[DIM];
 
   double **zeta;
@@ -577,6 +578,7 @@ int main(int argc, char *argv[]){
   fprintf(stderr, "#                   (m): %10.2f\n", global_time/60.0);
   fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
 
+  Free_Transform_obl();
   for(int d = 0; d < DIM - 1; d++){
     free_1d_double(zeta[d]);
   }

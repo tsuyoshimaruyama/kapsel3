@@ -20,6 +20,8 @@ double **work_v3, **work_v2, *work_v1;
 int *KX_int, *KY_int, *KZ_int;
 double *K2, *IK2;
 
+splineSystem* splineOblique;
+
 int (*Calc_KX)( const int &i, const int &j, const int &k);
 int (*Calc_KY)( const int &i, const int &j, const int &k);
 int (*Calc_KZ)( const int &i, const int &j, const int &k);
@@ -98,7 +100,6 @@ void Init_fft(void){
     fprintf(stderr,"specify SW_FFT correctly.\n");
     exit_job(EXIT_FAILURE);
   }
-  splineInit(NX, DX);
 }
 
 inline void A_k2dja_k_primitive(double *a
