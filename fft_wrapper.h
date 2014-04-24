@@ -335,6 +335,7 @@ inline void Plot_ux(double const* x, double const* const* u, const string &tag, 
   fclose(fout);
 }
 
+// Allocate / Deallocate interpolation  memory for single core run
 inline void Init_Transform_obl(){
 #ifndef _OPENMP
   splineInit(splineOblique, NX, DX);
@@ -345,6 +346,8 @@ inline void Free_Transform_obl(){
   splineFree(splineOblique);
 #endif
 }
+
+// Allocate / Deallocate interpolation memory for omp run
 inline void Transform_obl_init_mem(splineSystem* &spl, double** &u0, double** &u1, double* &x0, double* &x1){
   splineInit(spl, NX, DX);
   u0 = (double**)malloc(sizeof(double*) * DIM);
@@ -368,11 +371,13 @@ inline void Transform_obl_free_mem(splineSystem* &spl, double** &u0, double** &u
   free(x1);
   spl = NULL;
   u0  = u1 = NULL;
-  x0 = x1 = NULL;
+  x0  = x1 = NULL;
 }
-//+1 : rectangular -> oblique
-//-1 : rectangular <- oblique
-inline void Transform_obl_u(double **uu, const int flag, const int &id){
+
+// Periodic spline interpolation
+// +1 : rectangular -> oblique
+// -1 : rectangular <- oblique
+inline void Transform_obl_u(double **uu, const int &flag, const int &id){
   int im, im_ob;
   double sign = (flag >= 0 ? 1.0 : -1.0);
   double dmy_x;
@@ -391,7 +396,7 @@ inline void Transform_obl_u(double **uu, const int flag, const int &id){
 #endif
 
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, sign, dmy_x, delta_y, spl, x0, x1, u0, u1)
-  for(int j = 0; j < NY; j++){//original coor
+  for(int j = 0; j < NY; j++){//original coord
 #ifdef _OPENMP
     Transform_obl_init_mem(spl, u0, u1, x0, x1);
 #endif
@@ -405,17 +410,20 @@ inline void Transform_obl_u(double **uu, const int flag, const int &id){
         dmy_x = fmod(i*DX - sign*degree_oblique*delta_y + 4.0*LX, LX); //transformed coord
 
         x0[i] = dmy_x;
+        //velocity components in transformed basis defined over
+        //original grid points x0
         u0[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
         u0[1][i] = uu[1][im];
         u0[2][i] = uu[2][im];
       }
 
+      //compute interpolated points
       for(int d = DIM - 1; d >= 0; d--){
         splineCompute(spl, u0[d]);
 
-        for(int i = 0; i < NX; i++){//transformed
+        for(int i = 0; i < NX; i++){//transformed coord
           im = (i*NY*NZ_) + (j*NZ_) + k;
-          dmy_x = fmod(i*DX + sign*degree_oblique*delta_y + 4.0*LX, LX); // original
+          dmy_x = fmod(i*DX + sign*degree_oblique*delta_y + 4.0*LX, LX); // original coord
 
           x1[i]     = i*DX;
           u1[d][i]  = splineFx(spl, dmy_x);
@@ -507,10 +515,7 @@ inline void U_oblique2u(double **uu, const int &id, const int&flag) {
             int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
 	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
 	    double beta  = 1. - alpha;
-	    
 	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-            if(j == NY/2 + (int)(A/DX) + 1) work_v2[1][i] = i_oblique*DX;
-
 	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
 
 	    for (int k = 0; k < NZ; k++) {
@@ -534,6 +539,8 @@ inline void U_oblique2u(double **uu, const int &id, const int&flag) {
 		    alpha*work_v3[2][im_p];
 
                 if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2){
+                  work_v1[i] = i_oblique*DX;
+
                   uaux[0][i] = uu[0][im_ob] - Shear_rate_eff*(j - NY/2.0);
                   uaux[1][i] = uu[1][im_ob];
                   uaux[2][i] = uu[2][im_ob];
@@ -541,7 +548,9 @@ inline void U_oblique2u(double **uu, const int &id, const int&flag) {
 	    }
 	}
     }
-    if(flag) Plot_ux(work_v2[1], uaux, "lin", id);
+    if(flag){
+      Plot_ux(work_v1, uaux, "lin", id);
+    }
 }
 
 inline void contra2co(double **contra) {
