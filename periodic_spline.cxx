@@ -28,7 +28,7 @@ void splineInit(splineSystem* &spl, const int &n, const double &dx){
   spl->Aii = alloc_1d_double(n);
   spl->Ain = alloc_1d_double(n);
   for(int i = 0; i < n; i++){
-    spl->a[i] = .666;
+    spl->a[i] = 0.0;
     spl->b[i] = spl->c[i] = spl->d[i] = 0.0;
   }
 }

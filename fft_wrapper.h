@@ -353,7 +353,6 @@ inline void Init_Transform_obl(){
 
   for(int np = 0; np < nthreads; np++){
     splineInit(splineOblique[np], NX, DX);
-    fprintf(stderr, "#splineOblique: %d %X\n", np, splineOblique[np]);
     uspline[np] = (double**) malloc(sizeof(double*) * DIM );
 
     for(int d = 0; d < DIM; d++) uspline[np][d] = alloc_1d_double(NX);
@@ -417,14 +416,6 @@ inline void Transform_obl_u(double **uu, const int &flag, const int &id){
       //compute interpolated points
       for(int d = DIM - 1; d >= 0; d--){
         splineCompute(spl, us0[d]);
-	/*if(d == 0 && k == NZ/2 && j == NY/2 + (int)(A/DX) + 1){
-	  fprintf(stderr, "# @%X %f -> %g %g %g %g\n", 
-		  spl, sign,
-		  spl->a[NX/2],
-		  spl->b[NX/2],
-		  spl->c[NX/2],
-		  spl->d[NX/2]);
-		  }*/
 
         for(int i = 0; i < NX; i++){//transformed coord
           im = (i*NY*NZ_) + (j*NZ_) + k;
@@ -543,9 +534,9 @@ inline void U_oblique2u(double **uu, const int &id, const int&flag) {
 	    }
 	}
     }
-    if(flag){
+    /*if(flag){
       Plot_ux(work_v1, uaux, "lin", id);
-    }
+      }*/
 }
 
 inline void contra2co(double **contra) {
