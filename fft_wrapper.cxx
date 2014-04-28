@@ -20,7 +20,8 @@ double **work_v3, **work_v2, *work_v1;
 int *KX_int, *KY_int, *KZ_int;
 double *K2, *IK2;
 
-splineSystem* splineOblique;
+splineSystem** splineOblique;
+double*** uspline;
 
 int (*Calc_KX)( const int &i, const int &j, const int &k);
 int (*Calc_KY)( const int &i, const int &j, const int &k);

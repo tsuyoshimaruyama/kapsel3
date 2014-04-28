@@ -16,8 +16,6 @@ void splineFree(splineSystem* &spl){
   spl = NULL;
 }
 void splineInit(splineSystem* &spl, const int &n, const double &dx){
-  if(spl != NULL) splineFree(spl);
-
   assert(n >= splineDim);
   spl = new splineSystem;
   spl->n   = n;
@@ -29,6 +27,10 @@ void splineInit(splineSystem* &spl, const int &n, const double &dx){
   spl->Q   = alloc_1d_double(n);
   spl->Aii = alloc_1d_double(n);
   spl->Ain = alloc_1d_double(n);
+  for(int i = 0; i < n; i++){
+    spl->a[i] = .666;
+    spl->b[i] = spl->c[i] = spl->d[i] = 0.0;
+  }
 }
 void splineCompute(splineSystem* spl, const double* fx){
   int n    = spl->n;

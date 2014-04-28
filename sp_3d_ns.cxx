@@ -404,7 +404,9 @@ int main(int argc, char *argv[]){
   MT_seed(GIVEN_SEED,0);
   //MT_seed(RANDOM_SEED,0);
   Init_fft();
+  fprintf(stderr, "# Init transform...\n");
   Init_Transform_obl();
+  fprintf(stderr, "# ok init\n");
   double uk_dc[DIM];
 
   double **zeta;

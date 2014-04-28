@@ -11,7 +11,6 @@
 #include "alloc.h"
 #include "macro.h"
 
-using std::string;
 /*!
   \file periodic_spline.h
   \author J. Molina

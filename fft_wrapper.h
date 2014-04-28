@@ -49,7 +49,9 @@ extern double **work_v3, **work_v2, *work_v1;
 extern int *KX_int, *KY_int, *KZ_int;
 extern double *K2,*IK2;
 
-extern splineSystem* splineOblique;
+extern splineSystem** splineOblique;
+extern double*** uspline;
+
 
 extern int (*Calc_KX)( const int &i, const int &j, const int &k);
 extern int (*Calc_KY)( const int &i, const int &j, const int &k);
@@ -337,41 +339,43 @@ inline void Plot_ux(double const* x, double const* const* u, const string &tag, 
 
 // Allocate / Deallocate interpolation  memory for single core run
 inline void Init_Transform_obl(){
+  int nthreads;
 #ifndef _OPENMP
-  splineInit(splineOblique, NX, DX);
+  nthreads = 1;
+#else
+#pragma omp parallel
+  {
+    nthreads = omp_get_num_threads();
+  }
 #endif
-}
-inline void Free_Transform_obl(){
-#ifndef _OPENMP
-  splineFree(splineOblique);
-#endif
+  uspline = (double***) malloc(sizeof(double**) * nthreads); 
+  splineOblique = new splineSystem*[nthreads];
+
+  for(int np = 0; np < nthreads; np++){
+    splineInit(splineOblique[np], NX, DX);
+    fprintf(stderr, "#splineOblique: %d %X\n", np, splineOblique[np]);
+    uspline[np] = (double**) malloc(sizeof(double*) * DIM );
+
+    for(int d = 0; d < DIM; d++) uspline[np][d] = alloc_1d_double(NX);
+  }
 }
 
-// Allocate / Deallocate interpolation memory for omp run
-inline void Transform_obl_init_mem(splineSystem* &spl, double** &u0, double** &u1, double* &x0, double* &x1){
-  splineInit(spl, NX, DX);
-  u0 = (double**)malloc(sizeof(double*) * DIM);
-  u1 = (double**)malloc(sizeof(double*) * DIM);
-  for(int d = 0; d < DIM; d++){
-    u0[d] = alloc_1d_double(NX);
-    u1[d] = alloc_1d_double(NX);
+inline void Free_Transform_obl(){
+  int nthreads;
+#ifndef _OPENMP
+  nthreads = 1;
+#else
+#pragma omp parallel 
+  {
+    nthreads = omp_get_num_threads();
   }
-  x0 = alloc_1d_double(NX);
-  x1 = alloc_1d_double(NX);
-}
-inline void Transform_obl_free_mem(splineSystem* &spl, double** &u0, double** &u1, double* &x0, double* &x1){
-  splineFree(spl);
-  for(int d = 0; d < DIM; d++){
-    free_1d_double(u0[d]);
-    free_1d_double(u1[d]);
+#endif
+  for(int np = 0; np < nthreads; np++){
+    splineFree(splineOblique[np]);
+    for(int d = 0; d < DIM; d++) free_1d_double(uspline[np][d]);
   }
-  free(u0);
-  free(u1);
-  free(x0);
-  free(x1);
-  spl = NULL;
-  u0  = u1 = NULL;
-  x0  = x1 = NULL;
+  delete[] splineOblique;
+  free(uspline);
 }
 
 // Periodic spline interpolation
@@ -382,65 +386,56 @@ inline void Transform_obl_u(double **uu, const int &flag, const int &id){
   double sign = (flag >= 0 ? 1.0 : -1.0);
   double dmy_x;
   double delta_y;
-  splineSystem *spl;
-  double *x0, *x1;
-  double **u0, **u1;
 
-
-#ifndef _OPENMP
-  spl = splineOblique;
-  u0  = work_v3;
-  u1  = uaux;
-  x0  = work_v2[0];
-  x1  = work_v2[1];
-#endif
-
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, sign, dmy_x, delta_y, spl, x0, x1, u0, u1)
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, dmy_x, delta_y)
   for(int j = 0; j < NY; j++){//original coord
-#ifdef _OPENMP
-    Transform_obl_init_mem(spl, u0, u1, x0, x1);
+    int np;    
+#ifndef _OPENMP
+    np = 0;
+#else
+    np = omp_get_thread_num();
 #endif
+    splineSystem *spl = splineOblique[np];
+    double **us0      = uspline[np];
+    
     delta_y = (double)(j - NY/2)*DX;
-
+    
     for(int k = 0; k < NZ; k++){ //original coord
 
       //setup interpolation grid
       for(int i = 0; i < NX; i++){//original coord
         im = (i*NY*NZ_) + (j*NZ_) + k;
         dmy_x = fmod(i*DX - sign*degree_oblique*delta_y + 4.0*LX, LX); //transformed coord
-
-        x0[i] = dmy_x;
+	
         //velocity components in transformed basis defined over
         //original grid points x0
-        u0[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
-        u0[1][i] = uu[1][im];
-        u0[2][i] = uu[2][im];
-      }
+	us0[0][i] = uu[0][im] -sign*degree_oblique*uu[1][im];
+	us0[1][i] = uu[1][im];
+	us0[2][i] = uu[2][im];
+      }//i
 
       //compute interpolated points
       for(int d = DIM - 1; d >= 0; d--){
-        splineCompute(spl, u0[d]);
+        splineCompute(spl, us0[d]);
+	/*if(d == 0 && k == NZ/2 && j == NY/2 + (int)(A/DX) + 1){
+	  fprintf(stderr, "# @%X %f -> %g %g %g %g\n", 
+		  spl, sign,
+		  spl->a[NX/2],
+		  spl->b[NX/2],
+		  spl->c[NX/2],
+		  spl->d[NX/2]);
+		  }*/
 
         for(int i = 0; i < NX; i++){//transformed coord
           im = (i*NY*NZ_) + (j*NZ_) + k;
           dmy_x = fmod(i*DX + sign*degree_oblique*delta_y + 4.0*LX, LX); // original coord
-
-          x1[i]     = i*DX;
-          u1[d][i]  = splineFx(spl, dmy_x);
-          uu[d][im] = u1[d][i];
+	  
+          uu[d][im]  = splineFx(spl, dmy_x);
           if(d == 0 && sign < 0) uu[d][im] += Shear_rate_eff*delta_y;
-        }
-      }
-
-      if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2 && sign < 0){
-        Plot_ux(x0, u0, "raw", id);
-        Plot_ux(x1, u1, "spl", id);
-      }
+        }//i
+      }//d
 
     }//k
-#ifdef _OPENMP
-    Transform_obl_free_mem(spl, u0, u1, x0, x1);
-#endif
   }//j
 }
 
