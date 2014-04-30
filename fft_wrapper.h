@@ -337,7 +337,7 @@ inline void Plot_ux(double const* x, double const* const* u, const string &tag, 
   fclose(fout);
 }
 
-// Allocate / Deallocate interpolation  memory for single core run
+// Allocate / Deallocate interpolation memory
 inline void Init_Transform_obl(){
   int nthreads;
 #ifndef _OPENMP
@@ -370,8 +370,12 @@ inline void Free_Transform_obl(){
   }
 #endif
   for(int np = 0; np < nthreads; np++){
-    splineFree(splineOblique[np]);
+
     for(int d = 0; d < DIM; d++) free_1d_double(uspline[np][d]);
+    
+    free(uspline[np]);
+    splineFree(splineOblique[np]);
+    
   }
   delete[] splineOblique;
   free(uspline);
