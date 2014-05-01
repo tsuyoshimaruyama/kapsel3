@@ -23,12 +23,25 @@ double *K2, *IK2;
 splineSystem** splineOblique;
 double*** uspline;
 
+Index_range* ijk_range_two_third_filter;
+Index_range* ijk_range_no_filter;
+int n_ijk_range_two_third_filter;
+int n_ijk_range_no_filter;
+
+
 int (*Calc_KX)( const int &i, const int &j, const int &k);
 int (*Calc_KY)( const int &i, const int &j, const int &k);
 int (*Calc_KZ)( const int &i, const int &j, const int &k);
 void (*Truncate_two_third_rule)(double *a);
 
 
+inline void Free_K(void){
+  free_1d_double(IK2);
+  free_1d_double(K2);
+  free_1d_int(KZ_int);
+  free_1d_int(KY_int);
+  free_1d_int(KX_int);
+}
 inline void Init_K(void){
   KX_int = alloc_1d_int(NX*NY*NZ_);
   KY_int = alloc_1d_int(NX*NY*NZ_);
@@ -64,6 +77,15 @@ inline void Init_K(void){
   }
 }
 
+inline void Free_fft_ooura(void){
+  free_1d_double(w);
+  free_1d_double(t);
+  free_1d_int(ip);
+  Free_K();
+  delete[] ijk_range_two_third_filter;
+  delete[] ijk_range_no_filter;
+}
+
 inline void Init_fft_ooura(void){
 #ifndef _OPENMP
   fprintf(stderr,"# Ooura rdft3d is selected.\n");
@@ -87,11 +109,48 @@ inline void Init_fft_ooura(void){
   Calc_KY = Calc_KY_Ooura;
   Calc_KZ = Calc_KZ_Ooura;
 
-  Truncate_two_third_rule = Truncate_two_third_rule_ooura;
-
   Init_K();
+
+  if(SW_KFILTER == two_third_filter){
+    Truncate_two_third_rule = Truncate_two_third_rule_ooura;
+  }else if(SW_KFILTER == no_filter){
+    Truncate_two_third_rule = Truncate_two_third_rule_off;
+  }
+  { //for 2/3 rule
+    Index_range dmy_range[] = {
+      {0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
+      ,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
+      ,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
+      ,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
+    };
+    n_ijk_range_two_third_filter = sizeof(dmy_range) / sizeof(Index_range);
+    ijk_range_two_third_filter   = new Index_range[n_ijk_range_two_third_filter];
+    for(int n = 0; n < n_ijk_range_two_third_filter; n++){
+      ijk_range_two_third_filter[n] = dmy_range[n];
+    }
+  }
+  { //for no filter
+    Index_range dmy_range[] = {
+      {0, NX-1, 0, NY-1, 0, NZ_-1}
+    };
+    n_ijk_range_no_filter = sizeof(dmy_range) / sizeof(Index_range);
+    ijk_range_no_filter   = new Index_range[n_ijk_range_no_filter];
+    for(int n = 0; n < n_ijk_range_no_filter; n++){
+      ijk_range_no_filter[n] = dmy_range[n];
+    }
+  }
 }
 
+void Free_fft(void){
+  if(SW_FFT==Ooura){
+    Free_fft_ooura();
+  }else if(SW_FFT==IMKL_FFT){
+    Free_fft_ooura();
+  }else{
+    fprintf(stderr, "specify SW_FFT correctly.\n");
+    exit_job(EXIT_FAILURE);
+  }
+}
 void Init_fft(void){
   if(SW_FFT==Ooura){ // Ooura fft
     Init_fft_ooura();

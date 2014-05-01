@@ -195,7 +195,7 @@ void Make_phi_qq_particle(double *phi
     int x_int[DIM];
     double residue[DIM];
     int sw_in_cell 
-      = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
     sw_in_cell = 1;
     int r_mesh[DIM];
     double r[DIM];
@@ -260,7 +260,7 @@ void Make_phi_qq_fixed_particle(double *phi
     int x_int[DIM];
     double residue[DIM];
     int sw_in_cell 
-      = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
     sw_in_cell = 1;
     int r_mesh[DIM];
     double r[DIM];
@@ -391,14 +391,10 @@ inline void Set_steadystate_ion_density(double **Concentration
     {
       double dmy_uk_dc[DIM];
       U_k2zeta_k(u, up, dmy_uk_dc);
-      //for two-thirds rule 
-      const Index_range ijk_range[] = {
-	{0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
-	,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
-	,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-      };
-      const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
+      
+      const Index_range* ijk_range;
+      int n_ijk_range;
+      Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
       Ion_diffusion_solver_Euler(up, jikan, dmy_uk_dc, Concentration, p, ijk_range, n_ijk_range);
     }
     ///////////////////////
@@ -416,7 +412,7 @@ inline void Set_steadystate_ion_density(double **Concentration
 inline void Set_uniform_ion_charge_density_nosalt(double *Concentration
 					    ,double *Total_solute
 					    ,Particle *p){
-  if(N_spec != 1){//N_spec = 1 $B$K$+$.$k$3$H$KCm0U(B
+  if(N_spec != 1){//N_spec = 1 にかぎることに注意
     fprintf(stderr,"invalid (number of ion spencies) = %d\n",N_spec);
     exit_job(EXIT_FAILURE);
   }
@@ -452,7 +448,7 @@ inline void Set_uniform_ion_charge_density_nosalt(double *Concentration
 inline void Set_Poisson_Boltzmann_ion_charge_density_nosalt(double **Concentration
 						      ,double *Total_solute
 						      ,Particle *p){
-  if(N_spec != 1){//N_spec = 1 $B$K$+$.$k$3$H$KCm0U(B
+  if(N_spec != 1){//N_spec = 1 にかぎることに注意
     fprintf(stderr,"invalid (number of ion spencies) = %d\n",N_spec);
     exit_job(EXIT_FAILURE);
   }
@@ -516,7 +512,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_nosalt(double **Concentrati
 inline void Set_uniform_ion_charge_density_salt(double **Concentration
 					  ,double *Total_solute
 					  ,Particle *p){
-  if(N_spec != 2){//N_spec = 2 $B$K$+$.$k$3$H$KCm0U(B
+  if(N_spec != 2){//N_spec = 2 にかぎることに注意
     fprintf(stderr,"invalid (number of ion spencies) = %d\n",N_spec);
     exit_job(EXIT_FAILURE);
   }
@@ -577,11 +573,11 @@ inline void Set_uniform_ion_charge_density_salt(double **Concentration
 inline void Set_Poisson_Boltzmann_ion_charge_density_salt(double **Concentration
 						    ,double *Total_solute
 						    ,Particle *p){
-  if(N_spec != 2){//N_spec = 2 $B$K$+$.$k$3$H$KCm0U(B
+  if(N_spec != 2){//N_spec = 2 にかぎることに注意
     fprintf(stderr,"invalid (number of ion spencies) = %d\n",N_spec);
     exit_job(EXIT_FAILURE);
   }
-  if(Valency[0] != -Valency[1]){//$BBP>N(Bz:z$BEE2r<AMO1U(B Valency_positive_ion=z, Valency_negative_ion=-z $B$N>l9g$K$+$.$k(B
+  if(Valency[0] != -Valency[1]){//対称z:z電解質溶液 Valency_positive_ion=z, Valency_negative_ion=-z の場合にかぎる
     fprintf(stderr,"invalid (Valency_positive_ion, Valency_negative_ion) = %g %g\n",Valency[0],Valency[1]);
     fprintf(stderr,"set Valency_positive_ion = - Valency_negative_ion\n");
     exit_job(EXIT_FAILURE);
@@ -590,7 +586,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_salt(double **Concentration
   double Rho_inf = kBT * Dielectric_cst / SQ(Elementary_charge * Debye_length);
   double Rho_inf_positive_ion=Rho_inf/(Valency[0]*(Valency[0]-Valency[1]));
   double Rho_inf_negative_ion=-Rho_inf/(Valency[1]*(Valency[0]-Valency[1]));
-  //$B;E9~$_$N%$%*%sG;EY(B($B%P%k%/$G%+%&%s%?!<%$%*%s(B, $B6&%$%*%s$OG;EY(BRho_inf_positive_ion, Rho_inf_negative_ion$B$GJ?9U$G$"$k$H2>Dj(B)
+  //仕込みのイオン濃度(バルクでカウンターイオン, 共イオンは濃度Rho_inf_positive_ion, Rho_inf_negative_ionで平衡であると仮定)
   fprintf(stderr,"# bulk density of positive and negative ions  %g %g\n", Rho_inf_positive_ion, Rho_inf_negative_ion);
   
   int STEP=100000;
@@ -691,7 +687,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_salt(double **Concentration
 
 void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
 
-  for(int i=0;i<Component_Number;i++){//$B%3%m%$%II=LLEE2Y$O(B0$B0J30$K@_Dj$9$k(B
+  for(int i=0;i<Component_Number;i++){//コロイド表面電荷は0以外に設定する
     if(Surface_charge[i] == 0.){
       fprintf(stderr,"invalid (Surface_charge) = %g\n",Surface_charge[i]);
       exit_job(EXIT_FAILURE);
@@ -722,7 +718,7 @@ void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
 
   if(N_spec == 1){
     if(Component_Number == 1){
-      if(Valency_counterion * Surface_charge[0] >= 0.){//$B%$%*%s2A?t$O%3%m%$%II=LLEE2Y$H$O0[Id9f$K$9$k(B
+      if(Valency_counterion * Surface_charge[0] >= 0.){//イオン価数はコロイド表面電荷とは異符号にする
 	fprintf(stderr,"invalid (Valency_counterion) = %g\n",Valency_counterion);
 	exit_job(EXIT_FAILURE);
       }
@@ -730,7 +726,7 @@ void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
       double dmy0 = Surface_charge[0];
       for(int i=1; i<Component_Number; i++){
 	double dmy1 = Surface_charge[i];
- 	if(dmy0 * dmy1 <= 0.){//saltfree$B$N$H$-@5Ii%3%m%$%I:.9g7O$K$OL$BP1~(B
+ 	if(dmy0 * dmy1 <= 0.){//saltfreeのとき正負コロイド混合系には未対応
 	  fprintf(stderr,"invalid (number of ion spencies) = %d\n",N_spec);
 	  fprintf(stderr,"select salt in Add_salt\n");
 	  exit_job(EXIT_FAILURE);
@@ -775,11 +771,11 @@ void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
     }
     fprintf(stderr,"############################\n");
   }else{
-    if(Valency_positive_ion <= 0.){//$B@5%$%*%s2A?t(B > 0
+    if(Valency_positive_ion <= 0.){//正イオン価数 > 0
       fprintf(stderr,"invalid (Valency_positive_ion) = %g\n",Valency_positive_ion);
       exit_job(EXIT_FAILURE);
     }
-    if(Valency_negative_ion >= 0.){//$BIi%$%*%s2A?t(B < 0
+    if(Valency_negative_ion >= 0.){//負イオン価数 < 0
       fprintf(stderr,"invalid (Valency_negative_ion) = %g\n",Valency_negative_ion);
       exit_job(EXIT_FAILURE);
     }

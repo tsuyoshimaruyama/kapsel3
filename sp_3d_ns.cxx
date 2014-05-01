@@ -10,44 +10,17 @@
 void (*Time_evolution)(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan);
 
 void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
-    if(SW_EQ == Navier_Stokes){
-	//for two-thirds rule 
-	const Index_range ijk_range[] = {
-	    {0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	};
-	const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
-	/////////////////
-	NS_solver_slavedEuler(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p);
-	/////////////////
-    }else if(SW_EQ == Shear_Navier_Stokes){
-	//for two-thirds rule 
-	const Index_range ijk_range[] = {
-	    {0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	};
-	const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
-	/////////////////	
-	NS_solver_slavedEuler_Shear_PBC(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
-	/////////////////	
-	
-    }else if(SW_EQ == Electrolyte){
-	//for two-thirds rule 
-	const Index_range ijk_range[] = {
-	    {0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
-	    ,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	};
-	const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
-	//////////////////
-	NSsolute_solver_Euler(zeta, jikan, uk_dc, Concentration,p,ijk_range, n_ijk_range);
-	//////////////////
-    }
+  const Index_range* ijk_range;
+  int n_ijk_range;
+  Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
+  
+  if(SW_EQ == Navier_Stokes){
+    NS_solver_slavedEuler(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p);
+  }else if(SW_EQ == Shear_Navier_Stokes){
+    NS_solver_slavedEuler_Shear_PBC(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
+  }else if(SW_EQ == Electrolyte){
+    NSsolute_solver_Euler(zeta, jikan, uk_dc, Concentration,p,ijk_range, n_ijk_range);
+  }
 }
 
 void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
@@ -203,19 +176,11 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 }
 
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
-
-    // Update of Fluid Velocity Filed	
-    //for two-thirds rule 
-    const Index_range ijk_range[] = {
-	{0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
-	,{0,TRN_X-1, NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-	,{NX-TRN_X+1,NX-1,  0,TRN_Y-1, 0,2*TRN_Z-1}
-	,{NX-TRN_X+1,NX-1,  NY-TRN_Y+1,NY-1,  0,2*TRN_Z-1}
-    };
-    const int n_ijk_range = sizeof(ijk_range)/sizeof(Index_range);
-    /////////////////	
+    const Index_range* ijk_range;
+    int n_ijk_range;
+    Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
+  
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
-    /////////////////	
     
     if(Particle_Number >= 0){
 	if(FIX_CELL){ // time-dependent average pressure gradient
@@ -257,9 +222,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         }
 
         Copy_v3(ucp, u);
-        Copy_v3(up, u);
-        U_oblique2u(up, jikan.ts, 1);
-        Transform_obl_u(ucp, -1, jikan.ts);
+        Transform_obl_u(ucp, oblique2cartesian, jikan.ts);
         Update_K2_OBL();
         // u   -> velocity field in oblique coordinates
         // ucp -> velocity fild in cartesian coordinates
@@ -300,7 +263,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           Reset_phi_u(phi, up);
           Make_phi_u_particle_OBL(phi, up, p);
           Make_f_particle_dt_nonsole(f, ucp, up, phi);
-          Transform_obl_u(f, 1, jikan.ts);
+          Transform_obl_u(f, cartesian2oblique, jikan.ts);
           Add_f_particle(u, f);
 	}
 	
@@ -582,6 +545,7 @@ int main(int argc, char *argv[]){
   fprintf(stderr, "#                   (h): %10.2f\n", global_time/3600.0);
 
   Free_Transform_obl();
+  Free_fft();
   for(int d = 0; d < DIM - 1; d++){
     free_1d_double(zeta[d]);
   }

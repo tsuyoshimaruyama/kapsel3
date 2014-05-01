@@ -268,7 +268,7 @@ void Output_avs(AVS_parameters &Avs_parameters
   if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
       Zeta_k2u_k_OBL(zeta, uk_dc, u);
       U_k2u(u);
-      U_oblique2u(u, 0, 0);
+      U_oblique2u(u);
   } else {
       Zeta_k2u(zeta, uk_dc, u);
   }

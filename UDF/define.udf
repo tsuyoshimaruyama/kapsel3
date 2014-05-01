@@ -220,6 +220,10 @@ switch: {
        }
      }
    }
+   ns_solver:{
+      KFILTER: select {'2/3', 'NONE'} "K-space filtering"
+      OBL_INT: select {'linear', 'spline'} "interpolation scheme for Oblique/Rectangular transform"
+   }
 }
 
 output: {

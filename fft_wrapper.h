@@ -52,12 +52,36 @@ extern double *K2,*IK2;
 extern splineSystem** splineOblique;
 extern double*** uspline;
 
+extern Index_range* ijk_range_two_third_filter;
+extern Index_range* ijk_range_no_filter;
+extern int n_ijk_range_two_third_filter;
+extern int n_ijk_range_no_filter;
 
 extern int (*Calc_KX)( const int &i, const int &j, const int &k);
 extern int (*Calc_KY)( const int &i, const int &j, const int &k);
 extern int (*Calc_KZ)( const int &i, const int &j, const int &k);
 extern void (*Truncate_two_third_rule)(double *a);
 
+/*!
+  \brief Get FFT filter index range
+  \warning Do not try to modify contents of ijk_range
+ */
+inline void Get_ijk_range(const Index_range* &ijk_range, int &n_ijk_range, KFILTER &fflag){
+
+  if(fflag != no_filter){//default to 2/3
+    n_ijk_range = n_ijk_range_two_third_filter;
+    ijk_range   = ijk_range_two_third_filter;
+  }else{
+    n_ijk_range = n_ijk_range_no_filter;
+    ijk_range   = ijk_range_no_filter;
+  }    
+}
+
+
+/*!
+  \brief Deallocate FFT memory
+ */
+void Free_fft(void);
 /*!
   \brief Initialize FFT routines
   \details Used to initialize any required workspace memory for FFT routines. For the moment only Ooura's FFT can be used 
@@ -339,56 +363,67 @@ inline void Plot_ux(double const* x, double const* const* u, const string &tag, 
 
 // Allocate / Deallocate interpolation memory
 inline void Init_Transform_obl(){
-  int nthreads;
+
+  if(SW_OBL_INT == spline_int){
+    int nthreads;
 #ifndef _OPENMP
-  nthreads = 1;
+    nthreads = 1;
 #else
 #pragma omp parallel
-  {
-    nthreads = omp_get_num_threads();
-  }
+    {
+      nthreads = omp_get_num_threads();
+    }
 #endif
-  uspline = (double***) malloc(sizeof(double**) * nthreads); 
-  splineOblique = new splineSystem*[nthreads];
-
-  for(int np = 0; np < nthreads; np++){
-    splineInit(splineOblique[np], NX, DX);
-    uspline[np] = (double**) malloc(sizeof(double*) * DIM );
-
-    for(int d = 0; d < DIM; d++) uspline[np][d] = alloc_1d_double(NX);
+    uspline = (double***) malloc(sizeof(double**) * nthreads); 
+    splineOblique = new splineSystem*[nthreads];
+    
+    for(int np = 0; np < nthreads; np++){
+      splineInit(splineOblique[np], NX, DX);
+      uspline[np] = (double**) malloc(sizeof(double*) * DIM );
+      
+      for(int d = 0; d < DIM; d++) uspline[np][d] = alloc_1d_double(NX);
+    }
   }
+
 }
 
 inline void Free_Transform_obl(){
-  int nthreads;
+  if(SW_OBL_INT == spline_int){
+    int nthreads;
 #ifndef _OPENMP
-  nthreads = 1;
+    nthreads = 1;
 #else
 #pragma omp parallel 
-  {
-    nthreads = omp_get_num_threads();
-  }
+    {
+      nthreads = omp_get_num_threads();
+    }
 #endif
-  for(int np = 0; np < nthreads; np++){
-
-    for(int d = 0; d < DIM; d++) free_1d_double(uspline[np][d]);
-    
-    free(uspline[np]);
-    splineFree(splineOblique[np]);
-    
+    for(int np = 0; np < nthreads; np++){
+      
+      for(int d = 0; d < DIM; d++) free_1d_double(uspline[np][d]);
+      
+      free(uspline[np]);
+      splineFree(splineOblique[np]);
+      
+    }
+    delete[] splineOblique;
+    free(uspline);
   }
-  delete[] splineOblique;
-  free(uspline);
 }
 
 // Periodic spline interpolation
-// +1 : rectangular -> oblique
-// -1 : rectangular <- oblique
-inline void Transform_obl_u(double **uu, const int &flag, const int &id){
+inline void Transform_obl_u_spline(double **uu, const OBL_TRANSFORM &flag, const int &id){
   int im, im_ob;
-  double sign = (flag >= 0 ? 1.0 : -1.0);
   double dmy_x;
   double delta_y;
+  double sign;
+  if(flag == oblique2cartesian){ 
+    sign = -1.0;
+  }else if(flag == cartesian2oblique){
+    sign = 1.0;
+  }else{
+    exit_job(EXIT_FAILURE);
+  }
 
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, dmy_x, delta_y)
   for(int j = 0; j < NY; j++){//original coord
@@ -412,7 +447,7 @@ inline void Transform_obl_u(double **uu, const int &flag, const int &id){
 	
         //velocity components in transformed basis defined over
         //original grid points x0
-	us0[0][i] = uu[0][im] -sign*degree_oblique*uu[1][im];
+	us0[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
 	us0[1][i] = uu[1][im];
 	us0[2][i] = uu[2][im];
       }//i
@@ -481,10 +516,9 @@ inline void U2u_oblique(double **uu) {
 	    }
 	}
     }
-    
 }
 
-inline void U_oblique2u(double **uu, const int &id, const int&flag) {
+inline void U_oblique2u(double **uu) {
 
     int im;
     int im_ob;
@@ -528,20 +562,27 @@ inline void U_oblique2u(double **uu, const int &id, const int&flag) {
 		    beta*work_v3[2][im] +
 		    alpha*work_v3[2][im_p];
 
-                if(j == NY/2 + (int)(A/DX) + 1 && k == NZ/2){
-                  work_v1[i] = i_oblique*DX;
-
-                  uaux[0][i] = uu[0][im_ob] - Shear_rate_eff*(j - NY/2.0);
-                  uaux[1][i] = uu[1][im_ob];
-                  uaux[2][i] = uu[2][im_ob];
-                }
 	    }
 	}
     }
-    /*if(flag){
-      Plot_ux(work_v1, uaux, "lin", id);
-      }*/
 }
+
+inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &id){
+  if(SW_OBL_INT == linear_int){
+    if(flag == oblique2cartesian){
+      U_oblique2u(uu);
+    }else if(flag == cartesian2oblique){
+      U2u_oblique(uu);
+    }else{
+      exit_job(EXIT_FAILURE);
+    }
+  }else if(SW_OBL_INT == spline_int){
+    Transform_obl_u(uu, flag, id);
+  }else{
+    exit_job(EXIT_FAILURE);
+  }
+}
+
 
 inline void contra2co(double **contra) {
 
@@ -903,7 +944,6 @@ inline void Truncate_general(double *a, const Index_range &ijk_range){
 inline void Truncate_two_third_rule_ooura(double *a){
   static Index_range dmy_range;
   const int trn_z2=2*TRN_Z;
-  int range[2];
   {
     dmy_range.istart=0;
     dmy_range.iend=NX-1;
@@ -945,4 +985,7 @@ inline void Truncate_two_third_rule_ooura(double *a){
   }
 }
 
+inline void Truncate_two_third_rule_off(double *a){
+  return;
+}
 #endif

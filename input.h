@@ -53,10 +53,13 @@ enum PT {spherical_particle
 	 ,rigid
 };
 enum JAX {x_axis, y_axis, z_axis, no_axis};
-enum JP {motor,
-	 slip,
-         obstacle,
-         no_propulsion};
+enum JP  {motor,slip,obstacle,no_propulsion};
+
+enum OBL_INT {linear_int, spline_int};
+enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
+enum KFILTER {two_third_filter, no_filter};
+
+
 //////  
 extern SW_time SW_TIME;
 //////  
@@ -65,6 +68,14 @@ extern const char *EQ_name[];
 //////  
 extern PT SW_PT;
 extern const char *PT_name[];
+
+//////
+extern OBL_INT SW_OBL_INT;
+extern const char *OBL_INT_name[];
+//////
+extern KFILTER SW_KFILTER;
+extern const char *KFILTER_name[];
+
 //////  material parameters
 extern double RHO;
 extern double IRHO;
@@ -131,7 +142,7 @@ extern int SW_UDF;
 extern int SW_FFT;
 //////
 
-/////// $B7W;;>r7o$N@_Dj(B
+/////// 計算条件の設定
 extern int Nmax;
 extern int Nmin;
 extern int Ns[];
