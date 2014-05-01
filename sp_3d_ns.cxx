@@ -218,7 +218,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           Reset_U_OBL(ucp, u);
           Swap_mem(u, ucp);
           degree_oblique -= 1.;
-          fprintf(stdout, "#Grid reset: %d", jikan.ts);
+          fprintf(stdout, "#Grid reset: %d\n", jikan.ts);
         }
 
         Copy_v3(ucp, u);

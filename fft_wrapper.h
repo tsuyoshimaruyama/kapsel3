@@ -412,7 +412,7 @@ inline void Free_Transform_obl(){
 }
 
 // Periodic spline interpolation
-inline void Transform_obl_u_spline(double **uu, const OBL_TRANSFORM &flag, const int &id){
+inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag, const int &id){
   int im, im_ob;
   double dmy_x;
   double delta_y;
@@ -577,7 +577,7 @@ inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &i
       exit_job(EXIT_FAILURE);
     }
   }else if(SW_OBL_INT == spline_int){
-    Transform_obl_u(uu, flag, id);
+    Spline_u_oblique_transform(uu, flag, id);
   }else{
     exit_job(EXIT_FAILURE);
   }
