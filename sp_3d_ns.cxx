@@ -445,7 +445,7 @@ int main(int argc, char *argv[]){
 	}
 
 	if(SW_UDF){// Output_UDF
-	  Output_udf(ufout, Avs_parameters, zeta, uk_dc, particles, jikan);
+	  Output_udf(ufout, zeta, uk_dc, particles, jikan);
 	}
 
 	if(SW_EQ == Electrolyte){

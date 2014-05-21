@@ -291,7 +291,7 @@ void Force_restore_parameters(double **zeta
             ufin->get(target.sub("zeta1"),zeta[1][im]);
           }
           if(Electrolyte ){
-            for(int n=0;n<N_spec;n++){ // Two_fluid $B$G$O(B N_spec =1
+            for(int n=0;n<N_spec;n++){ // Two_fluid では N_spec =1
               sprintf(str,"resume.CONTINUE.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
               Location target(str);
               ufin->get(target.sub("ck"),conc_k[n][im]);

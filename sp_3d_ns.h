@@ -25,6 +25,7 @@
 #include "make_phi.h"
 #include "avs_output.h"
 #include "avs_output_p.h"
+#include "output.h"
 #include "resume.h"
 #include "md_force.h"
 #include "fluid_solver.h"

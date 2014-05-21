@@ -63,15 +63,6 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters);
  */
 void Output_avs(AVS_parameters &Avs_parameters, double **zeta, double *uk_dc, Particle *p, const CTime &time);
 
-/*!
-  \brief Output particle data for current configuration in UDF format
- */
-void Output_udf(UDFManager *ufout
-		,AVS_parameters &Avs_parameters
-		,double **zeta
-		,double *uk_dc
-		,const Particle *p
-		,const CTime &time);
 
 /*!
   \brief Output field data of charged system for current configuration
