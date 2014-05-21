@@ -357,5 +357,6 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 	exit_job(EXIT_FAILURE);
     }
 }
+
 #endif
 

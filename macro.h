@@ -135,6 +135,9 @@ inline double SQ(const double x){
 inline int SQ(const int x){
     return x*x;
 }
+inline int ABS(const int x){
+    return x>=0?x:-x;
+}
 inline double ABS(const double x){
     return x>=0?x:-x;
 } 
@@ -188,6 +191,10 @@ inline bool positive_mp(const double &a){
 }
 inline bool negative_mp(const double &a){
   return -TOL_MP > a;
+}
+inline int MOD(const int &a, const int &b){
+  int dmy = a % b;
+  return (a >= 0) ? dmy : (b - ABS(dmy)) % b;
 }
 
 ///

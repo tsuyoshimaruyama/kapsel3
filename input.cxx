@@ -30,8 +30,17 @@ const char *PT_name[]={"spherical_particle"
 		 ,"rigid"
 };
 //////
+OBL_INT SW_OBL_INT;
+const char *OBL_INT_name[]={"linear", "spline"};
+
+//////
+KFILTER SW_KFILTER;
+const char *KFILTER_name[]={"2/3", "none"};
+
+//////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
 const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
+
 //////
 SW_time SW_TIME;
 //////
@@ -47,7 +56,7 @@ int SW_UDF;
 //int SW_FFT=Ooura;
 int SW_FFT=IMKL_FFT;
 //////
-/////// $B7W;;>r7o$N@_Dj(B
+/////// 計算条件の設定
 int Nmax;
 int Nmin;
 int Ns[DIM];
@@ -334,7 +343,7 @@ inline void Set_global_parameters(void){
 	    }
 	    double LJ_stokes_time = sqrt(mass_min * XI/Srate_depend_LJ_cap);
 	    Tdump=1./(NU * KMAX2);
-	    fprintf(stderr, "# aaaaa :vis_time 2:shearCFLtime 3:shearstokestime 4:LJstokestime\n");
+	    fprintf(stderr, "# vis_time 2:shearCFLtime 3:shearstokestime 4:LJstokestime\n");
 	    fprintf(stderr, "# %g %g %g %g\n" , Tdump*Axel, shear_CFL_time, shear_stokes_time, LJ_stokes_time);
             fprintf(stderr, "# Delta gamma = %.6g * %.6g = %.6g\n", Shear_rate, Tdump*Axel, 
                     Shear_rate*Tdump*Axel);
@@ -449,8 +458,8 @@ void Gourmet_file_io(const char *infile
     if(file_check(infile)) ufin=new UDFManager(infile);
     
     // --------------------------------------------------------
-    // $B%l%3!<%I$rDI2C$9$k$+?75,$K$9$k$+7h$a$k$?$a(B, $B=EJ#$9$k$1$I(B
-    // resumed or not $B$O(B outfile$B3+$/A0$K$b8+$H$/(B
+    // レコードを追加するか新規にするか決めるため, 重複するけど
+    // resumed or not は outfile開く前にも見とく
     {
 	string str;
 	ufin->get("resume.Calculation",str);
@@ -816,7 +825,7 @@ void Gourmet_file_io(const char *infile
 	fprintf(stderr,"#\n# %s eq. selected.\n", EQ_name[SW_EQ]);
     }
     
-    /////// $B7W;;>r7o$N@_Dj(B
+    /////// 計算条件の設定
     {
 	Location target("object_type");
 	string str;
@@ -1686,6 +1695,38 @@ void Gourmet_file_io(const char *infile
           }
         }
 
+        {
+          Location target("switch.ns_solver");
+          string str;
+
+          //default values
+          SW_KFILTER=two_third_filter;
+          SW_OBL_INT=linear_int;
+          
+          if(ufin->get(target.sub("KFILTER"), str)){
+            ufout->put(target.sub("KFILTER"), str);
+            ufres->put(target.sub("KFILTER"), str);
+            if(str == KFILTER_name[two_third_filter]){ SW_KFILTER = two_third_filter;}
+            else if(str == KFILTER_name[no_filter]){ SW_KFILTER = no_filter;}
+            else{ exit_job(EXIT_FAILURE); }
+          }
+          if(SW_KFILTER == two_third_filter){fprintf(stderr, "# NS solver k-filter scheme: 2/3 rule\n");}
+          else if(SW_KFILTER == no_filter){ fprintf(stderr, "# NS solver k-filter scheme: NONE\n");}
+          else{exit_job(EXIT_FAILURE);}
+
+          if(ufin->get(target.sub("OBL_INT"), str)){
+            ufout->put(target.sub("OBL_INT"), str);
+            ufres->put(target.sub("OBL_INT"), str);
+            if(str == OBL_INT_name[linear_int]){ SW_OBL_INT = linear_int;}
+            else if(str == OBL_INT_name[spline_int]){ SW_OBL_INT = spline_int;}
+            else{ exit_job(EXIT_FAILURE);}
+          }
+          if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+            if(SW_OBL_INT == linear_int){fprintf(stderr, "# OBL/RCT transform. scheme: linear\n");}
+            else if(SW_OBL_INT == spline_int){fprintf(stderr, "# OBL/RCT transform. scheme: periodic spline\n");}
+            else{exit_job(EXIT_FAILURE);}
+          }
+        }
     }
     {
       DBG_MASS_GRID = 0;
@@ -1930,7 +1971,7 @@ void Gourmet_file_io(const char *infile
 
 char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;
 
-//GOURMET$B>e$GM?$($i$l$?%U%!%$%kL>$r<hF@$7$^$9(B
+//GOURMET上で与えられたファイル名を取得します
 
 void file_get(const int argc, char *argv[]){
 
@@ -1950,27 +1991,27 @@ void file_get(const int argc, char *argv[]){
     char *p=argv[i];
     if(*p=='-' && *++p) c=*p++;
     switch(c){
-    case 'I':   //$B%$%s%W%C%H(BUDF
+    case 'I':   //インプットUDF
       In_udf=p;
       fprintf(stderr, "#using %s as input\n",p);
       break;
-    case 'S':   //$B7W;;ESCf7P2a=PNO(BUDF
+    case 'S':   //計算途中経過出力UDF
       Sum_udf=p;
       fprintf(stderr,"#using %s as summary\n",p);
       break;
-    case 'O':   //$B%"%&%H%W%C%H(BUDF
+    case 'O':   //アウトプットUDF
       Out_udf=p;
       fprintf(stderr,"#using %s as output\n",p);
       break;
-    case 'D':   //$BDj5A(BUDF
+    case 'D':   //定義UDF
       Def_udf=p;
       fprintf(stderr, "#using %s as definition\n",p);
       break;
-    case 'M':   //$B@)8fMQ%U%!%$%k(B
+    case 'M':   //制御用ファイル
       Ctrl_udf=p;
       fprintf(stderr,"#using %s as control\n",p);
       break;
-    case 'R':   // $B%j%9%?!<%H(BUDF
+    case 'R':   // リスタートUDF
       Res_udf=p;
       fprintf(stderr,"#using %s as restart\n",p);
       R_selected = 1;
@@ -1992,8 +2033,8 @@ void file_get(const int argc, char *argv[]){
     exit_job(EXIT_FAILURE);
   }
 
-  if(0){ // input.udf $B$r(B restart.udf $B$K%3%T!<$7$H$/(B
-  //if(R_selected){ // input.udf $B$r(B restart.udf $B$K%3%T!<$7$H$/(B
+  if(0){ // input.udf を restart.udf にコピーしとく
+  //if(R_selected){ // input.udf を restart.udf にコピーしとく
     FILE *fin, *fout;
     char s[256];
     if((fin=fopen(In_udf,"r"))==NULL){

@@ -110,13 +110,14 @@ OBJS  	= mt19937ar.o\
 	rigid_body.o\
 	operate_surface.o\
 	matrix_diagonal.o\
+	periodic_spline.o\
 	sp_3d_ns.o
 
 XYZ_OBJS= alloc.o\
 	rigid_body.o\
 	$(AUX)/udf2xyz.o
 
-TARGET 	= kapsel
+TARGET 	= kapsel 
 XYZ	= udf2xyz
 
 ## Implicit rules
@@ -132,7 +133,6 @@ $(TARGET): $(OBJS)
 
 $(XYZ): $(XYZ_OBJS)
 	$(CXX) $(XYZ_OBJS) -o $(XYZ) $(CFLAGS) $(LINKS)
-
 
 ## Compile
 

@@ -12,6 +12,7 @@
 #include <assert.h> 
 #include <math.h>
 
+#include "periodic_spline.h"
 #include "variable.h"
 #include "input.h"
 #include "aux_field.h"
@@ -48,11 +49,39 @@ extern double **work_v3, **work_v2, *work_v1;
 extern int *KX_int, *KY_int, *KZ_int;
 extern double *K2,*IK2;
 
+extern splineSystem** splineOblique;
+extern double*** uspline;
+
+extern Index_range* ijk_range_two_third_filter;
+extern Index_range* ijk_range_no_filter;
+extern int n_ijk_range_two_third_filter;
+extern int n_ijk_range_no_filter;
+
 extern int (*Calc_KX)( const int &i, const int &j, const int &k);
 extern int (*Calc_KY)( const int &i, const int &j, const int &k);
 extern int (*Calc_KZ)( const int &i, const int &j, const int &k);
 extern void (*Truncate_two_third_rule)(double *a);
 
+/*!
+  \brief Get FFT filter index range
+  \warning Do not try to modify contents of ijk_range
+ */
+inline void Get_ijk_range(const Index_range* &ijk_range, int &n_ijk_range, KFILTER &fflag){
+
+  if(fflag != no_filter){//default to 2/3
+    n_ijk_range = n_ijk_range_two_third_filter;
+    ijk_range   = ijk_range_two_third_filter;
+  }else{
+    n_ijk_range = n_ijk_range_no_filter;
+    ijk_range   = ijk_range_no_filter;
+  }    
+}
+
+
+/*!
+  \brief Deallocate FFT memory
+ */
+void Free_fft(void);
 /*!
   \brief Initialize FFT routines
   \details Used to initialize any required workspace memory for FFT routines. For the moment only Ooura's FFT can be used 
@@ -227,6 +256,195 @@ void U_k2divergence_k(double **u, double *div);
  */
 void U_k2rotation_k(double **u);
 
+/*!
+  \brief Transform scalar field from rectangular to oblique coordinates
+  \param[in,out] phi scalar (density) field to transform
+ */
+inline void phi2phi_oblique(double *phi){
+    
+    int im;
+    int im_ob;
+    int im_ob_p;
+
+    Copy_v1(work_v1, phi);
+    
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+
+	    double sign = j - NY/2;
+	    if (!(sign == 0)) {
+		sign = sign/fabs(sign);
+	    }
+
+	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2))*sign;
+	    double alpha = (degree_oblique*(j - NY/2) - i_oblique)*sign;
+	    double beta  = 1. - alpha;
+
+	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+	    int i_oblique_plus = (int) fmod(i_oblique + sign + 4.*NX, NX);
+
+	    
+	    for (int k = 0; k < NZ; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+		im_ob_p = (i_oblique_plus*NY*NZ_) + (j*NZ_) + k;
+
+		phi[im] = (beta*work_v1[im_ob]+alpha*work_v1[im_ob_p]);
+	    }
+	}
+    }
+}
+
+/*!
+  \brief Transform scalar field from oblique to rectangular coordinates
+  \param[in,out] phi scalar (density) field to transform
+ */
+inline void phi_oblique2phi(double *phi) {
+
+    int im;
+    int im_ob;
+    int im_p;
+
+    Copy_v1(work_v1, phi);
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+
+	    double sign = j - NY/2;
+	    //int sign = j - NY/2;
+	    if (!(sign == 0)) {
+		sign = sign/fabs(sign);
+	    }
+
+	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
+	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
+	    double beta  = 1. - alpha;
+	    
+	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+
+	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
+
+	    for (int k = 0; k < NZ; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+		im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
+
+		phi[im_ob] = beta*work_v1[im] + alpha*work_v1[im_p];
+	    }
+	}
+    }
+}
+
+// Allocate / Deallocate interpolation memory
+inline void Init_Transform_obl(){
+
+  if(SW_OBL_INT == spline_int){
+    int nthreads;
+#ifndef _OPENMP
+    nthreads = 1;
+#else
+#pragma omp parallel
+    {
+      nthreads = omp_get_num_threads();
+    }
+#endif
+    uspline = (double***) malloc(sizeof(double**) * nthreads); 
+    splineOblique = new splineSystem*[nthreads];
+    
+    for(int np = 0; np < nthreads; np++){
+      splineInit(splineOblique[np], NX, DX);
+      uspline[np] = (double**) malloc(sizeof(double*) * DIM );
+      
+      for(int d = 0; d < DIM; d++) uspline[np][d] = alloc_1d_double(NX);
+    }
+  }
+
+}
+
+inline void Free_Transform_obl(){
+  if(SW_OBL_INT == spline_int){
+    int nthreads;
+#ifndef _OPENMP
+    nthreads = 1;
+#else
+#pragma omp parallel 
+    {
+      nthreads = omp_get_num_threads();
+    }
+#endif
+    for(int np = 0; np < nthreads; np++){
+      
+      for(int d = 0; d < DIM; d++) free_1d_double(uspline[np][d]);
+      
+      free(uspline[np]);
+      splineFree(splineOblique[np]);
+      
+    }
+    delete[] splineOblique;
+    free(uspline);
+  }
+}
+
+// Periodic spline interpolation
+inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag, const int &id){
+  int im, im_ob;
+  double dmy_x;
+  double delta_y;
+  double sign;
+  if(flag == oblique2cartesian){ 
+    sign = -1.0;
+  }else if(flag == cartesian2oblique){
+    sign = 1.0;
+  }else{
+    exit_job(EXIT_FAILURE);
+  }
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, dmy_x, delta_y)
+  for(int j = 0; j < NY; j++){//original coord
+    int np;    
+#ifndef _OPENMP
+    np = 0;
+#else
+    np = omp_get_thread_num();
+#endif
+    splineSystem *spl = splineOblique[np];
+    double **us0      = uspline[np];
+    
+    delta_y = (double)(j - NY/2)*DX;
+    
+    for(int k = 0; k < NZ; k++){ //original coord
+
+      //setup interpolation grid
+      for(int i = 0; i < NX; i++){//original coord
+        im = (i*NY*NZ_) + (j*NZ_) + k;
+        dmy_x = fmod(i*DX - sign*degree_oblique*delta_y + 4.0*LX, LX); //transformed coord
+	
+        //velocity components in transformed basis defined over
+        //original grid points x0
+	us0[0][i] = uu[0][im] - sign*degree_oblique*uu[1][im];
+	us0[1][i] = uu[1][im];
+	us0[2][i] = uu[2][im];
+      }//i
+
+      //compute interpolated points
+      for(int d = DIM - 1; d >= 0; d--){
+        splineCompute(spl, us0[d]);
+
+        for(int i = 0; i < NX; i++){//transformed coord
+          im = (i*NY*NZ_) + (j*NZ_) + k;
+          dmy_x = fmod(i*DX + sign*degree_oblique*delta_y + 4.0*LX, LX); // original coord
+	  
+          uu[d][im]  = splineFx(spl, dmy_x);
+          if(d == 0 && sign < 0) uu[d][im] += Shear_rate_eff*delta_y;
+        }//i
+      }//d
+
+    }//k
+  }//j
+}
+
 inline void U2u_oblique(double **uu) {
     
     int im;
@@ -274,7 +492,6 @@ inline void U2u_oblique(double **uu) {
 	    }
 	}
     }
-    
 }
 
 inline void U_oblique2u(double **uu) {
@@ -295,12 +512,10 @@ inline void U_oblique2u(double **uu) {
 		sign = sign/fabs(sign);
 	    }
 
-	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
+            int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
 	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
 	    double beta  = 1. - alpha;
-	    
 	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-
 	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
 
 	    for (int k = 0; k < NZ; k++) {
@@ -322,11 +537,28 @@ inline void U_oblique2u(double **uu) {
 		uu[2][im_ob] =
 		    beta*work_v3[2][im] +
 		    alpha*work_v3[2][im_p];
+
 	    }
 	}
     }
-    
 }
+
+inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &id){
+  if(SW_OBL_INT == linear_int){
+    if(flag == oblique2cartesian){
+      U_oblique2u(uu);
+    }else if(flag == cartesian2oblique){
+      U2u_oblique(uu);
+    }else{
+      exit_job(EXIT_FAILURE);
+    }
+  }else if(SW_OBL_INT == spline_int){
+    Spline_u_oblique_transform(uu, flag, id);
+  }else{
+    exit_job(EXIT_FAILURE);
+  }
+}
+
 
 inline void contra2co(double **contra) {
 
@@ -688,7 +920,6 @@ inline void Truncate_general(double *a, const Index_range &ijk_range){
 inline void Truncate_two_third_rule_ooura(double *a){
   static Index_range dmy_range;
   const int trn_z2=2*TRN_Z;
-  int range[2];
   {
     dmy_range.istart=0;
     dmy_range.iend=NX-1;
@@ -730,4 +961,7 @@ inline void Truncate_two_third_rule_ooura(double *a){
   }
 }
 
+inline void Truncate_two_third_rule_off(double *a){
+  return;
+}
 #endif

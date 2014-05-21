@@ -9,14 +9,14 @@
 #include "avs_output.h"
 
 const int Veclen = 5+5; 
-const char *Label="ux uy uz phi pressure tau_xy tau_yz tau_zx tau_xx tau_yy"; // avs $B=PNO%i%Y%kMQ(B
+const char *Label="ux uy uz phi pressure tau_xy tau_yz tau_zx tau_xx tau_yy"; // avs 出力ラベル用
 const int Veclen_two_fluid = 5; 
-const char *Label_two_fluid="ux uy uz phi concentration"; // avs $B=PNO%i%Y%kMQ(B
+const char *Label_two_fluid="ux uy uz phi concentration"; // avs 出力ラベル用
 const int Veclen_QS = 4+5; 
-//const char *Label_QS="ux uy uz phi q11 q12 q13 q22 q23"; // avs $B=PNO%i%Y%kMQ(B
-const char *Label_QS="ux uy uz phi s1 s2 nx ny nz"; // avs $B=PNO%i%Y%kMQ(B
+//const char *Label_QS="ux uy uz phi q11 q12 q13 q22 q23"; // avs 出力ラベル用
+const char *Label_QS="ux uy uz phi s1 s2 nx ny nz"; // avs 出力ラベル用
 const int Veclen_charge = 4+3; 
-const char *Label_charge="ux uy uz phi surface_charge rho e_potential"; // avs $B=PNO%i%Y%kMQ(B
+const char *Label_charge="ux uy uz phi surface_charge rho e_potential"; // avs 出力ラベル用
 
 //const AVS_Field Field = irregular;
 const AVS_Field Field = uniform;
