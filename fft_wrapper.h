@@ -42,7 +42,7 @@ extern int *ip;
 extern double *w;
 extern double *t;
 
-extern double **ucp, **uaux;
+extern double **ucp;
 extern double *phi,**up,**u,*rhop;
 extern double **work_v3, **work_v2, *work_v1;
 
@@ -256,6 +256,10 @@ void U_k2divergence_k(double **u, double *div);
  */
 void U_k2rotation_k(double **u);
 
+/*!
+  \brief Transform scalar field from rectangular to oblique coordinates
+  \param[in,out] phi scalar (density) field to transform
+ */
 inline void phi2phi_oblique(double *phi){
     
     int im;
@@ -291,23 +295,11 @@ inline void phi2phi_oblique(double *phi){
 	}
     }
 }
-inline void Remove_shear_U(double **u, double* phi){
-  int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      double sign = j - NY/2;
-      if(!(sign == 0)){
-	sign = sign / fabs(sign);
-      }
 
-      for(int k = 0; k < NZ; k++){
-	im = (i*NY*NZ_) + (j*NZ_) + k;
-	u[0][im] -= Shear_rate_eff*(j - NY/2.0)*phi[im];
-      }
-    }
-  }
-}
+/*!
+  \brief Transform scalar field from oblique to rectangular coordinates
+  \param[in,out] phi scalar (density) field to transform
+ */
 inline void phi_oblique2phi(double *phi) {
 
     int im;
@@ -343,22 +335,6 @@ inline void phi_oblique2phi(double *phi) {
 	    }
 	}
     }
-}
-inline void Plot_ux(double const* x, double const* const* u, const string &tag, const int &id){
-  FILE* fout;
-  char buffer[256];
-  
-  sprintf(buffer, "./images/ux_%s-%d.dat", tag.c_str(), id);
-  fout = filecheckopen(buffer, "w");
-  int j = NY/2 + (int)(A/DX) + 1;
-  int k = NZ/2;
-  double ushear = Shear_rate_eff*(j - NY/2.0);
-  for(int i = 0; i < NX; i++){
-    fprintf(fout, "%.5g %.5g %.5g %.5g %.5g %.5g\n",
-            i*DX, x[i], u[0][i], u[1][i], u[2][i], ushear
-            );
-  }
-  fclose(fout);
 }
 
 // Allocate / Deallocate interpolation memory

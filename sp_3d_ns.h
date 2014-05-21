@@ -358,44 +358,5 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
     }
 }
 
-void Plot_phi_u(double const* phi, 
-		double const* const* up, 
-		double const* const* u,
-		const double &strain, const string &tag, const int &id){
-  int im;
-  int k = NZ/2;
-  FILE* fout;
-  char buffer[256];
-  double rp[DIM];
-  double rr[DIM];
-  double dmyr;
-  double ushear;
-  sprintf(buffer, "./images/xy_%s-%d.dat", tag.c_str(), id);
-  fout = filecheckopen(buffer, "w");
-
-  fprintf(fout, "%.5g\n", strain);
-  for(int d = 0; d < DIM; d++) rp[d] = Ns[d]/2.0;
-
-  rr[2] = k*DX;
-  for(int j = 0; j < NY; j++){
-    rr[1] = j*DX;
-    ushear = Shear_rate_eff*(j - NY/2.0);
-    for(int i = 0; i < NX; i++){
-      rr[0] = i*DX;
-      dmyr = sqrt(SQ(rr[0] - rp[0]) + SQ(rr[1] - rp[1]) + SQ(rr[2] - rp[2]));
-
-      im = (i*NY*NZ_) + (j*NZ_) + k;
-      fprintf(fout, "%.5g %.5g %.5g %.5g %.5g %.5g %.5g %.5g %.5g\n",
-	      j*DX, i*DX, 
-	      phi[im], 
-	      up[0][im], up[1][im], 
-	      u[0][im], u[1][im],
-	      ushear,
-	      (dmyr > 0.0 ? dmyr : 1.0)
-	      );
-    }
-  }
-  fclose(fout);
-}
 #endif
 

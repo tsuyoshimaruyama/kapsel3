@@ -1711,7 +1711,7 @@ void Gourmet_file_io(const char *infile
             else{ exit_job(EXIT_FAILURE); }
           }
           if(SW_KFILTER == two_third_filter){fprintf(stderr, "# NS solver k-filter scheme: 2/3 rule\n");}
-          else if(SW_KFILTER = no_filter){ fprintf(stderr, "# NS solver k-filter scheme: NONE\n");}
+          else if(SW_KFILTER == no_filter){ fprintf(stderr, "# NS solver k-filter scheme: NONE\n");}
           else{exit_job(EXIT_FAILURE);}
 
           if(ufin->get(target.sub("OBL_INT"), str)){

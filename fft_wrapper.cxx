@@ -13,7 +13,7 @@ double *w;
 double *t;
 
 
-double **ucp, **uaux;
+double **ucp;
 double *phi, **up, **u, *rhop;
 double **work_v3, **work_v2, *work_v1;
 
