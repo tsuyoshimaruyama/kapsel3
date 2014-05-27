@@ -14,8 +14,9 @@
 void Init_output(){
 
   //AVS data
-  Set_avs_parameters(Avs_parameters);
-  if(SW_AVS){
+  if(SW_OUTFORMAT == OUT_AVS_ASCII ||
+     SW_OUTFORMAT == OUT_AVS_BINARY){
+    Set_avs_parameters(Avs_parameters);
     Init_avs(Avs_parameters);
     if(Particle_Number > 0){
       Init_avs_p(Avs_parameters);
@@ -25,12 +26,13 @@ void Init_output(){
 
 void Show_output_parameter(){
   fprintf(stderr, "#Output parameters\n");
-  if(SW_AVS){
+  if(SW_OUTFORMAT == OUT_AVS_ASCII ||
+     SW_OUTFORMAT == OUT_AVS_BINARY){
     Show_avs_parameter();
   }else{
     fprintf(stderr, "#AVS output is suppressed.\n");
   }
-
+  
   if(SW_UDF){
     fprintf(stderr, "#for UDF ->\t%s\n",Out_udf);
   }else {

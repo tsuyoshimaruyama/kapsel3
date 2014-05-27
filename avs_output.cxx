@@ -18,10 +18,13 @@ const AVS_Field Field = uniform;
 AVS_parameters Avs_parameters;
 
 void Show_avs_parameter(){
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     fprintf(stderr, "#for AVS (filetype is binary)\n");
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     fprintf(stderr, "#for AVS (filetype is ascii)\n");
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fprintf(stderr, "#directory:%s\n", Out_dir);
   fprintf(stderr, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
@@ -75,7 +78,8 @@ void Init_avs(const AVS_parameters &Avs_parameters){
   
   if(Field == irregular){
     fout=filecheckopen(Avs_parameters.cod_file,"wb");
-    if(BINARY){
+
+    if(SW_OUTFORMAT == OUT_AVS_BINARY){
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 	for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
 	  for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend ; k++){
@@ -100,7 +104,7 @@ void Init_avs(const AVS_parameters &Avs_parameters){
 	  }
 	}
       }
-    }else{
+    }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
       fprintf(fout,"X Y Z\n");
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 	for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
@@ -110,6 +114,9 @@ void Init_avs(const AVS_parameters &Avs_parameters){
 	  }
 	}
       }
+    }else{
+      fprintf(stderr, "# Uknown AVS FORMAT\n");
+      exit_job(EXIT_FAILURE);
     }
     fclose(fout);
   }else if(Field == uniform){
@@ -200,7 +207,7 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.fld_file,"a");
   fprintf(fout,"time value = \"step%dtime%g\"\n"
 	  ,time.ts, time.time);
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     static const int data_size=sizeof(float)*
       Avs_parameters.nx * Avs_parameters.ny * Avs_parameters.nz;
     if(Field == irregular){
@@ -225,7 +232,7 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 	      n+1,
 	      Avs_parameters.out_pfx, time.ts, n * data_size);
     }
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     if(Field == irregular){
       for(int n=0; n < DIM; n++){
 	fprintf(fout,
@@ -247,6 +254,9 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 	      "variable %d file = %s%d.dat filetype = ascii skip = 2 offset = %d stride = %d\n",
 	      n+1, Avs_parameters.out_pfx, time.ts, n, veclen);
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fprintf(fout,"EOT\n");
   fclose(fout);
@@ -268,7 +278,7 @@ void Output_avs(AVS_parameters &Avs_parameters
 	  Out_dir, Avs_parameters.out_pfx, time.ts);
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
@@ -284,7 +294,7 @@ void Output_avs(AVS_parameters &Avs_parameters
       Binary_write(fout, Avs_parameters, strain[3]); // 22
 
     }
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     fprintf(fout,"%s\n", line);
     for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
@@ -305,7 +315,11 @@ void Output_avs(AVS_parameters &Avs_parameters
 	}
       }
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
+
   fclose(fout);
 
 }
@@ -329,7 +343,7 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   double dmy_surface_area = PI4 * RADIUS * RADIUS;
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
@@ -337,7 +351,7 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
     Binary_write(fout, Avs_parameters, colloid_charge);
     Binary_write(fout, Avs_parameters, solute_charge_total);
     Binary_write(fout, Avs_parameters, potential);
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){ // OUT_AVS_ASCII
     fprintf(fout,"%s\n", line);
     for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
@@ -355,6 +369,9 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
 	}
       }
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fclose(fout);
 }

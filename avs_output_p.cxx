@@ -36,7 +36,7 @@ inline void Add_pfield_description(AVS_parameters &Avs_parameters
   fout = filecheckopen(Avs_parameters.pfld_file, "a");
   fprintf(fout, "time value = \"step%dtime%g\"\n"
 	  , time.ts, time.time);
-  if(BINARY) {
+  if(SW_OUTFORMAT == OUT_AVS_BINARY) {
     static const int data_size = sizeof(float) *
       Particle_Number;// * DIM;
     for(int n = 0; n < DIM; n++) {
@@ -51,8 +51,7 @@ inline void Add_pfield_description(AVS_parameters &Avs_parameters
 	      n + 1,
 	      Avs_parameters.out_ppfx, time.ts, n * data_size);
     }
-  }
-  else {
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     for(int n = 0; n < DIM; n++) {
       fprintf(fout,
 	      "coord %d file = %s%d.cod filetype = ascii skip = 0 offset = %d stride =%d\n",
@@ -64,6 +63,9 @@ inline void Add_pfield_description(AVS_parameters &Avs_parameters
 	      "variable %d file = %s%d.dat filetype = ascii skip = 1 offset = %d stride = %d\n",
 	      n + 1, Avs_parameters.out_ppfx, time.ts, n, veclen);
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fprintf(fout, "EOT\n");
   fclose(fout);
@@ -82,7 +84,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
 	  Out_dir, Avs_parameters.out_ppfx, time.ts);
   fout = filecheckopen(Avs_parameters.data_file, "wb");
 
-  if(BINARY) {
+  if(SW_OUTFORMAT == OUT_AVS_BINARY) {
     float dmy;
     for(int d = 0; d < DIM; d++) {
       for(int n = 0; n < Particle_Number; n++) {
@@ -90,8 +92,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
 	fwrite(&dmy, sizeof(float), 1, fout);
       }
     }
-  }
-  else {
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII) {
     for(int n = 0; n < Particle_Number; n++) {
       fprintf(fout, "%.3g %.3g %.3g\n"
 	      , p[n].x[2]
@@ -99,6 +100,9 @@ void Output_avs_p(AVS_parameters &Avs_parameters
 	      , p[n].x[0]
 	      );
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fclose(fout);
 
@@ -113,7 +117,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
     rqtn_rm(p[n].QR, p[n].q);
   }
 
-  if(BINARY) {
+  if(SW_OUTFORMAT == OUT_AVS_BINARY) {
     float dmy;
     for(int n = 0; n < Particle_Number; n++) {   //radius
       dmy = (float)RADIUS;
@@ -128,8 +132,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
       }
     }
 
-  }
-  else {
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII) {
     fprintf(fout, "%s\n", line);
     for(int n = 0; n < Particle_Number; n++) {
       fprintf(fout, "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n",
@@ -138,6 +141,9 @@ void Output_avs_p(AVS_parameters &Avs_parameters
 	      p[n].QR[0][1], p[n].QR[1][1], p[n].QR[2][1],
 	      p[n].QR[0][2], p[n].QR[1][2], p[n].QR[2][2]);
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fclose(fout);
 }

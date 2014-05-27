@@ -59,6 +59,7 @@ enum OBL_INT {linear_int, spline_int};
 enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
 enum KFILTER {two_third_filter, no_filter};
 
+enum OUTFORMAT{OUT_NONE, OUT_AVS_ASCII, OUT_AVS_BINARY};
 
 //////  
 extern SW_time SW_TIME;
@@ -75,6 +76,9 @@ extern const char *OBL_INT_name[];
 //////
 extern KFILTER SW_KFILTER;
 extern const char *KFILTER_name[];
+//////
+extern OUTFORMAT SW_OUTFORMAT;
+extern const char *OUTFORMAT_name[];
 
 //////  material parameters
 extern double RHO;
@@ -111,9 +115,6 @@ extern int RESUMED ;
 extern int last_ts ;
 extern double Srate_depend_LJ_cap;
 extern double LJ_dia;
-//////
-/////// avs output;
-extern int SW_AVS;
 
 extern int SW_JANUS;
 extern int SW_JANUS_MOTOR;
@@ -135,7 +136,6 @@ extern int DBG_LE_SOLVE_UPDT;
 
 extern char Out_dir[];
 extern char Out_name[];
-extern int BINARY;
 //////
 extern int SW_UDF;
 ////// FFT select

@@ -37,6 +37,9 @@ const char *OBL_INT_name[]={"linear", "spline"};
 KFILTER SW_KFILTER;
 const char *KFILTER_name[]={"2/3", "none"};
 
+OUTFORMAT SW_OUTFORMAT;
+const char *OUTFORMAT_name[]={"NONE", "ASCII", "BINARY"};
+
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
 const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
@@ -44,10 +47,8 @@ const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
 //////
 SW_time SW_TIME;
 //////
-int SW_AVS;
 char Out_dir[128];
 char Out_name[128];
-int BINARY;
 //////
 int SW_UDF;
 /////// FFT
@@ -1815,8 +1816,8 @@ void Gourmet_file_io(const char *infile
 	    ufin->get(target.sub("AVS"),str);
 	    ufout->put(target.sub("AVS"),str);
 	    ufres->put(target.sub("AVS"),str);
+	    SW_OUTFORMAT = OUT_NONE;
 	    if(str == "ON"){
-		SW_AVS = 1;
 		target.down("ON");
 		{
 		    ufin->get(target.sub("Out_dir"),str);
@@ -1841,10 +1842,10 @@ void Gourmet_file_io(const char *infile
 		    ufin->get(target.sub("FileType"),str);
 		    ufout->put(target.sub("FileType"),str);
 		    ufres->put(target.sub("FileType"),str);
-		    if(str == "BINARY"){
-			BINARY = 1;
-		    }else if(str == "ASCII"){
-			BINARY = 0;
+		    if(str == OUTFORMAT_name[OUT_AVS_BINARY]){
+			SW_OUTFORMAT = OUT_AVS_BINARY;
+		    }else if(str == OUTFORMAT_name[OUT_AVS_ASCII]){
+			SW_OUTFORMAT = OUT_AVS_ASCII;
 		    }else{
 			fprintf(stderr, "invalid FileType %s\n",str.c_str()); 
 			exit_job(EXIT_FAILURE);
@@ -1852,7 +1853,7 @@ void Gourmet_file_io(const char *infile
 		}
 		target.up();
 	    }else if(str == "OFF"){
-		SW_AVS = 0;
+	      SW_OUTFORMAT = OUT_NONE;
 	    }else{
 		fprintf(stderr, "invalid switch for AVS\n"); 
 		exit_job(EXIT_FAILURE);

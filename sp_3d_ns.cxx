@@ -426,7 +426,7 @@ int main(int argc, char *argv[]){
     if( jikan.ts % GTS == 0){
       if(!resumed_and_1st_loop){
 
-	if(SW_AVS){// Output_AVS
+	if(SW_OUTFORMAT != OUT_NONE){// Output field & particle data
 	  if(Particle_Number > 0){
 	    Output_particle_data(particles, jikan);
 	  }
