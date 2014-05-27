@@ -407,7 +407,7 @@ int main(int argc, char *argv[]){
 
   //  return EXIT_SUCCESS;
 
-  Show_parameter(Avs_parameters, particles);
+  Show_parameter(particles);
 
   if ((SW_EQ == Shear_Navier_Stokes) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
     Mean_shear_stress(INIT, stderr, NULL, particles, jikan, Shear_rate_eff);
