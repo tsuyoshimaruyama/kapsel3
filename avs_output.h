@@ -49,6 +49,11 @@ typedef struct AVS_parameters{
 extern AVS_parameters Avs_parameters;
 
 /*!
+  \brief Print avs parameters to stderr
+ */
+void Show_avs_parameter();
+
+/*!
   \brief Write AVS .fld definition files
  */
 void Init_avs(const AVS_parameters &Avs_parameters);
@@ -61,13 +66,24 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters);
 /*!
   \brief Output field data for current configuration in AVS format
  */
-void Output_avs(AVS_parameters &Avs_parameters, double **zeta, double *uk_dc, Particle *p, const CTime &time);
+void Output_avs(AVS_parameters &Avs_parameters, 
+		double **u, 
+		double *phi, 
+		double *Pressure,
+		double **strain,
+		const CTime &time);
 
 
 /*!
   \brief Output field data of charged system for current configuration
   in AVS format
  */
-void Output_avs_charge(AVS_parameters &Avs_parameters, double **zeta, double *uk_dc, double **Concentration, Particle *p, const CTime &time);
+void Output_avs_charge(AVS_parameters &Avs_parameters, 
+		       double** u, 
+		       double* phi, 
+		       double* colloid_charge, 
+		       double* solute_charge_total,
+		       double* potential,
+		       const CTime &time);
 
 #endif

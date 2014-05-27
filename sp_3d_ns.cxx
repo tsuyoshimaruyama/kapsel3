@@ -363,13 +363,7 @@ int main(int argc, char *argv[]){
 
   static CTime jikan={0, 0.0, DT, DT*0.5, DT, DT*0.5};
 
-  Set_avs_parameters(Avs_parameters);
-  if(SW_AVS){
-    Init_avs(Avs_parameters);
-    if(Particle_Number > 0){
-      Init_avs_p(Avs_parameters);
-    }
-  }
+  Init_output();
 
   Particle *particles = new Particle [Particle_Number];
   if(Particle_Number > 0){
@@ -408,6 +402,7 @@ int main(int argc, char *argv[]){
   //  return EXIT_SUCCESS;
 
   Show_parameter(particles);
+  Show_output_parameter();
 
   if ((SW_EQ == Shear_Navier_Stokes) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
     Mean_shear_stress(INIT, stderr, NULL, particles, jikan, Shear_rate_eff);
@@ -433,14 +428,12 @@ int main(int argc, char *argv[]){
 
 	if(SW_AVS){// Output_AVS
 	  if(Particle_Number > 0){
-	    Output_avs_p(Avs_parameters, particles, jikan);
+	    Output_particle_data(particles, jikan);
 	  }
-          if(SW_EQ == Navier_Stokes 
-             || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
-             ){
-            Output_avs(Avs_parameters, zeta, uk_dc, particles, jikan);
+          if(SW_EQ != Electrolyte){
+            Output_field_data(zeta, uk_dc, particles, jikan);
           }else if(SW_EQ==Electrolyte){
-            Output_avs_charge(Avs_parameters, zeta, uk_dc, Concentration, particles, jikan);
+            Output_charge_field_data(zeta, uk_dc, Concentration, particles, jikan);
           }
 	}
 

@@ -16,6 +16,27 @@ const char *Label_charge="ux uy uz phi surface_charge rho e_potential"; // avs å
 //const AVS_Field Field = irregular;
 const AVS_Field Field = uniform;
 AVS_parameters Avs_parameters;
+
+void Show_avs_parameter(){
+  if(BINARY){
+    fprintf(stderr, "#for AVS (filetype is binary)\n");
+  }else{
+    fprintf(stderr, "#for AVS (filetype is ascii)\n");
+  }
+  fprintf(stderr, "#directory:%s\n", Out_dir);
+  fprintf(stderr, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
+	  ,Avs_parameters.out_fld
+	  ,Avs_parameters.out_cod
+	  ,Avs_parameters.out_pfx);
+  if(Particle_Number > 0){
+    fprintf(stderr, "# (particle data)->\t{%s, %s*.cod, %s*.dat}\n"
+	    ,Avs_parameters.out_pfld
+	    ,Avs_parameters.out_ppfx
+	    ,Avs_parameters.out_ppfx
+	    );
+  }
+}
+
 void Init_avs(const AVS_parameters &Avs_parameters){
   FILE *fout;
   fout=filecheckopen(Avs_parameters.fld_file,"w");
@@ -232,58 +253,12 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 }
 
 void Output_avs(AVS_parameters &Avs_parameters
-		,double **zeta
-		,double *uk_dc
-		,Particle *p
+		,double **u
+		,double *phi
+		,double *Pressure
+		,double **strain
 		,const CTime &time){
 
-  double *strain[QDIM]={f_particle[0]
-		      ,f_particle[1]
-		      ,f_particle[2]
-		      ,f_ns0[0]
-		      ,f_ns0[1]
-  };
-  {// strain tensor
-    for(int d=0;d<DIM-1;d++){
-      for(int i=0; i<NX; i++){
-	for(int j=0; j<NY; j++){
-	  for(int k=0; k<NZ_; k++){
-		int im=(i*NY*NZ_)+(j*NZ_)+k;
-	    u[d][im] = ETA * zeta[d][im];
-	  }
-	}
-      }
-    }
-    Zeta_k2Strain_k(u, strain);
-    for(int d=0;d<QDIM;d++){
-      A_k2a(strain[d]);
-    }
-  }
-
-  if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-      Zeta_k2u_k_OBL(zeta, uk_dc, u);
-      U_k2u(u);
-      U_oblique2u(u);
-  } else {
-      Zeta_k2u(zeta, uk_dc, u);
-  }
-
-  A_k2a(Pressure);
-  {
-    Reset_phi(phi);
-    if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-	  Make_phi_particle_OBL(phi, p);
-	  if(SW_JANUS){
-	    Make_phi_janus_particle_OBL(phi, work_v1, p); // +1/-1 janus polarity
-	  }
-    }else {
-	  Make_phi_particle(phi, p);
-	  if(SW_JANUS){
-	    Make_phi_janus_particle(phi, work_v1, p); // +1/-1 janus polarity
-	  }
-    }
-  }
-  
   Add_field_description(Avs_parameters,time, Veclen);
 
   FILE *fout;
@@ -337,33 +312,13 @@ void Output_avs(AVS_parameters &Avs_parameters
 
 
 void Output_avs_charge(AVS_parameters &Avs_parameters
-		       ,double **zeta
-		       ,double *uk_dc
-		       ,double **Concentration
-		       ,Particle *p
+		       ,double** u
+		       ,double* phi
+		       ,double* colloid_charge
+		       ,double* solute_charge_total
+		       ,double* potential
 		       ,const CTime &time
 		       ){
-  Zeta_k2u(zeta, uk_dc, u);
-  
-  double *potential = f_particle[0];
-  double *dmy_value0 = f_particle[1];
-  {
-    Conc_k2charge_field(p, Concentration, potential, phi, dmy_value0);
-    A2a_k(potential);
-    Charge_field_k2Coulomb_potential_k_PBC(potential);
-    A_k2a(potential);
-    for(int n=0;n<N_spec;n++){
-      A_k2a(Concentration[n]);
-    }
-  }
-  {
-    Reset_phi(phi);
-    Reset_phi(up[0]);
-
-    Make_phi_qq_particle(phi, up[0], p);
-
-  }
-
   Add_field_description(Avs_parameters,time, Veclen_charge);
 
   FILE *fout;
@@ -379,51 +334,28 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
     Binary_write(fout, Avs_parameters, phi);
-    for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend ; k++){
-      for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
-	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  float dmy = up[0][(i*NY*NZ_)+(j*NZ_)+k] * dmy_surface_area;
-	  fwrite(&dmy,sizeof(float),1,fout);
-	}
-      }
-    }
-    for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
-      for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
-	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  float dmy=0.;
-	  for(int n=0; n<N_spec; n++){
-	    dmy += (float)(Elementary_charge*Valency[n]*Concentration[n][(i*NY*NZ_)+(j*NZ_)+k]);
-	  }
-	  dmy *= (1.-phi[(i*NY*NZ_)+(j*NZ_)+k]);
-	  fwrite(&dmy,sizeof(float),1,fout);
-	}
-      }
-    }
+    Binary_write(fout, Avs_parameters, colloid_charge);
+    Binary_write(fout, Avs_parameters, solute_charge_total);
     Binary_write(fout, Avs_parameters, potential);
   }else{
     fprintf(fout,"%s\n", line);
     for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
 	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  double dmy = 0.;
-	  for(int n=0; n<N_spec; n++){
-	    dmy += Elementary_charge*Valency[n]*Concentration[n][(i*NY*NZ_)+(j*NZ_)+k];
-	  }
+	  int im = (i*NY*NZ_) + (j*NZ_) + k;
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,u[0][(i*NY*NZ_)+(j*NZ_)+k],u[1][(i*NY*NZ_)+(j*NZ_)+k],u[2][(i*NY*NZ_)+(j*NZ_)+k]
-		  ,phi[(i*NY*NZ_)+(j*NZ_)+k]
-		  ,up[0][(i*NY*NZ_)+(j*NZ_)+k]*dmy_surface_area
-		  ,(1.-phi[(i*NY*NZ_)+(j*NZ_)+k])*dmy
-		  ,potential[(i*NY*NZ_)+(j*NZ_)+k]
+		  ,u[0][im]
+		  ,u[1][im]
+		  ,u[2][im]
+		  ,phi[im]
+		  ,colloid_charge[im]
+		  ,solute_charge_total[im]
+		  ,potential[im]
 		  );
 	}
       }
     }
   }
   fclose(fout);
-
-  for(int n=0; n<N_spec; n++){
-    A2a_k(Concentration[n]);
-  }
 }
 

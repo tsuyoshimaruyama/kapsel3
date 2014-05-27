@@ -260,7 +260,7 @@ void Omega_k2zeta_k_OBL(double **omega, double **zetak){
   assert(zetak[1][0] == 0.0); 
 }
 
-void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]){
+void U_k2Strain_k(double **u, double *strain_k[QDIM]){
   // Strain_k は 5成分
   double dmy[DIM]={0.,0.,0.};
   int k2;
@@ -269,7 +269,11 @@ void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]){
   double ks[DIM];
   double u_dmy[DIM][2];
 
-  Zeta_k2u_k(zeta, dmy, strain_k);
+  //save uk_dc
+  for(int d= 0; d < DIM; d++){
+    dmy[d] = u[d][0];
+    u[d][0]= 0.0;
+  }
 
 #pragma omp parallel for schedule(dynamic, 1) private(im0, im1, k2, ks, u_dmy)
   for(int i=0; i<NX; i++){
@@ -278,12 +282,12 @@ void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]){
 	k2=2*k;
 	im0=(i*NY*NZ_)+(j*NZ_)+k2;
 	im1=(i*NY*NZ_)+(j*NZ_)+k2+1;
-	ks[0] = KX_int[(i*NY*NZ_)+(j*NZ_)+k2] * WAVE_X * .5;
-	ks[1] = KY_int[(i*NY*NZ_)+(j*NZ_)+k2] * WAVE_Y * .5;
-	ks[2] = KZ_int[(i*NY*NZ_)+(j*NZ_)+k2] * WAVE_Z * .5;
+	ks[0] = KX_int[im0] * WAVE_X * .5;
+	ks[1] = KY_int[im0] * WAVE_Y * .5;
+	ks[2] = KZ_int[im0] * WAVE_Z * .5;
 	for(int d=0;d<DIM;d++){
-	  u_dmy[d][0] = u[d][im0];
-	  u_dmy[d][1] = u[d][im1];
+	  u_dmy[d][0] = ETA*u[d][im0];
+	  u_dmy[d][1] = ETA*u[d][im1];
 	}
 
 	strain_k[0][im0] = ks[0] * u_dmy[0][1] * 2.;
@@ -314,6 +318,73 @@ void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]){
 	  -ks[2] * u_dmy[1][0];
       }
     }
+  }
+
+  //reset uk_dc
+  for(int d = 0; d < DIM; d++){
+    u[d][0] = dmy[d];
+  }
+}
+
+void U_k2Strain_k_OBL(double **zeta, double *strain_k[QDIM]){
+  // Strain_k は 5成分
+  // E^{\mu\mu}
+  double dmy[DIM]={0.,0.,0.};
+  int k2;
+  int im0;
+  int im1;
+  double ks[DIM];
+  double u_dmy[DIM][2];
+
+  //save uk_dc
+  for(int d = 0; d < DIM; d++){
+    dmy[d] = u[d][0];
+    u[d][0] = 0.0;
+  }
+
+#pragma omp parallel for schedule(dynamic, 1) private(im0, im1, k2, ks, u_dmy)
+  for(int i=0; i<NX; i++){
+    for(int j=0; j<NY; j++){
+      for(int k=0; k<HNZ_; k++){
+	k2=2*k;
+	im0=(i*NY*NZ_)+(j*NZ_)+k2;
+	im1=im0+1;
+	ks[0] = KX_int[im0] * WAVE_X * .5;
+	ks[1] = KY_int[im0] * WAVE_Y * .5;
+	ks[2] = KZ_int[im0] * WAVE_Z * .5;
+        co2contra_single(ks);//contra
+	
+	for(int d=0;d<DIM;d++){
+	  u_dmy[d][0] = ETA*u[d][im0];
+	  u_dmy[d][1] = ETA*u[d][im1];
+	}//contra
+
+        //E^{xx}
+	strain_k[0][im0] = ks[0] * u_dmy[0][1] * 2.;
+	strain_k[0][im1] =-ks[0] * u_dmy[0][0] * 2.;
+
+        //E^{xy}
+	strain_k[1][im0]=  ks[0] * u_dmy[1][1] + ks[1] * u_dmy[0][1];
+	strain_k[1][im1]=-(ks[0] * u_dmy[1][0] + ks[1] * u_dmy[0][0]);
+
+        //E^{xz}
+	strain_k[2][im0] =  ks[0] * u_dmy[2][1] + ks[2] * u_dmy[0][1];
+	strain_k[2][im1] =-(ks[0] * u_dmy[2][0] + ks[2] * u_dmy[0][0]);
+
+        //E^{yy}
+	strain_k[3][im0] = ks[1] * u_dmy[1][1] * 2.;
+	strain_k[3][im1] =-ks[1] * u_dmy[1][0] * 2.;
+
+        //E^{yz}
+	strain_k[4][im0] =  ks[1] * u_dmy[2][1] + ks[2] * u_dmy[1][1];
+	strain_k[4][im1] =-(ks[1] * u_dmy[2][0] + ks[2] * u_dmy[1][0]);
+      }
+    }
+  }
+
+  //reset uk_dc
+  for(int d = 0; d < DIM; d++){
+    u[d][0] = dmy[d];
   }
 }
 

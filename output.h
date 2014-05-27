@@ -16,6 +16,26 @@
 //UDF OUTPUT WRITING
 //
 
+void Init_output();
+
+void Show_output_parameter();
+
+void Output_particle_data(Particle* p,
+			  const CTime &time);
+
+
+void Output_field_data(double** zeta,
+		       double* uk_dc,
+		       Particle* p,
+		       const CTime &time);
+
+void Output_charge_field_data(double** zeta,
+			      double* uk_dc,
+			      double** Concentration,
+			      Particle* p,
+			      const CTime &time);
+
+
 /*!
   \brief Output particle data for current configuration in UDF format
  */

@@ -1,12 +1,142 @@
 /*!
   \file output.cxx
-  \brief Routines to write output files
+  \brief Wrapper rouintes to write output files
+  \details Prepare all data for output, leave actual writing to specialized class
   \author J. Molina
   \date 2014/05/21
   \version 1.0
  */
 
 #include "output.h"
+#include "avs_output.h"
+#include "avs_output_p.h"
+
+void Init_output(){
+
+  //AVS data
+  Set_avs_parameters(Avs_parameters);
+  if(SW_AVS){
+    Init_avs(Avs_parameters);
+    if(Particle_Number > 0){
+      Init_avs_p(Avs_parameters);
+    }
+  }
+}
+
+void Show_output_parameter(){
+  fprintf(stderr, "#Output parameters\n");
+  if(SW_AVS){
+    Show_avs_parameter();
+  }else{
+    fprintf(stderr, "#AVS output is suppressed.\n");
+  }
+
+  if(SW_UDF){
+    fprintf(stderr, "#for UDF ->\t%s\n",Out_udf);
+  }else {
+    fprintf(stderr, "#UDF output is supressed.\n");
+  }
+}
+void Output_particle_data(Particle* p,
+			  const CTime &time){
+  Output_avs_p(Avs_parameters, p, time);
+}
+void Output_field_data(double** zeta,
+		       double* uk_dc,
+		       Particle* p,
+		       const CTime &time){
+
+
+  double *strain[QDIM]={f_particle[0]
+		      ,f_particle[1]
+		      ,f_particle[2]
+		      ,f_ns0[0]
+		      ,f_ns0[1]
+  };
+
+  if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+    Zeta_k2u_k_OBL(zeta, uk_dc, u);
+    U_k2Strain_k_OBL(u, strain);
+    for(int d = 0; d < QDIM; d++){
+      A_k2a(strain[d]);
+    }
+    U_k2u(u);
+
+    E_oblique2E(strain, false); //without mean shear flow terms
+    U_oblique2u(u);             //with mean shear flow terms
+  }else{
+    Zeta_k2u_k(zeta, uk_dc, u);
+    U_k2Strain_k(u, strain);
+    for(int d = 0; d < QDIM; d++){
+      A_k2a(strain[d]);
+    }
+    U_k2u(u);
+  }
+
+  A_k2a(Pressure); //! TODO: implement pressure calculation
+  {
+    Reset_phi(phi);
+    if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
+      Make_phi_particle_OBL(phi, p);
+    }else {
+      Make_phi_particle(phi, p);
+    }
+  }
+
+  //Writers
+  Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
+}
+
+void Output_charge_field_data(double** zeta,
+			      double* uk_dc,
+			      double** Concentration,
+			      Particle* p,
+			      const CTime &time){
+  Zeta_k2u(zeta, uk_dc, u);
+  
+  double *potential = f_particle[0];
+  double *dmy_value0 = f_particle[1];
+  {
+    Conc_k2charge_field(p, Concentration, potential, phi, dmy_value0);
+    A2a_k(potential);
+    Charge_field_k2Coulomb_potential_k_PBC(potential);
+    A_k2a(potential);
+    for(int n=0;n<N_spec;n++){
+      A_k2a(Concentration[n]);
+    }
+  }
+  {
+    Reset_phi(phi);
+    Reset_phi(up[0]);
+    Make_phi_qq_particle(phi, up[0], p);
+  }
+  {
+    int im;
+    double dmy;
+    double dmy_surface_area = PI4*SQ(RADIUS);
+    //compute total concentration
+    for(int i = 0; i < NX; i++){
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ; k++){
+	  im = (i*NY*NZ_) + (j*NZ_) + k;
+	  dmy = 0.0;
+	  for(int n = 0; n < N_spec; n++){
+	    dmy += Elementary_charge*Valency[n]*Concentration[n][im];
+	  }
+	  up[0][im]*= dmy_surface_area;
+	  up[1][im] = dmy*(1.0 - phi[im]);
+	}
+      }
+    }
+  }
+
+  //Writers
+  Output_avs_charge(Avs_parameters, u, phi, up[0], up[1], potential, time);
+
+  for(int n=0; n<N_spec; n++){
+    A2a_k(Concentration[n]);
+  }
+}
 
 void Output_udf(UDFManager *ufout
                 , double **zeta
@@ -114,3 +244,4 @@ void Output_udf(UDFManager *ufout
     }
   }
 }
+
