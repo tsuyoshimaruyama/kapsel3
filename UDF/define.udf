@@ -233,7 +233,10 @@ output: {
    ON:{
       Out_dir: string "directory name"
       Out_name: string "prefix name for data file"
-      FileType: select {"BINARY","ASCII"} "output data type"
+      FileType: select {"BINARY","ASCII","EXTENDED"} "output data type"
+      EXTENDED:{
+        Format: select {"HDF5"}
+      }
    }
    UDF: select {"ON","OFF"}
 }

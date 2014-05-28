@@ -143,7 +143,19 @@ switch:{
    "linear"
  }
 }
-output:{10,100,"OFF",{"avs_ch","data","BINARY"}"ON"}
+output:{10,
+	100,
+	"OFF",
+	{
+	 "output",
+	 "data",
+	 "BINARY"
+	 {
+	  "HDF5"
+	 }
+	}
+	"ON"
+       }
 resume:{
  "NEW",
  {

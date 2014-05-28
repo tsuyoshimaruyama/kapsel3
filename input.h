@@ -59,7 +59,8 @@ enum OBL_INT {linear_int, spline_int};
 enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
 enum KFILTER {two_third_filter, no_filter};
 
-enum OUTFORMAT{OUT_NONE, OUT_AVS_ASCII, OUT_AVS_BINARY};
+enum OUTFORMAT{OUT_NONE, OUT_AVS_ASCII, OUT_AVS_BINARY, OUT_EXT};
+enum EXTFORMAT{EXT_OUT_NONE, EXT_OUT_HDF5};
 
 //////  
 extern SW_time SW_TIME;
@@ -78,7 +79,10 @@ extern KFILTER SW_KFILTER;
 extern const char *KFILTER_name[];
 //////
 extern OUTFORMAT SW_OUTFORMAT;
+extern EXTFORMAT SW_EXTFORMAT;
+
 extern const char *OUTFORMAT_name[];
+extern const char *EXTFORMAT_name[];
 
 //////  material parameters
 extern double RHO;

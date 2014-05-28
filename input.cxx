@@ -38,8 +38,9 @@ KFILTER SW_KFILTER;
 const char *KFILTER_name[]={"2/3", "none"};
 
 OUTFORMAT SW_OUTFORMAT;
-const char *OUTFORMAT_name[]={"NONE", "ASCII", "BINARY"};
-
+EXTFORMAT SW_EXTFORMAT; 
+const char *OUTFORMAT_name[]={"NONE", "ASCII", "BINARY", "EXTENDED"};
+const char *EXTFORMAT_name[]={"NONE", "HDF5"};
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
 const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
@@ -1817,6 +1818,7 @@ void Gourmet_file_io(const char *infile
 	    ufout->put(target.sub("AVS"),str);
 	    ufres->put(target.sub("AVS"),str);
 	    SW_OUTFORMAT = OUT_NONE;
+	    SW_EXTFORMAT = EXT_OUT_NONE;
 	    if(str == "ON"){
 		target.down("ON");
 		{
@@ -1843,9 +1845,25 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("FileType"),str);
 		    ufres->put(target.sub("FileType"),str);
 		    if(str == OUTFORMAT_name[OUT_AVS_BINARY]){
-			SW_OUTFORMAT = OUT_AVS_BINARY;
+		      SW_OUTFORMAT = OUT_AVS_BINARY;
 		    }else if(str == OUTFORMAT_name[OUT_AVS_ASCII]){
-			SW_OUTFORMAT = OUT_AVS_ASCII;
+		      SW_OUTFORMAT = OUT_AVS_ASCII;
+		    }else if(str == OUTFORMAT_name[OUT_EXT]){
+		      SW_OUTFORMAT = OUT_EXT;
+		      target.down("Extended");
+			{
+			  //extended output options
+			  ufin->get(target.sub("Format"), str);
+			  ufout->put(target.sub("Format"), str);
+			  ufres->put(target.sub("Format"), str);
+			  if(str == EXTFORMAT_name[EXT_OUT_HDF5]){
+			    SW_EXTFORMAT = EXT_OUT_HDF5;
+			  }else{
+			    fprintf(stderr, "#Unrecognized exteded format\n");
+			    exit_job(EXIT_FAILURE);
+			  }
+			}
+		      target.up();
 		    }else{
 			fprintf(stderr, "invalid FileType %s\n",str.c_str()); 
 			exit_job(EXIT_FAILURE);
@@ -1854,6 +1872,7 @@ void Gourmet_file_io(const char *infile
 		target.up();
 	    }else if(str == "OFF"){
 	      SW_OUTFORMAT = OUT_NONE;
+	      SW_EXTFORMAT = EXT_OUT_NONE;
 	    }else{
 		fprintf(stderr, "invalid switch for AVS\n"); 
 		exit_job(EXIT_FAILURE);
