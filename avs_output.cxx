@@ -41,6 +41,11 @@ void Show_avs_parameter(){
 }
 
 void Init_avs(const AVS_parameters &Avs_parameters){
+  {
+    char dmy_dir[256];
+    sprintf(dmy_dir, "%s/avs", Out_dir);
+    dircheckmake(dmy_dir);
+  }
   FILE *fout;
   fout=filecheckopen(Avs_parameters.fld_file,"w");
   fprintf(fout,"# AVS field file\n");

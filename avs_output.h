@@ -14,8 +14,6 @@
 #include "variable.h"
 #include "macro.h"
 #include "input.h"
-#include "operate_omega.h"
-#include "make_phi.h"
 #include "fluid_solver.h"
 
 enum AVS_Field {

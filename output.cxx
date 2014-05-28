@@ -8,29 +8,44 @@
  */
 
 #include "output.h"
-#include "avs_output.h"
-#include "avs_output_p.h"
 
+output_writer *writer;
 void Init_output(){
 
-  //AVS data
-  if(SW_OUTFORMAT == OUT_AVS_ASCII ||
-     SW_OUTFORMAT == OUT_AVS_BINARY){
+  //legacy AVS support
+  if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){
+    fprintf(stderr, "#AVS: set\n");
     Set_avs_parameters(Avs_parameters);
+    fprintf(stderr, "#AVS: init\n");
     Init_avs(Avs_parameters);
+    fprintf(stderr, "#AVS: init_p\n");
     if(Particle_Number > 0){
       Init_avs_p(Avs_parameters);
     }
+    fprintf(stderr, "#AVS: finish\n");
+  }else if(SW_OUTFORMAT == OUT_EXT){
+    if(SW_EXTFORMAT == EXT_OUT_HDF5){
+      writer = new hdf5_writer(NX, NY, NZ, NZ_,  //field dimensions
+			       Particle_Number  //particle dimensions
+			       );
+    }
   }
 }
-
+void Free_output(){
+  if(SW_OUTFORMAT == OUT_EXT){
+    writer->~output_writer();
+  }
+}
 void Show_output_parameter(){
   fprintf(stderr, "#Output parameters\n");
-  if(SW_OUTFORMAT == OUT_AVS_ASCII ||
-     SW_OUTFORMAT == OUT_AVS_BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Show_avs_parameter();
-  }else{
+  }else if(SW_OUTFORMAT == OUT_EXT){
     fprintf(stderr, "#AVS output is suppressed.\n");
+    fprintf(stderr, "#Extened output enabled.\n");
+    writer -> show_parameter();
+  }else{
+    fprintf(stderr, "#Field/Particle output is disabled.\n");
   }
   
   if(SW_UDF){
@@ -39,14 +54,11 @@ void Show_output_parameter(){
     fprintf(stderr, "#UDF output is supressed.\n");
   }
 }
-void Output_particle_data(Particle* p,
-			  const CTime &time){
-  Output_avs_p(Avs_parameters, p, time);
-}
-void Output_field_data(double** zeta,
-		       double* uk_dc,
-		       Particle* p,
-		       const CTime &time){
+
+void Output_data(double** zeta,
+		 double* uk_dc,
+		 Particle* p,
+		 const CTime &time){
 
 
   double *strain[QDIM]={f_particle[0]
@@ -85,15 +97,28 @@ void Output_field_data(double** zeta,
     }
   }
 
-  //Writers
-  Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_BINARY){
+    Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
+    if(Particle_Number > 0){
+      Output_avs_p(Avs_parameters, p, time);
+    }
+  }else if(SW_OUTFORMAT == OUT_EXT){
+    writer -> write_start(time);
+    writer -> write_field_data(u, DIM);
+    writer -> write_field_data(phi);
+    writer -> write_field_data(Pressure);
+    writer -> write_field_data(strain, QDIM);
+    if(Particle_Number > 0) 
+      writer -> write_particle_data(p);
+    writer -> write_end();
+  }
 }
 
-void Output_charge_field_data(double** zeta,
-			      double* uk_dc,
-			      double** Concentration,
-			      Particle* p,
-			      const CTime &time){
+void Output_charge_data(double** zeta,
+			double* uk_dc,
+			double** Concentration,
+			Particle* p,
+			const CTime &time){
   Zeta_k2u(zeta, uk_dc, u);
   
   double *potential = f_particle[0];
@@ -133,8 +158,17 @@ void Output_charge_field_data(double** zeta,
   }
 
   //Writers
-  Output_avs_charge(Avs_parameters, u, phi, up[0], up[1], potential, time);
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_BINARY){
+    Output_avs_charge(Avs_parameters, u, phi, up[0], up[1], potential, time);
+    if(Particle_Number > 0){
+      Output_avs_p(Avs_parameters, p, time);
+    }
+  }else if(SW_OUTFORMAT == OUT_EXT){
+    writer -> write_start(time);
+    writer -> write_end();
+  }
 
+  //recover original state
   for(int n=0; n<N_spec; n++){
     A2a_k(Concentration[n]);
   }

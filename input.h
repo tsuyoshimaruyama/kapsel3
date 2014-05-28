@@ -14,7 +14,6 @@
 #include <cstring>
 #include <cfloat>
 #include <sys/types.h>
-#include <dirent.h>
 #include <assert.h>
 #include "macro.h"
 #include "alloc.h"

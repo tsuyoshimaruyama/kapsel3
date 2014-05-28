@@ -1826,17 +1826,8 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("Out_dir"),str);
 		    ufres->put(target.sub("Out_dir"),str);
 		    strcpy(Out_dir,str.c_str());
-		    {
-			if (opendir(Out_dir)==NULL) {
-			    fprintf(stderr,
-				    "\tdirectory \"%s\",\"%s/avs\" does not seemed to exist.\n",
-				    Out_dir,Out_dir);
-			    fprintf(stderr,
-				    "\texecute \"mkdir %s;mkdir %s/avs\" before run.\n",
-				    Out_dir,Out_dir);
-			    exit_job(EXIT_FAILURE);
-			}
-		    }
+		    dircheckmake(Out_dir);
+
 		    ufin->get(target.sub("Out_name"),str);
 		    ufout->put(target.sub("Out_name"),str);
 		    ufres->put(target.sub("Out_name"),str);
@@ -1850,7 +1841,7 @@ void Gourmet_file_io(const char *infile
 		      SW_OUTFORMAT = OUT_AVS_ASCII;
 		    }else if(str == OUTFORMAT_name[OUT_EXT]){
 		      SW_OUTFORMAT = OUT_EXT;
-		      target.down("Extended");
+		      target.down("EXTENDED");
 			{
 			  //extended output options
 			  ufin->get(target.sub("Format"), str);
@@ -1859,7 +1850,7 @@ void Gourmet_file_io(const char *infile
 			  if(str == EXTFORMAT_name[EXT_OUT_HDF5]){
 			    SW_EXTFORMAT = EXT_OUT_HDF5;
 			  }else{
-			    fprintf(stderr, "#Unrecognized exteded format\n");
+			    fprintf(stderr, "#%s : Unrecognized exteded format\n", str.c_str());
 			    exit_job(EXIT_FAILURE);
 			  }
 			}

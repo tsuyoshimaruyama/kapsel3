@@ -427,13 +427,10 @@ int main(int argc, char *argv[]){
       if(!resumed_and_1st_loop){
 
 	if(SW_OUTFORMAT != OUT_NONE){// Output field & particle data
-	  if(Particle_Number > 0){
-	    Output_particle_data(particles, jikan);
-	  }
           if(SW_EQ != Electrolyte){
-            Output_field_data(zeta, uk_dc, particles, jikan);
+            Output_data(zeta, uk_dc, particles, jikan);
           }else if(SW_EQ==Electrolyte){
-            Output_charge_field_data(zeta, uk_dc, Concentration, particles, jikan);
+            Output_charge_data(zeta, uk_dc, Concentration, particles, jikan);
           }
 	}
 
@@ -514,6 +511,8 @@ int main(int argc, char *argv[]){
     delete ufres;
     fprintf(stderr,"#%s end.\n",Res_udf);
   }
+  Free_output();
+
   global_time = ((double) (end_time - global_start))/CLOCKS_PER_SEC;
   fprintf(stderr, "#Simulation has ended!\n");
   fprintf(stderr, "#Total Running Time (s): %10.2f\n", global_time);
