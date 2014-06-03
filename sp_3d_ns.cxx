@@ -363,7 +363,7 @@ int main(int argc, char *argv[]){
 
   static CTime jikan={0, 0.0, DT, DT*0.5, DT, DT*0.5};
 
-  Init_output();
+
 
   Particle *particles = new Particle [Particle_Number];
   if(Particle_Number > 0){
@@ -376,6 +376,7 @@ int main(int argc, char *argv[]){
 	  Init_Rigid(particles);
 	  }
   }
+  Init_output();
   
   Init_zeta_k(zeta, uk_dc);
 
@@ -427,11 +428,16 @@ int main(int argc, char *argv[]){
       if(!resumed_and_1st_loop){
 
 	if(SW_OUTFORMAT != OUT_NONE){// Output field & particle data
+	  Output_open_frame();
           if(SW_EQ != Electrolyte){
-            Output_data(zeta, uk_dc, particles, jikan);
+            Output_field_data(zeta, uk_dc, particles, jikan);
           }else if(SW_EQ==Electrolyte){
-            Output_charge_data(zeta, uk_dc, Concentration, particles, jikan);
+            Output_charge_field_data(zeta, uk_dc, Concentration, particles, jikan);
           }
+	  if(Particle_Number > 0){
+	    Output_particle_data(particles, jikan);
+	  }
+	  Output_close_frame();
 	}
 
 	if(SW_UDF){// Output_UDF

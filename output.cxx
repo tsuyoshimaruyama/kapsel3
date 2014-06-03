@@ -12,22 +12,78 @@
 output_writer *writer;
 void Init_output(){
 
-  //legacy AVS support
-  if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){
-    fprintf(stderr, "#AVS: set\n");
+  //Init Parameters
+
+  //field selections
+  if(print_field.vel || print_field.phi || 
+     (print_field.pressure && SW_EQ != Electrolyte) || 
+     (print_field.tau && SW_EQ != Electrolyte) ||
+     (print_field.rho && SW_EQ == Electrolyte)
+     ){
+    print_field.none = false;
+  }else{
+    print_field.none = true;
+  }
+
+  //hyper slab selection
+  if(print_field_crop.rank >=0 && print_field_crop.rank < DIM && !print_field.none){
+    print_field_crop.none = false;
+  }else{
+    print_field_crop.none = true;
+  }
+
+  //particle selection
+  if(print_particle.first >= 0 && print_particle.first < Particle_Number 
+     && Particle_Number > 0){
+    print_particle.none = false;
+  }else{
+    print_particle.none = true;
+  }
+
+
+  //Init Writers
+  if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){ // LEGACY AVS
+    //extended options not supported for AVS
+
+    //no cropping
+    print_field_crop.none = true;
+
+    //print all fields
+    print_field.none = false;
+    print_field.vel  = true;
+    print_field.phi  = true;
+    print_field.rho  = true;
+    print_field.pressure = true;
+    print_field.tau  = true;
+
+    //print all particle data
+    print_particle.none = false;
+    print_particle.first = 0;
+
     Set_avs_parameters(Avs_parameters);
-    fprintf(stderr, "#AVS: init\n");
     Init_avs(Avs_parameters);
-    fprintf(stderr, "#AVS: init_p\n");
     if(Particle_Number > 0){
       Init_avs_p(Avs_parameters);
     }
-    fprintf(stderr, "#AVS: finish\n");
   }else if(SW_OUTFORMAT == OUT_EXT){
     if(SW_EXTFORMAT == EXT_OUT_HDF5){
-      writer = new hdf5_writer(NX, NY, NZ, NZ_,  //field dimensions
-			       Particle_Number  //particle dimensions
-			       );
+      hdf5_writer* h5writer = new hdf5_writer(NX, NY, NZ, NZ_, DX,
+					      Particle_Number, 
+					      DT*GTS,
+					      Out_dir, 
+					      Out_name
+					      );
+      if(!print_field_crop.none)
+	h5writer->set_hyperslab(print_field_crop.rank, 
+				print_field_crop.start, 
+				print_field_crop.width);
+      if(!print_particle.none)
+	h5writer->set_particle_mask(print_particle.first);
+      
+      //print grid coordinates required for xdmf format
+      h5writer -> write_xyz_coords(work_v3);
+      
+      writer = h5writer;
     }
   }
 }
@@ -37,29 +93,74 @@ void Free_output(){
   }
 }
 void Show_output_parameter(){
-  fprintf(stderr, "#Output parameters\n");
+  fprintf(stderr, "#### Output parameters #### \n");
+
+  if(SW_UDF){
+    fprintf(stderr, "# UDF output is enabled\n");
+    fprintf(stderr, "# for UDF ->\t%s\n",Out_udf);
+  }else {
+    fprintf(stderr, "# UDF output is supressed.\n");
+  }
+
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Show_avs_parameter();
   }else if(SW_OUTFORMAT == OUT_EXT){
-    fprintf(stderr, "#AVS output is suppressed.\n");
-    fprintf(stderr, "#Extened output enabled.\n");
+    fprintf(stderr, "# AVS output is suppressed.\n");
+    fprintf(stderr, "# Extened output enabled.\n");
     writer -> show_parameter();
   }else{
-    fprintf(stderr, "#Field/Particle output is disabled.\n");
+    fprintf(stderr, "# Field/Particle output is disabled.\n");
+  }
+
+  //field selection
+  if(!print_field.none){
+    fprintf(stderr, "# Field data is being printed\n");
+    fprintf(stderr, "# Print velocity field : %s\n", 
+	    (print_field.vel ? "YES" : "NO"));
+    fprintf(stderr, "# Print phi field      : %s\n", 
+	    (print_field.phi ? "YES" : "NO"));
+    fprintf(stderr, "# Print rho field      : %s\n", 
+	    ((print_field.rho && SW_EQ == Electrolyte) ? "YES" : "NO"));
+    fprintf(stderr, "# Print Pressure field : %s\n",
+	    ((print_field.pressure && SW_EQ != Electrolyte) ? "YES" : "NO"));
+    fprintf(stderr, "# Print Stress field   : %s\n",
+	    ((print_field.tau && SW_EQ != Electrolyte) ? "YES" : "NO"));
+  }else{
+    fprintf(stderr, "# Field data is suppressed\n");
+  }
+
+  //hyperslab
+  if(!print_field_crop.none){
+    fprintf(stderr, "# Field data is being cropped \n");
+    fprintf(stderr, "# Slab axis  : %d (0=yz, 1=xz, 2=xy)\n", print_field_crop.rank);
+    fprintf(stderr, "# Slab start : %d\n", print_field_crop.start);
+    fprintf(stderr, "# Slab width : %d\n", print_field_crop.width);
+  }
+
+  //Particle selection
+  if(!print_particle.none){
+    fprintf(stderr, "# Particle data is being printed \n");
+  }else{
+    fprintf(stderr, "# Particle data is being suppressed\n");
+    fprintf(stderr, "# Note: Particle data can still be found in UDF (if enabled)\n");
   }
   
-  if(SW_UDF){
-    fprintf(stderr, "#for UDF ->\t%s\n",Out_udf);
-  }else {
-    fprintf(stderr, "#UDF output is supressed.\n");
-  }
+  fprintf(stderr, "####                   #### \n");
+}
+void Output_open_frame(){
+  if(SW_OUTFORMAT == OUT_EXT)
+    writer -> write_start();
+    
+}
+void Output_close_frame(){
+  if(SW_OUTFORMAT == OUT_EXT)
+    writer -> write_end();
 }
 
-void Output_data(double** zeta,
-		 double* uk_dc,
-		 Particle* p,
-		 const CTime &time){
-
+void Output_field_data(double** zeta,
+		       double* uk_dc,
+		       Particle* p,
+		       const CTime &time){
 
   double *strain[QDIM]={f_particle[0]
 		      ,f_particle[1]
@@ -68,62 +169,87 @@ void Output_data(double** zeta,
 		      ,f_ns0[1]
   };
 
-  if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
-    Zeta_k2u_k_OBL(zeta, uk_dc, u);
-    U_k2Strain_k_OBL(u, strain);
-    for(int d = 0; d < QDIM; d++){
-      A_k2a(strain[d]);
-    }
-    U_k2u(u);
+  if(print_field.vel || print_field.tau){
 
-    E_oblique2E(strain, false); //without mean shear flow terms
-    U_oblique2u(u);             //with mean shear flow terms
-  }else{
-    Zeta_k2u_k(zeta, uk_dc, u);
-    U_k2Strain_k(u, strain);
-    for(int d = 0; d < QDIM; d++){
-      A_k2a(strain[d]);
+    if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+      Zeta_k2u_k_OBL(zeta, uk_dc, u);
+   
+      if(print_field.tau){
+	U_k2Strain_k_OBL(u, strain);
+	for(int d = 0; d < QDIM; d++){
+	  A_k2a(strain[d]);
+	}
+	E_oblique2E(strain, false); //without mean shear flow terms
+      }//print strain ?
+      
+      if(print_field.vel){
+	U_k2u(u);
+	U_oblique2u(u);             //with mean shear flow terms
+      }//print u?
+    }else{
+      Zeta_k2u_k(zeta, uk_dc, u);
+      
+      if(print_field.tau){
+	U_k2Strain_k(u, strain);
+	for(int d = 0; d < QDIM; d++){
+	  A_k2a(strain[d]);
+	}
+      }//print strain?
+      
+      if(print_field.vel){
+	U_k2u(u);
+      }//print u?
     }
-    U_k2u(u);
-  }
 
-  A_k2a(Pressure); //! TODO: implement pressure calculation
-  {
+  }// Print u / strain ?
+
+  //! TODO: implement pressure calculation
+  if(print_field.pressure){
+    A_k2a(Pressure); 
+  }//print pressure?
+
+  if(print_field.phi){
     Reset_phi(phi);
     if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
       Make_phi_particle_OBL(phi, p);
     }else {
       Make_phi_particle(phi, p);
     }
-  }
+  }//print phi?
 
-  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
-    if(Particle_Number > 0){
-      Output_avs_p(Avs_parameters, p, time);
-    }
   }else if(SW_OUTFORMAT == OUT_EXT){
-    writer -> write_start(time);
-    writer -> write_field_data(u, DIM);
-    writer -> write_field_data(phi);
-    writer -> write_field_data(Pressure);
-    writer -> write_field_data(strain, QDIM);
-    if(Particle_Number > 0) 
-      writer -> write_particle_data(p);
-    writer -> write_end();
+    if(print_field.vel){
+      writer -> write_field_data(u[0], "ux");
+      writer -> write_field_data(u[1], "uy");
+      writer -> write_field_data(u[2], "uz");
+    }
+    if(print_field.phi)     
+      writer -> write_field_data(phi, "phi");
+    if(print_field.pressure)
+      writer -> write_field_data(Pressure, "pressure");
+    if(print_field.tau){
+      writer -> write_field_data(strain[0], "tau_xx");
+      writer -> write_field_data(strain[1], "tau_xy");
+      writer -> write_field_data(strain[2], "tau_xz");
+      writer -> write_field_data(strain[3], "tau_yy");
+      writer -> write_field_data(strain[4], "tau_yz");
+    }
   }
 }
 
-void Output_charge_data(double** zeta,
-			double* uk_dc,
-			double** Concentration,
-			Particle* p,
-			const CTime &time){
-  Zeta_k2u(zeta, uk_dc, u);
+void Output_charge_field_data(double** zeta,
+			      double* uk_dc,
+			      double** Concentration,
+			      Particle* p,
+			      const CTime &time){
+  if(print_field.vel)
+    Zeta_k2u(zeta, uk_dc, u);
   
   double *potential = f_particle[0];
   double *dmy_value0 = f_particle[1];
-  {
+  if(print_field.rho){
     Conc_k2charge_field(p, Concentration, potential, phi, dmy_value0);
     A2a_k(potential);
     Charge_field_k2Coulomb_potential_k_PBC(potential);
@@ -131,13 +257,18 @@ void Output_charge_data(double** zeta,
     for(int n=0;n<N_spec;n++){
       A_k2a(Concentration[n]);
     }
-  }
-  {
+  }//print rho?
+
+  if(print_field.phi && !print_field.rho){
+    Reset_phi(phi);
+    Make_phi_particle(phi, p);
+  }else if(print_field.phi && print_field.rho){
     Reset_phi(phi);
     Reset_phi(up[0]);
     Make_phi_qq_particle(phi, up[0], p);
-  }
-  {
+  }//print phi/rho?
+
+  if(print_field.rho){
     int im;
     double dmy;
     double dmy_surface_area = PI4*SQ(RADIUS);
@@ -158,19 +289,38 @@ void Output_charge_data(double** zeta,
   }
 
   //Writers
-  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs_charge(Avs_parameters, u, phi, up[0], up[1], potential, time);
-    if(Particle_Number > 0){
-      Output_avs_p(Avs_parameters, p, time);
-    }
   }else if(SW_OUTFORMAT == OUT_EXT){
-    writer -> write_start(time);
-    writer -> write_end();
+    if(print_field.vel){
+      writer -> write_field_data(u[0], "u_x");
+      writer -> write_field_data(u[1], "u_y");
+      writer -> write_field_data(u[2], "u_z");
+    }
+    if(print_field.phi)
+      writer -> write_field_data(phi, "phi");
+    if(print_field.rho){
+      writer -> write_field_data(up[0], "surface_charge");
+      writer -> write_field_data(up[1], "rho");
+      writer -> write_field_data(potential, "e_potential");
+    }
   }
 
   //recover original state
-  for(int n=0; n<N_spec; n++){
-    A2a_k(Concentration[n]);
+  if(print_field.rho){
+    for(int n=0; n<N_spec; n++){
+      A2a_k(Concentration[n]);
+    }
+  }
+}
+
+//Todo: figure out how to print structures using hdf5 interface (avoid mem copies)!
+void Output_particle_data(Particle* p, const CTime& time){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
+    Output_avs_p(Avs_parameters, p, time);
+  }else{
+    if(!print_particle.none)
+      writer->write_particle_data(p);
   }
 }
 

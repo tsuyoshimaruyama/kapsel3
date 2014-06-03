@@ -22,16 +22,21 @@ void Init_output();
 void Free_output();
 void Show_output_parameter();
 
-void Output_data(double** zeta,
-		   double* uk_dc,
-		   Particle* p,
-		   const CTime &time);
+void Output_open_frame();
+void Output_close_frame();
+void Output_field_data(double** zeta,
+		       double* uk_dc,
+		       Particle* p,
+		       const CTime &time);
 
-void Output_charge_data(double** zeta,
-			  double* uk_dc,
-			  double** Concentration,
-			  Particle* p,
-			  const CTime &time);
+void Output_charge_field_data(double** zeta,
+			      double* uk_dc,
+			      double** Concentration,
+			      Particle* p,
+			      const CTime &time);
+
+void Output_particle_data(Particle*p, 
+			 const CTime &time);
 
 
 /*!

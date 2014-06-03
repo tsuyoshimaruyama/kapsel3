@@ -149,9 +149,25 @@ output:{10,
 	{
 	 "output",
 	 "data",
-	 "BINARY"
+	 "EXTENDED"
 	 {
-	  "HDF5"
+	  {
+	    "HDF5"
+          }
+	  {
+	    0
+	  }
+	  {
+	    "YES"
+	    {
+	      "XZ",  10, 10
+	    }
+	    "YES",
+	    "YES",
+	    "YES",
+	    "NO",
+	    "NO"
+       	  }
 	 }
 	}
 	"ON"

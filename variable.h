@@ -11,7 +11,7 @@
 #include "parameter_define.h"
 #include "quaternion.h"
 
-// omega,ux,uy,phi, phi_up $B$J$I>l$NJQ?t$r3JG<$9$k(B
+// omega,ux,uy,phi, phi_up など場の変数を格納する
 typedef double ** *Value;
 typedef int ** *Value_int;
 
@@ -83,5 +83,25 @@ typedef struct Index_range {
   int kend;
 } Index_range;
 
+typedef struct Field_crop{
+  bool none;
+  int rank;
+  int start;
+  int width;
+} Field_crop;
+
+typedef struct Field_output{
+  bool none;
+  bool vel;
+  bool phi;
+  bool rho;
+  bool pressure;
+  bool tau;
+} Field_output;
+
+typedef struct Particle_output{
+  bool none;
+  int first;
+} Particle_output;
 
 #endif

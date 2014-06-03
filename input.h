@@ -19,6 +19,7 @@
 #include "alloc.h"
 #include "udfmanager.h"
 #include "parameter_define.h"
+#include "variable.h"
 
 /////////////////////
 /////////////////////
@@ -59,7 +60,7 @@ enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
 enum KFILTER {two_third_filter, no_filter};
 
 enum OUTFORMAT{OUT_NONE, OUT_AVS_ASCII, OUT_AVS_BINARY, OUT_EXT};
-enum EXTFORMAT{EXT_OUT_NONE, EXT_OUT_HDF5};
+enum EXTFORMAT{EXT_OUT_HDF5};
 
 //////  
 extern SW_time SW_TIME;
@@ -79,6 +80,9 @@ extern const char *KFILTER_name[];
 //////
 extern OUTFORMAT SW_OUTFORMAT;
 extern EXTFORMAT SW_EXTFORMAT;
+extern Field_crop      print_field_crop;
+extern Field_output    print_field;
+extern Particle_output print_particle;
 
 extern const char *OUTFORMAT_name[];
 extern const char *EXTFORMAT_name[];
