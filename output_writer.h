@@ -129,6 +129,7 @@ class hdf5_writer : public output_writer {
     HDF5 Parameters
    */
   hid_t  fid;        //file id
+  hid_t  gid_time;   //time frame id
   hid_t  gid_field;  //group id for field data
   hid_t  gid_part;   //group id for particle data
 

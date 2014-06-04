@@ -36,7 +36,7 @@ hdf5_writer::hdf5_writer(const int&    _NX,
   }
   
   {// HDF5
-    fid = gid_field = gid_part = -1;
+    fid = gid_time = gid_field = gid_part = -1;
 
     //Field data read/write access specifiers
     {
@@ -61,15 +61,39 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       out_dataspace_field = H5Screate_simple(out_rank_field, out_dims_field, NULL);
       h5_check_err(out_dataspace_field);
     }
+    {
+      char fname[256];
+      sprintf(fname, "%s.h5", out_name);
+      fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(fid);
+    }
   }
-
 }
 hdf5_writer::~hdf5_writer(){
-  herr_t status; 
+  herr_t status;
+  //set global attributes
+  {
+    status = H5LTset_attribute_float(fid, "/", "dx", &DX, 1);
+    h5_check_err(status);
+
+    int dmy_dims[DIM] = {out_dims_field[0], out_dims_field[1], out_dims_field[2]};
+    status = H5LTset_attribute_int(fid, "/", "nxnynz", dmy_dims, DIM);
+    h5_check_err(status);
+
+    status = H5LTset_attribute_float(fid, "/", "origin", Origin, DIM);
+    h5_check_err(status);
+
+    int dmy_num = nump - startp;
+    status = H5LTset_attribute_int(fid, "/", "nump", &dmy_num, 1);
+    h5_check_err(status);
+  }
   status = H5Sclose(mem_dataspace_field);
   h5_check_err(status);
 
   status = H5Sclose(out_dataspace_field);
+  h5_check_err(status);
+
+  status = H5Fclose(fid);
   h5_check_err(status);
 }
 
@@ -77,48 +101,28 @@ hdf5_writer::~hdf5_writer(){
 //Inherited functions
 //
 void hdf5_writer::write_start(){
+  char dmy_group[128];
   //open file & groups
   {
-    char fname[256];
-    sprintf(fname, "%s.%d.h5", out_name, ts);
-    fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    h5_check_err(fid);
-    
+    sprintf(dmy_group, "/frame_%d", ts);
+    gid_time  = H5Gcreate(fid, dmy_group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    h5_check_err(gid_time);
+
     //create field group
-    gid_field = H5Gcreate(fid, "/field_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    gid_field = H5Gcreate(gid_time, "field_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_field);
 
     //create particle group
-    gid_part  = H5Gcreate(fid, "/particle_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    gid_part  = H5Gcreate(gid_time, "particle_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_part);
   }
 
   //add attributes
   {
     herr_t status;
-    char dmy_group[128];
-    {
-      sprintf(dmy_group,"/");
-      status = H5LTset_attribute_int(fid, dmy_group, "ts", &ts, 1);
-      h5_check_err(status);
-
-      float dmy_float = static_cast<float>(ts)*dt;
-      status = H5LTset_attribute_float(fid, dmy_group, "time", &dmy_float, 1);
-      h5_check_err(status);
-
-    }
-    {
-      sprintf(dmy_group, "/field_data");
-      status = H5LTset_attribute_float(fid, dmy_group, "dx", &DX, 1);
-      h5_check_err(status);
-
-      int dmy_dims[DIM] = {out_dims_field[0], out_dims_field[1], out_dims_field[2]};
-      status = H5LTset_attribute_int(fid, dmy_group, "nxnynz", dmy_dims, DIM);
-      h5_check_err(status);
-
-      status = H5LTset_attribute_float(fid, dmy_group, "origin", Origin, DIM);
-      h5_check_err(status);
-    }
+    float dmy_float = static_cast<float>(ts)*dt;
+    status = H5LTset_attribute_float(gid_time, dmy_group, "time", &dmy_float, 1);
+    h5_check_err(status);
   }
 }
 void hdf5_writer::write_end(){
@@ -130,7 +134,7 @@ void hdf5_writer::write_end(){
   status = H5Gclose(gid_field);
   h5_check_err(status);
 
-  status = H5Fclose(fid);
+  status = H5Gclose(gid_time);
   h5_check_err(status);
   ts += 1;
 }
@@ -281,30 +285,29 @@ void hdf5_writer::show_parameter() {
 //
 
 void hdf5_writer::write_xyz_coords(double** work_v3){
-  char fname[256];
-  sprintf(fname, "%s_coord.h5", out_name);
-  hid_t cfid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  h5_check_err(cfid);
+  double ddx = static_cast<double>(DX);
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZ; k++){
 	int im = (i*NY*NZ_) + (j*NZ_) + k;
-	work_v3[0][im] = static_cast<double>(i);
-	work_v3[1][im] = static_cast<double>(j);
-	work_v3[2][im] = static_cast<double>(k);
+	work_v3[0][im] = static_cast<double>(i)*ddx;
+	work_v3[1][im] = static_cast<double>(j)*ddx;
+	work_v3[2][im] = static_cast<double>(k)*ddx;
       }
     }
   }
-  write_data(cfid, work_v3[0], "x", 
+  hid_t gid_coord = H5Gcreate(fid, "/grid_coord", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_check_err(gid_coord);
+  write_data(gid_coord, work_v3[0], "x", 
 	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
 	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  write_data(cfid, work_v3[1], "y", 
+  write_data(gid_coord, work_v3[1], "y", 
 	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
 	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  write_data(cfid, work_v3[2], "z", 
+  write_data(gid_coord, work_v3[2], "z", 
 	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
 	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  herr_t status = H5Fclose(cfid);
+  herr_t status = H5Gclose(gid_coord);
   h5_check_err(status);
 }
 
