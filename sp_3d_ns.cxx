@@ -434,9 +434,7 @@ int main(int argc, char *argv[]){
           }else if(SW_EQ==Electrolyte){
             Output_charge_field_data(zeta, uk_dc, Concentration, particles, jikan);
           }
-	  if(Particle_Number > 0){
-	    Output_particle_data(particles, jikan);
-	  }
+	  Output_particle_data(particles, jikan);
 	  Output_close_frame();
 	}
 

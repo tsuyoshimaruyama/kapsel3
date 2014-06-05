@@ -94,7 +94,7 @@ typedef struct Field_output{
   bool none;
   bool vel;
   bool phi;
-  bool rho;
+  bool charge;
   bool pressure;
   bool tau;
 } Field_output;

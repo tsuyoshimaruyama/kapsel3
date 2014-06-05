@@ -9,6 +9,7 @@
 #include "macro.h"
 #include "parameter_define.h"
 #include "variable.h"
+#include "alloc.h"
 #include "output_writer_base.h"
 
 class hdf5_writer : public output_writer {
@@ -20,20 +21,26 @@ class hdf5_writer : public output_writer {
     \param[in] _NZ points in z
     \param[in] _NZ_ total points in z, including ghost points used in fft computations
     \param[in] _DX sclae for grid spacing
-    \param[in] _Nump total number of particles
+    \param[in] _nump total number of particles
     \param[in] _dt time step between frames (assumes printing at regular intervals)
     \param[in] _out_dir output directory for trajectory files
     \param[in] _out_name name of trajectory files
+    \param[in] _field_crop hyperslab selection parameters
+    \param[in] _print_field parameters to control how to print field data
+    \param[in] _print_particle parameters to control how to print particle data
    */
   hdf5_writer(const int&     _NX, 
 	      const int&     _NY,
 	      const int&     _NZ,
 	      const int&     _NZ_,
 	      const double&  _DX,
-	      const int&     _Nump,
+	      const int&     _nump,
 	      const double&  _dt,
 	      const char*    _out_dir,
-	      const char*    _out_name
+	      const char*    _out_name,
+	      const Field_crop& _field_crop,
+	      const Field_output& _print_field,
+	      const Particle_output& _print_particle
 	      );
 
   /*!
@@ -59,7 +66,13 @@ class hdf5_writer : public output_writer {
   /*!
     \brief Write field data to open frame
    */
-  void write_field_data(double const* phi, const char* name);
+  void write_field_data(double**u, double* phi, double* pressure,
+			double**tau);
+  /*!
+    \brief Write charged field data to open frame
+   */
+  void write_charge_field_data(double** u, double*phi, double* surface_charge, 
+			       double* solute_charge, double* potential);
 
   /*!
     \brief Writes particle data to open frame
@@ -70,32 +83,6 @@ class hdf5_writer : public output_writer {
     \brief Write output parameters to stderr
   */
   void show_parameter();
-
-
-  //
-  // New functions
-  //
-  
-  /*!
-    \brief Print x,y,z coordiantes for ALL points 
-    \details Required to obtain correct visualization using xdmf
-    \param[in,out] work_v3 working memory
-   */
-  void write_xyz_coords(double** work_v3);
-
-  /*!
-    \brief Select hyperslab to output only partial field data
-    \param[input] rank selects axis to reduce: yz slab (0), xz slab (1), xy slab (2)
-    \param[input] slab_start start index for slab
-    \param[input] slab_width number of slices in slab dimension
-   */
-  void set_hyperslab(const int &rank, const int &slab_start,  const int &slab_width);
-
-  /*!
-    \brief Select subset of particle to print
-    \details if first is not a valid particle id, NO particles will be printed
-   */
-  void set_particle_mask(const int &first);
 
  private:
   /*
@@ -112,18 +99,43 @@ class hdf5_writer : public output_writer {
     Particle Data
   */
   int nump;
-  int startp;
 
   /*
     Time Data
    */
   int    ts;
   float  dt;
+
+  /*
+    Output Options
+   */
+  Field_crop   crop_field;
+  Field_output print_field;
+  Particle_output print_particle;
   
   /*
     Output Param
   */
-  char   out_name[256];
+  static const char* f_vel_name[];
+  static const char* f_tau_name[];
+  static const char* f_phi_name;
+  static const char* f_pressure_name;
+  static const char* f_surface_charge_name;
+  static const char* f_solute_charge_name;
+  static const char* f_potential_charge_name;
+  static const char* p_id_name;
+  static const char* p_spec_name;
+  static const char* p_pos_name;
+  static const char* p_pos_raw_name;
+  static const char* p_vel_name;
+  static const char* p_omega_name;
+  static const char* p_force_h_name;
+  static const char* p_force_r_name;
+  static const char* p_torque_h_name;
+  static const char* p_torque_r_name;
+  static const char* p_QR_name;
+  char out_path[128];
+  char out_name[128];
 
   /*
     HDF5 Parameters
@@ -218,21 +230,34 @@ class hdf5_writer : public output_writer {
   }
   
   /*!
+    \brief Write scalar field data to current frame
+   */
+  void write_field_scalar(const double* phi, const char* name);
+
+  /*!
     \brief Write scalar particle data to current frame
    */
   void write_particle_scalar(const int* data, const char* name);
   /*!
     \brief Write vector particle data to current frame
    */
-  void write_particle_vector3(const double* data, const char* name);
-  /*!
-    \brief Write quaternion particle data to current frame
-   */
-  void write_particle_quaternion(const double* data, const char* name);
+  void write_particle_vectorn(const double* data, const int& dim, const char* name);
+
   /*!
     \brief Write 3x3 square matrix particle data to current frame
    */
   void write_particle_matrix3(const double* data, const char* name);
+  /*!
+    \brief Write hdf5/xdmf configuration file
+    \details List all data required to build xdmf xml file
+   */
+  void write_conf_file();
+  
+  /*!
+    \brief Print x,y,z coordiantes for ALL points 
+    \details Required to obtain correct visualization using xdmf
+   */
+  void write_xyz_coords();
 };
 
 #endif

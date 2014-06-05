@@ -1831,11 +1831,11 @@ void Gourmet_file_io(const char *infile
 
 	    print_field.vel      = true;   //print velocity field
 	    print_field.phi      = true;   //print phi field
-	    print_field.rho      = true;   //print rho field      (if electrolyte)
+	    print_field.charge   = true;   //print rho field      (if electrolyte)
 	    print_field.pressure = false;  //print pressure field (not implemented yet)
 	    print_field.tau      = true;   //print stress field 
 
-	    print_particle.first  = 0;     //no skipping particles on output
+	    print_particle.first = 0;      //no skipping particles on output
 	    if(str == "ON"){
 		target.down("ON");
 		{
@@ -1944,10 +1944,10 @@ void Gourmet_file_io(const char *infile
 			  ufres->put(target.sub("Phi"), str);
 			  print_field.phi = (str == "YES" ? true : false);
 			  
-			  ufin->get(target.sub("Rho"), str);
-			  ufout->put(target.sub("Rho"), str);
-			  ufres->put(target.sub("Rho"), str);
-			  print_field.rho = (str == "YES" ? true : false);
+			  ufin->get(target.sub("Charge"), str);
+			  ufout->put(target.sub("Charge"), str);
+			  ufres->put(target.sub("Charge"), str);
+			  print_field.charge = (str == "YES" ? true : false);
 			  
 			  ufin->get(target.sub("Pressure"), str);
 			  ufout->put(target.sub("Pressure"), str);

@@ -253,7 +253,7 @@ output: {
 	  }
 	  Vel: select{"YES", "NO"}       "Print velocity field"
 	  Phi: select{"YES", "NO"}       "Print phi field"
-	  Rho: select{"YES", "NO"}       "Print rho charge fields (surface and solute)"
+	  Charge: select{"YES", "NO"}    "Print charge fields (surface & solute charge & potential)"
 	  Pressure: select{"YES", "NO"}  "Print pressure field"
 	  Tau: select{"YES", "NO"}       "Print stress tensor"
 	}
