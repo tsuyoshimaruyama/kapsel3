@@ -156,16 +156,21 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       int dmy_num = nump - print_particle.first;
       status = H5LTset_attribute_int(fid, "/", "nump", &dmy_num, 1);
       h5_check_err(status);
+
+      status = H5Fflush(fid, H5F_SCOPE_LOCAL);
+      h5_check_err(status);
     }
   }
 
-}
-
-hdf5_writer::~hdf5_writer(){
   //print grid coordinates required for xdmf format
   this -> write_xyz_coords();
 
   //print configure file
+  this -> write_conf_file();
+}
+
+hdf5_writer::~hdf5_writer(){
+  //print updated configure file (with time step info)
   this -> write_conf_file();
 
   herr_t status;
@@ -216,8 +221,11 @@ void hdf5_writer::write_end(){
   status = H5Gclose(gid_field);
   h5_check_err(status);
 
+  status = H5Fflush(gid_time, H5F_SCOPE_LOCAL);
+  h5_check_err(status);
   status = H5Gclose(gid_time);
   h5_check_err(status);
+
   ts += 1;
 }
 inline void hdf5_writer::write_field_scalar(const double* phi, const char* name) {
