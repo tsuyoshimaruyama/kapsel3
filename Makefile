@@ -94,6 +94,7 @@ OBJS  	= mt19937ar.o\
 	fftsg3d.o\
 	avs_output.o\
 	avs_output_p.o\
+	output.o\
 	resume.o\
 	make_phi.o\
 	fluid_solver.o\

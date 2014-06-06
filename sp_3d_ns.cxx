@@ -363,13 +363,7 @@ int main(int argc, char *argv[]){
 
   static CTime jikan={0, 0.0, DT, DT*0.5, DT, DT*0.5};
 
-  Set_avs_parameters(Avs_parameters);
-  if(SW_AVS){
-    Init_avs(Avs_parameters);
-    if(Particle_Number > 0){
-      Init_avs_p(Avs_parameters);
-    }
-  }
+
 
   Particle *particles = new Particle [Particle_Number];
   if(Particle_Number > 0){
@@ -382,6 +376,7 @@ int main(int argc, char *argv[]){
 	  Init_Rigid(particles);
 	  }
   }
+  Init_output();
   
   Init_zeta_k(zeta, uk_dc);
 
@@ -407,7 +402,8 @@ int main(int argc, char *argv[]){
 
   //  return EXIT_SUCCESS;
 
-  Show_parameter(Avs_parameters, particles);
+  Show_parameter(particles);
+  Show_output_parameter();
 
   if ((SW_EQ == Shear_Navier_Stokes) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
     Mean_shear_stress(INIT, stderr, NULL, particles, jikan, Shear_rate_eff);
@@ -431,21 +427,19 @@ int main(int argc, char *argv[]){
     if( jikan.ts % GTS == 0){
       if(!resumed_and_1st_loop){
 
-	if(SW_AVS){// Output_AVS
-	  if(Particle_Number > 0){
-	    Output_avs_p(Avs_parameters, particles, jikan);
-	  }
-          if(SW_EQ == Navier_Stokes 
-             || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
-             ){
-            Output_avs(Avs_parameters, zeta, uk_dc, particles, jikan);
+	if(SW_OUTFORMAT != OUT_NONE){// Output field & particle data
+	  Output_open_frame();
+          if(SW_EQ != Electrolyte){
+            Output_field_data(zeta, uk_dc, particles, jikan);
           }else if(SW_EQ==Electrolyte){
-            Output_avs_charge(Avs_parameters, zeta, uk_dc, Concentration, particles, jikan);
+            Output_charge_field_data(zeta, uk_dc, Concentration, particles, jikan);
           }
+	  Output_particle_data(particles, jikan);
+	  Output_close_frame();
 	}
 
 	if(SW_UDF){// Output_UDF
-	  Output_udf(ufout, Avs_parameters, zeta, uk_dc, particles, jikan);
+	  Output_udf(ufout, zeta, uk_dc, particles, jikan);
 	}
 
 	if(SW_EQ == Electrolyte){
@@ -521,6 +515,8 @@ int main(int argc, char *argv[]){
     delete ufres;
     fprintf(stderr,"#%s end.\n",Res_udf);
   }
+  Free_output();
+
   global_time = ((double) (end_time - global_start))/CLOCKS_PER_SEC;
   fprintf(stderr, "#Simulation has ended!\n");
   fprintf(stderr, "#Total Running Time (s): %10.2f\n", global_time);

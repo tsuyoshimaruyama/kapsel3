@@ -422,7 +422,7 @@ void Init_Particle(Particle *p){
   }*/
   fprintf(stderr,"############################\n");
 }
-void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
+void Show_parameter(Particle *p){
   FILE *fp=stderr;
   {
     int dmy = NX*NY*NZ;
@@ -634,33 +634,6 @@ void Show_parameter(AVS_parameters Avs_parameters, Particle *p){
     fprintf(fp, "#k_max * min(RADIUS,xi) = %g (must be >%g)\n"
 	    ,MIN(RADIUS,XI) * kmax, M_PI);
     fprintf(fp, "#\n");
-    fprintf(fp, "#output files\n");
-    if(SW_AVS){
-      if(BINARY){
-	fprintf(fp, "#for AVS (filetype is binary)\n");
-      }else{
-	fprintf(fp, "#for AVS (filetype is ascii)\n");
-      }
-      fprintf(fp, "#directory:%s\n", Out_dir);
-      fprintf(fp, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
-	      ,Avs_parameters.out_fld
-	      ,Avs_parameters.out_cod
-	      ,Avs_parameters.out_pfx);
-      if(Particle_Number > 0){
-	fprintf(fp, "# (particle data)->\t{%s, %s*.cod, %s*.dat}\n"
-		,Avs_parameters.out_pfld
-		,Avs_parameters.out_ppfx
-		,Avs_parameters.out_ppfx
-		);
-      }
-    }else {
-      fprintf(fp, "#AVS output is suppressed.\n");
-    }
-    if(SW_UDF){
-      fprintf(fp, "#for UDF ->\t%s\n",Out_udf);
-    }else {
-      fprintf(fp, "#UDF output is supressed.\n");
-    }
   }
 
     if((SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards) && !Fixed_particle){

@@ -9,10 +9,12 @@
 #define RIGID_H
 
 #include "input.h"
+#include "lad3.h"
 #include "Matrix_Inverse.h"
 #include "matrix_diagonal.h"
 #include "periodic_boundary.h"
-
+#include "rigid_body.h"
+#include "particle_rotation_solver.h"
 
 /*!
   \brief Initialize the geometry and center of mass position for each

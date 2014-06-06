@@ -6,8 +6,8 @@
   \end{def}
   \begin{data}
     EngineType:"Kapsel"
-    EngineVersion:"v3.02"
-    Comment:"2013/07/01"
+    EngineVersion:"v3.1"
+    Comment:"2014/06/03"
   \end{data}
 \end{header}
 
@@ -233,7 +233,31 @@ output: {
    ON:{
       Out_dir: string "directory name"
       Out_name: string "prefix name for data file"
-      FileType: select {"BINARY","ASCII"} "output data type"
+      FileType: select {"BINARY","ASCII","EXTENDED"} "output data type"
+      EXTENDED:{
+        Driver:
+	{ 
+	  Format: select {"HDF5"}
+	}
+	Print_particle: 
+	{
+	  First: int             "ID of first particle to print (if < 0  or > Number of particles, all particles skipped)"
+	}
+	Print_field:
+	{
+	  Crop:select{"YES", "NO"}       "Crop Field Data to Hyperslab"
+	  YES:{
+	    Slab: select{"YZ", "XZ", "XY"} "Hyperslab"
+	    Start: int "index for start plane"	    
+	    Width: int "number of planes"
+	  }
+	  Vel: select{"YES", "NO"}       "Print velocity field"
+	  Phi: select{"YES", "NO"}       "Print phi field"
+	  Charge: select{"YES", "NO"}    "Print charge fields (surface & solute charge & potential)"
+	  Pressure: select{"YES", "NO"}  "Print pressure field"
+	  Tau: select{"YES", "NO"}       "Print stress tensor"
+	}
+      }
    }
    UDF: select {"ON","OFF"}
 }

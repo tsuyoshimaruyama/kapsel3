@@ -233,8 +233,14 @@ void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u);
 void Zeta_k2u_k_OBL(double **zeta, double uk_dc[DIM], double **u);
 
 /*!
+  Compute symmetric strain rate tensor
  */
-void Zeta_k2Strain_k(double **zeta, double *strain_k[QDIM]);
+void U_k2Strain_k(double **u, double *strain_k[QDIM]);
+
+/*!
+  Compute contravaraint symmetric strain rate tensor
+ */
+void U_k2Strain_k_OBL(double **u, double *strain_k[QDIM]);
 
 /*!
   \brief Compute divergence of vector field (in reciprocal space)
@@ -256,44 +262,66 @@ void U_k2divergence_k(double **u, double *div);
  */
 void U_k2rotation_k(double **u);
 
+inline void orth2obl(const int& j, const int& i,
+		     int& i_oblique, int& i_oblique_plus,
+		     double& alpha, double& beta){
+  int delta_j = j - NY/2;
+  double sign = (double)delta_j;
+  if (!(delta_j == 0)) sign = sign/fabs(sign);
+  
+  i_oblique = (int)(sign*degree_oblique*delta_j)*sign;
+  alpha = (degree_oblique*delta_j - i_oblique)*sign;
+  beta  = 1.0 - alpha;
+  
+  i_oblique      = (int) fmod(i + i_oblique + 4.0*NX, NX);
+  i_oblique_plus = (int) fmod(i_oblique + sign + 4.0*NX, NX);
+}
+inline void obl2orth(const int &j, const int& i,
+		     int& i_plus, int& i_oblique,
+		     double& alpha, double& beta){
+  int delta_j = j - NY/2;
+  double sign = (double)delta_j;
+  if (!(delta_j == 0)) sign = sign/fabs(sign);
+      
+  i_oblique = (int)(sign*degree_oblique*delta_j)*sign + sign;
+  alpha = (i_oblique - degree_oblique*delta_j)*sign;
+  beta  = 1.0 - alpha;
+      
+  i_oblique  = (int) fmod(i + i_oblique + 4.0*NX, NX);
+  i_plus     = (int) fmod(i + sign + 2.0*NX, NX);
+}
+
+
 /*!
   \brief Transform scalar field from rectangular to oblique coordinates
   \param[in,out] phi scalar (density) field to transform
  */
 inline void phi2phi_oblique(double *phi){
-    
-    int im;
-    int im_ob;
-    int im_ob_p;
-
-    Copy_v1(work_v1, phi);
-    
+  
+  int im;
+  int im_ob;
+  int im_ob_p;
+  
+  Copy_v1(work_v1, phi);
+  
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-
-	    double sign = j - NY/2;
-	    if (!(sign == 0)) {
-		sign = sign/fabs(sign);
-	    }
-
-	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2))*sign;
-	    double alpha = (degree_oblique*(j - NY/2) - i_oblique)*sign;
-	    double beta  = 1. - alpha;
-
-	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-	    int i_oblique_plus = (int) fmod(i_oblique + sign + 4.*NX, NX);
-
-	    
-	    for (int k = 0; k < NZ; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
-		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
-		im_ob_p = (i_oblique_plus*NY*NZ_) + (j*NZ_) + k;
-
-		phi[im] = (beta*work_v1[im_ob]+alpha*work_v1[im_ob_p]);
-	    }
-	}
+  for (int i = 0; i < NX; i++) {
+    for (int j = 0; j < NY; j++) {
+      
+      
+      int i_oblique, i_oblique_plus;
+      double alpha, beta;
+      orth2obl(j, i, i_oblique, i_oblique_plus, alpha, beta);
+      
+      for (int k = 0; k < NZ; k++) {
+	im      = (i*NY*NZ_) + (j*NZ_) + k;
+	im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+	im_ob_p = (i_oblique_plus*NY*NZ_) + (j*NZ_) + k;
+	
+	phi[im] = (beta*work_v1[im_ob]+alpha*work_v1[im_ob_p]);
+      }
     }
+  }
 }
 
 /*!
@@ -302,39 +330,29 @@ inline void phi2phi_oblique(double *phi){
  */
 inline void phi_oblique2phi(double *phi) {
 
-    int im;
-    int im_ob;
-    int im_p;
-
-    Copy_v1(work_v1, phi);
-
+  int im;
+  int im_ob;
+  int im_p;
+  
+  Copy_v1(work_v1, phi);
+  
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
-    for (int i = 0; i < NX; i++) {
-	for (int j = 0; j < NY; j++) {
-
-	    double sign = j - NY/2;
-	    //int sign = j - NY/2;
-	    if (!(sign == 0)) {
-		sign = sign/fabs(sign);
-	    }
-
-	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
-	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
-	    double beta  = 1. - alpha;
-	    
-	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-
-	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
-
-	    for (int k = 0; k < NZ; k++) {
-		im      = (i*NY*NZ_) + (j*NZ_) + k;
-		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
-		im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
-
-		phi[im_ob] = beta*work_v1[im] + alpha*work_v1[im_p];
-	    }
-	}
+  for (int i = 0; i < NX; i++) {
+    for (int j = 0; j < NY; j++) {
+      
+      int i_plus, i_oblique;
+      double alpha, beta;
+      obl2orth(j, i, i_plus, i_oblique, alpha, beta);
+      
+      for (int k = 0; k < NZ; k++) {
+	im      = (i*NY*NZ_) + (j*NZ_) + k;
+	im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+	im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
+	
+	phi[im_ob] = beta*work_v1[im] + alpha*work_v1[im_p];
+      }
     }
+  }
 }
 
 // Allocate / Deallocate interpolation memory
@@ -457,44 +475,29 @@ inline void U2u_oblique(double **uu) {
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 
-	    double sign = j - NY/2;
-	    //int sign = j - NY/2;
-	    if (!(sign == 0)) {
-		sign = sign/fabs(sign);
-	    }
-
-	    int i_oblique = (int)(sign*degree_oblique*(j - NY/2))*sign;
-	    double alpha = (degree_oblique*(j - NY/2) - i_oblique)*sign;
-	    double beta  = 1. - alpha;
-
-	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-	    int i_oblique_plus = (int) fmod(i_oblique + sign + 4.*NX, NX);
-
+	    int i_oblique, i_oblique_plus;
+	    double alpha, beta;
+	    orth2obl(j, i, i_oblique, i_oblique_plus, alpha, beta);
 	    
 	    for (int k = 0; k < NZ; k++) {
 		im      = (i*NY*NZ_) + (j*NZ_) + k;
 		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
 		im_ob_p = (i_oblique_plus*NY*NZ_) + (j*NZ_) + k;
 
-		uu[0][im] =
-		    (beta*work_v3[0][im_ob] +
-		     alpha*work_v3[0][im_ob_p])
-		    - degree_oblique*(beta*work_v3[1][im_ob] +
-				      alpha*work_v3[1][im_ob_p]);
+		//orthogonal grid -> oblique grid
+		for(int d = 0; d < DIM; d++){
+		  uu[d][im] = beta*work_v3[d][im_ob] + alpha*work_v3[d][im_ob_p];
+		}
 
-		uu[1][im] =
-		    beta*work_v3[1][im_ob] +
-		    alpha*work_v3[1][im_ob_p];
-
-		uu[2][im] =
-		    beta*work_v3[2][im_ob] +
-		    alpha*work_v3[2][im_ob_p];
+		//orthogonal coordinates -> oblique coordinates
+		//warning: mean shear flow is not removed
+		uu[0][im] -= (degree_oblique*uu[1][im]);
 	    }
 	}
     }
 }
 
-inline void U_oblique2u(double **uu) {
+inline void U_oblique2u(double **uu, const bool &add_mean_flow = true) {
 
     int im;
     int im_ob;
@@ -506,41 +509,75 @@ inline void U_oblique2u(double **uu) {
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 
-	    double sign = j - NY/2;
-	    //int sign = j - NY/2;
-	    if (!(sign == 0)) {
-		sign = sign/fabs(sign);
-	    }
-
-            int i_oblique = (int)(sign*degree_oblique*(j - NY/2.))*sign + sign;
-	    double alpha = (i_oblique - degree_oblique*(j - NY/2.))*sign;
-	    double beta  = 1. - alpha;
-	    i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-	    int i_plus = (int) fmod(i + sign + 2*NX, NX);
+	    int i_plus, i_oblique;
+	    double alpha, beta;
+	    obl2orth(j, i, i_plus, i_oblique, alpha, beta);
 
 	    for (int k = 0; k < NZ; k++) {
 		im      = (i*NY*NZ_) + (j*NZ_) + k;
 		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
 		im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
 
-		uu[0][im_ob] =
-		    (beta*work_v3[0][im] +
-		     alpha*work_v3[0][im_p])
-		    + degree_oblique*(beta*work_v3[1][im] +
-				      alpha*work_v3[1][im_p])
-		    + Shear_rate_eff*(j - NY/2.);
+		//oblique grid -> orthogonal grid
+		for(int d = 0; d < DIM; d++){
+		  uu[d][im_ob] = beta*work_v3[d][im] + alpha*work_v3[d][im_p];
+		}
 
-		uu[1][im_ob] =
-		    beta*work_v3[1][im] +
-		    alpha*work_v3[1][im_p];
-
-		uu[2][im_ob] =
-		    beta*work_v3[2][im] +
-		    alpha*work_v3[2][im_p];
-
+		//oblique coordinates -> orthogonal coordinates
+		//warning: mean shear flow is added by default!
+		uu[0][im_ob] += (degree_oblique*uu[1][im_ob]);
+		if(add_mean_flow) uu[0][im_ob] += Shear_rate_eff*(j - NY/2.0);
 	    }
 	}
     }
+}
+
+//Symmetric contravariant strain tensor from oblique to orthogonal
+inline void E_oblique2E(double **EE, const bool &add_mean_flow=true){
+    int im; 
+  int im_ob;
+  int im_p;
+  double *work_v5[QDIM] = {work_v3[0], 
+                           work_v3[1],
+                           work_v3[2],
+                           work_v2[0],
+                           work_v2[1]};
+  Copy_v5(work_v5, EE);
+  
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      
+      int i_plus, i_oblique;
+      double alpha, beta;
+      obl2orth(j, i, i_plus, i_oblique, alpha, beta);
+      
+      for(int k = 0; k < NZ; k++){
+        im     = (i*NY*NZ_) + (j*NZ_) + k;
+        im_ob  = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+        im_p   = (i_plus*NY*NZ_) + (j*NZ_) + k;
+	
+        //oblique grid -> orthogonal grid
+        for(int d = 0; d < QDIM; d++){
+          EE[d][im_ob] = beta*work_v5[d][im] + alpha*work_v5[d][im_p];
+        }
+	
+        //oblique coordinates -> orthogonal coordinates
+        //warning: mean shear flow is added by default!
+        {
+          //xx
+          EE[0][im_ob] += (2.0*degree_oblique*EE[1][im_ob] + SQ(degree_oblique)*EE[3][im_ob]);
+          //xy
+          EE[1][im_ob] += (degree_oblique*EE[3][im_ob]);
+          //xz
+          EE[2][im_ob] += (degree_oblique*EE[4][im_ob]);
+        }
+        if(add_mean_flow) EE[1][im_ob] += (ETA*Shear_rate_eff/2.0);
+	
+      }//k
+    }//j
+  }//i
+
 }
 
 inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &id){

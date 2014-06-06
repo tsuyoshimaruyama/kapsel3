@@ -10,18 +10,42 @@
 
 const int Veclen = 5+5; 
 const char *Label="ux uy uz phi pressure tau_xy tau_yz tau_zx tau_xx tau_yy"; // avs 出力ラベル用
-const int Veclen_two_fluid = 5; 
-const char *Label_two_fluid="ux uy uz phi concentration"; // avs 出力ラベル用
-const int Veclen_QS = 4+5; 
-//const char *Label_QS="ux uy uz phi q11 q12 q13 q22 q23"; // avs 出力ラベル用
-const char *Label_QS="ux uy uz phi s1 s2 nx ny nz"; // avs 出力ラベル用
 const int Veclen_charge = 4+3; 
 const char *Label_charge="ux uy uz phi surface_charge rho e_potential"; // avs 出力ラベル用
 
 //const AVS_Field Field = irregular;
 const AVS_Field Field = uniform;
 AVS_parameters Avs_parameters;
+
+void Show_avs_parameter(){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
+    fprintf(stderr, "#for AVS (filetype is binary)\n");
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
+    fprintf(stderr, "#for AVS (filetype is ascii)\n");
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
+  }
+  fprintf(stderr, "#directory:%s\n", Out_dir);
+  fprintf(stderr, "# (mesh data)->\t{%s, %s, %s*.dat}\n"
+	  ,Avs_parameters.out_fld
+	  ,Avs_parameters.out_cod
+	  ,Avs_parameters.out_pfx);
+  if(Particle_Number > 0){
+    fprintf(stderr, "# (particle data)->\t{%s, %s*.cod, %s*.dat}\n"
+	    ,Avs_parameters.out_pfld
+	    ,Avs_parameters.out_ppfx
+	    ,Avs_parameters.out_ppfx
+	    );
+  }
+}
+
 void Init_avs(const AVS_parameters &Avs_parameters){
+  {
+    char dmy_dir[256];
+    sprintf(dmy_dir, "%s/avs", Out_dir);
+    dircheckmake(dmy_dir);
+  }
   FILE *fout;
   fout=filecheckopen(Avs_parameters.fld_file,"w");
   fprintf(fout,"# AVS field file\n");
@@ -59,7 +83,8 @@ void Init_avs(const AVS_parameters &Avs_parameters){
   
   if(Field == irregular){
     fout=filecheckopen(Avs_parameters.cod_file,"wb");
-    if(BINARY){
+
+    if(SW_OUTFORMAT == OUT_AVS_BINARY){
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 	for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
 	  for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend ; k++){
@@ -84,7 +109,7 @@ void Init_avs(const AVS_parameters &Avs_parameters){
 	  }
 	}
       }
-    }else{
+    }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
       fprintf(fout,"X Y Z\n");
       for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
 	for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
@@ -94,6 +119,9 @@ void Init_avs(const AVS_parameters &Avs_parameters){
 	  }
 	}
       }
+    }else{
+      fprintf(stderr, "# Uknown AVS FORMAT\n");
+      exit_job(EXIT_FAILURE);
     }
     fclose(fout);
   }else if(Field == uniform){
@@ -162,7 +190,7 @@ void Set_avs_parameters(AVS_parameters &Avs_parameters){
 
 inline void Binary_write(FILE *fout
 			 ,AVS_parameters &Avs_parameters
-			 ,double *a
+			 ,const double *a
 			 ){
   int im;
   for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
@@ -184,7 +212,7 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.fld_file,"a");
   fprintf(fout,"time value = \"step%dtime%g\"\n"
 	  ,time.ts, time.time);
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     static const int data_size=sizeof(float)*
       Avs_parameters.nx * Avs_parameters.ny * Avs_parameters.nz;
     if(Field == irregular){
@@ -209,7 +237,7 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 	      n+1,
 	      Avs_parameters.out_pfx, time.ts, n * data_size);
     }
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     if(Field == irregular){
       for(int n=0; n < DIM; n++){
 	fprintf(fout,
@@ -231,64 +259,21 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 	      "variable %d file = %s%d.dat filetype = ascii skip = 2 offset = %d stride = %d\n",
 	      n+1, Avs_parameters.out_pfx, time.ts, n, veclen);
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fprintf(fout,"EOT\n");
   fclose(fout);
 }
 
 void Output_avs(AVS_parameters &Avs_parameters
-		,double **zeta
-		,double *uk_dc
-		,Particle *p
+		,double **u
+		,double *phi
+		,double *Pressure
+		,double **strain
 		,const CTime &time){
 
-  double *strain[QDIM]={f_particle[0]
-		      ,f_particle[1]
-		      ,f_particle[2]
-		      ,f_ns0[0]
-		      ,f_ns0[1]
-  };
-  {// strain tensor
-    for(int d=0;d<DIM-1;d++){
-      for(int i=0; i<NX; i++){
-	for(int j=0; j<NY; j++){
-	  for(int k=0; k<NZ_; k++){
-		int im=(i*NY*NZ_)+(j*NZ_)+k;
-	    u[d][im] = ETA * zeta[d][im];
-	  }
-	}
-      }
-    }
-    Zeta_k2Strain_k(u, strain);
-    for(int d=0;d<QDIM;d++){
-      A_k2a(strain[d]);
-    }
-  }
-
-  if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-      Zeta_k2u_k_OBL(zeta, uk_dc, u);
-      U_k2u(u);
-      U_oblique2u(u);
-  } else {
-      Zeta_k2u(zeta, uk_dc, u);
-  }
-
-  A_k2a(Pressure);
-  {
-    Reset_phi(phi);
-    if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-	  Make_phi_particle_OBL(phi, p);
-	  if(SW_JANUS){
-	    Make_phi_janus_particle_OBL(phi, work_v1, p); // +1/-1 janus polarity
-	  }
-    }else {
-	  Make_phi_particle(phi, p);
-	  if(SW_JANUS){
-	    Make_phi_janus_particle(phi, work_v1, p); // +1/-1 janus polarity
-	  }
-    }
-  }
-  
   Add_field_description(Avs_parameters,time, Veclen);
 
   FILE *fout;
@@ -298,7 +283,7 @@ void Output_avs(AVS_parameters &Avs_parameters
 	  Out_dir, Avs_parameters.out_pfx, time.ts);
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
@@ -314,7 +299,7 @@ void Output_avs(AVS_parameters &Avs_parameters
       Binary_write(fout, Avs_parameters, strain[3]); // 22
 
     }
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){
     fprintf(fout,"%s\n", line);
     for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
@@ -335,147 +320,24 @@ void Output_avs(AVS_parameters &Avs_parameters
 	}
       }
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
+
   fclose(fout);
 
 }
 
-void Output_udf(UDFManager *ufout
-                , AVS_parameters &Avs_parameters
-                , double **zeta
-                , double *uk_dc
-                , const Particle *p
-                , const CTime &time
-		)
-{
-  ufout->newRecord();
-  ufout->put("E", 1.0);
-  ufout->put("t", time.ts);
-  for(int j = 0; j < Particle_Number; j++) {
-    char str[256];
-    sprintf(str, "Particles[%d]", j);
-    Location target(str);
-    ufout->put(target.sub("R.x"), p[j].x[0]);
-    ufout->put(target.sub("R.y"), p[j].x[1]);
-    ufout->put(target.sub("R.z"), p[j].x[2]);
-    ufout->put(target.sub("R_raw.x"), p[j].x_nopbc[0]);
-    ufout->put(target.sub("R_raw.y"), p[j].x_nopbc[1]);
-    ufout->put(target.sub("R_raw.z"), p[j].x_nopbc[2]);
-    ufout->put(target.sub("v.x"), p[j].v[0]);
-    ufout->put(target.sub("v.y"), p[j].v[1]);
-    ufout->put(target.sub("v.z"), p[j].v[2]);
-
-    qtn_isnormal(p[j].q);
-    ufout->put(target.sub("q.q0"), qtn_q0(p[j].q));
-    ufout->put(target.sub("q.q1"), qtn_q1(p[j].q));
-    ufout->put(target.sub("q.q2"), qtn_q2(p[j].q));
-    ufout->put(target.sub("q.q3"), qtn_q3(p[j].q));
-    ufout->put(target.sub("omega.x"), p[j].omega[0]);
-    ufout->put(target.sub("omega.y"), p[j].omega[1]);
-    ufout->put(target.sub("omega.z"), p[j].omega[2]);
-
-    ufout->put(target.sub("f_hydro.x"), p[j].f_hydro_previous[0]);
-    ufout->put(target.sub("f_hydro.y"), p[j].f_hydro_previous[1]);
-    ufout->put(target.sub("f_hydro.z"), p[j].f_hydro_previous[2]);
-    ufout->put(target.sub("torque_hydro.x"), p[j].torque_hydro_previous[0]);
-    ufout->put(target.sub("torque_hydro.y"), p[j].torque_hydro_previous[1]);
-    ufout->put(target.sub("torque_hydro.z"), p[j].torque_hydro_previous[2]);
-
-    ufout->put(target.sub("f_r.x"), p[j].fr_previous[0]);
-    ufout->put(target.sub("f_r.y"), p[j].fr_previous[1]);
-    ufout->put(target.sub("f_r.z"), p[j].fr_previous[2]);
-    ufout->put(target.sub("torque_r.x"), 0.0);
-    ufout->put(target.sub("torque_r.y"), 0.0);
-    ufout->put(target.sub("torque_r.z"), 0.0);
-
-
-    ufout->put(target.sub("f_slip.x"), p[j].f_slip_previous[0]);
-    ufout->put(target.sub("f_slip.y"), p[j].f_slip_previous[1]);
-    ufout->put(target.sub("f_slip.z"), p[j].f_slip_previous[2]);
-    ufout->put(target.sub("torque_slip.x"), p[j].torque_slip_previous[0]);
-    ufout->put(target.sub("torque_slip.y"), p[j].torque_slip_previous[1]);
-    ufout->put(target.sub("torque_slip.z"), p[j].torque_slip_previous[2]);
-  }
-  if(SW_PT == rigid){
-    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
-      char str[256];
-      sprintf(str, "RigidParticles[%d]", rigidID);
-      Location target(str);
-
-      int rigid_first_n = Rigid_Particle_Cumul[rigidID];
-      quaternion qGs;
-      qtn_init(qGs, p[rigid_first_n].q);
-
-      ufout->put(target.sub("R.x"), xGs[rigidID][0]);
-      ufout->put(target.sub("R.y"), xGs[rigidID][1]);
-      ufout->put(target.sub("R.z"), xGs[rigidID][2]);
-      ufout->put(target.sub("R_raw.x"), xGs_nopbc[rigidID][0]);
-      ufout->put(target.sub("R_raw.y"), xGs_nopbc[rigidID][1]);
-      ufout->put(target.sub("R_raw.z"), xGs_nopbc[rigidID][2]);
-      ufout->put(target.sub("v.x"), velocityGs[rigidID][0]);
-      ufout->put(target.sub("v.y"), velocityGs[rigidID][1]);
-      ufout->put(target.sub("v.z"), velocityGs[rigidID][2]);
-
-      ufout->put(target.sub("q.q0"), qtn_q0(qGs));
-      ufout->put(target.sub("q.q1"), qtn_q1(qGs));
-      ufout->put(target.sub("q.q2"), qtn_q2(qGs));
-      ufout->put(target.sub("q.q3"), qtn_q3(qGs));
-      ufout->put(target.sub("omega.x"), omegaGs[rigidID][0]);
-      ufout->put(target.sub("omega.y"), omegaGs[rigidID][1]);
-      ufout->put(target.sub("omega.z"), omegaGs[rigidID][2]);
-
-      ufout->put(target.sub("f_hydro.x"), forceGs_previous[rigidID][0]);
-      ufout->put(target.sub("f_hydro.y"), forceGs_previous[rigidID][1]);
-      ufout->put(target.sub("f_hydro.z"), forceGs_previous[rigidID][2]);
-      ufout->put(target.sub("torque_hydro.x"), torqueGs_previous[rigidID][0]);
-      ufout->put(target.sub("torque_hydro.y"), torqueGs_previous[rigidID][1]);
-      ufout->put(target.sub("torque_hydro.z"), torqueGs_previous[rigidID][2]);
-
-      ufout->put(target.sub("f_r.x"), forceGrs_previous[rigidID][0]);
-      ufout->put(target.sub("f_r.y"), forceGrs_previous[rigidID][1]);
-      ufout->put(target.sub("f_r.z"), forceGrs_previous[rigidID][2]);
-      ufout->put(target.sub("torque_r.x"), torqueGrs_previous[rigidID][0]);
-      ufout->put(target.sub("torque_r.y"), torqueGrs_previous[rigidID][1]);
-      ufout->put(target.sub("torque_r.z"), torqueGrs_previous[rigidID][2]);
-
-      ufout->put(target.sub("f_slip.x"), 0.0);
-      ufout->put(target.sub("f_slip.y"), 0.0);
-      ufout->put(target.sub("f_slip.z"), 0.0);
-      ufout->put(target.sub("torque_slip.x"), 0.0);
-      ufout->put(target.sub("torque_slip.y"), 0.0);
-      ufout->put(target.sub("torque_slip.z"), 0.0);
-    }
-  }
-}
 
 void Output_avs_charge(AVS_parameters &Avs_parameters
-		       ,double **zeta
-		       ,double *uk_dc
-		       ,double **Concentration
-		       ,Particle *p
+		       ,double** u
+		       ,double* phi
+		       ,double* colloid_charge
+		       ,double* solute_charge_total
+		       ,double* potential
 		       ,const CTime &time
 		       ){
-  Zeta_k2u(zeta, uk_dc, u);
-  
-  double *potential = f_particle[0];
-  double *dmy_value0 = f_particle[1];
-  {
-    Conc_k2charge_field(p, Concentration, potential, phi, dmy_value0);
-    A2a_k(potential);
-    Charge_field_k2Coulomb_potential_k_PBC(potential);
-    A_k2a(potential);
-    for(int n=0;n<N_spec;n++){
-      A_k2a(Concentration[n]);
-    }
-  }
-  {
-    Reset_phi(phi);
-    Reset_phi(up[0]);
-
-    Make_phi_qq_particle(phi, up[0], p);
-
-  }
-
   Add_field_description(Avs_parameters,time, Veclen_charge);
 
   FILE *fout;
@@ -486,56 +348,36 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
   double dmy_surface_area = PI4 * RADIUS * RADIUS;
-  if(BINARY){
+  if(SW_OUTFORMAT == OUT_AVS_BINARY){
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);
     Binary_write(fout, Avs_parameters, u[2]);
     Binary_write(fout, Avs_parameters, phi);
-    for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend ; k++){
-      for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend ; j++){
-	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  float dmy = up[0][(i*NY*NZ_)+(j*NZ_)+k] * dmy_surface_area;
-	  fwrite(&dmy,sizeof(float),1,fout);
-	}
-      }
-    }
-    for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
-      for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
-	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  float dmy=0.;
-	  for(int n=0; n<N_spec; n++){
-	    dmy += (float)(Elementary_charge*Valency[n]*Concentration[n][(i*NY*NZ_)+(j*NZ_)+k]);
-	  }
-	  dmy *= (1.-phi[(i*NY*NZ_)+(j*NZ_)+k]);
-	  fwrite(&dmy,sizeof(float),1,fout);
-	}
-      }
-    }
+    Binary_write(fout, Avs_parameters, colloid_charge);
+    Binary_write(fout, Avs_parameters, solute_charge_total);
     Binary_write(fout, Avs_parameters, potential);
-  }else{
+  }else if(SW_OUTFORMAT == OUT_AVS_ASCII){ // OUT_AVS_ASCII
     fprintf(fout,"%s\n", line);
     for(int k=Avs_parameters.kstart; k<= Avs_parameters.kend; k++){
       for(int j=Avs_parameters.jstart; j<= Avs_parameters.jend; j++){
 	for(int i=Avs_parameters.istart; i<=Avs_parameters.iend; i++){
-	  double dmy = 0.;
-	  for(int n=0; n<N_spec; n++){
-	    dmy += Elementary_charge*Valency[n]*Concentration[n][(i*NY*NZ_)+(j*NZ_)+k];
-	  }
+	  int im = (i*NY*NZ_) + (j*NZ_) + k;
 	  fprintf(fout,"%.3g %.3g %.3g %.3g %.3g %.3g %.3g\n"
-		  ,u[0][(i*NY*NZ_)+(j*NZ_)+k],u[1][(i*NY*NZ_)+(j*NZ_)+k],u[2][(i*NY*NZ_)+(j*NZ_)+k]
-		  ,phi[(i*NY*NZ_)+(j*NZ_)+k]
-		  ,up[0][(i*NY*NZ_)+(j*NZ_)+k]*dmy_surface_area
-		  ,(1.-phi[(i*NY*NZ_)+(j*NZ_)+k])*dmy
-		  ,potential[(i*NY*NZ_)+(j*NZ_)+k]
+		  ,u[0][im]
+		  ,u[1][im]
+		  ,u[2][im]
+		  ,phi[im]
+		  ,colloid_charge[im]
+		  ,solute_charge_total[im]
+		  ,potential[im]
 		  );
 	}
       }
     }
+  }else{
+    fprintf(stderr, "# Uknown AVS FORMAT\n");
+    exit_job(EXIT_FAILURE);
   }
   fclose(fout);
-
-  for(int n=0; n<N_spec; n++){
-    A2a_k(Concentration[n]);
-  }
 }
 

@@ -37,6 +37,14 @@ const char *OBL_INT_name[]={"linear", "spline"};
 KFILTER SW_KFILTER;
 const char *KFILTER_name[]={"2/3", "none"};
 
+OUTFORMAT SW_OUTFORMAT;
+EXTFORMAT SW_EXTFORMAT; 
+Field_crop      print_field_crop;
+Field_output    print_field;
+Particle_output print_particle;
+
+const char *OUTFORMAT_name[]={"NONE", "ASCII", "BINARY", "EXTENDED"};
+const char *EXTFORMAT_name[]={"HDF5"};
 //////
 const char *JAX_name[]={"X", "Y", "Z", "NONE"};
 const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
@@ -44,10 +52,8 @@ const char *JP_name[]={"TUMBLER", "SQUIRMER", "OBSTACLE", "OFF"};
 //////
 SW_time SW_TIME;
 //////
-int SW_AVS;
 char Out_dir[128];
 char Out_name[128];
-int BINARY;
 //////
 int SW_UDF;
 /////// FFT
@@ -1815,36 +1821,148 @@ void Gourmet_file_io(const char *infile
 	    ufin->get(target.sub("AVS"),str);
 	    ufout->put(target.sub("AVS"),str);
 	    ufres->put(target.sub("AVS"),str);
+	    SW_OUTFORMAT = OUT_NONE;
+	    SW_EXTFORMAT = EXT_OUT_HDF5;
+
+	    //default print flags
+	    print_field_crop.rank =-1;    //no cropping (0=yz, 1=xz, 2=xy)
+	    print_field_crop.start= 0;    //start plane
+	    print_field_crop.width= 0;    //slab thickness
+
+	    print_field.vel      = true;   //print velocity field
+	    print_field.phi      = true;   //print phi field
+	    print_field.charge   = true;   //print rho field      (if electrolyte)
+	    print_field.pressure = false;  //print pressure field (not implemented yet)
+	    print_field.tau      = true;   //print stress field 
+
+	    print_particle.first = 0;      //no skipping particles on output
 	    if(str == "ON"){
-		SW_AVS = 1;
 		target.down("ON");
 		{
 		    ufin->get(target.sub("Out_dir"),str);
 		    ufout->put(target.sub("Out_dir"),str);
 		    ufres->put(target.sub("Out_dir"),str);
 		    strcpy(Out_dir,str.c_str());
-		    {
-			if (opendir(Out_dir)==NULL) {
-			    fprintf(stderr,
-				    "\tdirectory \"%s\",\"%s/avs\" does not seemed to exist.\n",
-				    Out_dir,Out_dir);
-			    fprintf(stderr,
-				    "\texecute \"mkdir %s;mkdir %s/avs\" before run.\n",
-				    Out_dir,Out_dir);
-			    exit_job(EXIT_FAILURE);
-			}
-		    }
+		    dircheckmake(Out_dir);
+
 		    ufin->get(target.sub("Out_name"),str);
 		    ufout->put(target.sub("Out_name"),str);
 		    ufres->put(target.sub("Out_name"),str);
 		    strcpy(Out_name,str.c_str());
+
 		    ufin->get(target.sub("FileType"),str);
 		    ufout->put(target.sub("FileType"),str);
 		    ufres->put(target.sub("FileType"),str);
-		    if(str == "BINARY"){
-			BINARY = 1;
-		    }else if(str == "ASCII"){
-			BINARY = 0;
+		    if(str == OUTFORMAT_name[OUT_AVS_BINARY]){
+		      SW_OUTFORMAT = OUT_AVS_BINARY;
+		    }else if(str == OUTFORMAT_name[OUT_AVS_ASCII]){
+		      SW_OUTFORMAT = OUT_AVS_ASCII;
+		    }else if(str == OUTFORMAT_name[OUT_EXT]){
+		      SW_OUTFORMAT = OUT_EXT;
+		      target.down("EXTENDED");
+		      {
+			//extended output options
+			target.down("Driver");
+			{
+			  ufin->get(target.sub("Format"), str);
+			  ufout->put(target.sub("Format"), str);
+			  ufres->put(target.sub("Format"), str);
+			  if(str == EXTFORMAT_name[EXT_OUT_HDF5]){
+			    SW_EXTFORMAT = EXT_OUT_HDF5;
+			  }else{
+			    fprintf(stderr, "#%s : Unrecognized exteded format\n", str.c_str());
+			    exit_job(EXIT_FAILURE);
+			  }
+			}
+			target.up();
+
+			target.down("Print_particle");
+			{ //Print flags for particle data
+			  ufin->get(target.sub("First"), print_particle.first);
+			  ufout->put(target.sub("First"), print_particle.first);
+			  ufres->put(target.sub("First"), print_particle.first);
+			}
+			target.up();
+			
+			target.down("Print_field");
+			{ //Print flags for field data
+			  ufin->get(target.sub("Crop"), str);
+			  ufout->put(target.sub("Crop"), str);
+			  ufres->put(target.sub("Crop"), str);
+			  if(str == "YES"){
+			    target.down("YES");
+			    ufin->get(target.sub("Slab"), str);
+			    ufout->put(target.sub("Slab"), str);
+			    ufres->put(target.sub("Slab"), str);
+			    if(str == "YZ"){
+			      print_field_crop.rank = 0;
+			    }else if(str == "XZ"){
+			      print_field_crop.rank = 1;
+			    }else if(str == "XY"){
+			      print_field_crop.rank = 2;
+			    }else{
+			      fprintf(stderr, "Incorrect slab selection\n");
+			      exit_job(EXIT_FAILURE);
+			    }
+
+			    ufin->get(target.sub("Start"), print_field_crop.start);
+			    ufout->put(target.sub("Start"), print_field_crop.start);
+			    ufres->put(target.sub("Start"), print_field_crop.start);
+			    if(print_field_crop.start < 0 || 
+			       print_field_crop.start >= Ns[print_field_crop.rank]){
+			      fprintf(stderr, "Invalid Slab start value: 0 <= %d < %d\n",
+				      print_field_crop.start, Ns[print_field_crop.rank]);
+			      exit_job(EXIT_FAILURE);
+			    }
+			    
+			    ufin->get(target.sub("Width"), print_field_crop.width);
+			    ufout->put(target.sub("Width"), print_field_crop.width);
+			    ufres->put(target.sub("Width"), print_field_crop.width);
+			    if(print_field_crop.width <= 0 ||
+			       (print_field_crop.start + print_field_crop.width) >
+			       Ns[print_field_crop.rank]){
+			      fprintf(stderr, "Invalid Slab width value: 0< %d && 0 <= %d + %d <= %d\n",
+				      print_field_crop.width,
+				      print_field_crop.start, print_field_crop.width,
+				      Ns[print_field_crop.rank]);
+			      exit_job(EXIT_FAILURE);
+			    }
+
+			    target.up();
+			  }else{ // no cropping
+			      print_field_crop.rank  = -1;
+			      print_field_crop.start =  0;
+			      print_field_crop.width =  0;
+			  }
+			  
+			  ufin->get(target.sub("Vel"), str);
+			  ufout->put(target.sub("Vel"), str);
+			  ufres->put(target.sub("Vel"), str);
+			  print_field.vel = (str == "YES" ? true : false);
+			  
+			  ufin->get(target.sub("Phi"), str);
+			  ufout->put(target.sub("Phi"), str);
+			  ufres->put(target.sub("Phi"), str);
+			  print_field.phi = (str == "YES" ? true : false);
+			  
+			  ufin->get(target.sub("Charge"), str);
+			  ufout->put(target.sub("Charge"), str);
+			  ufres->put(target.sub("Charge"), str);
+			  print_field.charge = (str == "YES" ? true : false);
+			  
+			  ufin->get(target.sub("Pressure"), str);
+			  ufout->put(target.sub("Pressure"), str);
+			  ufres->put(target.sub("Pressure"), str);
+			  print_field.pressure = (str == "YES" ? true : false);
+
+			  ufin->get(target.sub("Tau"), str);
+			  ufout->put(target.sub("Tau"), str);
+			  ufres->put(target.sub("Tau"), str);
+			  print_field.tau = (str == "YES" ? true : false);
+			}
+			target.up();
+		      }
+		      target.up();
 		    }else{
 			fprintf(stderr, "invalid FileType %s\n",str.c_str()); 
 			exit_job(EXIT_FAILURE);
@@ -1852,7 +1970,7 @@ void Gourmet_file_io(const char *infile
 		}
 		target.up();
 	    }else if(str == "OFF"){
-		SW_AVS = 0;
+	      SW_OUTFORMAT = OUT_NONE;
 	    }else{
 		fprintf(stderr, "invalid switch for AVS\n"); 
 		exit_job(EXIT_FAILURE);

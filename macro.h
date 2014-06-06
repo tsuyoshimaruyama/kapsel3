@@ -16,6 +16,7 @@
 #include <limits.h>
 #include <float.h>
 #include <time.h>
+#include <dirent.h>
 
 
 const double Euler_cst = 0.57721566490153286060651209008240243104215933593992359880576723488485;
@@ -201,7 +202,20 @@ inline int MOD(const int &a, const int &b){
 inline void exit_job(int status){
   exit(status);
 }
-
+inline int dircheckmake(const char *dname){
+  DIR* dtest;
+  if((dtest=opendir(dname))==NULL){
+    char dmy_cmd[256];
+    sprintf(dmy_cmd, "mkdir %s", dname);
+    system(dmy_cmd);
+    if((dtest=opendir(dname)) == NULL){
+      fprintf(stderr, "%s not succeeded\n", dmy_cmd);
+      exit_job(EXIT_FAILURE);
+    }
+    closedir(dtest);
+  }
+  return true;
+}
 inline FILE *filecheckopen(const char *fname, const char st[]){
   FILE *fp;
   
@@ -211,7 +225,6 @@ inline FILE *filecheckopen(const char *fname, const char st[]){
   }
   return(fp);
 }
-
 inline int file_check(const char *filename){
     FILE *ftest;
     if(NULL==(ftest=fopen(filename,"r"))){

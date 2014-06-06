@@ -9,8 +9,11 @@
 #ifndef RESUME_H
 #define RESUME_H
 
-#include "avs_output.h"
+#include "input.h"
+#include "variable.h"
 #include "rigid.h"
+#include "fft_wrapper.h"
+
 
 //UDF RESTART WRITING
 //
