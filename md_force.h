@@ -18,10 +18,6 @@ extern double Min_rij;
 extern double Max_force;
 extern double *Hydro_force;
 extern double *Hydro_force_new;
-extern double *Hydro_force_new_u;
-extern double *Hydro_force_new_p;
-extern double *Hydro_force_new_v;
-extern double *Hydro_force_new_w;
 
 enum Particle_BC {
   PBC_particle

@@ -198,8 +198,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         Shear_rate_eff = Shear_rate;
         degree_oblique += Shear_rate_eff*jikan.dt_fluid;
 
-        if(DBG_LE_SOLVE_UPDT) Update_Obl_Coord(u, Shear_rate_eff*jikan.dt_fluid);
-        
         if (degree_oblique >= 1.) {
           Reset_U_OBL(ucp, u);
           Swap_mem(u, ucp);
@@ -299,17 +297,6 @@ inline void Mem_alloc_var(double **zeta){
   work_v1 = alloc_1d_double(NX*NY*NZ_);
   Hydro_force = alloc_1d_double(NX*NY*NZ_);
   Hydro_force_new = alloc_1d_double(NX*NY*NZ_);
-  if(DBG_LE_SHEAR){
-    Hydro_force_new_u = alloc_1d_double(NX*NY*NZ_);
-    Hydro_force_new_p = alloc_1d_double(NX*NY*NZ_);
-    Hydro_force_new_v = alloc_1d_double(NX*NY*NZ_);
-    Hydro_force_new_w = alloc_1d_double(NX*NY*NZ_);
-  }else{
-    Hydro_force_new_u = NULL;
-    Hydro_force_new_p = NULL;
-    Hydro_force_new_v = NULL;
-    Hydro_force_new_w = NULL;
-  }
 }
 
 int main(int argc, char *argv[]){

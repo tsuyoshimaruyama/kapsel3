@@ -13,10 +13,6 @@ double Max_force;
 double *Hydro_force;
 
 double *Hydro_force_new;
-double *Hydro_force_new_u;
-double *Hydro_force_new_p;
-double *Hydro_force_new_v;
-double *Hydro_force_new_w;
 
 #define Cell_length 16
 
@@ -27,9 +23,9 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   Min_rij = DBL_MAX;
   Max_force = 0.;
   int SW_minrij = 1;
-  // Particle •Ï”‚Ì f ‚É 
+  // Particle å¤‰æ•°ã® f ã« 
   // !! += 
-  //‚Å‘«‚·. f ‚Ì‰Šú’l ‚ª³‚µ‚¢‚Æ‰¼’è‚µ‚Ä‚¢‚é!!
+  //ã§è¶³ã™. f ã®åˆæœŸå€¤ ãŒæ­£ã—ã„ã¨ä»®å®šã—ã¦ã„ã‚‹!!
   const double LJ_cutoff = A_R_cutoff * LJ_dia;
   double r_ij_vec[DIM];
   double r_ij;
@@ -207,10 +203,9 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
     double x[DIM];
     double dmyR;
     double dmy_phi;
-    double dmy_mass;
     int pspec;
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,dmy_mass,pspec) 
+  private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,pspec) 
     for(int n = 0; n < Particle_Number; n++){
       for (int d = 0; d < DIM; d++) {
 	xp[d] = p[n].x[d];
@@ -244,19 +239,9 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
       
 
       pspec = p[n].spec;
-      double dmy_mass2;
-      if(DBG_MASS_GRID){//correct mass grid resolution
-        dmy_mass = MASS[pspec] / (p[n].mass * DX3 * RHO_particle[pspec]);      
-        dmy_mass2 = (p[n].inertia[0][0] + p[n].inertia[1][1] + p[n].inertia[2][2])/3.0;
-        dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
-      }else{
-        dmy_mass = 1.0;
-        dmy_mass2 = 1.0;
-      }
-
       for(int d = 0; d < DIM; d++){
-	p[n].f_slip[d] = (dmy * force[d]) * dmy_mass;
-        p[n].torque_slip[d] = (dmy * torque[d]) * dmy_mass2;
+	p[n].f_slip[d] = (dmy * force[d]);
+        p[n].torque_slip[d] = (dmy * torque[d]);
       }
     }//Particle_number
 }
@@ -283,8 +268,6 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
     double dmyR;
     double dmy_phi;
     double v_rot[DIM];
-    double dmy_mass;
-    double dmy_inertia[DIM];
     int pspec;
 
     double forceg[DIM];
@@ -299,7 +282,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
     }
 
 #pragma omp parallel for schedule(dynamic, 1) \
-  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,dmy_mass,dmy_inertia,pspec, \
+  private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,pspec, \
           rigidID, forceg, torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
 	//double xp[DIM],vp[DIM],omega_p[DIM];
@@ -311,10 +294,9 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
 	    vp[d] = p[n].v[d];
 	    omega_p[d] = p[n].omega[d];
 
-	    force[d] = torque[d] = dmy_inertia[d] = 0.0;
+	    force[d] = torque[d] = 0.0;
             forceg[d] = torqueg[d] = 0.0;
 	}
-	dmy_mass = 0.0;
 
 	sw_in_cell 
 	    = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
@@ -330,12 +312,6 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
 	    dmy_phi= Phi(dmyR, RADIUS);
 	    Angular2v(omega_p, r, v_rot);
 
-	    //Mass grid factors
-	    dmy_mass += dmy_phi;
-	    for(int d = 0; d < DIM; d++){
-	      dmy_inertia[d] += dmy_phi * (dmyR * dmyR - r[d]*r[d]);
-	    }
-            
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 	    for(int d=0; d < DIM; d++ ){ 
               dmy_fp[d] = ((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;
@@ -356,23 +332,14 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
         }// mesh
 
         pspec = p[n].spec;
-        double dmy_mass2;
-        if(DBG_MASS_GRID){ //correct mass grid resolution
-          dmy_mass = MASS[pspec] / (dmy_mass * DX3 * RHO_particle[pspec]);
-          dmy_mass2 = (dmy_inertia[0] + dmy_inertia[1] + dmy_inertia[2])/3.0;
-          dmy_mass2 = MOI[pspec] / (dmy_mass2 * DX3 * RHO_particle[pspec]);
-        }else{
-          dmy_mass = 1.0;
-          dmy_mass2 =1.0;
-        }
 
         for(int d = 0; d < DIM; d++){
-          p[n].f_hydro[d] = (dmy * force[d]) * dmy_mass;
+          p[n].f_hydro[d] = (dmy * force[d]);
           p[n].f_slip[d] = 0.0;
 	}
 	if(ROTATION){
 	  for(int d = 0; d < DIM; d++){
-	    p[n].torque_hydro[d] = (dmy * torque[d]) * dmy_mass2;
+	    p[n].torque_hydro[d] = (dmy * torque[d]);
 	    p[n].torque_slip[d] = 0.0;
 	  }
 	}
@@ -431,12 +398,6 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     
     Reset_phi(Hydro_force);
     Reset_phi(Hydro_force_new);
-    if(DBG_LE_SHEAR){
-      Reset_phi(Hydro_force_new_u);
-      Reset_phi(Hydro_force_new_p);
-      Reset_phi(Hydro_force_new_v);
-      Reset_phi(Hydro_force_new_w);
-    }
 #pragma omp parallel for schedule(dynamic, 1)\
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,\
           dmyR,dmy_phi,dmy_rhop,dmy_ry,v_rot,sign,im,forceg,torqueg) 
@@ -500,11 +461,6 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
 #pragma omp atomic
         Hydro_force_new[im] += dmy_fp[0]*dmy_ry*dmy_rhop;
         
-        if(DBG_LE_SHEAR){
-#pragma omp atomic
-          Hydro_force_new_u[im] += dmy_fp[0]*dmy_ry*dmy_rhop;
-        }
-
         volume[n] += dmy_phi;
         Itrace[n] += dmy_phi*SQ(dmyR);
       }//mesh
@@ -550,14 +506,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
           double dmy_stress_w = -RHO*(torque[1]*r[2] - torque[2]*r[1])/Itrace[n];
 #pragma omp atomic
           Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi;
-          if(DBG_LE_SHEAR){
-#pragma omp atomic
-            Hydro_force_new_p[im] += dmy_stress_p*dmy_ry*dmy_phi;
-#pragma omp atomic
-            Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi;
-#pragma omp atomic
-            Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi;
-          }
+
         }
       }
       
@@ -589,7 +538,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
       for (int d = 0; d < DIM; d++) {
         xp[d] = p[n].x[d];
       }
-      sw_in_cell = Particle_cell(xp, DX, x_int, residue);// {1,0} ‚ª•Ô‚Á‚Ä‚­‚é
+      sw_in_cell = Particle_cell(xp, DX, x_int, residue);// {1,0} ãŒè¿”ã£ã¦ãã‚‹
       sw_in_cell = 1;
       
       for(int mesh=0; mesh < NP_domain; mesh++){
@@ -615,10 +564,6 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
           double dmy_stress_w = dWg[rigidID][1]*(GRvecs[n][2] + r[2]) - dWg[rigidID][2]*(GRvecs[n][1] + r[1]);
 #pragma omp atomic
           Hydro_force_new[im] += (dmy_stress_v + dmy_stress_w)*dmy_ry*dmy_phi*dmy_rhop;
-          if(DBG_LE_SHEAR){
-            Hydro_force_new_v[im] += dmy_stress_v*dmy_ry*dmy_phi*dmy_rhop;
-            Hydro_force_new_w[im] += dmy_stress_w*dmy_ry*dmy_phi*dmy_rhop;
-          }
         }
       }
     }//Particle_Number
