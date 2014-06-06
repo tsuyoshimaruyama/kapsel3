@@ -24,10 +24,7 @@ splineSystem** splineOblique;
 double*** uspline;
 
 Index_range* ijk_range_two_third_filter;
-Index_range* ijk_range_no_filter;
 int n_ijk_range_two_third_filter;
-int n_ijk_range_no_filter;
-
 
 int (*Calc_KX)( const int &i, const int &j, const int &k);
 int (*Calc_KY)( const int &i, const int &j, const int &k);
@@ -83,7 +80,6 @@ inline void Free_fft_ooura(void){
   free_1d_int(ip);
   Free_K();
   delete[] ijk_range_two_third_filter;
-  delete[] ijk_range_no_filter;
 }
 
 inline void Init_fft_ooura(void){
@@ -111,11 +107,7 @@ inline void Init_fft_ooura(void){
 
   Init_K();
 
-  if(SW_KFILTER == two_third_filter){
-    Truncate_two_third_rule = Truncate_two_third_rule_ooura;
-  }else if(SW_KFILTER == no_filter){
-    Truncate_two_third_rule = Truncate_two_third_rule_off;
-  }
+  Truncate_two_third_rule = Truncate_two_third_rule_ooura;
   { //for 2/3 rule
     Index_range dmy_range[] = {
       {0,TRN_X-1, 0,TRN_Y-1, 0,2*TRN_Z-1}
@@ -127,16 +119,6 @@ inline void Init_fft_ooura(void){
     ijk_range_two_third_filter   = new Index_range[n_ijk_range_two_third_filter];
     for(int n = 0; n < n_ijk_range_two_third_filter; n++){
       ijk_range_two_third_filter[n] = dmy_range[n];
-    }
-  }
-  { //for no filter
-    Index_range dmy_range[] = {
-      {0, NX-1, 0, NY-1, 0, NZ_-1}
-    };
-    n_ijk_range_no_filter = sizeof(dmy_range) / sizeof(Index_range);
-    ijk_range_no_filter   = new Index_range[n_ijk_range_no_filter];
-    for(int n = 0; n < n_ijk_range_no_filter; n++){
-      ijk_range_no_filter[n] = dmy_range[n];
     }
   }
 }

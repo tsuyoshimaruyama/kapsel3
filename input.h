@@ -57,7 +57,6 @@ enum JP  {motor,slip,obstacle,no_propulsion};
 
 enum OBL_INT {linear_int, spline_int};
 enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
-enum KFILTER {two_third_filter, no_filter};
 
 enum OUTFORMAT{OUT_NONE, OUT_AVS_ASCII, OUT_AVS_BINARY, OUT_EXT};
 enum EXTFORMAT{EXT_OUT_HDF5};
@@ -74,9 +73,6 @@ extern const char *PT_name[];
 //////
 extern OBL_INT SW_OBL_INT;
 extern const char *OBL_INT_name[];
-//////
-extern KFILTER SW_KFILTER;
-extern const char *KFILTER_name[];
 //////
 extern OUTFORMAT SW_OUTFORMAT;
 extern EXTFORMAT SW_EXTFORMAT;

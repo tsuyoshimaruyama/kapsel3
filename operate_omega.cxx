@@ -103,7 +103,7 @@ void Zeta_k2advection_k(double **zeta, double uk_dc[DIM], double **advection){
     //Truncate_vector_two_third_rule(zeta, DIM-1);
     //Zeta_k2u(zeta, uk_dc, u);
     for(int d=0; d<(DIM-1); d++){
-	Truncate_two_third_rule_ooura(zeta[d]);
+	Truncate_two_third_rule(zeta[d]);
     }
     Zeta_k2u_k(zeta, uk_dc, u);
     for(int d=0;d<DIM;d++){
@@ -116,7 +116,7 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
     //Truncate_vector_two_third_rule(zeta, DIM-1);
     //Zeta_k2u(zeta, uk_dc, u);
     for(int d=0; d<(DIM-1); d++){
-	Truncate_two_third_rule_ooura(zeta[d]);
+	Truncate_two_third_rule(zeta[d]);
     }
    
     Zeta_k2u_cpuky(zeta, uk_dc, u, work_v1);//contra

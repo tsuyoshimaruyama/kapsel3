@@ -10,10 +10,8 @@
 void (*Time_evolution)(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan);
 
 void Time_evolution_noparticle(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
-  const Index_range* ijk_range;
-  int n_ijk_range;
-  Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
-  
+  const Index_range* ijk_range = ijk_range_two_third_filter;
+  const int n_ijk_range = n_ijk_range_two_third_filter;
   if(SW_EQ == Navier_Stokes){
     NS_solver_slavedEuler(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p);
   }else if(SW_EQ == Shear_Navier_Stokes){
@@ -38,7 +36,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	}
 	
 	for(int d=0; d<(DIM-1); d++){
-	    Truncate_two_third_rule_ooura(zeta[d]);
+	    Truncate_two_third_rule(zeta[d]);
 	}
 	
 	Zeta_k2u(zeta, uk_dc, u);
@@ -176,10 +174,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 }
 
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
-    const Index_range* ijk_range;
-    int n_ijk_range;
-    Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
-  
+    const Index_range* ijk_range = ijk_range_two_third_filter;
+    const int n_ijk_range = n_ijk_range_two_third_filter;
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
     
     if(Particle_Number >= 0){
@@ -192,7 +188,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	}
 	/*
 	for(int d = 0; d < DIM - 1; d++){
-	    Truncate_two_third_rule_ooura(zeta[d]);
+	    Truncate_two_third_rule(zeta[d]);
 	}
 	*/
 

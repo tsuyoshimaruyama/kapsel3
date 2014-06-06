@@ -196,7 +196,7 @@ inline void Rhs_NS_solute(Particle *p
   //Truncate_vector_two_third_rule(zeta_k, DIM-1);
 
   for(int d=0; d<(DIM-1); d++){
-    Truncate_two_third_rule_ooura(zeta_k[d]);
+    Truncate_two_third_rule(zeta_k[d]);
   }
 
   Zeta_k2u(zeta_k, uk_dc, u);
@@ -204,7 +204,7 @@ inline void Rhs_NS_solute(Particle *p
 
 for(int n=0; n<N_spec; n++){
     //Truncate_two_third_rule(concentration_k[n]);
-    Truncate_two_third_rule_ooura(concentration_k[n]);
+    Truncate_two_third_rule(concentration_k[n]);
     Diffusion_flux_single(solute_flux,concentration_k[n],Onsager_coeff[n], rhs_ns[0]);
     A_k2a_out(concentration_k[n], rhs_solute[n]);
     Solute_solver_rhs_nonlinear_x_single(grad_potential
@@ -262,7 +262,7 @@ inline void Rhs_NS_Nernst_Planck(Particle *p
     Charge_field_k2Coulomb_potential_k_PBC(u[0]);
 
     //Truncate_two_third_rule(u[0]);
-    Truncate_two_third_rule_ooura(u[0]);
+    Truncate_two_third_rule(u[0]);
 
     A_k2da_k(u[0], grad_potential);
     Add_constant_field_k(grad_potential, E_ext, jikan);

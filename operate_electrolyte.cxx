@@ -392,9 +392,8 @@ inline void Set_steadystate_ion_density(double **Concentration
       double dmy_uk_dc[DIM];
       U_k2zeta_k(u, up, dmy_uk_dc);
       
-      const Index_range* ijk_range;
-      int n_ijk_range;
-      Get_ijk_range(ijk_range, n_ijk_range, SW_KFILTER);
+      const Index_range* ijk_range = ijk_range_two_third_filter;
+      const int n_ijk_range = n_ijk_range_two_third_filter;
       Ion_diffusion_solver_Euler(up, jikan, dmy_uk_dc, Concentration, p, ijk_range, n_ijk_range);
     }
     ///////////////////////

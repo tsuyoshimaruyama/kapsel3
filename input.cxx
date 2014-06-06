@@ -33,10 +33,6 @@ const char *PT_name[]={"spherical_particle"
 OBL_INT SW_OBL_INT;
 const char *OBL_INT_name[]={"linear", "spline"};
 
-//////
-KFILTER SW_KFILTER;
-const char *KFILTER_name[]={"2/3", "none"};
-
 OUTFORMAT SW_OUTFORMAT;
 EXTFORMAT SW_EXTFORMAT; 
 Field_crop      print_field_crop;
@@ -1706,20 +1702,8 @@ void Gourmet_file_io(const char *infile
           string str;
 
           //default values
-          SW_KFILTER=two_third_filter;
           SW_OBL_INT=linear_int;
           
-          if(ufin->get(target.sub("KFILTER"), str)){
-            ufout->put(target.sub("KFILTER"), str);
-            ufres->put(target.sub("KFILTER"), str);
-            if(str == KFILTER_name[two_third_filter]){ SW_KFILTER = two_third_filter;}
-            else if(str == KFILTER_name[no_filter]){ SW_KFILTER = no_filter;}
-            else{ exit_job(EXIT_FAILURE); }
-          }
-          if(SW_KFILTER == two_third_filter){fprintf(stderr, "# NS solver k-filter scheme: 2/3 rule\n");}
-          else if(SW_KFILTER == no_filter){ fprintf(stderr, "# NS solver k-filter scheme: NONE\n");}
-          else{exit_job(EXIT_FAILURE);}
-
           if(ufin->get(target.sub("OBL_INT"), str)){
             ufout->put(target.sub("OBL_INT"), str);
             ufres->put(target.sub("OBL_INT"), str);

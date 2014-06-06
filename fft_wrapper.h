@@ -53,30 +53,12 @@ extern splineSystem** splineOblique;
 extern double*** uspline;
 
 extern Index_range* ijk_range_two_third_filter;
-extern Index_range* ijk_range_no_filter;
 extern int n_ijk_range_two_third_filter;
-extern int n_ijk_range_no_filter;
 
 extern int (*Calc_KX)( const int &i, const int &j, const int &k);
 extern int (*Calc_KY)( const int &i, const int &j, const int &k);
 extern int (*Calc_KZ)( const int &i, const int &j, const int &k);
 extern void (*Truncate_two_third_rule)(double *a);
-
-/*!
-  \brief Get FFT filter index range
-  \warning Do not try to modify contents of ijk_range
- */
-inline void Get_ijk_range(const Index_range* &ijk_range, int &n_ijk_range, KFILTER &fflag){
-
-  if(fflag != no_filter){//default to 2/3
-    n_ijk_range = n_ijk_range_two_third_filter;
-    ijk_range   = ijk_range_two_third_filter;
-  }else{
-    n_ijk_range = n_ijk_range_no_filter;
-    ijk_range   = ijk_range_no_filter;
-  }    
-}
-
 
 /*!
   \brief Deallocate FFT memory
@@ -996,9 +978,5 @@ inline void Truncate_two_third_rule_ooura(double *a){
     dmy_range.kend=trn_z2-1;
     Truncate_general(a, dmy_range);
   }
-}
-
-inline void Truncate_two_third_rule_off(double *a){
-  return;
 }
 #endif
