@@ -1921,8 +1921,9 @@ void Gourmet_file_io(const char *infile
 			    if(print_field_crop.width <= 0 ||
 			       (print_field_crop.start + print_field_crop.width) >
 			       Ns[print_field_crop.rank]){
-			      fprintf(stderr, "Invalid Slab width value:1 <= %d <= %d\n",
-				      print_field_crop.start + print_field_crop.width,
+			      fprintf(stderr, "Invalid Slab width value: 0< %d && 0 <= %d + %d <= %d\n",
+				      print_field_crop.width,
+				      print_field_crop.start, print_field_crop.width,
 				      Ns[print_field_crop.rank]);
 			      exit_job(EXIT_FAILURE);
 			    }

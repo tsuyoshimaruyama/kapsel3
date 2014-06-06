@@ -394,7 +394,7 @@ void hdf5_writer::show_parameter() {
   fprintf(stderr, "# Grid spacing         = %.3g\n", DX);
   fprintf(stderr, "# Time between frames  = %.3g\n", dt);
   if(!print_particle.none){
-    fprintf(stderr, "# Particles Range      = %d -> %d\n", print_particle.first, nump);
+    fprintf(stderr, "# Particles Range      = %d -> %d\n", print_particle.first, nump-1);
   }else{
     fprintf(stderr, "# Particle Data is being suppressed\n");
   }
