@@ -8,10 +8,10 @@
  */
 
 #include "output.h"
-
-output_writer *writer;
+output_writer *writer;    //pointer to base writer
+hdf5_writer   *h5writer;  //pointer to hdf5 writer
 void Init_output(){
-  
+  writer = h5writer = NULL;
   if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){ // LEGACY AVS
     //extended options not supported for AVS
     //no cropping
@@ -57,16 +57,15 @@ void Init_output(){
 
     // Initialize writers
     if(SW_EXTFORMAT == EXT_OUT_HDF5){
-      hdf5_writer* h5writer = new hdf5_writer(NX, NY, NZ, NZ_, DX,
-					      Particle_Number, 
-					      DT*GTS,
-					      Out_dir, 
-					      Out_name,
-					      print_field_crop,
-					      print_field,
-					      print_particle);
-      
-      writer = h5writer;
+      h5writer = new hdf5_writer(NX, NY, NZ, NZ_, DX,
+				 Particle_Number, 
+				 DT*GTS,
+				 Out_dir, 
+				 Out_name,
+				 print_field_crop,
+				 print_field,
+				 print_particle);
+      writer = static_cast<output_writer*>(h5writer);
     }
   }
 }
@@ -92,8 +91,18 @@ void Show_output_parameter(){
   }
 }
 void Output_open_frame(){
-  if(SW_OUTFORMAT == OUT_EXT)
+  if(SW_OUTFORMAT == OUT_EXT){
     writer -> write_start();
+
+    //hdf5 specific options : write data to current frame
+    if(SW_EXTFORMAT == EXT_OUT_HDF5){
+      if(SW_EQ == Shear_Navier_Stokes || 
+	 SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+	float dmy_float = static_cast<float>(degree_oblique);
+	h5writer -> write_frame_attributes("gamma", &dmy_float, 1);
+      }
+    }
+  }
     
 }
 void Output_close_frame(){

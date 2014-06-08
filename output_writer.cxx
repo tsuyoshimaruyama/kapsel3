@@ -22,6 +22,10 @@ const char* hdf5_writer::p_torque_h_name= "torque_h";
 const char* hdf5_writer::p_torque_r_name= "torque_r";
 const char* hdf5_writer::p_QR_name ="QR";
 
+//hdf5 group names
+const char* hdf5_writer::gid_field_name="field_data";
+const char* hdf5_writer::gid_part_name="particle_data";
+
 //hdf5 writer Constructor / Destroyer
 hdf5_writer::hdf5_writer(const int&    _NX,
 			 const int&    _NY,
@@ -188,28 +192,26 @@ hdf5_writer::~hdf5_writer(){
 //Inherited functions
 //
 void hdf5_writer::write_start(){
-  char dmy_group[128];
   //open file & groups
   {
-    sprintf(dmy_group, "/frame_%d", ts);
-    gid_time  = H5Gcreate(fid, dmy_group, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    sprintf(gid_time_name, "/frame_%d", ts);
+    gid_time  = H5Gcreate(fid, gid_time_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_time);
 
     //create field group
-    gid_field = H5Gcreate(gid_time, "field_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    gid_field = H5Gcreate(gid_time, gid_field_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_field);
 
     //create particle group
-    gid_part  = H5Gcreate(gid_time, "particle_data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    gid_part  = H5Gcreate(gid_time, gid_part_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_part);
   }
 
   //add attributes
+
   {
-    herr_t status;
     float dmy_float = static_cast<float>(ts)*dt;
-    status = H5LTset_attribute_float(gid_time, dmy_group, "time", &dmy_float, 1);
-    h5_check_err(status);
+    this->write_frame_attributes("time", &dmy_float, 1);
   }
 }
 void hdf5_writer::write_end(){

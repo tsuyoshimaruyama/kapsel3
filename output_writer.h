@@ -64,6 +64,17 @@ class hdf5_writer : public output_writer {
   void write_end();
 
   /*!
+    \brief Write float attribute data to current time frame attributes
+   */
+  inline void write_frame_attributes(const char* name, const float* attr, 
+				     const int& rank){
+    herr_t status;
+    status = H5LTset_attribute_float(gid_time, gid_time_name, name,
+				     attr, rank);
+    h5_check_err(status);
+  }
+
+  /*!
     \brief Write field data to open frame
    */
   void write_field_data(double**u, double* phi, double* pressure,
@@ -144,6 +155,11 @@ class hdf5_writer : public output_writer {
   hid_t  gid_time;   //time frame id
   hid_t  gid_field;  //group id for field data
   hid_t  gid_part;   //group id for particle data
+
+  char   gid_time_name[128];       //time frame group name
+  static const char* gid_field_name;  //field group name
+  static const char* gid_part_name;   //particle group name
+
 
   //Field Output
   static const hsize_t mem_rank_field = 1;

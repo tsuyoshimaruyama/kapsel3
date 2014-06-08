@@ -17,6 +17,7 @@
 #include "output_writer.h"
 
 extern output_writer *writer;
+extern hdf5_writer   *h5writer;
 
 void Init_output();
 void Free_output();
