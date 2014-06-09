@@ -1766,6 +1766,10 @@ void Gourmet_file_io(const char *infile
 		    }else if(str == OUTFORMAT_name[OUT_AVS_ASCII]){
 		      SW_OUTFORMAT = OUT_AVS_ASCII;
 		    }else if(str == OUTFORMAT_name[OUT_EXT]){
+		      #ifndef WITH_EXTOUT
+		      fprintf(stderr, "Error: Kapsel compiled without EXTENDED output support\n");
+		      exit_job(EXIT_FAILURE);
+		      #endif
 		      SW_OUTFORMAT = OUT_EXT;
 		      target.down("EXTENDED");
 		      {

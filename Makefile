@@ -83,8 +83,6 @@ ifeq ($(ENV), ICC_MKL_OMP)
       GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
 endif
 
-CFLAGS 	= $(CCOPT) -L$(GOURMET_LIB_PATH) -I$(GOURMET_INCLUDE_PATH)
-
 OBJS  	= mt19937ar.o\
 	operate_electrolyte.o\
 	fluct.o\
@@ -113,6 +111,14 @@ OBJS  	= mt19937ar.o\
 	matrix_diagonal.o\
 	periodic_spline.o\
 	sp_3d_ns.o
+
+
+ifeq ($(HDF5), ON)
+      LINKS  += -lhdf5 -lhdf5_hl
+      CCOPT  += -DWITH_EXTOUT -L/opt/hdf5.1.8/lib -I/opt/hdf5.1.8/include
+      OBJS   += output_writer.o
+endif
+CFLAGS 	= $(CCOPT) -L$(GOURMET_LIB_PATH) -I$(GOURMET_INCLUDE_PATH)
 
 XYZ_OBJS= alloc.o\
 	rigid_body.o\

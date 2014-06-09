@@ -8,10 +8,14 @@
  */
 
 #include "output.h"
+#ifdef WITH_EXTOUT
 output_writer *writer;    //pointer to base writer
 hdf5_writer   *h5writer;  //pointer to hdf5 writer
+#endif 
 void Init_output(){
+#ifdef WITH_EXTOUT
   writer = h5writer = NULL;
+#endif
   if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){ // LEGACY AVS
     //extended options not supported for AVS
     //no cropping
@@ -32,6 +36,7 @@ void Init_output(){
     if(!print_particle.none)
       Init_avs_p(Avs_parameters);
   }else if(SW_OUTFORMAT == OUT_EXT){
+#ifdef WITH_EXTOUT
     //Setup extended parameters
 
     //field selection
@@ -67,12 +72,15 @@ void Init_output(){
 				 print_particle);
       writer = static_cast<output_writer*>(h5writer);
     }
+#endif
   }
 }
 void Free_output(){
+#ifdef WITH_EXTOUT
   if(SW_OUTFORMAT == OUT_EXT){
     writer->~output_writer();
   }
+#endif
 }
 void Show_output_parameter(){
   if(SW_UDF){
@@ -85,12 +93,15 @@ void Show_output_parameter(){
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Show_avs_parameter();
   }else if(SW_OUTFORMAT == OUT_EXT){
+#ifdef WITH_EXTOUT
     writer -> show_parameter();
+#endif
   }else{
     fprintf(stderr, "# Field/Particle output is disabled.\n");
   }
 }
 void Output_open_frame(){
+#ifdef WITH_EXTOUT
   if(SW_OUTFORMAT == OUT_EXT){
     writer -> write_start();
 
@@ -103,11 +114,14 @@ void Output_open_frame(){
       }
     }
   }
+#endif
     
 }
 void Output_close_frame(){
+#ifdef WITH_EXTOUT
   if(SW_OUTFORMAT == OUT_EXT)
     writer -> write_end();
+#endif
 }
 
 void Output_field_data(double** zeta,
@@ -173,7 +187,9 @@ void Output_field_data(double** zeta,
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
   }else if(SW_OUTFORMAT == OUT_EXT){
+#ifdef WITH_EXTOUT
     writer->write_field_data(u, phi, Pressure, strain);
+#endif
   }
 }
 
@@ -231,7 +247,9 @@ void Output_charge_field_data(double** zeta,
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs_charge(Avs_parameters, u, phi, up[0], up[1], potential, time);
   }else if(SW_OUTFORMAT == OUT_EXT){
+#ifdef WITH_EXTOUT
     writer -> write_charge_field_data(u, phi, up[0], up[1], potential);
+#endif
   }
 
   //recover original state
@@ -247,7 +265,9 @@ void Output_particle_data(Particle* p, const CTime& time){
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs_p(Avs_parameters, p, time);
   }else{
+#ifdef WITH_EXTOUT
     writer->write_particle_data(p);
+#endif
   }
 }
 

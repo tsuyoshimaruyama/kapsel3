@@ -14,10 +14,11 @@
 #include "fft_wrapper.h"
 #include "avs_output.h"
 #include "avs_output_p.h"
+#ifdef WITH_EXTOUT
 #include "output_writer.h"
-
 extern output_writer *writer;
 extern hdf5_writer   *h5writer;
+#endif
 
 void Init_output();
 void Free_output();
