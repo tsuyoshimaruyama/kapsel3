@@ -8,10 +8,7 @@
 
 #include "md_force.h"
 
-double Min_rij;
-double Max_force;
 double *Hydro_force;
-
 double *Hydro_force_new;
 
 #define Cell_length 16
@@ -20,20 +17,16 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
 				      ,const double cap
 				       ){
-  Min_rij = DBL_MAX;
-  Max_force = 0.;
-  int SW_minrij = 1;
   // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
   const double LJ_cutoff = A_R_cutoff * LJ_dia;
   double r_ij_vec[DIM];
   double r_ij;
-  int rigid_pair;
   double shear_stress=0.0;
 
 // List Constructor
-  int i,j,k;
+  int i,j;
   int *lscl;
   lscl = alloc_1d_int(Particle_Number);
   int lc[DIM];
@@ -91,25 +84,14 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			  while (i != -1){
 			      j = head[cl];
 			      while (j != -1){
-                                rigid_pair = rigid_chain(i, j);
-				  if (i > j && !rigid_pair) {
+                                if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
 				      distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
-				      if(SW_minrij){
-					  Min_rij = MIN(r_ij, Min_rij);
-				      }
 				      if (r_ij < LJ_cutoff){
 					  double dmy = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));
-					  double dmyf = 0.;
 					  for(int d=0; d < DIM; d++ ){ 
 					      double dmy1 = dmy * -r_ij_vec[d];
-					      if(SW_minrij){
-						  dmyf += SQ(dmy1);
-					      }
 					      p[i].fr[d] += dmy1;
 					      p[j].fr[d] -= dmy1;
-					  }
-					  if(SW_minrij){
-					      Max_force = MAX(sqrt(dmyf),Max_force);
 					  }
 					  shear_stress += ((dmy * -r_ij_vec[0])* (r_ij_vec[1]));
 				      }
@@ -133,39 +115,24 @@ double Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 						,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
 						,const double cap
 				       ){
-    Min_rij = DBL_MAX;
-    Max_force = 0.;
-    int SW_minrij = 1;
     // Particle $BJQ?t$N(B f $B$K(B 
     // !! += 
     //$B$GB-$9(B. f $B$N=i4|CM(B $B$,@5$7$$$H2>Dj$7$F$$$k(B!!
     const double LJ_cutoff = A_R_cutoff * LJ_dia;
     double shear_stress=0.0;
-    int rigid_pair;
     for(int n=0;n<Particle_Number ; n++){
 	Particle *p_n = &p[n];
 	for(int m=n+1; m < Particle_Number ; m++){
 	    double r_ij_vec[DIM];
 	    double r_ij;
 	    distance0_func( (*p_n).x, p[m].x, r_ij, r_ij_vec);
-	    if(SW_minrij){
-		Min_rij = MIN(r_ij, Min_rij);
-	    }
-            rigid_pair = rigid_chain(n, m);
-	    if(r_ij < LJ_cutoff && !rigid_pair){
+	    if(r_ij < LJ_cutoff && !rigid_chain(n,m) && !obstacle_chain(p[n].spec,p[m].spec)){
 		
 		double dmy = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));
-		double dmyf = 0.;
 		for(int d=0; d < DIM; d++ ){ 
 		    double dmy1 = dmy * -r_ij_vec[d];
-		    if(SW_minrij){
-			dmyf += SQ(dmy1);
-		    }
 		    (*p_n).fr[d] += dmy1;
 		    p[m].fr[d] -= dmy1;
-		}
-		if(SW_minrij){
-		    Max_force = MAX(sqrt(dmyf),Max_force);
 		}
 		shear_stress += ((dmy * -r_ij_vec[0])* (r_ij_vec[1]));
 	    }

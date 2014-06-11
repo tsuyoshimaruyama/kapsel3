@@ -14,8 +14,6 @@
 #include "interaction.h"
 #include "make_phi.h"
 
-extern double Min_rij;
-extern double Max_force;
 extern double *Hydro_force;
 extern double *Hydro_force_new;
 

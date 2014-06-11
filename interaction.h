@@ -23,6 +23,18 @@ inline int rigid_chain(const int &i, const int &j){
   return dmy;
 }
 
+/*
+  \brief Determine if two particles are both obstacles
+ */
+inline int obstacle_chain(const int &spec_i, const int &spec_j){
+  int dmy = 0;
+  if((janus_propulsion[spec_i] == obstacle) &&
+     (janus_propulsion[spec_j] == obstacle)){
+    dmy = 1;
+  }
+  return dmy;
+}
+
 /*!
   \brief Distance vector between two points under periodic Lees-Edwards
   boundary conditions
@@ -155,7 +167,7 @@ inline double Distance(const double *x1
  */
 inline double Lennard_Jones_f(const double &x, const double sigma){
   //    printf("%d\n",LJ_powers);
-  // ! x== 0.0 $B$N=hM}$r>JN,(B
+  // ! x== 0.0 の処理を省略
   double answer=0.0;
   {
     if(LJ_powers==0){//12:6

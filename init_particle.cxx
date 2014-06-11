@@ -18,9 +18,21 @@ void Init_Particle(Particle *p){
     Angular2v = Angular2v_rot_off;
   }
   if(VF > 1.0){
-    fprintf(stderr,"volume fraction = %g > 1\n", VF);
-    fprintf(stderr,"too many particles\n");
-    exit_job(EXIT_FAILURE);
+    int ok_overlap = 0;
+    if(SW_PT == spherical_particle ){
+      for(int i = 0; i < Component_Number; i++){
+        if(janus_propulsion[i] == obstacle) ok_overlap = 1;
+      }
+    }else if(SW_PT == rigid){
+      ok_overlap = 1;
+    }
+    if(ok_overlap){
+      fprintf(stderr,"# WARNING: volume fraction = %g > 1\n", VF);
+    }else{
+      fprintf(stderr,"volume fraction = %g > 1\n", VF);
+      fprintf(stderr,"too many particles\n");
+      exit_job(EXIT_FAILURE);
+    }
   }
   if(DISTRIBUTION == None){ // position
     fprintf(stderr, "#init_particle: configuration directly specified in main().: ");
