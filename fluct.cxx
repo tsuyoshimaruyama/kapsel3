@@ -18,19 +18,22 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
   static double noise_intensity_o = kT_snap_o * sdv_omega;
 
   if(SW_PT != rigid){
+#pragma omp parallel for schedule(dynamic, 1)
     for(int n=0; n<Particle_Number; n++){
-      double dmy[6];
-      Gauss2(dmy);
-      Gauss2(dmy+2);
-      Gauss2(dmy+4);
-  
-      double imass = IMASS[p[n].spec];
-      double imoi = IMOI[p[n].spec];
-      
-      for(int d=0; d<DIM; d++){
-        p[n].v[d] += dmy[d]*noise_intensity_v*imass;
-        if(ROTATION){
-        p[n].omega[d] += dmy[d+3]*noise_intensity_o*imoi;
+      if(janus_propulsion[p[n].spec] != obstacle){
+        double dmy[6];
+        Gauss2(dmy);
+        Gauss2(dmy+2);
+        Gauss2(dmy+4);
+        
+        double imass = IMASS[p[n].spec];
+        double imoi = IMOI[p[n].spec];
+        
+        for(int d=0; d<DIM; d++){
+          p[n].v[d] += dmy[d]*noise_intensity_v*imass;
+          if(ROTATION){
+            p[n].omega[d] += dmy[d+3]*noise_intensity_o*imoi;
+          }
         }
       }
     }
