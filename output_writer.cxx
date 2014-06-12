@@ -106,7 +106,7 @@ hdf5_writer::hdf5_writer(const int&    _NX,
 	  mem_offset = slab_start*NZ_;
 	  mem_stride = NY*NZ_;
 	  mem_count  = NX;
-	  mem_block  = slab_width;
+          mem_block  = slab_width*NZ_;
 	}else if(rank == 2){ //xy slab
 	  mem_offset = slab_start;
 	  mem_stride = NZ_;
@@ -133,7 +133,7 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       //check consistency between memory and disk spaces
       {
 	hsize_t slab_npoints = H5Sget_select_npoints(mem_dataspace_field);
-	assert(slab_npoints = out_dims_field[0]*out_dims_field[1]*out_dims_field[2]);
+	assert(slab_npoints == out_dims_field[0]*out_dims_field[1]*out_dims_field[2]);
       }
     }
   }//HDF5
