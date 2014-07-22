@@ -244,14 +244,28 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
     if(OPERATION == INIT){
       sprintf(line_label,"#");
       if(SW_EQ==Shear_Navier_Stokes_Lees_Edwards){
-        if(!Shear_AC){
+	/*
+	if(!Shear_AC){
 	  for(int d=1; d<sizeof(labels_le_dc)/sizeof(char *); d++)
 	    sprintf(line_label, "%s%d:%s ", line_label, d, labels_le_dc[d]);
         }else{
           fprintf(stderr, "Error: Incorrect Shear calculation\n");
           exit_job(EXIT_FAILURE);
         }
+	*/
+	//AC
+	if(!Shear_AC){
+	  for(int d=1; d<sizeof(labels_le_dc)/sizeof(char *); d++)
+	    sprintf(line_label, "%s%d:%s ", line_label, d, labels_le_dc[d]);
+        }else if(Shear_AC){
+	  for(int d=1; d<sizeof(labels_le_dc)/sizeof(char *); d++)
+	    sprintf(line_label, "%s%d:%s ", line_label, d, labels_le_dc[d]);
+	}else{
+          fprintf(stderr, "Error: Incorrect Shear calculation\n");
+          exit_job(EXIT_FAILURE);
+        }
 
+	//
       }else if(SW_EQ==Shear_Navier_Stokes){
         if(!Shear_AC){
           for(int d=1; d<sizeof(labels_zz_dc)/sizeof(char *); d++)

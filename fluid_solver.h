@@ -281,9 +281,9 @@ inline void Reset_phi_OBL(double *phi, double const* work_v1){
 /*!
   \brief Reset velocity field when oblique degree is equal to one
  */
-inline void Reset_U_OBL(double **u, double const* const* ucp){
+inline void Reset_U_OBL(double **u, double const* const* ucp,int flg){
   int im, im_obl;
-
+  
 #pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++) {
@@ -292,21 +292,48 @@ inline void Reset_U_OBL(double **u, double const* const* ucp){
       if (!(sign == 0)) {
         sign = sign/fabs(sign);
       }
-      
-      int i_oblique = (int)(sign*(j - NY/2))*sign;
-      i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
-      for(int k = 0; k < NZ; k++){
-        im = (i*NY*NZ_)+(j*NZ_) + k;
-        im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
-        
-        //Warning: reset grid points AND oblique basis vectors
+      /*
+	int i_oblique = (int)(sign*(j - NY/2))*sign;
+	i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+	for(int k = 0; k < NZ; k++){
+	im = (i*NY*NZ_)+(j*NZ_) + k;
+	im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
+	
+	//Warning: reset grid points AND oblique basis vectors
         u[0][im_obl] = ucp[0][im] + ucp[1][im];
         u[1][im_obl] = ucp[1][im];
         u[2][im_obl] = ucp[2][im];
+      */
+      //AC
+      if(flg==0) {//reset 1=>0
+	int i_oblique = (int)(sign*(j - NY/2))*sign;
+	i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+	for(int k = 0; k < NZ; k++){
+	  im = (i*NY*NZ_)+(j*NZ_) + k;
+	  im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
+	  
+	  //Warning: reset grid points AND oblique basis vectors
+	  u[0][im_obl] = ucp[0][im] + ucp[1][im];
+	  u[1][im_obl] = ucp[1][im];
+	  u[2][im_obl] = ucp[2][im];
+	}
       }
+      else{
+	int i_oblique = -(int)(sign*(j - NY/2))*sign;
+	i_oblique      = (int) fmod(i + i_oblique + 4.*NX, NX);
+	for(int k = 0; k < NZ; k++){
+	  im = (i*NY*NZ_)+(j*NZ_) + k;
+	  im_obl = (i_oblique*NY*NZ_)+(j*NZ_) + k;
+	  //Warning: reset grid points AND oblique basis vectors
+	  u[0][im_obl] = ucp[0][im] - ucp[1][im];
+	  u[1][im_obl] = ucp[1][im];
+	  u[2][im_obl] = ucp[2][im];
+	}
+      }//
     }
   }
 }
+
 
 /*!
   \brief Update magnitude of k vectors 
