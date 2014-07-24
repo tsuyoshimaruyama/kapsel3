@@ -677,8 +677,7 @@ inline void A2a_k(double *a){
     for (int j = 0; j< NY; j++){
       for (int l = 0; l< NZ; l++){
 	int im = (i*NY*NZ_)+(j*NZ_)+l; 
-	int im_z = (i*NY*NZ)+(j*NZ)+l; 
-	a_cp[im_z]=a[im];
+	a_cp[i][j][l] = a[im];
       }
     }
   }
@@ -690,11 +689,8 @@ inline void A2a_k(double *a){
     for (int j = 0; j< NY; j++) {
       for (int l = 0; l< NZ/2+1; l++){
         int im = (i*NY*NZ_)+(j*NZ_)+2*l; 
-	int im_z = (i*NY*NZ)+(j*NZ)+2*l; 
-	// a[im]=a_cp[i][j][2*l];
-	// a[im+1]=a_cp[i][j][2*l+1];
-	a[im]=a_cp[im_z];
-	a[im]=a_cp[im_z+1];
+	a[im]=a_cp[i][j][2*l];
+	a[im+1]=a_cp[i][j][2*l+1];
       }
     }
   }
