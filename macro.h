@@ -24,6 +24,7 @@ const double Euler_cst = 0.57721566490153286060651209008240243104215933593992359
 const double PI4 = 4. * M_PI;
 const double PI2 = 2. * M_PI;
 const double PI_half = .5 * M_PI;
+const double iRoot_PI = 1.0/sqrt(M_PI);
 const double One_third= 1./3.;
 const double Root_six= sqrt(6.);
 const double Root_two= sqrt(2.);
