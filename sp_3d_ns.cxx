@@ -204,13 +204,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         }else{
           Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
         }
-	
-        //Shear_rate_eff = Shear_rate;
-	if(!Shear_AC){
-        Shear_rate_eff = Shear_rate;
-        }else{
-          Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
-        }
         degree_oblique += Shear_rate_eff*jikan.dt_fluid;
         if (degree_oblique >= 1.) {
 	  int flag =0;
@@ -476,7 +469,7 @@ int main(int argc, char *argv[]){
 	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
     } else if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
 	Shear_strain_realized += Shear_rate_eff * jikan.dt_fluid;
-	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate);
+	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
     }
 
     //////////////////////////////////////////////////////////

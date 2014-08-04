@@ -231,8 +231,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
     };
     static const char *labels_le[]={""
 				    ,"time"
-				    ,"degree_oblique"
 				    ,"shear_rate"
+				    ,"degree_oblique"
 				    ,"shear_strain_temporal"
 				    ,"lj_dev_stress_temporal"
 				    ,"shear_stress_temporal_old"
@@ -273,8 +273,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 	double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
 	fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		,jikan.time
-		,degree_oblique
 		,srate_eff
+		,degree_oblique
 		,strain_output
 		,dev_stress
 		,hydro_stress[1][0]
