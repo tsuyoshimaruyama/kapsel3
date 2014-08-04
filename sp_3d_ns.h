@@ -231,6 +231,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
     };
     static const char *labels_le[]={""
 				    ,"time"
+				    ,"degree_oblique"
 				    ,"shear_rate"
 				    ,"shear_strain_temporal"
 				    ,"lj_dev_stress_temporal"
