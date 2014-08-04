@@ -93,9 +93,6 @@ extern double Shear_rate;
 extern double Shear_rate_eff;
 extern double Shear_strain_realized;
 //AC
-extern double Shear_strain;
-extern int Shear_strain_int;
-//
 extern double Shear_frequency;
 extern double Inertia_stress;
 extern double dev_shear_stress[];

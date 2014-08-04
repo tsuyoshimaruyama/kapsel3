@@ -119,9 +119,6 @@ double Shear_rate;
 double Shear_rate_eff;
 double Shear_strain_realized;
 //AC
-double Shear_strain;
-int    Shear_strain_int;
-//
 double Shear_frequency;
 double Inertia_stress;
 double dev_shear_stress[0];
@@ -654,14 +651,6 @@ void Gourmet_file_io(const char *infile
 			fprintf(stderr,"# DC steady shear: shear rate %f \n", Shear_rate);
 		    }
 		    if(str == "AC"){// in near future, someone will extend this section.
-		      /*	
-		      target.down("AC");
-		      Shear_AC = 0;
-		      ufin->get(target.sub("Shear_rate"),Shear_rate);
-		      ufout->put(target.sub("Shear_rate"),Shear_rate);
-		      ufres->put(target.sub("Shear_rate"),Shear_rate);
-		      fprintf(stderr,"# DC steady shear: shear rate %f \n", Shear_rate);
-		      */
 		      //AC by otomura
 		      target.down("AC");
 		      Shear_AC = 1;
@@ -672,7 +661,6 @@ void Gourmet_file_io(const char *infile
 		      ufout->put(target.sub("Frequency"),Shear_frequency);
 		      ufres->put(target.sub("Frequency"),Shear_frequency);
 		      fprintf(stderr,"# AC oscillatory shear: (shear rate, frequency, the maximum amp of strain)= %f %f %f\n",Shear_rate, Shear_frequency, Shear_rate/Shear_frequency);
-		      //
 
 		    }
 		}

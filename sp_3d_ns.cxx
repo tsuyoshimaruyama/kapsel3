@@ -182,24 +182,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
     const Index_range* ijk_range = ijk_range_two_third_filter;
     const int n_ijk_range = n_ijk_range_two_third_filter;
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
-    //AC
-    static const double iLy = 1./L[1];
-    
-    if(!Shear_AC){
-      Shear_strain = -Shear_rate * LY * jikan.dt_fluid * jikan.ts;
-      double dmy = fmod(Shear_strain,L[1]);
-      Shear_strain_int +=(int)((Shear_strain-dmy)*iLy);
-      Shear_strain = dmy;
-    }
-    else{
-      Shear_strain = shear_amp * LY * ( sin(Angular_Frequency * jikan.dt_fluid * jikan.ts) );
-      const int a = (int)((floor)(shear_amp)) + 1;
-      double dmy = fmod(Shear_strain + a*L[1], L[1]);
-      Shear_strain_int += (int)((Shear_strain - dmy) * iLy);
-      Shear_strain = dmy;
-      if(jikan.ts==0)degree_oblique = Shear_strain*iLy;
-    }
-      //      
+         
     if(Particle_Number >= 0){
 	if(FIX_CELL){ // time-dependent average pressure gradient
 	    for(int d=0;d<DIM;d++){
@@ -216,35 +199,20 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
         Zeta_k2u_k_OBL(zeta, uk_dc, u);
         U_k2u(u);
-	//AC
 	if(!Shear_AC){
           Shear_rate_eff = Shear_rate;
-        }
-        else{
+        }else{
           Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
         }
-	//if(jikan.ts%GTS==0)stress_calc_fluid_k(u,u_b,U2_k,pres,jikan);
-	//
 	
         //Shear_rate_eff = Shear_rate;
-        //AC
 	if(!Shear_AC){
-          Shear_rate_eff = Shear_rate;
-        }
-        else{
+        Shear_rate_eff = Shear_rate;
+        }else{
           Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
         }
-	//
-	degree_oblique += Shear_rate_eff*jikan.dt_fluid;
-	/*
+        degree_oblique += Shear_rate_eff*jikan.dt_fluid;
         if (degree_oblique >= 1.) {
-          Reset_U_OBL(ucp, u);
-          Swap_mem(u, ucp);
-          degree_oblique -= 1.;
-        }
-	*/
-	//AC
-	if (degree_oblique >= 1.) {
 	  int flag =0;
 	  Reset_U_OBL(ucp, u,flag);
           Swap_mem(u, ucp);
@@ -256,7 +224,6 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	  Swap_mem(u,ucp);
 	  degree_oblique +=1.;
 	}
-	//
 
         Copy_v3(ucp, u);
         Transform_obl_u(ucp, oblique2cartesian, jikan.ts);
@@ -308,10 +275,9 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	
         U2u_k(u);
 	Solenoidal_uk_OBL(u);
-	
+
 	U_k2zeta_k_OBL(u, zeta, uk_dc);
     }
-    std::cout<<jikan.ts<<" "<<degree_oblique<<" "<<Shear_rate_eff<<" "<<Shear_strain_realized<<std::endl;
 }
 
 inline void Mem_alloc_var(double **zeta){

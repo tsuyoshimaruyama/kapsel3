@@ -453,7 +453,7 @@ inline void U2u_oblique(double **uu) {
 
     Copy_v3(work_v3, uu);
     
-    #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 
@@ -481,42 +481,42 @@ inline void U2u_oblique(double **uu) {
 
 inline void U_oblique2u(double **uu, const bool &add_mean_flow = true) {
 
-  int im;
-  int im_ob;
-  int im_p;
-  
-  Copy_v3(work_v3, uu);
-  
-  #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
-  for (int i = 0; i < NX; i++) {
-    for (int j = 0; j < NY; j++) {
-      
-      int i_plus, i_oblique;
-      double alpha, beta;
-      obl2orth(j, i, i_plus, i_oblique, alpha, beta);
-      
-      for (int k = 0; k < NZ; k++) {
-	im      = (i*NY*NZ_) + (j*NZ_) + k;
-	im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
-	im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
-	
-	//oblique grid -> orthogonal grid
-	for(int d = 0; d < DIM; d++){
-	  uu[d][im_ob] = beta*work_v3[d][im] + alpha*work_v3[d][im_p];
-	}
-	
-	//oblique coordinates -> orthogonal coordinates
-	//warning: mean shear flow is added by default!
+    int im;
+    int im_ob;
+    int im_p;
+
+    Copy_v3(work_v3, uu);
+
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+
+	    int i_plus, i_oblique;
+	    double alpha, beta;
+	    obl2orth(j, i, i_plus, i_oblique, alpha, beta);
+
+	    for (int k = 0; k < NZ; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+		im_ob   = (i_oblique*NY*NZ_) + (j*NZ_) + k;
+		im_p    = (i_plus*NY*NZ_) + (j*NZ_) + k;
+
+		//oblique grid -> orthogonal grid
+		for(int d = 0; d < DIM; d++){
+		  uu[d][im_ob] = beta*work_v3[d][im] + alpha*work_v3[d][im_p];
+		}
+
+		//oblique coordinates -> orthogonal coordinates
+		//warning: mean shear flow is added by default!
 		uu[0][im_ob] += (degree_oblique*uu[1][im_ob]);
 		if(add_mean_flow) uu[0][im_ob] += Shear_rate_eff*(j - NY/2.0);
-      }
+	    }
+	}
     }
-  }
 }
 
 //Symmetric contravariant strain tensor from oblique to orthogonal
 inline void E_oblique2E(double **EE, const bool &add_mean_flow=true){
-  int im; 
+    int im; 
   int im_ob;
   int im_p;
   double *work_v5[QDIM] = {work_v3[0], 
@@ -526,7 +526,7 @@ inline void E_oblique2E(double **EE, const bool &add_mean_flow=true){
                            work_v2[1]};
   Copy_v5(work_v5, EE);
   
-   #pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       
@@ -580,114 +580,109 @@ inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &i
 
 
 inline void contra2co(double **contra) {
-  
-  int im;
-  
-  Copy_v3_k(work_v3, contra);
-  
-  #pragma omp parallel for schedule(dynamic, 1) private(im)
-  for (int i = 0; i < NX; i++) {
-    for (int j = 0; j < NY; j++) {
-      for (int k = 0; k < NZ_; k++) {
-	im      = (i*NY*NZ_) + (j*NZ_) + k;
-	
-	contra[0][im] =
-	  work_v3[0][im] +
-	  degree_oblique*work_v3[1][im];
-	contra[1][im] =
-	  degree_oblique*work_v3[0][im] +
-	  (1. + degree_oblique*degree_oblique)*work_v3[1][im];
-	contra[2][im] =
-	  work_v3[2][im];
-      }
+
+    int im;
+
+    Copy_v3_k(work_v3, contra);
+
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+	    for (int k = 0; k < NZ_; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+
+		contra[0][im] =
+		    work_v3[0][im] +
+		    degree_oblique*work_v3[1][im];
+		contra[1][im] =
+		    degree_oblique*work_v3[0][im] +
+		    (1. + degree_oblique*degree_oblique)*work_v3[1][im];
+		contra[2][im] =
+		    work_v3[2][im];
+	    }
+	}
     }
-  }
 }
 
 inline void co2contra(double **contra) {
 
-  int im;
-  
-  Copy_v3_k(work_v3, contra);
-  
-  #pragma omp parallel for schedule(dynamic, 1) private(im)
-  for (int i = 0; i < NX; i++) {
-    for (int j = 0; j < NY; j++) {
-      for (int k = 0; k < NZ_; k++) {
-	im      = (i*NY*NZ_) + (j*NZ_) + k;
+    int im;
 
-	contra[0][im] =
-	  (1. + degree_oblique*degree_oblique)*work_v3[0][im] -
-	  degree_oblique*work_v3[1][im];
-	contra[1][im] =
-	  -degree_oblique*work_v3[0][im] +
-	  work_v3[1][im];
-	contra[2][im] =
-	  work_v3[2][im];
-      }
+    Copy_v3_k(work_v3, contra);
+
+#pragma omp parallel for schedule(dynamic, 1) private(im)
+    for (int i = 0; i < NX; i++) {
+	for (int j = 0; j < NY; j++) {
+	    for (int k = 0; k < NZ_; k++) {
+		im      = (i*NY*NZ_) + (j*NZ_) + k;
+
+		contra[0][im] =
+		    (1. + degree_oblique*degree_oblique)*work_v3[0][im] -
+		    degree_oblique*work_v3[1][im];
+		contra[1][im] =
+		    -degree_oblique*work_v3[0][im] +
+		    work_v3[1][im];
+		contra[2][im] =
+		    work_v3[2][im];
+	    }
+	}
     }
-  }
 }
 
 inline void contra2co_single(double contra[]) {
-  double dmy[DIM];
-  
-  for (int d = 0; d < DIM; d++) {
-    dmy[d] = contra[d];
-  }
-  
-  contra[0] =
-    dmy[0] + degree_oblique*dmy[1];
-  contra[1] =
-    degree_oblique*dmy[0] + (1. + degree_oblique*degree_oblique)*dmy[1];
-  contra[2] = dmy[2];
+    double dmy[DIM];
+
+    for (int d = 0; d < DIM; d++) {
+	dmy[d] = contra[d];
+    }
+
+    contra[0] =
+	dmy[0] + degree_oblique*dmy[1];
+    contra[1] =
+	degree_oblique*dmy[0] + (1. + degree_oblique*degree_oblique)*dmy[1];
+    contra[2] = dmy[2];
 }
 
 inline void co2contra_single(double co[]) {
-  double dmy[DIM];
-  
-  for (int d = 0; d < DIM; d++) {
-    dmy[d] = co[d];
-  }
-  
-  co[0] =
-    (1. + degree_oblique*degree_oblique)*dmy[0] - degree_oblique*dmy[1];
-  co[1] =
-    -degree_oblique*dmy[0] + dmy[1];
-  co[2] = dmy[2];
+    double dmy[DIM];
+
+    for (int d = 0; d < DIM; d++) {
+	dmy[d] = co[d];
+    }
+
+    co[0] =
+	(1. + degree_oblique*degree_oblique)*dmy[0] - degree_oblique*dmy[1];
+    co[1] =
+	-degree_oblique*dmy[0] + dmy[1];
+    co[2] = dmy[2];
 }
 
 /*!
   \brief Compute Fourier transform of scalar field (in place)
   \details \f[A(\vec{r}) \longrightarrow \ft{A}(\vec{k})\f]
   \param[in,out] a scalar field A (input), Fourier transform of A (ouput)
-*/
-
-
-
+ */
 
 inline void A2a_k(double *a){
   
-  #ifndef _OPENMP
+#ifndef _OPENMP
   double ***a_cp;
   
   a_cp = alloc_3d_double(NX, NY, NZ_);
-  #pragma omp parallel for schedule(dynamic,1) private(im)
-  for (int i = 0; i< NX; i++) {
+  for (int i = 0; i< NX; i++){
     for (int j = 0; j< NY; j++){
       for (int l = 0; l< NZ; l++){
 	int im = (i*NY*NZ_)+(j*NZ_)+l; 
-	a_cp[i][j][l] = a[im];
+	a_cp[i][j][l]=a[im];
       }
     }
   }
   
   rdft3d(NX, NY, NZ, 1, a_cp, t, ip, w);
   rdft3dsort(NX, NY, NZ, 1, a_cp);
-  #pragma omp parallel for schedule(dynamic, 1) // private(im) 
-  for (int i = 0; i< NX; i++) {
-    for (int j = 0; j< NY; j++) {
-      for (int l = 0; l< NZ/2+1; l++){
+  for (int i = 0; i< NX; i++){
+    for (int j = 0; j< NY; j++){
+      for (int l = 0; l< HNZ_; l++){
         int im = (i*NY*NZ_)+(j*NZ_)+2*l; 
 	a[im]=a_cp[i][j][2*l];
 	a[im+1]=a_cp[i][j][2*l+1];
@@ -695,27 +690,24 @@ inline void A2a_k(double *a){
     }
   }
   free_3d_double(a_cp);
-  #endif
+#endif
 
-  #ifdef _OPENMP
-  // double x_in[NX][NY][NZ];
-  // double _Complex x_out[NX][NY][NZ/2+1];
+#ifdef _OPENMP
   double* x_in = new double[NX*NY*NZ];
-  double _Complex* x_out = new double _Complex[NX*NY*(NZ/2+1)];
+  double _Complex* x_out = new double _Complex[NX*NY*HNZ_];
   
   {
-  #pragma omp parallel for schedule(dynamic, 1) // private(im)
+#pragma omp parallel for schedule(dynamic, 1)
     for (int i = 0; i< NX; i++){
       for (int j = 0; j< NY; j++){
 	for (int l = 0; l< NZ; l++){
-          int im=(i*NY*NZ_)+(j*NZ_)+l;
+	  int im=(i*NY*NZ_)+(j*NZ_)+l;
 	  int im_z = (i*NY*NZ)+(j*NZ)+l; 
 	  x_in[im_z]=a[im];
-	  // x_in[i][j][l]=a[im];
 	}
       }
     }
-    
+
     {
       DFTI_DESCRIPTOR_HANDLE Desc_Handle = 0;
       long    m;
@@ -728,17 +720,17 @@ inline void A2a_k(double *a){
       long    strides_out[4]; 
       
       lengths[0] = (NX);
-      lengths[1] = (NY);
+      lengths[1] =(NY);
       lengths[2] = (NZ);
-      
+
       strides_in[0] = 0;
       strides_in[1] = (NZ)*NY;
       strides_in[2] = NZ;
       strides_in[3] = 1;
-      
+
       strides_out[0] = 0;
-      strides_out[1] = (NZ/2+1)*NY;
-      strides_out[2] = NZ/2+1;
+      strides_out[1] = HNZ_*NY;
+      strides_out[2] = HNZ_;
       strides_out[3] = 1;
       Status = DftiCreateDescriptor(&Desc_Handle, DFTI_DOUBLE, DFTI_REAL, 3, lengths);
       Status = DftiSetValue(Desc_Handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
@@ -752,25 +744,22 @@ inline void A2a_k(double *a){
   }    
 
 
-  #pragma omp parallel for schedule(dynamic, 1) // private(im)
+#pragma omp parallel for schedule(dynamic, 1)
   for (int i = 0; i< NX; i++){
-    int NZZ = NZ/2+1;
     for (int j = 0; j< NY; j++){
-      for (int l = 0; l< NZ/2+1; l++){
+      for (int l = 0; l< HNZ_; l++){
 	
 	int im = (i*NY*NZ_)+(j*NZ_)+2*l;
-        int im_z = (i*NY*NZZ)+(j*NZZ)+l;
+        int im_z = (i*NY*HNZ_)+(j*HNZ_)+l;
         a[im]=__real__(x_out[im_z]);
 	a[im+1]=-(__imag__(x_out[im_z]));
 
-	// a[im]=__real__(x_out[i][j][l]);
-	// a[im+1]=-(__imag__(x_out[i][j][l]));
       }
     }
   }
   delete[] x_in;
   delete[] x_out;
-  #endif 
+#endif 
 }
 
 
@@ -779,116 +768,115 @@ inline void A2a_k(double *a){
   \brief Compute inverse Fourier transform of scalar field (in place)
   \details \f[\ft{A}(\vec{k}) \longrightarrow A(\vec{r})\f]
   \param[in,out] a Fourier transform of scalar field A (input), A (ouput)
-*/
+ */
 
 
 
 inline void A_k2a(double *a){
 
 
-  #ifndef _OPENMP
-  double ***a_cp;
-  a_cp = alloc_3d_double(NX, NY, NZ_);
+#ifndef _OPENMP
+ double ***a_cp;
+ a_cp = alloc_3d_double(NX, NY, NZ_);
   #pragma omp parallel for schedule(dynamic,1) // private(im) 
-  for (int i = 0; i< NX; i++){
-    for (int j = 0; j< NY; j++){
-      for (int l = 0; l< NZ/2+1; l++){
+ for (int i = 0; i< NX; i++){
+ for (int j = 0; j< NY; j++){
+ for (int l = 0; l< NZ/2+1; l++){
         int im = (i*NY*NZ_)+(j*NZ_)+2*l;
-	a_cp[i][j][2*l]=a[im];
-	a_cp[i][j][2*l+1]=a[im+1];
-      }
-    }
-  }
+ a_cp[i][j][2*l]=a[im];
+ a_cp[i][j][2*l+1]=a[im+1];
+ }
+ }
+ }
 
-  static double scale = 2.0/(NX * NY * NZ);
-  rdft3dsort(NX, NY, NZ, -1, a_cp);
-  rdft3d(NX, NY, NZ, -1, a_cp, t, ip, w);
+ static double scale = 2.0/(NX * NY * NZ);
+ rdft3dsort(NX, NY, NZ, -1, a_cp);
+ rdft3d(NX, NY, NZ, -1, a_cp, t, ip, w);
 
-  #pragma omp parallel for schedule(dynamic, 1) private(im) 
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ/2+1; k++){
+#pragma omp parallel for schedule(dynamic, 1) private(im) 
+   for(int i=0; i<NX; i++){
+      for(int j=0; j<NY; j++){
+	  for(int k=0; k<NZ/2+1; k++){
 	int im = (i*NY*NZ_)+(j*NZ_)+2*k;
-	a[im] = a_cp[i][j][2*k]*scale;
-        a[im+1] = a_cp[i][j][2*k+1]*scale;
+	 a[im] = a_cp[i][j][2*k]*scale;
+	 a[im+1] = a_cp[i][j][2*k+1]*scale;
+	}
       }
-    }
-  }
-  free_3d_double(a_cp);
-  #endif
+   }
+free_3d_double(a_cp);
+#endif
 
-  #ifdef _OPENMP
-  static double scale = 1.0/(NX * NY * NZ);
+#ifdef _OPENMP
+static double scale = 1.0/(NX * NY * NZ);
   // double x_in[NX][NY][NZ];
   // double _Complex x_out[NX][NY][NZ/2+1];
   double* x_in = new double[NX*NY*NZ];
   double _Complex* x_out = new double _Complex[NX*NY*(NZ/2+1)];
-  
-  {
+
+{
     #pragma omp parallel for schedule(dynamic,1) //private(im)
-    for (int i = 0; i< NX; i++){
-       int NZZ = NZ/2+1;
-       for (int j = 0; j< NY; j++){
-	for (int l = 0; l< NZ/2+1; l++){
+for (int i = 0; i< NX; i++){
+for (int j = 0; j< NY; j++){
+for (int l = 0; l< NZ/2+1; l++){
           int im = (i*NY*NZ_)+(j*NZ_)+2*l;
-	  int im_z = (i*NY*NZZ)+(j*NZZ)+l;
+	  int im_z = (i*NY*HNZ_)+(j*HNZ_)+l;
 	  __real__(x_out[im_z])=a[im];
           __imag__(x_out[im_z])=-a[im+1];
 
 	  // __real__(x_out[i][j][l])=a[im];
 	  // __imag__(x_out[i][j][l])=-a[im+1];
-	}
-      }
-    }
-    
-    {
-      DFTI_DESCRIPTOR_HANDLE Desc_Handle = 0;
-      long    Status;
-      long    lengths[3];
-      long    strides_in[4]; 
-      long    strides_out[4]; 
-      
-      lengths[0] = (NX);
-      lengths[1] = (NY);
-      lengths[2] = (NZ);
-      
-      strides_in[0] = 0;
-      strides_in[1] = NZ*NY;
-      strides_in[2] = NZ;
-      strides_in[3] = 1;
+}
+}
+}
 
-      strides_out[0] = 0;
-      strides_out[1] = (NZ/2+1)*NY;
-      strides_out[2] = NZ/2+1;
-      strides_out[3] = 1;
-      
-      Status = DftiCreateDescriptor( &Desc_Handle, DFTI_DOUBLE,
-				     DFTI_REAL, 3, lengths);
-      Status = DftiSetValue( Desc_Handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
-      Status = DftiSetValue(Desc_Handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
-      Status = DftiSetValue(Desc_Handle, DFTI_OUTPUT_STRIDES, strides_in);
-      Status = DftiSetValue(Desc_Handle, DFTI_INPUT_STRIDES, strides_out);
-      Status = DftiCommitDescriptor( Desc_Handle );
-      Status = DftiComputeBackward( Desc_Handle, x_out, x_in);
-      Status = DftiFreeDescriptor(&Desc_Handle);
-    }
-    
+{
+DFTI_DESCRIPTOR_HANDLE Desc_Handle = 0;
+long    Status;
+long    lengths[3];
+long    strides_in[4]; 
+long    strides_out[4]; 
+
+lengths[0] = (NX);
+lengths[1] =(NY);
+lengths[2] = (NZ);
+
+strides_in[0] = 0;
+strides_in[1] = NZ*NY;
+strides_in[2] = NZ;
+strides_in[3] = 1;
+
+strides_out[0] = 0;
+strides_out[1] = (NZ/2+1)*NY;
+strides_out[2] = NZ/2+1;
+strides_out[3] = 1;
+
+Status = DftiCreateDescriptor( &Desc_Handle, DFTI_DOUBLE,
+                                    DFTI_REAL, 3, lengths);
+Status = DftiSetValue( Desc_Handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+Status = DftiSetValue(Desc_Handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+Status = DftiSetValue(Desc_Handle, DFTI_OUTPUT_STRIDES, strides_in);
+Status = DftiSetValue(Desc_Handle, DFTI_INPUT_STRIDES, strides_out);
+Status = DftiCommitDescriptor( Desc_Handle );
+Status = DftiComputeBackward( Desc_Handle, x_out, x_in);
+Status = DftiFreeDescriptor(&Desc_Handle);
+}
+
    #pragma omp parallel for schedule(dynamic, 1) // private(im)
-    for (int i = 0; i< NX; i++){
-      for (int j = 0; j< NY; j++){
-	for (int l = 0; l< NZ; l++){
+for (int i = 0; i< NX; i++){
+for (int j = 0; j< NY; j++){
+for (int l = 0; l< NZ; l++){
 	  int im = (i*NY*NZ_)+(j*NZ_)+l;
 	  int im_z = (i*NY*NZ)+(j*NZ)+l;
 	  // a[im]=x_in[i][j][l]*scale;
 	  a[im]=x_in[im_z]*scale;
-	}
-      }
-    }
-    
-  }
+}
+}
+}
+
+}
   delete[] x_in;
   delete[] x_out;
-  #endif
+#endif
 }
 
 /*!
@@ -942,7 +930,7 @@ inline int Calc_KZ_Ooura(const int &i, const int &j, const int &k){
 }
 inline void Truncate_general(double *a, const Index_range &ijk_range){
   int im;
-  #pragma omp parallel for schedule(dynamic, 1) private(im) 
+#pragma omp parallel for schedule(dynamic, 1) private(im) 
   for(int i=ijk_range.istart; i<=ijk_range.iend; i++){
     for(int j=ijk_range.jstart; j<=ijk_range.jend; j++){
       for(int k=ijk_range.kstart; k<=ijk_range.kend; k++){
