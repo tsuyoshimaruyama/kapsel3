@@ -229,14 +229,14 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
                                        ,"shear_inertia_stress_temporal"
                                        ,"apparent_shear_stress"
     };
-    static const char *labels_le_dc[]={""
-                                       ,"time"
-                                       ,"shear_rate"
-                                       ,"shear_strain_temporal"
-                                       ,"lj_dev_stress_temporal"
-                                       ,"shear_stress_temporal_old"
-                                       ,"shear_stress_temporal_new"
-                                       ,"viscosity"
+    static const char *labels_le[]={""
+				    ,"time"
+				    ,"shear_rate"
+				    ,"shear_strain_temporal"
+				    ,"lj_dev_stress_temporal"
+				    ,"shear_stress_temporal_old"
+				    ,"shear_stress_temporal_new"
+				    ,"viscosity"
     };
 
     static char line_label[1<<10];
@@ -244,14 +244,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
     if(OPERATION == INIT){
       sprintf(line_label,"#");
       if(SW_EQ==Shear_Navier_Stokes_Lees_Edwards){
-        if(!Shear_AC){
-	  for(int d=1; d<sizeof(labels_le_dc)/sizeof(char *); d++)
-	    sprintf(line_label, "%s%d:%s ", line_label, d, labels_le_dc[d]);
-        }else{
-          fprintf(stderr, "Error: Incorrect Shear calculation\n");
-          exit_job(EXIT_FAILURE);
-        }
-
+	  for(int d=1; d<sizeof(labels_le)/sizeof(char *); d++)
+	    sprintf(line_label, "%s%d:%s ", line_label, d, labels_le[d]);
       }else if(SW_EQ==Shear_Navier_Stokes){
         if(!Shear_AC){
           for(int d=1; d<sizeof(labels_zz_dc)/sizeof(char *); d++)
@@ -270,48 +264,47 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
       double stress[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
       double hydro_stress[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
       double hydro_stress_new[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
-      double hydro_stress_new_u[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
-      double hydro_stress_new_p[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
-      double hydro_stress_new_v[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
-      double hydro_stress_new_w[DIM][DIM] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
 
       double strain_output = Shear_strain_realized;
-	if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
-          Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
-          Calc_hydro_stress(jikan, p, phi, Hydro_force_new, hydro_stress_new);
-          double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
-	  fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
+      if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
+	Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
+	Calc_hydro_stress(jikan, p, phi, Hydro_force_new, hydro_stress_new);
+	double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
+	fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
+		,jikan.time
+		,degree_oblique
+		,srate_eff
+		,strain_output
+		,dev_stress
+		,hydro_stress[1][0]
+		,hydro_stress_new[1][0]
+		,(hydro_stress_new[1][0] + dev_stress)/srate_eff + ETA
+		);
+      }else if(SW_EQ == Shear_Navier_Stokes){ 
+	if(!Shear_AC){
+	  Calc_shear_stress(jikan, p, phi, Shear_force, stress);
+	  fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		  ,jikan.time
 		  ,srate_eff
 		  ,strain_output
-		  ,dev_stress
-		  ,hydro_stress[1][0]
-		  ,hydro_stress_new[1][0]
-		  ,(hydro_stress_new[1][0] + dev_stress)/srate_eff + ETA
+		  ,-stress[1][0]
+		  ,-stress[1][0]/srate_eff
 		  );
-	} else if(!Shear_AC){
-          Calc_shear_stress(jikan, p, phi, Shear_force, stress);
-	    fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g\n"
-		    ,jikan.time
-		    ,srate_eff
-		    ,strain_output
-		    ,-stress[1][0]
-		    ,-stress[1][0]/srate_eff
-		);
 	}else{
-          Calc_shear_stress(jikan, p, phi, Shear_force, stress);
-	    fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
-		    ,jikan.time
-		    ,srate_eff
-		    ,strain_output
-		    ,-stress[1][0]
-		    ,Inertia_stress
-		    ,-stress[1][0]+Inertia_stress
-		);
+	  Calc_shear_stress(jikan, p, phi, Shear_force, stress);
+	  fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
+		  ,jikan.time
+		  ,srate_eff
+		  ,strain_output
+		  ,-stress[1][0]
+		  ,Inertia_stress
+		  ,-stress[1][0]+Inertia_stress
+		  );
 	}
+      }
     }else {
-	fprintf(stderr, "invalid OPERATION in Mean_shear_stress().\n"); 
-	exit_job(EXIT_FAILURE);
+      fprintf(stderr, "invalid OPERATION in Mean_shear_stress().\n"); 
+      exit_job(EXIT_FAILURE);
     }
 }
 

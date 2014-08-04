@@ -174,10 +174,15 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 }
 
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
+    //AC
+    Angular_Frequency = PI2*Shear_frequency;
+    double ifreq = 1/Angular_Frequency;
+    double shear_amp = Shear_rate * ifreq;
+    //
     const Index_range* ijk_range = ijk_range_two_third_filter;
     const int n_ijk_range = n_ijk_range_two_third_filter;
     NS_solver_slavedEuler_Shear_OBL(zeta, jikan, uk_dc, ijk_range, n_ijk_range, p, Shear_force);
-    
+         
     if(Particle_Number >= 0){
 	if(FIX_CELL){ // time-dependent average pressure gradient
 	    for(int d=0;d<DIM;d++){
@@ -194,23 +199,41 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
         Zeta_k2u_k_OBL(zeta, uk_dc, u);
         U_k2u(u);
+	if(!Shear_AC){
+          Shear_rate_eff = Shear_rate;
+        }else{
+          Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
+        }
 	
+        //Shear_rate_eff = Shear_rate;
+	if(!Shear_AC){
         Shear_rate_eff = Shear_rate;
+        }else{
+          Shear_rate_eff = Shear_rate * cos(Angular_Frequency*jikan.dt_fluid*jikan.ts);
+        }
         degree_oblique += Shear_rate_eff*jikan.dt_fluid;
-
         if (degree_oblique >= 1.) {
-          Reset_U_OBL(ucp, u);
+	  int flag =0;
+	  Reset_U_OBL(ucp, u,flag);
           Swap_mem(u, ucp);
           degree_oblique -= 1.;
         }
+	else if(degree_oblique<0.){
+	  int flag = 1;
+	  Reset_U_OBL(ucp,u,flag);
+	  Swap_mem(u,ucp);
+	  degree_oblique +=1.;
+	}
 
         Copy_v3(ucp, u);
         Transform_obl_u(ucp, oblique2cartesian, jikan.ts);
         Update_K2_OBL();
         // u   -> velocity field in oblique coordinates
         // ucp -> velocity fild in cartesian coordinates
-
-	Calc_shear_rate_eff();
+	//Calc_shear_rate_eff();
+	//AC
+	if(!Shear_AC) Calc_shear_rate_eff();
+	//
 	//End Deformation
 	
 	if(!Fixed_particle){

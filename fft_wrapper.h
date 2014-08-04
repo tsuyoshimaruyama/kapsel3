@@ -664,119 +664,125 @@ inline void co2contra_single(double co[]) {
  */
 
 inline void A2a_k(double *a){
-  int im;
   
 #ifndef _OPENMP
   double ***a_cp;
+  
   a_cp = alloc_3d_double(NX, NY, NZ_);
-#pragma omp parallel for schedule(dynamic,1) private(im)
   for (int i = 0; i< NX; i++){
-  for (int j = 0; j< NY; j++){
-  for (int l = 0; l< NZ; l++){
-  im = (i*NY*NZ_)+(j*NZ_)+l; 
-  a_cp[i][j][l]=a[im];
-  }
-  }
+    for (int j = 0; j< NY; j++){
+      for (int l = 0; l< NZ; l++){
+	int im = (i*NY*NZ_)+(j*NZ_)+l; 
+	a_cp[i][j][l]=a[im];
+      }
+    }
   }
   
   rdft3d(NX, NY, NZ, 1, a_cp, t, ip, w);
   rdft3dsort(NX, NY, NZ, 1, a_cp);
-  
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
   for (int i = 0; i< NX; i++){
-  for (int j = 0; j< NY; j++){
-  for (int l = 0; l< NZ/2+1; l++){
-  im = (i*NY*NZ_)+(j*NZ_)+2*l; 
-  a[im]=a_cp[i][j][2*l];
-  a[im+1]=a_cp[i][j][2*l+1];
-  }
-  }
+    for (int j = 0; j< NY; j++){
+      for (int l = 0; l< HNZ_; l++){
+        int im = (i*NY*NZ_)+(j*NZ_)+2*l; 
+	a[im]=a_cp[i][j][2*l];
+	a[im+1]=a_cp[i][j][2*l+1];
+      }
+    }
   }
   free_3d_double(a_cp);
 #endif
 
 #ifdef _OPENMP
-double x_in[NX][NY][NZ];
-double _Complex x_out[NX][NY][NZ/2+1];
+  double* x_in = new double[NX*NY*NZ];
+  double _Complex* x_out = new double _Complex[NX*NY*HNZ_];
+  
+  {
+#pragma omp parallel for schedule(dynamic, 1)
+    for (int i = 0; i< NX; i++){
+      for (int j = 0; j< NY; j++){
+	for (int l = 0; l< NZ; l++){
+	  int im=(i*NY*NZ_)+(j*NZ_)+l;
+	  int im_z = (i*NY*NZ)+(j*NZ)+l; 
+	  x_in[im_z]=a[im];
+	}
+      }
+    }
 
-{
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-for (int i = 0; i< NX; i++){
-for (int j = 0; j< NY; j++){
-for (int l = 0; l< NZ; l++){
-im=(i*NY*NZ_)+(j*NZ_)+l;
-x_in[i][j][l]=a[im];
-}
-}
-}
+    {
+      DFTI_DESCRIPTOR_HANDLE Desc_Handle = 0;
+      long    m;
+      long    n;
+      long    k;
+      long    Status;
+      double  Scale;
+      long    lengths[3];
+      long    strides_in[4]; 
+      long    strides_out[4]; 
+      
+      lengths[0] = (NX);
+      lengths[1] =(NY);
+      lengths[2] = (NZ);
 
-{
-DFTI_DESCRIPTOR_HANDLE Desc_Handle = 0;
-long    m;
-long    n;
-long    k;
-long    Status;
-double  Scale;
-long    lengths[3];
-long    strides_in[4]; 
-long    strides_out[4]; 
+      strides_in[0] = 0;
+      strides_in[1] = (NZ)*NY;
+      strides_in[2] = NZ;
+      strides_in[3] = 1;
 
-lengths[0] = (NX);
-lengths[1] =(NY);
-lengths[2] = (NZ);
-
-strides_in[0] = 0;
-strides_in[1] = (NZ)*NY;
-strides_in[2] = NZ;
-strides_in[3] = 1;
-
-strides_out[0] = 0;
-strides_out[1] = (NZ/2+1)*NY;
-strides_out[2] = NZ/2+1;
-strides_out[3] = 1;
-Status = DftiCreateDescriptor(&Desc_Handle, DFTI_DOUBLE,
-                                    DFTI_REAL, 3, lengths);
-Status = DftiSetValue(Desc_Handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
-Status = DftiSetValue(Desc_Handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
-Status = DftiSetValue(Desc_Handle, DFTI_INPUT_STRIDES, strides_in);
-Status = DftiSetValue(Desc_Handle, DFTI_OUTPUT_STRIDES, strides_out);
-Status = DftiCommitDescriptor(Desc_Handle);
-Status = DftiComputeForward(Desc_Handle, x_in, x_out);
-Status = DftiFreeDescriptor( &Desc_Handle);
-}
+      strides_out[0] = 0;
+      strides_out[1] = HNZ_*NY;
+      strides_out[2] = HNZ_;
+      strides_out[3] = 1;
+      Status = DftiCreateDescriptor(&Desc_Handle, DFTI_DOUBLE, DFTI_REAL, 3, lengths);
+      Status = DftiSetValue(Desc_Handle, DFTI_PLACEMENT, DFTI_NOT_INPLACE);
+      Status = DftiSetValue(Desc_Handle, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+      Status = DftiSetValue(Desc_Handle, DFTI_INPUT_STRIDES, strides_in);
+      Status = DftiSetValue(Desc_Handle, DFTI_OUTPUT_STRIDES, strides_out);
+      Status = DftiCommitDescriptor(Desc_Handle);
+      Status = DftiComputeForward(Desc_Handle, x_in, x_out);
+      Status = DftiFreeDescriptor( &Desc_Handle);
+    }
+  }    
 
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
-for (int i = 0; i< NX; i++){
-for (int j = 0; j< NY; j++){
-for (int l = 0; l< NZ/2+1; l++){
-im=(i*NY*NZ_)+(j*NZ_)+2*l;
-a[im]=__real__(x_out[i][j][l]);
-a[im+1]=-(__imag__(x_out[i][j][l]));
-}
-}
-}
-}
+#pragma omp parallel for schedule(dynamic, 1)
+  for (int i = 0; i< NX; i++){
+    for (int j = 0; j< NY; j++){
+      for (int l = 0; l< HNZ_; l++){
+	
+	int im = (i*NY*NZ_)+(j*NZ_)+2*l;
+        int im_z = (i*NY*HNZ_)+(j*HNZ_)+l;
+        a[im]=__real__(x_out[im_z]);
+	a[im+1]=-(__imag__(x_out[im_z]));
+
+      }
+    }
+  }
+  delete[] x_in;
+  delete[] x_out;
 #endif 
 }
+
+
 
 /*!
   \brief Compute inverse Fourier transform of scalar field (in place)
   \details \f[\ft{A}(\vec{k}) \longrightarrow A(\vec{r})\f]
   \param[in,out] a Fourier transform of scalar field A (input), A (ouput)
  */
+
+
+
 inline void A_k2a(double *a){
 
-int im;
 
 #ifndef _OPENMP
  double ***a_cp;
  a_cp = alloc_3d_double(NX, NY, NZ_);
-#pragma omp parallel for schedule(dynamic,1) private(im) 
+  #pragma omp parallel for schedule(dynamic,1) // private(im) 
  for (int i = 0; i< NX; i++){
  for (int j = 0; j< NY; j++){
  for (int l = 0; l< NZ/2+1; l++){
- im = (i*NY*NZ_)+(j*NZ_)+2*l;
+        int im = (i*NY*NZ_)+(j*NZ_)+2*l;
  a_cp[i][j][2*l]=a[im];
  a_cp[i][j][2*l+1]=a[im+1];
  }
@@ -791,7 +797,7 @@ int im;
    for(int i=0; i<NX; i++){
       for(int j=0; j<NY; j++){
 	  for(int k=0; k<NZ/2+1; k++){
-      im = (i*NY*NZ_)+(j*NZ_)+2*k;
+	int im = (i*NY*NZ_)+(j*NZ_)+2*k;
 	 a[im] = a_cp[i][j][2*k]*scale;
 	 a[im+1] = a_cp[i][j][2*k+1]*scale;
 	}
@@ -802,18 +808,23 @@ free_3d_double(a_cp);
 
 #ifdef _OPENMP
 static double scale = 1.0/(NX * NY * NZ);
-double x_in[NX][NY][NZ];
-double _Complex x_out[NX][NY][NZ/2+1];
-
+  // double x_in[NX][NY][NZ];
+  // double _Complex x_out[NX][NY][NZ/2+1];
+  double* x_in = new double[NX*NY*NZ];
+  double _Complex* x_out = new double _Complex[NX*NY*(NZ/2+1)];
 
 {
-#pragma omp parallel for schedule(dynamic,1) private(im)
+    #pragma omp parallel for schedule(dynamic,1) //private(im)
 for (int i = 0; i< NX; i++){
 for (int j = 0; j< NY; j++){
 for (int l = 0; l< NZ/2+1; l++){
-im = (i*NY*NZ_)+(j*NZ_)+2*l;
-__real__(x_out[i][j][l])=a[im];
-__imag__(x_out[i][j][l])=-a[im+1];
+          int im = (i*NY*NZ_)+(j*NZ_)+2*l;
+	  int im_z = (i*NY*HNZ_)+(j*HNZ_)+l;
+	  __real__(x_out[im_z])=a[im];
+          __imag__(x_out[im_z])=-a[im+1];
+
+	  // __real__(x_out[i][j][l])=a[im];
+	  // __imag__(x_out[i][j][l])=-a[im+1];
 }
 }
 }
@@ -850,17 +861,21 @@ Status = DftiComputeBackward( Desc_Handle, x_out, x_in);
 Status = DftiFreeDescriptor(&Desc_Handle);
 }
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+   #pragma omp parallel for schedule(dynamic, 1) // private(im)
 for (int i = 0; i< NX; i++){
 for (int j = 0; j< NY; j++){
 for (int l = 0; l< NZ; l++){
-im = (i*NY*NZ_)+(j*NZ_)+l;
-a[im]=x_in[i][j][l]*scale;
+	  int im = (i*NY*NZ_)+(j*NZ_)+l;
+	  int im_z = (i*NY*NZ)+(j*NZ)+l;
+	  // a[im]=x_in[i][j][l]*scale;
+	  a[im]=x_in[im_z]*scale;
 }
 }
 }
 
 }
+  delete[] x_in;
+  delete[] x_out;
 #endif
 }
 
