@@ -129,11 +129,11 @@ void Output_field_data(double** zeta,
 		       Particle* p,
 		       const CTime &time){
   if(print_field.none) return;
-  double *strain[QDIM]={f_particle[0]
-		      ,f_particle[1]
-		      ,f_particle[2]
-		      ,f_ns0[0]
-		      ,f_ns0[1]
+  double *stress[QDIM]={f_particle[0]
+                        ,f_particle[1]
+                        ,f_particle[2]
+                        ,f_ns0[0]
+                        ,f_ns0[1]
   };
 
   if(print_field.vel || print_field.tau){
@@ -142,12 +142,12 @@ void Output_field_data(double** zeta,
       Zeta_k2u_k_OBL(zeta, uk_dc, u);
    
       if(print_field.tau){
-	U_k2Strain_k_OBL(u, strain);
+	U_k2Stress_k_OBL(u, stress);
 	for(int d = 0; d < QDIM; d++){
-	  A_k2a(strain[d]);
+	  A_k2a(stress[d]);
 	}
-	E_oblique2E(strain, false); //without mean shear flow terms
-      }//print strain ?
+	Stress_oblique2Stress(stress, false); //without mean shear flow terms
+      }//print stress ?
       
       if(print_field.vel){
 	U_k2u(u);
@@ -157,18 +157,18 @@ void Output_field_data(double** zeta,
       Zeta_k2u_k(zeta, uk_dc, u);
       
       if(print_field.tau){
-	U_k2Strain_k(u, strain);
+	U_k2Stress_k(u, stress);
 	for(int d = 0; d < QDIM; d++){
-	  A_k2a(strain[d]);
+	  A_k2a(stress[d]);
 	}
-      }//print strain?
+      }//print stress?
       
       if(print_field.vel){
 	U_k2u(u);
       }//print u?
     }
 
-  }// Print u / strain ?
+  }// Print u / stress ?
 
   //! TODO: implement pressure calculation
   if(print_field.pressure){
@@ -185,10 +185,10 @@ void Output_field_data(double** zeta,
   }//print phi?
 
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
-    Output_avs(Avs_parameters, u, phi, Pressure, strain, time);
+    Output_avs(Avs_parameters, u, phi, Pressure, stress, time);
   }else if(SW_OUTFORMAT == OUT_EXT){
 #ifdef WITH_EXTOUT
-    writer->write_field_data(u, phi, Pressure, strain);
+    writer->write_field_data(u, phi, Pressure, stress);
 #endif
   }
 }

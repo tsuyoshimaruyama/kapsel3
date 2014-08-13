@@ -215,14 +215,14 @@ void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u);
 void Zeta_k2u_k_OBL(double **zeta, double uk_dc[DIM], double **u);
 
 /*!
-  Compute symmetric strain rate tensor
+  Compute stress tensor
  */
-void U_k2Strain_k(double **u, double *strain_k[QDIM]);
+void U_k2Stress_k(double **u, double *stress_k[QDIM]);
 
 /*!
-  Compute contravaraint symmetric strain rate tensor
+  Compute contravaraint stress tensor
  */
-void U_k2Strain_k_OBL(double **u, double *strain_k[QDIM]);
+void U_k2Stress_k_OBL(double **u, double *stress_k[QDIM]);
 
 /*!
   \brief Compute divergence of vector field (in reciprocal space)
@@ -514,9 +514,9 @@ inline void U_oblique2u(double **uu, const bool &add_mean_flow = true) {
     }
 }
 
-//Symmetric contravariant strain tensor from oblique to orthogonal
-inline void E_oblique2E(double **EE, const bool &add_mean_flow=true){
-    int im; 
+//contravariant stress tensor from oblique to orthogonal
+inline void Stress_oblique2Stress(double **EE, const bool &add_mean_flow=true){
+  int im; 
   int im_ob;
   int im_p;
   double *work_v5[QDIM] = {work_v3[0], 
@@ -554,7 +554,7 @@ inline void E_oblique2E(double **EE, const bool &add_mean_flow=true){
           //xz
           EE[2][im_ob] += (degree_oblique*EE[4][im_ob]);
         }
-        if(add_mean_flow) EE[1][im_ob] += (ETA*Shear_rate_eff/2.0);
+        if(add_mean_flow) EE[1][im_ob] += (ETA*Shear_rate_eff);
 	
       }//k
     }//j
