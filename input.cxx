@@ -396,7 +396,7 @@ inline void Set_global_parameters(void){
     //////
     MSTEP= GTS * Num_snap;
     //////
-    double dummy_pow;
+    double dummy_pow = 1.0;
     if((SW_EQ == Shear_Navier_Stokes ) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
 	if(LJ_powers == 0){
 	    dummy_pow = pow(2.,1./6.);

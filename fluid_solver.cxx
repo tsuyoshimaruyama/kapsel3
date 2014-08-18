@@ -149,6 +149,7 @@ inline void Rhs_NS(double **zeta
 ////////// inline functions end
 void Mem_alloc_NS_solver(void){
     Pressure = alloc_1d_double(NX*NY*NZ_);
+    Reset_phi(Pressure);
     f_ns0 = (double **) malloc(sizeof (double *)*(DIM-1));
     f_ns1 = (double **) malloc(sizeof (double *)*(DIM-1));
 

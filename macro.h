@@ -209,10 +209,13 @@ inline int dircheckmake(const char *dname){
     char dmy_cmd[256];
     sprintf(dmy_cmd, "mkdir %s", dname);
     system(dmy_cmd);
-    if((dtest=opendir(dname)) == NULL){
+    DIR* dnew;
+    if((dnew=opendir(dname)) == NULL){
       fprintf(stderr, "%s not succeeded\n", dmy_cmd);
       exit_job(EXIT_FAILURE);
     }
+    closedir(dnew);
+  }else{
     closedir(dtest);
   }
   return true;
