@@ -183,6 +183,36 @@ inline void qtn_prod(quaternion &q, const quaternion &qa,
 }
 
 /*!
+  \brief qpq = q.p.q*
+ */
+inline void qtn_qpq_prod(quaternion &qpq, const quaternion &q,
+                         const quaternion &p, const double alpha=1.0){
+  double qs2   = q.s*q.s;
+  double qv2   = q.v[0]*q.v[0] + q.v[1]*q.v[1] + q.v[2]*q.v[2];
+  //scalar part
+  qpq.s = alpha*(qs2 + qv2)*p.s;
+
+  //vector part
+  qs2 -= qv2;
+  double qdotp = q.v[0]*p.v[0] + q.v[1]*p.v[1] + q.v[2]*p.v[2];
+  qpq.v[0] = alpha*(qs2*p.v[0] + 2.0*(qdotp*q.v[0] + q.s*(q.v[1]*p.v[2] - q.v[2]*p.v[1])) );
+  qpq.v[1] = alpha*(qs2*p.v[1] + 2.0*(qdotp*q.v[1] + q.s*(q.v[2]*p.v[0] - q.v[0]*p.v[2])) );
+  qpq.v[2] = alpha*(qs2*p.v[2] + 2.0*(qdotp*q.v[2] + q.s*(q.v[0]*p.v[1] - q.v[1]*p.v[0])) );
+}
+/*!
+  \brief qvq = q.(0,v).q*
+ */
+inline void qtn_qvq_prod(double qvq[DIM], const quaternion &q,
+                         const double v[DIM], const double alpha=1.0){
+  //vector part
+  double qs2   = q.s*q.s - (q.v[0]*q.v[0] + q.v[1]*q.v[1] + q.v[2]*q.v[2]);
+  double qdotp = q.v[0]*v[0] + q.v[1]*v[1] + q.v[2]*v[2];
+  qvq[0] = alpha*(qs2*v[0] + 2.0*(qdotp*q.v[0] + q.s*(q.v[1]*v[2] - q.v[2]*v[1])) );
+  qvq[1] = alpha*(qs2*v[1] + 2.0*(qdotp*q.v[1] + q.s*(q.v[2]*v[0] - q.v[0]*v[2])) );
+  qvq[2] = alpha*(qs2*v[2] + 2.0*(qdotp*q.v[2] + q.s*(q.v[0]*v[1] - q.v[1]*v[0])) );
+}
+
+/*!
   \brief Multiply two quaternion in place: q = q.(alpha*qb)
  */
 inline void qtn_prod(quaternion &q, const quaternion &qb, 
@@ -190,6 +220,22 @@ inline void qtn_prod(quaternion &q, const quaternion &qb,
   quaternion qa;
   qtn_init(qa, q);
   qtn_prod(q, qa, qb, alpha);
+}
+
+/*
+  \brief p = q.p.q*
+ */
+inline void qtn_qpq_prod(quaternion &qpq, const quaternion &q, const double alpha=1.0){
+  quaternion p;
+  qtn_init(p, qpq);
+  qtn_qpq_prod(qpq, q, p);
+}
+/*!
+  \brief v = q.(0,v).q*
+ */
+inline void qtn_qvq_prod(double qvq[DIM], const quaternion &q, const double alpha=1.0){
+  double v[DIM] = {qvq[0], qvq[1], qvq[2]};
+  qtn_qvq_prod(qvq, q, v, alpha);
 }
 
 /*!
@@ -435,17 +481,38 @@ inline void rqtn_rm(double R[DIM][DIM], const quaternion &q){
   const double &q2 = q.v[1];
   const double &q3 = q.v[2];
 
-  R[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+  R[0][0] = 1.0 - 2.0*(q2*q2 + q3*q3);
   R[0][1] = 2.0*(q1*q2 - q0*q3);
   R[0][2] = 2.0*(q1*q3 + q0*q2);
   
   R[1][0] = 2.0*(q1*q2 + q0*q3);
-  R[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+  R[1][1] = 1.0 - 2.0*(q1*q1 + q3*q3);
   R[1][2] = 2.0*(q2*q3 - q0*q1);
 
   R[2][0] = 2.0*(q1*q3 - q0*q2);
   R[2][1] = 2.0*(q2*q3 + q0*q1);
-  R[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+  R[2][2] = 1.0 - 2.0*(q1*q1 + q2*q2);
+}
+/*!
+  \brief Compute rotation matrix (as 1d array) given rotation quaternion
+ */
+inline void rqtn_rm(double R[DIM*DIM], const quaternion &q){
+  const double &q0 = q.s;
+  const double &q1 = q.v[0];
+  const double &q2 = q.v[1];
+  const double &q3 = q.v[2];
+
+  R[0] = 1.0 - 2.0*(q2*q2 + q3*q3);
+  R[1] = 2.0*(q1*q2 - q0*q3);
+  R[2] = 2.0*(q1*q3 + q0*q2);
+  
+  R[3] = 2.0*(q1*q2 + q0*q3);
+  R[4] = 1.0 - 2.0*(q1*q1 + q3*q3);
+  R[5] = 2.0*(q2*q3 - q0*q1);
+
+  R[6] = 2.0*(q1*q3 - q0*q2);
+  R[7] = 2.0*(q2*q3 + q0*q1);
+  R[8] = 1.0 - 2.0*(q1*q1 + q2*q2);
 }
 
 /*!
@@ -503,6 +570,66 @@ inline void rm_rqtn(quaternion &q, const double R[DIM][DIM]){
     qq[0] = (R[1][0] - R[0][1]) * dmy;
     qq[1] = (R[2][0] + R[0][2]) * dmy;
     qq[2] = (R[2][1] + R[1][2]) * dmy;
+    break;
+  }
+  qtn_init(q, qq);
+}
+
+/*!
+  \brief Compute rotation quaternion given rotation matrix (as 1d array)
+ */
+inline void rm_rqtn(quaternion &q, const double R[DIM*DIM]){
+  double qq[4];
+
+  //q_i^2 components
+  qq[0] = 1.0 + R[0] + R[4] + R[8];
+  qq[1] = 1.0 + R[0] - R[4] - R[8];
+  qq[2] = 1.0 - R[0] + R[4] - R[8];
+  qq[3] = 1.0 - R[0] - R[4] + R[8];
+  assert(qq[0] >= 0 && qq[1] >= 0 && qq[2] >= 0 && qq[3] >= 0);
+
+  double dmy;
+  double mm = qq[0];
+  int i = 0;
+  for(int d = 1; d < 4; d++){ // find component with largest absolute magnitude
+    dmy = qq[d];
+    if(dmy > mm){
+      mm = dmy;
+      i = d;
+    }
+  }
+  switch (i){
+  case 0:
+    qq[0] = sqrt(qq[0]) / 2.0;
+    dmy = 1.0/(4.0 * qq[0]);
+
+    qq[1] = (R[7] - R[5]) * dmy;
+    qq[2] = (R[2] - R[6]) * dmy;
+    qq[3] = (R[3] - R[1]) * dmy;
+    break;
+  case 1:
+    qq[1] = sqrt(qq[1]) / 2.0;
+    dmy = 1.0/(4.0 * qq[1]);
+
+    qq[0] = (R[7] - R[5]) * dmy;
+    qq[2] = (R[3] + R[1]) * dmy;
+    qq[3] = (R[2] + R[6]) * dmy;
+    break;
+  case 2:
+    qq[2] = sqrt(qq[2]) / 2.0;
+    dmy = 1.0/(4.0 * qq[2]);
+
+    qq[0] = (R[2] - R[6]) * dmy;
+    qq[1] = (R[3] + R[1]) * dmy;
+    qq[3] = (R[7] + R[5]) * dmy;
+    break;
+  case 3:
+    qq[3] = sqrt(qq[3]) / 2.0;
+    dmy = 1.0/(4.0 * qq[3]);
+
+    qq[0] = (R[3] - R[1]) * dmy;
+    qq[1] = (R[6] + R[2]) * dmy;
+    qq[2] = (R[7] + R[5]) * dmy;
     break;
   }
   qtn_init(q, qq);

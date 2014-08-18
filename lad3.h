@@ -34,14 +34,22 @@ inline void v_copy(double copy[DIM], const double original[DIM]){
  */
 inline void M_copy(double copy[DIM][DIM], const double original[DIM][DIM]){
   for(int i = 0; i < DIM; i++)
-    for(int j = 0; j < DIM; j++)
-      copy[i][j] = original[i][j];
+    for(int j = 0; j < DIM; j++) copy[i][j] = original[i][j];
 }
 /*!
   \brief copy matrix
  */
 inline void M_copy(double copy[DIM*DIM], const double original[DIM*DIM]){
   for(int i = 0; i < DIM*DIM; i++) copy[i] = original[i];
+}
+
+inline void M_copy(double copy[DIM*DIM], const double original[DIM][DIM]){
+  for(int i = 0; i < DIM; i++)
+    for(int j = 0; j < DIM; j++) copy[i*DIM+j] = original[i][j];
+}
+inline void M_copy(double copy[DIM][DIM], const double original[DIM*DIM]){
+  for(int i = 0; i < DIM; i++)
+    for(int j = 0; j < DIM; j++) copy[i][j] = original[i*DIM+j];
 }
 
 /*!
