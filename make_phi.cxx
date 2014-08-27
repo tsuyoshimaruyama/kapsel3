@@ -39,7 +39,7 @@ void Make_surface_normal(double **surface_normal
       assert(xp[d] < L[d]);
     }
     sw_in_cell 
-      = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
     sw_in_cell = 1;
     for(int mesh=0; mesh < NP_domain; mesh++){
       Relative_coord(Sekibun_cell[mesh]
@@ -48,14 +48,18 @@ void Make_surface_normal(double **surface_normal
       dmy = ABS(dmy_r - RADIUS);
       if(dmy < HXI){
 	  ir = 1./dmy_r;
-	for(int d=0;d<DIM;d++){
-	  surface_normal[d][(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] 
-	    += r[d]*ir;
-	}
+          int im = (r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2];
+#pragma omp atomic
+	  surface_normal[0][im] += r[0]*ir;
+#pragma omp atomic
+	  surface_normal[1][im] += r[1]*ir;
+#pragma omp atomic
+	  surface_normal[2][im] += r[2]*ir;
       }
     }
   }
 }
+
 /////////////
 inline void Make_rho_field_primitive(double *phi
 				     ,Particle *p
@@ -83,7 +87,7 @@ inline void Make_rho_field_primitive(double *phi
 	}
 	
 	sw_in_cell 
-	    = Particle_cell(xp, dx, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+	    = Particle_cell(xp, dx, x_int, residue);// {1,0} が返ってくる
 	sw_in_cell = 1;
 	for(int mesh=0; mesh < np_domain; mesh++){
 	    Relative_coord(sekibun_cell[mesh]
@@ -93,6 +97,7 @@ inline void Make_rho_field_primitive(double *phi
 	    }
 	    dmy=Distance(x,xp);
 	    dmy_phi=Phi(dmy)*drho;
+#pragma omp atomic
 	    phi[(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += dmy_phi;
 	}
     }
@@ -139,85 +144,6 @@ inline double janus_geometry(const Particle &p, const double normal[DIM]){
   return ((cos_theta >= 0.0) ? 1.0 : -1.0);
 }
 
-void Make_phi_janus_particle(double *phi, double *id_phi, Particle *p){
-  double xp[DIM], residue[DIM], r[DIM];
-  double dmy_r;
-  int x_int[DIM], r_mesh[DIM];
-  int *nlattice;
-  int im, sw_in_cell;
-  nlattice = Ns;
-
-  //Reset janus labels for grid points
-  Reset_phi(id_phi, -1.0);
-
-  for(int n = 0; n < Particle_Number; n++){
-    
-    for(int d = 0; d < DIM; d++){
-      xp[d] = p[n].x[d];
-    }
-    
-    sw_in_cell = Particle_cell(xp, DX, x_int, residue);
-    sw_in_cell = 1;
-    
-    for(int mesh = 0; mesh < NP_domain; mesh++){
-      Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell,
-		     nlattice, DX, r_mesh, r);
-      dmy_r = sqrt(SQ(r[0]) + SQ(r[1]) + SQ(r[2]));
-      for(int d = 0; d < DIM; d++){
-	r[d] /= dmy_r;
-      }
-      im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-      
-      //New mesh point or closer particle
-      if(id_phi[im] < 0 || dmy_r < id_phi[im]){
-	phi[im] = janus_geometry(p[n], r) * ABS(phi[im]);
-	id_phi[im] = dmy_r;
-      }
-      
-    }//mesh
-  }//Particle Number
-}
-
-void Make_phi_janus_particle_OBL(double *phi, double *id_phi, Particle *p){
-  double xp[DIM], residue[DIM], r[DIM], x[DIM];
-  double dmy_r;
-  int x_int[DIM], r_mesh[DIM];
-  int *nlattice;
-  int im, sign, sw_in_cell;
-  nlattice = Ns;
-
-  // Reset janus labels for grid points
-  Reset_phi(id_phi, -1.0);
-
-  for(int n = 0; n < Particle_Number; n++){
-    for(int d = 0; d < DIM; d++){
-      xp[d] = p[n].x[d];
-    }
-    
-    sw_in_cell = Particle_cell(xp, DX, x_int, residue);
-    sw_in_cell = 1;
-    
-    for(int mesh = 0; mesh < NP_domain; mesh++){
-      sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, 
-					     residue, sw_in_cell, nlattice, 
-					     DX, r_mesh, r);
-      dmy_r = sqrt(SQ(r[0]) + SQ(r[1]) + SQ(r[2]));
-      for(int d = 0; d < DIM; d++){
-	r[d] /= dmy_r;
-      }
-      im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-      
-      //New mesh point or closer particle
-      if(id_phi[im] < 0 || dmy_r < id_phi[im]){
-	phi[im] = janus_geometry(p[n], r) * ABS(phi[im]);
-	id_phi[im] = dmy_r;
-      }
-      
-    }//mesh
-  }//Particle Number
-}
-
-
 inline void Make_phi_u_primitive(double *phi
 				 ,double **up
 				 ,Particle *p
@@ -251,7 +177,7 @@ inline void Make_phi_u_primitive(double *phi
 	}
 	
 	sw_in_cell 
-	    = Particle_cell(xp, dx, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+	    = Particle_cell(xp, dx, x_int, residue);// {1,0} が返ってくる
 	sw_in_cell = 1;
 	for(int mesh=0; mesh < np_domain; mesh++){
 	    Relative_coord(sekibun_cell[mesh]
@@ -265,13 +191,17 @@ inline void Make_phi_u_primitive(double *phi
 	    //dmy = sqrt(dmy);
 	    dmy_phi= Phi(dmy,radius);
 	    im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]; 
+#pragma omp atomic
 	    phi[im] += dmy_phi;
 	    
 	    if(SW_UP){
 		Angular2v(omega_p, r, v_rot);
-		for(int d=0;d<DIM;d++){
-		    up[d][im] += ( (vp[d]+v_rot[d]) * dmy_phi);
-		}
+#pragma omp atomic
+                up[0][im] += ( (vp[0]+v_rot[0]) * dmy_phi);
+#pragma omp atomic
+                up[1][im] += ( (vp[1]+v_rot[1]) * dmy_phi);
+#pragma omp atomic
+                up[2][im] += ( (vp[2]+v_rot[2]) * dmy_phi);
 	    }
 	}
     }
@@ -328,7 +258,7 @@ inline void Make_phi_u_primitive_OBL(double *phi
 	}
 	
 	sw_in_cell 
-	    = Particle_cell(xp, dx, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+	    = Particle_cell(xp, dx, x_int, residue);// {1,0} が返ってくる
 	sw_in_cell = 1;
 	for(int mesh=0; mesh < np_domain; mesh++){
 	    sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh]
@@ -349,17 +279,17 @@ inline void Make_phi_u_primitive_OBL(double *phi
 
 	    dmy_phi= Phi(dmy,radius);
 	    im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+#pragma omp atomic
 	    phi[im] += dmy_phi;
 	    
 	    if(SW_UP){
 		Angular2v(omega_p, r, v_rot);
-		for(int d=0;d<DIM;d++){
-		    if (!(d == 0)) {
-			up[d][im] += (vp[d] + v_rot[d])*dmy_phi;
-		    } else {
-			up[0][im] += ( (vp[d] - sign*Shear_rate_eff*L_particle[1] + v_rot[d])*dmy_phi);
-		    }
-		}
+#pragma omp atomic
+                up[0][im] += ( (vp[0] - sign*Shear_rate_eff*L_particle[1] + v_rot[0])*dmy_phi);
+#pragma omp atomic
+                up[1][im] += (vp[1] + v_rot[1])*dmy_phi;
+#pragma omp atomic
+                up[2][im] += (vp[2] + v_rot[2])*dmy_phi;
 	    }
 	}
     }
@@ -461,7 +391,7 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p){
     }
     
     sw_in_cell 
-      = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
     sw_in_cell = 1;
     for(int mesh=0; mesh < NP_domain; mesh++){
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
@@ -470,11 +400,15 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p){
       }
       dmy = Distance(x, xp);
       dmy_phi= Phi(dmy);
-      phi[(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += dmy_phi;
-      
-      for(int d=0;d<DIM;d++){
-	up[d][(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += ( vp[d] * dmy_phi);
-      }
+      int im = (r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2];
+#pragma omp atomic
+      phi[im] += dmy_phi;
+#pragma omp atomic
+      up[0][im] += ( vp[0] * dmy_phi);
+#pragma omp atomic
+      up[1][im] += ( vp[1] * dmy_phi);
+#pragma omp atomic
+      up[2][im] += ( vp[2] * dmy_phi);
     }
   }
 }
