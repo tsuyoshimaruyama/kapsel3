@@ -14,7 +14,7 @@ double *t;
 
 
 double **ucp;
-double *phi, **up, **u, *rhop;
+double *phi, *phi_sum, **up, **u, *rhop;
 double **work_v3, **work_v2, *work_v1;
 
 int *KX_int, *KY_int, *KZ_int;

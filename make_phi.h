@@ -46,6 +46,10 @@ void Make_phi_particle(double *phi
 		       ,const double radius = RADIUS
 		       );
 
+void Make_phi_particle_sum(double *phi, double* phi_sum, Particle* p, const double radius = RADIUS);
+
+void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p, const double radius = RADIUS);
+
 /*!
   \brief Compute smooth particle position and velocity fields
   \details

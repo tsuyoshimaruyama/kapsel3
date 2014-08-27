@@ -51,7 +51,7 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
   \param[in] u current fluid velocity field
   \param[in] jikan time data
  */
-void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const CTime &jikan);
+void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double const* const* u, const CTime &jikan);
 
 /*!
   \brief Compute hydrodynamic force acting on particles in a system with oblique coordinates (Lees-Edwards PBC)
