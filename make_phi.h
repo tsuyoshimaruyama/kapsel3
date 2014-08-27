@@ -30,13 +30,6 @@ extern int **Sekibun_cell;
  */
 void Make_phi_u_advection(double *phi, double **up, Particle *p);
 
-void Make_phi_janus_particle(double *phi,
-			     double *id_phi,
-			     Particle *p);
-void Make_phi_janus_particle_OBL(double *phi,
-				 double *id_phi,
-				 Particle *p);
-
 /*!
   \brief Compute smooth particle position field
   \details 
@@ -116,7 +109,7 @@ inline int Particle_cell(const double *xp
     assert(xp[2] < L_particle[2]);
   }
   
-  // r_i $B$N:82<$N%a%C%7%e:BI8$r7W;;(B
+  // r_i の左下のメッシュ座標を計算
   int sw_in_cell=0;
   for(int d=0; d<DIM; d++){
     double dmy = (xp[d] *idx);
