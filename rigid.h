@@ -17,8 +17,8 @@
 #include "particle_rotation_solver.h"
 
 /*!
-  \brief Initialize the geometry and center of mass position for each
-  of the rigid particles
+  \brief Compute initial center of mass position for each
+  of the rigid particles, assuming no particle overlap
   \warning Input rigid body coordinates should be given without PBC
   \todo Remove PBC from rigid particles when writing restart files
 */
@@ -35,7 +35,14 @@ inline void init_set_xGs(Particle *p){
     
     for(int d=0; d<DIM; d++) xGs[rigidID][d] /= (double) Rigid_Particle_Numbers[rigidID];
   }
-  
+}
+
+/*!
+  \brief Initialize geometry for each of the rigid particles
+  by computing relative vectors from COM to individual beads
+  \warning Call only after center of mass position xGs (without PBC) has been set
+ */
+inline void init_set_GRvecs(Particle *p){
   //position vectors from center of mass to individual beads
 #pragma omp parallel for schedule(dynamic, 1)
   for(int n=0; n<Particle_Number; n++){
@@ -44,7 +51,13 @@ inline void init_set_xGs(Particle *p){
       GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
     }
   }
+}
 
+/*
+  \brief Enforce PBC on rigid bodies
+  \warning Call only after center of mass and geometry has been initialized
+ */
+inline void init_set_PBC(Particle *p){
   //set raw (no-pbc) coordinates for rigid particles
 #pragma omp parallel for schedule(dynamic, 1)
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){

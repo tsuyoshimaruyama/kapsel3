@@ -280,7 +280,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double c
 	    Angular2v(omega_p, r, v_rot);
 
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
-	    dmy_phi= (phi_sum[im] <= 1.0 ? Phi(dmyR, RADIUS) : Phi(dmyR, RADIUS)/phi_sum[im]);
+            dmy_phi = Phi(dmyR, RADIUS) / MAX(phi_sum[im], 1.0);
 	    for(int d=0; d < DIM; d++ ){ 
               dmy_fp[d] = ((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;
               force[d] += dmy_fp[d];
