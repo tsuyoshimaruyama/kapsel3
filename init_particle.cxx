@@ -436,6 +436,13 @@ void Init_Particle(Particle *p){
       fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][0][0], Rigid_Moments[rigidID][0][1], Rigid_Moments[rigidID][0][2]);
       fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][1][0], Rigid_Moments[rigidID][1][1], Rigid_Moments[rigidID][1][2]);
       fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][2][0], Rigid_Moments[rigidID][2][1], Rigid_Moments[rigidID][2][2]);
+      fprintf(stderr, "# MOI_body:\n");
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][0][0], Rigid_Moments_body[rigidID][0][1], Rigid_Moments_body[rigidID][0][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][1][0], Rigid_Moments_body[rigidID][1][1], Rigid_Moments_body[rigidID][1][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][2][0], Rigid_Moments_body[rigidID][2][1], Rigid_Moments_body[rigidID][2][2]);
     }
     fprintf(stderr, "####\n");
     exit_job(EXIT_FAILURE);

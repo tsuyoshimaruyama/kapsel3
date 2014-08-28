@@ -113,6 +113,10 @@ inline void init_Rigid_Coordinates(Particle *p){
       qtn_init(p[n].q, dmy_q);
     }
     free(eigen_vector);
+
+    //Rigid_Moments_body gives inertia tensor in body-frame
+    //By construction it should be diagonal
+    rigid_body_matrix_rotation(Rigid_Moments_body[rigidID][0], Rigid_Moments[rigidID][0], dmy_q, SPACE2BODY);
   }
 
   //GRvecs_body gives position of all beads in body-frame
