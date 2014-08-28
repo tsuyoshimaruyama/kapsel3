@@ -225,9 +225,9 @@ inline void init_set_vGs(Particle *p){
 }
 
 /*!
-  \brief rotate GRvecs to match current orientation of rigid body
+  \brief rotate GRvecs and Rigig_Moments to match current orientation of rigid body
  */
-inline void update_GRvecs(Particle *p){
+inline void update_Orientation(Particle *p){
   int rigid_first_n;
   int rigid_last_n;
   quaternion rigidQ;
@@ -236,13 +236,16 @@ inline void update_GRvecs(Particle *p){
     rigid_first_n = Rigid_Particle_Cumul[rigidID];
     rigid_last_n = Rigid_Particle_Cumul[rigidID+1];
     qtn_init(rigidQ, p[rigid_first_n].q);
-
+    
     for(int n = rigid_first_n; n < rigid_last_n; n++){
       rigid_body_rotation(GRvecs[n], GRvecs_body[n], rigidQ, BODY2SPACE);
     }
+    rigid_body_matrix_rotation(Rigid_Moments[rigidID][0], Rigid_Moments_body[rigidID][0], 
+                               rigidQ, BODY2SPACE);
+    Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+    check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
   }
 }
-
 
 /*! 
   \brief Set masses and inertia tensors for current rigid body configurations
@@ -358,8 +361,7 @@ inline void solver_Rigid_Position(Particle *p, const CTime &jikan, string CASE){
   }
 
   //update relative vectors to bead positions
-  update_GRvecs(p);
-  set_Rigid_MMs(p);
+  update_Orientation(p);
 }
 
 /*!
@@ -434,8 +436,7 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   }
 
   //update relative vectors to bead positions
-  update_GRvecs(p);
-  set_Rigid_MMs(p);
+  update_Orientation(p);
 }
 
 /*!
