@@ -521,7 +521,6 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
   const double dx = DX;
   const double dx3= DX3;
   const int np_domain = NP_domain; 
-  const double dmy_mass0 = RHO*DX3;
   int const* const* sekibun_cell = Sekibun_cell;
   int const* nlattice = Ns;
 
@@ -554,7 +553,7 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
     }
     
 
-    Rigid_Masses[rigidID] = dmy_mass*dmy_mass0;
+    Rigid_Masses[rigidID] = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
     Rigid_IMasses[rigidID] = 1.0/Rigid_Masses[rigidID];
     for(int d = 0; d < DIM; d++) xGs[rigidID][d] = dmy_com[d] / dmy_mass;
   }
@@ -563,7 +562,6 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
   const double dx = DX;
   const double dx3= DX3;
   const int np_domain = NP_domain;
-  const double dmy_mass0 = RHO*DX3;
   int const* const* sekibun_cell = Sekibun_cell;
   int const* nlattice = Ns;
   
@@ -611,7 +609,7 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
       
       for(int d=0;d<DIM;d++){
       for(int e = 0; e < DIM; e++){
-        Rigid_Moments[rigidID][d][e] = dmy_inertia[d][e]*dmy_mass0;
+        Rigid_Moments[rigidID][d][e] = dmy_inertia[d][e]*DX3*RHO_particle[ RigidID_Components[rigidID] ];
       }
     }
     Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
