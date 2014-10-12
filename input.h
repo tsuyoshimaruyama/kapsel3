@@ -225,6 +225,7 @@ extern double *Rigid_Masses;
 extern double *Rigid_IMasses;
 extern double ***Rigid_Moments;
 extern double ***Rigid_IMoments;
+extern double ***Rigid_Moments_body;
 extern double **velocityGs;
 extern double **omegaGs;
 extern double **forceGs;	//hydro

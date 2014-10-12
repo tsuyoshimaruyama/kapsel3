@@ -15,6 +15,7 @@
 #include "profile.h"
 #include "rigid_body.h"
 #include "operate_omega.h"
+#include "Matrix_Inverse.h"
 
 extern void (*Angular2v)(const double *omega, const double *r, double *v);
 extern int NP_domain;
@@ -45,6 +46,10 @@ void Make_phi_particle(double *phi
 		       ,Particle *p
 		       ,const double radius = RADIUS
 		       );
+
+void Make_phi_particle_sum(double *phi, double* phi_sum, Particle* p, const double radius = RADIUS);
+
+void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p, const double radius = RADIUS);
 
 /*!
   \brief Compute smooth particle position and velocity fields
@@ -521,5 +526,22 @@ inline void Reset_u(double **up){
     }/* end omp for up[2] */
   }
 }
+
+/*!
+  \brief Compute total mass and mass center of rigid body composed
+  of possibly overalapping spherical beads
+  \param[in] phi_sum total (non-normalized) phi field
+  \param[in] p particle list
+ */
+void Make_phi_rigid_mass(const double* phi_sum, Particle* p);
+/*
+  \brief Compute moment of inertia of rigid body composed of
+  possibly overlapping spherical beads
+  \param[in] phi_sum total (non-normalized) phi field
+  \param[in] p particle list
+  \warning Rigid body center of mass (xGs) and geometry (GRvecs)
+  are assumed to be computed already
+ */
+void Make_phi_rigid_inertia(const double* phi_sum, Particle* p);
 
 #endif

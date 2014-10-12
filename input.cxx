@@ -179,6 +179,7 @@ double *Rigid_Masses;
 double *Rigid_IMasses;
 double ***Rigid_Moments;
 double ***Rigid_IMoments;
+double ***Rigid_Moments_body;
 double **velocityGs;
 double **omegaGs;
 double **forceGs;	//hydro
@@ -1315,6 +1316,7 @@ void Gourmet_file_io(const char *infile
 		Rigid_IMasses = alloc_1d_double(Rigid_Number);
 		Rigid_Moments = alloc_3d_double(Rigid_Number, DIM, DIM);
 		Rigid_IMoments = alloc_3d_double(Rigid_Number, DIM, DIM);
+                Rigid_Moments_body = alloc_3d_double(Rigid_Number, DIM, DIM);
 
 		velocityGs = alloc_2d_double(Rigid_Number, DIM);
 		omegaGs = alloc_2d_double(Rigid_Number, DIM);

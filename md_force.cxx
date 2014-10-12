@@ -212,7 +212,8 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
       }
     }//Particle_number
 }
-void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const CTime &jikan){
+void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double const* const* u,
+                                    const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
     
@@ -276,10 +277,10 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* const* u, const C
 	    }
 	    //dmyR = sqrt(dmyR); // vesion2.10 needs this value
 	    dmyR = Distance(x, xp); // vesion2.00 needs this value
-	    dmy_phi= Phi(dmyR, RADIUS);
 	    Angular2v(omega_p, r, v_rot);
 
 	    int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+            dmy_phi = Phi(dmyR, RADIUS) / MAX(phi_sum[im], 1.0);
 	    for(int d=0; d < DIM; d++ ){ 
               dmy_fp[d] = ((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;
               force[d] += dmy_fp[d];

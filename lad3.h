@@ -34,14 +34,22 @@ inline void v_copy(double copy[DIM], const double original[DIM]){
  */
 inline void M_copy(double copy[DIM][DIM], const double original[DIM][DIM]){
   for(int i = 0; i < DIM; i++)
-    for(int j = 0; j < DIM; j++)
-      copy[i][j] = original[i][j];
+    for(int j = 0; j < DIM; j++) copy[i][j] = original[i][j];
 }
 /*!
   \brief copy matrix
  */
 inline void M_copy(double copy[DIM*DIM], const double original[DIM*DIM]){
   for(int i = 0; i < DIM*DIM; i++) copy[i] = original[i];
+}
+
+inline void M_copy(double copy[DIM*DIM], const double original[DIM][DIM]){
+  for(int i = 0; i < DIM; i++)
+    for(int j = 0; j < DIM; j++) copy[i*DIM+j] = original[i][j];
+}
+inline void M_copy(double copy[DIM][DIM], const double original[DIM*DIM]){
+  for(int i = 0; i < DIM; i++)
+    for(int j = 0; j < DIM; j++) copy[i][j] = original[i*DIM+j];
 }
 
 /*!
@@ -115,7 +123,7 @@ inline void M_add(double C[DIM][DIM], const double A[DIM][DIM],
   for(int i = 0; i < DIM; i++){
     for(int j = 0; j < DIM; j++){
       C[i][j] = A[i][j] + alpha * B[i][j];
-    }
+}
   }
 }
 /*!
@@ -290,7 +298,7 @@ inline void M_trans(double B[DIM][DIM], const double A[DIM][DIM],
   for(int i = 0; i < DIM; i++){
     for(int j = 0; j < DIM; j++){
       B[i][j] = alpha*A[j][i];
-    }
+}
   }
 }
 /*!
@@ -391,7 +399,7 @@ inline void M_isValidRotation(double QR[DIM*DIM]){
   double iQR[DIM*DIM];
   double tQR[DIM*DIM];
   int det, test_det, test_inv;
-  
+
   test_det = (equal_tol(M_det(QR), 1.0, LARGE_TOL_MP) ? 1 : 0);
   M_trans(tQR, QR);
   M_prod(iQR, tQR, QR);
@@ -464,13 +472,13 @@ inline double M_sqnorm(const double A[DIM*DIM]){
   \brief Vector outer product: (AB)_ij = alpha*(a_i*b_j)
  */
 inline void v_outer_prod(double AB[DIM][DIM],
-                         const double a[DIM],
-                         const double b[DIM],
-                         const double alpha=1.0){
+		  const double a[DIM],
+		  const double b[DIM],
+		  const double alpha=1.0){
   for(int i = 0; i < DIM; i++){
     for(int j = 0; j < DIM; j++){
       AB[i][j] = alpha*a[i]*b[j];
-    }
+}
   }
 }
 /*!

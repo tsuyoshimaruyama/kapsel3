@@ -48,6 +48,9 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		MD_solver_position_AB2(p, jikan);
 	    }
 	}
+        Reset_phi(phi);
+        Reset_phi(phi_sum);
+        Make_phi_particle_sum(phi, phi_sum, p);
 	
 	if(SW_EQ == Electrolyte){
 	    double * rescale_factor = new double[N_spec];
@@ -60,7 +63,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	if(SW_EQ == Electrolyte){
 	    {
 		Reset_phi_u(phi, up);
-		Calc_f_hydro_correct_precision(p, u, jikan);
+		Calc_f_hydro_correct_precision(p, phi_sum, u, jikan);
 		for(int n=0;n<Particle_Number;n++){
 		    for(int d=0;d<DIM;d++){
 			p[n].f_hydro1[d] = p[n].f_hydro[d];
@@ -88,7 +91,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	{// Calculation of hydrodynamic force
 
 	  Reset_phi_u(phi, up);	  
-	  Calc_f_hydro_correct_precision(p, u, jikan); //hydrodynamic force
+	  Calc_f_hydro_correct_precision(p, phi_sum, u, jikan); //hydrodynamic force
 
 	  if(!SW_JANUS_SLIP){
 	    if(!Fixed_particle){
@@ -151,8 +154,10 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
         }
 	
 	{
-	    Reset_phi_u(phi, up);
-	    Make_phi_u_particle(phi, up, p);
+            //      Reset_phi_u(phi, up);
+            //	    Make_phi_u_particle(phi, up, p);
+	    Reset_u(up);
+            Make_u_particle_sum(up, phi_sum, p);
 	    Make_f_particle_dt_sole(f, u, up, phi);
 	    Add_f_particle(u, f);
 	}
@@ -309,6 +314,7 @@ inline void Mem_alloc_var(double **zeta){
   }
   
   phi = alloc_1d_double(NX*NY*NZ_);
+  phi_sum = alloc_1d_double(NX*NY*NZ_);
   rhop = alloc_1d_double(NX*NY*NZ_);
   work_v1 = alloc_1d_double(NX*NY*NZ_);
   Hydro_force = alloc_1d_double(NX*NY*NZ_);

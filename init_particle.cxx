@@ -407,31 +407,52 @@ void Init_Particle(Particle *p){
 
   // initialize rigid status
   if(SW_PT == rigid){
+    /* Old version assumed no overlap between beads
     init_set_xGs(p);
+    init_set_GRvecs(p);
+    init_set_PBC(p);
     set_Rigid_MMs(p);
+    */
+
+    //Reset mass moments to account for particle overlap
+    Reset_phi(phi);
+    Reset_phi(phi_sum);
+    Make_phi_particle_sum(phi, phi_sum, p);
+    Make_phi_rigid_mass(phi_sum, p);        
+
+    init_set_GRvecs(p);       
+    init_set_PBC(p);
+    Make_phi_rigid_inertia(phi_sum, p);    
+
     init_Rigid_Coordinates(p);
-    
     init_set_vGs(p);
+
+    fprintf(stderr, "####\n");
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      fprintf(stderr, "# Rigid Body %d built from %d spherical beads\n", rigidID, Rigid_Particle_Numbers[rigidID]);
+      fprintf(stderr, "# MASS    : %10.6g\n", Rigid_Masses[rigidID]);
+      fprintf(stderr, "# COM     : %10.6g %10.6g %10.6g\n", xGs[rigidID][0], xGs[rigidID][1], xGs[rigidID][2]);
+      fprintf(stderr, "# MOI     :\n");
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][0][0], Rigid_Moments[rigidID][0][1], Rigid_Moments[rigidID][0][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][1][0], Rigid_Moments[rigidID][1][1], Rigid_Moments[rigidID][1][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", Rigid_Moments[rigidID][2][0], Rigid_Moments[rigidID][2][1], Rigid_Moments[rigidID][2][2]);
+      fprintf(stderr, "# MOI_body:\n");
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][0][0], Rigid_Moments_body[rigidID][0][1], Rigid_Moments_body[rigidID][0][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][1][0], Rigid_Moments_body[rigidID][1][1], Rigid_Moments_body[rigidID][1][2]);
+      fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
+              Rigid_Moments_body[rigidID][2][0], Rigid_Moments_body[rigidID][2][1], Rigid_Moments_body[rigidID][2][2]);
+    }
+    fprintf(stderr, "####\n");
+    exit_job(EXIT_FAILURE);
   }
 
   {//set pinned particle velocities to zero
-    if(PINNING){
+    if(PINNING && SW_PT != rigid){
       Pinning(p);
     }
   }
-
-  // output p.x and p.v
-  /*for(int i=0; i<Particle_Number; i++){
-    double phi;
-    double nv[DIM];
-    rqtn_rv(phi, nv, p[i].q);      
-    fprintf(stderr,"# %d-th particle position (p_x, p_y, p_z)=(%g, %g, %g)\n",i,p[i].x[0],p[i].x[1],p[i].x[2]);
-    fprintf(stderr,"# %d-th particle velocity (p_vx, p_vy, p_vz)=(%g, %g, %g)\n",i,p[i].v[0],p[i].v[1],p[i].v[2]);
-    fprintf(stderr, "# %d-th particle orientation  (phi, nx, ny, nz) =(%g, %g, %g, %g)\n", 
-            i, phi*180.0/M_PI, nv[0], nv[1], nv[2]);
-    fprintf(stderr, "# %d-th particle [space frame] angular velocity  (p_wx, p_wy, p_wq) =(%g, %g, %g)\n",
-              i, p[i].omega[0], p[i].omega[1], p[i].omega[2]);
-  }*/
   fprintf(stderr,"############################\n");
 }
 void Show_parameter(Particle *p){
