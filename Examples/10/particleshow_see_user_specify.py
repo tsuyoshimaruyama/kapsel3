@@ -61,7 +61,7 @@ if objType=="rigid" or objType=="chain":
                 for i in range(size_Ns):
                         #chains
                         for m in range(Ns[i][1]):
-                                r=$RigidParticles[n_offset+m].R
+				r=$switch.INIT_distribution.user_specify.Particles[n_offset+n].R
                                 sphere(r,spat[i%len(spat)])
                         n_offset+=Ns[i][1]
 else:
@@ -69,6 +69,6 @@ else:
         for i in range(size_Ns):
                 #particles
                 for n in range(Ns[i][0]):
-                        r=$Particles[n_offset+n].R
+			r=$switch.INIT_distribution.user_specify.Particles[n_offset+n].R
                         sphere(r,spat[i%len(spat)])
                 n_offset+=Ns[i][0]
