@@ -445,7 +445,6 @@ void Init_Particle(Particle *p){
               Rigid_Moments_body[rigidID][2][0], Rigid_Moments_body[rigidID][2][1], Rigid_Moments_body[rigidID][2][2]);
     }
     fprintf(stderr, "####\n");
-    exit_job(EXIT_FAILURE);
   }
 
   {//set pinned particle velocities to zero

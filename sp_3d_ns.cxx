@@ -62,7 +62,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 	
 	if(SW_EQ == Electrolyte){
 	    {
-		Reset_phi_u(phi, up);
+		Reset_u(up);
 		Calc_f_hydro_correct_precision(p, phi_sum, u, jikan);
 		for(int n=0;n<Particle_Number;n++){
 		    for(int d=0;d<DIM;d++){
@@ -90,7 +90,7 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 		
 	{// Calculation of hydrodynamic force
 
-	  Reset_phi_u(phi, up);	  
+	  Reset_u(up);	  
 	  Calc_f_hydro_correct_precision(p, phi_sum, u, jikan); //hydrodynamic force
 
 	  if(!SW_JANUS_SLIP){
@@ -154,12 +154,12 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
         }
 	
 	{
-            //      Reset_phi_u(phi, up);
-            //	    Make_phi_u_particle(phi, up, p);
-	    Reset_u(up);
-            Make_u_particle_sum(up, phi_sum, p);
-	    Make_f_particle_dt_sole(f, u, up, phi);
-	    Add_f_particle(u, f);
+	  //Reset_phi_u(phi, up);
+	  //Make_phi_u_particle(phi, up, p);
+	  Reset_u(up);
+	  Make_u_particle_sum(up, phi_sum, p);
+	  Make_f_particle_dt_sole(f, u, up, phi);
+	  Add_f_particle(u, f);
 	}
 	
 	
