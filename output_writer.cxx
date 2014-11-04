@@ -235,16 +235,22 @@ void hdf5_writer::write_start(){
     h5_check_err(gid_time);
 
     //create field group
-    gid_field = H5Gcreate(gid_time, gid_field_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    h5_check_err(gid_field);
+    if(!print_field.none){
+      gid_field = H5Gcreate(gid_time, gid_field_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(gid_field);
+    }
 
     //create particle group
-    gid_part  = H5Gcreate(gid_time, gid_part_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    h5_check_err(gid_part);
+    if(print_particle_num != 0){
+      gid_part  = H5Gcreate(gid_time, gid_part_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(gid_part);
+    }
 
     //create obstacle group
-    gid_pobs  = H5Gcreate(gid_time, gid_pobs_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    h5_check_err(gid_pobs);
+    if(print_obstacle_num != 0){
+      gid_pobs  = H5Gcreate(gid_time, gid_pobs_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(gid_pobs);
+    }
   }
 
   //add attributes
@@ -257,14 +263,20 @@ void hdf5_writer::write_start(){
 void hdf5_writer::write_end(){
   herr_t status;
 
-  status = H5Gclose(gid_pobs);
-  h5_check_err(status);
-  
-  status = H5Gclose(gid_part);
-  h5_check_err(status);
+  if(print_obstacle_num != 0){
+    status = H5Gclose(gid_pobs);
+    h5_check_err(status);
+  }
 
-  status = H5Gclose(gid_field);
-  h5_check_err(status);
+  if(print_particle_num != 0){
+    status = H5Gclose(gid_part);
+    h5_check_err(status);
+  }
+
+  if(!print_field.none){
+    status = H5Gclose(gid_field);
+    h5_check_err(status);
+  }
 
   status = H5Fflush(gid_time, H5F_SCOPE_LOCAL);
   h5_check_err(status);
@@ -607,6 +619,7 @@ void hdf5_writer::write_configure_file(){
 }
 
 void hdf5_writer::write_field_info(){
+  if(print_field.none) return;
   double* work_v3[DIM];
   for(int d = 0; d < DIM; d++) 
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);

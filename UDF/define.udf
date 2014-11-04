@@ -185,11 +185,7 @@ switch: {
    LJ_truncate: select {'ON','OFF','NONE'} "OFF:normal LJ, ON:WCA, NONE: no-intaction at all"
    INIT_distribution: {
       type: select {'uniform_random','random_walk','FCC','BCC','user_specify'} 
-	"uniform_random:distributed uniformly in box,\
-	random_walk:distributed uniformly in box,\
-	FCC:distributed on FCC latice,\
-	BCC:distributed on BCC latice,\
-	user_specify:configuration and velocity specified by user"
+	"uniform_random:distributed uniformly in box, random_walk:distributed uniformly in box, FCC:distributed on FCC latice, BCC:distributed on BCC latice, user_specify:configuration and velocity specified by user"
       random_walk: {
          iteration: int
       }

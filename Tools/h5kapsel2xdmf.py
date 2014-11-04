@@ -50,6 +50,12 @@ def parseConf(fname):
     nump= 0
     numo= 0
 
+    particle_grid = ""
+    obstacle_grid = ""
+    field_grid_x  = ""
+    field_grid_y  = ""
+    field_grid_z  = ""
+
     scalar_field = []
     vector_field = []
     tensor6_field= []
@@ -497,8 +503,12 @@ for i in range(int(time[2])):
                                 vector_obstacle))
     
 fxx = open(h5file+'_fluid.xdmf', 'w')
-pxx = open(h5file+'_particle.xdmf', 'w')
-oxx = open(h5file+'_obstacle.xdmf', 'w')
 fxx.write(finalizexdmf(fx[0]))
+
+pxx = open(h5file+'_particle.xdmf', 'w')
 pxx.write(finalizexdmf(px[0]))
-oxx.write(finalizexdmf(ox[0]))
+
+if obstacle_grid != "":
+    oxx = open(h5file+'_obstacle.xdmf', 'w')
+    oxx.write(finalizexdmf(ox[0]))
+    
