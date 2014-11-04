@@ -1722,7 +1722,7 @@ void Gourmet_file_io(const char *infile
         }
     }
     
-    { /////// output;
+    { // output;
 	string str;
 	Location target("output");
 	ufin->get(target.sub("GTS"),GTS);
@@ -1733,25 +1733,27 @@ void Gourmet_file_io(const char *infile
 	
 	ufres->put(target.sub("GTS"),GTS);
 	ufres->put(target.sub("Num_snap"),Num_snap);
-	{ ////// AVS
+	{ // AVS
 	    ufin->get(target.sub("AVS"),str);
 	    ufout->put(target.sub("AVS"),str);
 	    ufres->put(target.sub("AVS"),str);
 	    SW_OUTFORMAT = OUT_NONE;
 	    SW_EXTFORMAT = EXT_OUT_HDF5;
 
-	    //default print flags
-	    print_field_crop.rank =-1;    //no cropping (0=yz, 1=xz, 2=xy)
-	    print_field_crop.start= 0;    //start plane
-	    print_field_crop.width= 0;    //slab thickness
-
+	    // default field print flags
+	    print_field.none     = false;
 	    print_field.vel      = true;   //print velocity field
 	    print_field.phi      = true;   //print phi field
 	    print_field.charge   = true;   //print rho field      (if electrolyte)
 	    print_field.pressure = false;  //print pressure field (not implemented yet)
-	    print_field.tau      = true;   //print stress field 
+	    print_field.tau      = true;   //print stress field
 
-	    print_particle.first = 0;      //no skipping particles on output
+	    for(int d = 0; d < DIM; d++){
+	      print_field_crop.start[d] = 0;
+	      print_field_crop.count[d] = Ns[d];
+	      print_field_crop.stride[d]= 1;
+	    }
+
 	    if(str == "ON"){
 		target.down("ON");
 		{
@@ -1796,14 +1798,6 @@ void Gourmet_file_io(const char *infile
 			}
 			target.up();
 
-			target.down("Print_particle");
-			{ //Print flags for particle data
-			  ufin->get(target.sub("First"), print_particle.first);
-			  ufout->put(target.sub("First"), print_particle.first);
-			  ufres->put(target.sub("First"), print_particle.first);
-			}
-			target.up();
-			
 			target.down("Print_field");
 			{ //Print flags for field data
 			  ufin->get(target.sub("Crop"), str);
@@ -1811,48 +1805,54 @@ void Gourmet_file_io(const char *infile
 			  ufres->put(target.sub("Crop"), str);
 			  if(str == "YES"){
 			    target.down("YES");
-			    ufin->get(target.sub("Slab"), str);
-			    ufout->put(target.sub("Slab"), str);
-			    ufres->put(target.sub("Slab"), str);
-			    if(str == "YZ"){
-			      print_field_crop.rank = 0;
-			    }else if(str == "XZ"){
-			      print_field_crop.rank = 1;
-			    }else if(str == "XY"){
-			      print_field_crop.rank = 2;
-			    }else{
-			      fprintf(stderr, "Incorrect slab selection\n");
-			      exit_job(EXIT_FAILURE);
-			    }
 
-			    ufin->get(target.sub("Start"), print_field_crop.start);
-			    ufout->put(target.sub("Start"), print_field_crop.start);
-			    ufres->put(target.sub("Start"), print_field_crop.start);
-			    if(print_field_crop.start < 0 || 
-			       print_field_crop.start >= Ns[print_field_crop.rank]){
-			      fprintf(stderr, "Invalid Slab start value: 0 <= %d < %d\n",
-				      print_field_crop.start, Ns[print_field_crop.rank]);
-			      exit_job(EXIT_FAILURE);
+			    const char* slab_name[DIM] = {"Slab_x", "Slab_y", "Slab_z"};
+			    for(int d = 0; d < DIM; d++){
+			      target.down(slab_name[d]);
+
+			      ufin->get(target.sub("start"),   print_field_crop.start[d]);
+			      ufin->get(target.sub("count"),   print_field_crop.count[d]);
+			      ufin->get(target.sub("stride"),  print_field_crop.stride[d]);
+
+			      ufout->put(target.sub("start"),  print_field_crop.start[d]);
+			      ufout->put(target.sub("count"),  print_field_crop.count[d]);
+			      ufout->put(target.sub("stride"), print_field_crop.stride[d]);
+
+			      ufres->put(target.sub("start"),  print_field_crop.start[d]);
+			      ufres->put(target.sub("count"),  print_field_crop.count[d]);
+			      ufres->put(target.sub("stride"), print_field_crop.stride[d]);
+
+			      target.up();
 			    }
 			    
-			    ufin->get(target.sub("Width"), print_field_crop.width);
-			    ufout->put(target.sub("Width"), print_field_crop.width);
-			    ufres->put(target.sub("Width"), print_field_crop.width);
-			    if(print_field_crop.width <= 0 ||
-			       (print_field_crop.start + print_field_crop.width) >
-			       Ns[print_field_crop.rank]){
-			      fprintf(stderr, "Invalid Slab width value: 0< %d && 0 <= %d + %d <= %d\n",
-				      print_field_crop.width,
-				      print_field_crop.start, print_field_crop.width,
-				      Ns[print_field_crop.rank]);
-			      exit_job(EXIT_FAILURE);
+			    for(int d = 0; d < DIM; d++){
+			      if(print_field_crop.start[d] < 0 || print_field_crop.start[d] >= Ns[d]){
+				fprintf(stderr, "# Error: field output start value for %d-dim out of bounds\n", d);
+				exit_job(EXIT_FAILURE);
+			      }
+			      if(print_field_crop.stride[d] <= 0 || print_field_crop.stride[d] >= Ns[d]){
+				fprintf(stderr, "# Error: field output stride value for %d-dim out of bounds\n", d);
+				exit_job(EXIT_FAILURE);
+			      }
+			      if(print_field_crop.count[d] <= 0 || print_field_crop.count[d] > Ns[d]){
+				fprintf(stderr, "# Error: field output count value for %d-dim out of bounds\n", d);
+				exit_job(EXIT_FAILURE);
+			      }
+			      
+			      int dmy_crop_end = print_field_crop.start[d] + (print_field_crop.count[d] - 1)*print_field_crop.stride[d];
+			      if(dmy_crop_end < 0 || dmy_crop_end >= Ns[d] || dmy_crop_end < print_field_crop.start[d]){
+				fprintf(stderr, "# Error: invalid field output range for %d-dim\n", d);
+				exit_job(EXIT_FAILURE);
+			      }
 			    }
-
-			    target.up();
-			  }else{ // no cropping
-			      print_field_crop.rank  = -1;
-			      print_field_crop.start =  0;
-			      print_field_crop.width =  0;
+			    
+			    target.up(); //Crop YES
+			  }else{ // Crop NO
+			    for(int d = 0; d < DIM; d++){
+			      print_field_crop.start[d] = 0;
+			      print_field_crop.count[d] = Ns[d];
+			      print_field_crop.stride[d]= 1;
+			    }
 			  }
 			  
 			  ufin->get(target.sub("Vel"), str);

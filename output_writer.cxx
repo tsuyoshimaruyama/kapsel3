@@ -1,6 +1,7 @@
 #include "output_writer.h"
 
 //fluid properties
+const char* hdf5_writer::f_axis_name[]  = {"x", "y", "z"};
 const char* hdf5_writer::f_vel_name[] = {"u_x", "u_y", "u_z", "u"};
 const char* hdf5_writer::f_tau_name[] = {"tau_xx", "tau_xy", "tau_xz", \
 					 "tau_yy", "tau_yz", "tau_zz", "tau"};
@@ -23,8 +24,13 @@ const char* hdf5_writer::p_torque_r_name= "torque_r";
 const char* hdf5_writer::p_QR_name ="QR";
 
 //hdf5 group names
-const char* hdf5_writer::gid_field_name="field_data";
-const char* hdf5_writer::gid_part_name="particle_data";
+const char* hdf5_writer::gid_sys_data_name="system_data";
+const char* hdf5_writer::gid_trj_data_name="trajectory_data";
+const char* hdf5_writer::gid_field_name="./field";
+const char* hdf5_writer::gid_part_name="./particle";
+const char* hdf5_writer::gid_pobs_name="./obstacle";
+
+const hid_t hdf5_writer::hid_null=static_cast<hid_t>(-1);
 
 //hdf5 writer Constructor / Destroyer
 hdf5_writer::hdf5_writer(const int&    _NX,
@@ -38,107 +44,101 @@ hdf5_writer::hdf5_writer(const int&    _NX,
 			 const char*   _out_name,
 			 const Field_crop& _crop_field,
 			 const Field_output& _print_field,
-			 const Particle_output& _print_particle
+			 std::vector<int> & _print_particle_list,
+			 std::vector<int> & _print_obstacle_list,
+			 Particle *p
 			 )
-
 {
+  //FIELD
   {
-    //FIELD
     NX   = _NX;
     NY   = _NY;
     NZ   = _NZ;
     NZ_  = _NZ_;
     DX   = static_cast<float>(_DX);
-    Origin[0] = Origin[1] = Origin[2] = 0.0;    
-
-    //PARTICLE
-    nump   = _nump;
-
-    //TIME
+    Origin[0] = _crop_field.start[0]*DX;
+    Origin[1] = _crop_field.start[1]*DX;
+    Origin[2] = _crop_field.start[2]*DX;
+  }
+  
+  //PARTICLE
+  {
+    nump               = _nump;
+    print_particle_num = _print_particle_list.size();
+    print_obstacle_num = _print_obstacle_list.size();
+    print_particle_list = (print_particle_num > 0 ? alloc_1d_int(print_particle_num) : NULL);
+    print_obstacle_list = (print_obstacle_num > 0 ? alloc_1d_int(print_obstacle_num) : NULL);
+    for(int i = 0; i < print_particle_num; i++) print_particle_list[i] = _print_particle_list[i];
+    for(int i = 0; i < print_obstacle_num; i++) print_obstacle_list[i] = _print_obstacle_list[i];
+  }
+  
+  //TIME
+  {
     ts   = 0;
     dt   = static_cast<float>(_dt);
-
-    //OUTPUT
+  }
+  
+  //OUTPUT OPTIONS
+  {
     dircheckmake(_out_dir);
     sprintf(out_name, "%s", _out_name);
     sprintf(out_path, "%s/%s", _out_dir, _out_name);
     crop_field  = _crop_field;
     print_field = _print_field;
-    print_particle = _print_particle;
   }
-  
-  {// HDF5
-    fid = gid_time = gid_field = gid_part = -1;
 
-    //Field data read/write access specifiers
+  // HDF5 PARAMETERS
+  {
+    fid = gid_sys_data = gid_trj_data = gid_time = gid_field = gid_part = gid_pobs = -1;
+    herr_t status;
+    
+    //Initialize Memory Dataspace
     {
-      //Array Dimenions
       mem_dims_field[0] = NX*NY*NZ_;
-      out_dims_field[0] = NX;
-      out_dims_field[1] = NY;
-      out_dims_field[2] = NZ;
-
-      //Memory access (ignore ghost fft points)
       mem_dataspace_field = H5Screate_simple(mem_rank_field, mem_dims_field, NULL);
       h5_check_err(mem_dataspace_field);
-      
-      hsize_t mem_offset = 0;
-      hsize_t mem_stride = NZ_;
-      hsize_t mem_count  = NX*NY;
-      hsize_t mem_block  = NZ;
-      herr_t  status  = H5Sselect_hyperslab(mem_dataspace_field, H5S_SELECT_SET,
-					    &mem_offset, &mem_stride, 
-					    &mem_count, &mem_block);
+      status = H5Sselect_none(mem_dataspace_field);
       h5_check_err(status);
-
-
-      //Memory acces hyperslab
-      if(!crop_field.none){
-	int rank = crop_field.rank;
-	int slab_start = crop_field.start;
-	int slab_width = crop_field.width;
-	if(rank == 0){ //yz slab
-	  mem_offset = slab_start*(NY*NZ_);
-	  mem_stride = NY*NZ_;
-	  mem_count  = slab_width;
-	  mem_block  = NY*NZ_;
-	}else if(rank == 1){ //xz slab
-	  mem_offset = slab_start*NZ_;
-	  mem_stride = NY*NZ_;
-	  mem_count  = NX;
-          mem_block  = slab_width*NZ_;
-	}else if(rank == 2){ //xy slab
-	  mem_offset = slab_start;
-	  mem_stride = NZ_;
-	  mem_count  = NY*NX;
-	  mem_block  = slab_width;
-	}else{
-	  fprintf(stderr, "# Invalid slab rank %d\n", rank);
-	  exit_job(EXIT_FAILURE);
+      
+      int i, j, k;
+      hsize_t im;
+      for(int ii = 0; ii < crop_field.count[0]; ii++){
+	i = crop_field.start[0] + ii*crop_field.stride[0];
+	
+	for(int jj = 0; jj < crop_field.count[1]; jj++){
+	  j = crop_field.start[1] + jj*crop_field.stride[1];
+	  
+	  for(int kk = 0; kk < crop_field.count[2]; kk++){
+	    k = crop_field.start[2] + kk*crop_field.stride[2];
+	    
+	    im = (i*NY*NZ_) + (j*NZ_) + k;
+	    status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, 1, &im);
+	    h5_check_err(status);
+	  }
 	}
+      }
+    }
 
-	//Modify output parameters
-	Origin[rank] = slab_start*DX;
-	out_dims_field[rank] = slab_width;
-
-	herr_t status = H5Sselect_hyperslab(mem_dataspace_field, H5S_SELECT_AND,
-					    &mem_offset, &mem_stride, &mem_count, &mem_block);
-	h5_check_err(status);
-      }//field_crop
-
+    //Initialize Disk Dataspace
+    {
+      out_dims_field[0] = crop_field.count[0];
+      out_dims_field[1] = crop_field.count[1];
+      out_dims_field[2] = crop_field.count[2];
+      
       //Disk Acess
       out_dataspace_field = H5Screate_simple(out_rank_field, out_dims_field, NULL);
       h5_check_err(out_dataspace_field);
-
-      //check consistency between memory and disk spaces
-      {
-	hsize_t slab_npoints = H5Sget_select_npoints(mem_dataspace_field);
-	assert(slab_npoints == out_dims_field[0]*out_dims_field[1]*out_dims_field[2]);
-      }
     }
-  }//HDF5
+
+    //Check consistency between memory and disk spaces
+    {
+      hsize_t dmy_npoints = H5Sget_select_npoints(mem_dataspace_field);
+      assert(dmy_npoints == out_dims_field[0]*out_dims_field[1]*out_dims_field[2]);
+    }
+  }
 
   {//Initialize output file
+    hid_t status;
     char fname[128];
     sprintf(fname, "%s.h5", out_path);
     fid = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -146,36 +146,62 @@ hdf5_writer::hdf5_writer(const int&    _NX,
     
     //set global attributes
     {
-      hid_t status;
       status = H5LTset_attribute_float(fid, "/", "dx", &DX, 1);
       h5_check_err(status);
-      
+
+      //dimensions of output field data
       int dmy_dims[DIM] = {out_dims_field[0], out_dims_field[1], out_dims_field[2]};
       status = H5LTset_attribute_int(fid, "/", "nxnynz", dmy_dims, DIM);
       h5_check_err(status);
-      
+
+      //grid origin
       status = H5LTset_attribute_float(fid, "/", "origin", Origin, DIM);
       h5_check_err(status);
-      
-      int dmy_num = nump - print_particle.first;
-      status = H5LTset_attribute_int(fid, "/", "nump", &dmy_num, 1);
+
+      //number of particles in trajectory
+      status = H5LTset_attribute_int(fid, "/", "nump", &print_particle_num, 1);
       h5_check_err(status);
 
+      //number of obstacle particles
+      status = H5LTset_attribute_int(fid, "/", "nump_obs", &print_obstacle_num, 1);
+      h5_check_err(status);
+
+      //total number of particles in system
+      status = H5LTset_attribute_int(fid, "/", "nump_total", &nump, 1);
+      h5_check_err(status);
+    }
+
+    //create main groups
+    {
+      gid_sys_data = H5Gcreate(fid, gid_sys_data_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(gid_sys_data);
+
+      gid_trj_data = H5Gcreate(fid, gid_trj_data_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      h5_check_err(gid_trj_data);
+    }
+
+    {
       status = H5Fflush(fid, H5F_SCOPE_LOCAL);
       h5_check_err(status);
     }
   }
 
-  //print grid coordinates required for xdmf format
-  this -> write_xyz_coords();
+  //print static field properties (grid info required for xdmf format)
+  this -> write_field_info();
+
+  //print static particle properties
+  this -> write_particle_info(p);
+
+  //print static obstacle properties
+  this -> write_obstacle_info(p);
 
   //print configure file
-  this -> write_conf_file();
+  this -> write_configure_file();
 }
 
 hdf5_writer::~hdf5_writer(){
   //print updated configure file (with time step info)
-  this -> write_conf_file();
+  this -> write_configure_file();
 
   herr_t status;
   status = H5Sclose(mem_dataspace_field);
@@ -184,8 +210,18 @@ hdf5_writer::~hdf5_writer(){
   status = H5Sclose(out_dataspace_field);
   h5_check_err(status);
 
+  status = H5Gclose(gid_sys_data);
+  h5_check_err(status);
+
+  status = H5Gclose(gid_trj_data);
+  h5_check_err(status);
+
+  fprintf(stderr, "Close fid\n");
   status = H5Fclose(fid);
   h5_check_err(status);
+
+  free_1d_int(print_particle_list);
+  free_1d_int(print_obstacle_list);
 }
 
 //
@@ -194,8 +230,8 @@ hdf5_writer::~hdf5_writer(){
 void hdf5_writer::write_start(){
   //open file & groups
   {
-    sprintf(gid_time_name, "/frame_%d", ts);
-    gid_time  = H5Gcreate(fid, gid_time_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    sprintf(gid_time_name, "./frame_%d", ts);
+    gid_time  = H5Gcreate(gid_trj_data, gid_time_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_time);
 
     //create field group
@@ -205,6 +241,10 @@ void hdf5_writer::write_start(){
     //create particle group
     gid_part  = H5Gcreate(gid_time, gid_part_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     h5_check_err(gid_part);
+
+    //create obstacle group
+    gid_pobs  = H5Gcreate(gid_time, gid_pobs_name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    h5_check_err(gid_pobs);
   }
 
   //add attributes
@@ -217,6 +257,9 @@ void hdf5_writer::write_start(){
 void hdf5_writer::write_end(){
   herr_t status;
 
+  status = H5Gclose(gid_pobs);
+  h5_check_err(status);
+  
   status = H5Gclose(gid_part);
   h5_check_err(status);
 
@@ -225,28 +268,60 @@ void hdf5_writer::write_end(){
 
   status = H5Fflush(gid_time, H5F_SCOPE_LOCAL);
   h5_check_err(status);
+  
   status = H5Gclose(gid_time);
   h5_check_err(status);
 
   ts += 1;
 }
-inline void hdf5_writer::write_field_scalar(const double* phi, const char* name) {
-  write_data(gid_field, phi, name, 
-	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
-	     H5T_NATIVE_FLOAT, out_dataspace_field);
+
+//writer for field data
+inline void hdf5_writer::write_field_scalar(const double* phi, const char* name,
+					    hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_field : _loc);
+  write_data(loc, phi, name, H5T_NATIVE_DOUBLE, mem_dataspace_field, H5T_NATIVE_FLOAT, out_dataspace_field);
 }
-inline void hdf5_writer::write_particle_scalar(const int * data, const char* name){
-  hsize_t dmy_dims[1] = {nump - print_particle.first};
-  write_data(gid_part, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
+
+//writer for particle data
+inline void hdf5_writer::write_particle_scalar(const int* data, const char* name,
+					       hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_part : _loc);
+  hsize_t dmy_dims[1] = {print_particle_num};
+  write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
 }
-inline void hdf5_writer::write_particle_vectorn(const double*data, const int& dim, const char* name){
-  hsize_t dmy_dims[2] = {nump - print_particle.first, dim};
-  write_data(gid_part, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
+inline void hdf5_writer::write_particle_vectorn(const double* data, const int& dim, const char* name,
+						hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_part : _loc);
+  hsize_t dmy_dims[2] = {print_particle_num, DIM};
+  write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
 }
-inline void hdf5_writer::write_particle_matrix3(const double* data, const char* name){
-  hsize_t dmy_dims[3] = {nump - print_particle.first, DIM, DIM};
-  write_data(gid_part, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
+inline void hdf5_writer::write_particle_matrix3(const double* data, const char* name,
+						hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_part : _loc);
+  hsize_t dmy_dims[3] = {print_particle_num, DIM, DIM};
+  write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
 }
+
+//writer for obstacle particle data
+inline void hdf5_writer::write_obstacle_scalar(const int* data, const char* name,
+					       hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
+  hsize_t dmy_dims[1] = {print_obstacle_num};
+  write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
+}
+inline void hdf5_writer::write_obstacle_vectorn(const double* data, const int& dim, const char* name,
+						hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
+  hsize_t dmy_dims[2] = {print_obstacle_num, DIM};
+  write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
+}
+inline void hdf5_writer::write_obstacle_matrix3(const double* data, const char* name,
+						hid_t _loc=hid_null){
+  hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
+  hsize_t dmy_dims[3] = {print_obstacle_num, DIM, DIM};
+  write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
+}
+
 void hdf5_writer::write_field_data(double** u, double* phi, double* pressure, double** tau){
   if(print_field.none) return;
 
@@ -290,26 +365,21 @@ void hdf5_writer::write_charge_field_data(double** u, double* phi,
 
 //Todo: figure out how to print structures using hdf5 interface (avoid mem copies)!
 void hdf5_writer::write_particle_data(Particle *p){
-  if(print_particle.none) return;
+  if(print_particle_num == 0) return;
 
-  int &firstp    = print_particle.first;
-  int nump_print = nump - firstp;
-  int nump_print3= 3*nump_print;
-  int nump_print6= 6*nump_print;
-  
-  int*   psp    = alloc_1d_int(nump_print);
-  int*   pid    = alloc_1d_int(nump_print);
+  const int* plist     = print_particle_list;
+  const int nump_print = print_particle_num;
+  const int nump_print3= 3*nump_print;
+  const int nump_print6= 6*nump_print;
+
   double* pdata = alloc_1d_double(nump_print3*3); 
   
-  int j, jj;
-#pragma omp parallel for schedule(dynamic, 1) private(j, jj)
-  for(int i = firstp; i < nump; i++){
-    j  = i - firstp;
+  int i, jj;
+#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
     jj = 3*j;
-    
-    pid[j]   = i;
-    psp[j]   = p[i].spec;
-    
+
     pdata[jj]  = p[i].x[0];
     pdata[jj+1]= p[i].x[1];
     pdata[jj+2]= p[i].x[2];
@@ -322,15 +392,13 @@ void hdf5_writer::write_particle_data(Particle *p){
     pdata[nump_print6+jj+1]= p[i].v[1];
     pdata[nump_print6+jj+2]= p[i].v[2];
   }
-  this->write_particle_scalar(pid, p_id_name);
-  this->write_particle_scalar(psp, p_spec_name);
   this->write_particle_vectorn(&pdata[0], DIM, p_pos_name);
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_pos_raw_name);
   this->write_particle_vectorn(&pdata[nump_print6], DIM, p_vel_name);
 
-#pragma opm parallel for schedule(dynamic, 1) private(j, jj)
-  for(int i = firstp; i < nump; i++){
-    j  = i - firstp;
+#pragma opm parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
     jj = 3*j;
 
     //total hydrodynamic force
@@ -346,9 +414,9 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[0], DIM, p_force_h_name);
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_force_r_name);
 
-#pragma omp parallel for schedule(dynamic, 1) private(j, jj)
-  for(int i = firstp; i < nump; i++){
-    j = i - firstp;
+#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
     jj = 3*j;
 
     pdata[jj]  = p[i].omega[0];
@@ -370,9 +438,9 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_torque_h_name);
   //this->write_particle_vectorn(&pdata[nump_print6], DIM, p_torque_r_name);
   
-#pragma omp parallel for schedule(dynamic, 1) private(j, jj)
-  for(int i = firstp; i < nump; i++){
-    j  = i - firstp;
+#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
     jj = 9*j;
     
     qtn_normalize(p[i].q);
@@ -391,32 +459,54 @@ void hdf5_writer::write_particle_data(Particle *p){
     pdata[jj+8]= p[i].QR[2][2];
   }
   this->write_particle_matrix3(&pdata[0], p_QR_name);
-      
-  free_1d_int(psp);
-  free_1d_int(pid);
+
+  free_1d_double(pdata);
+}
+
+void hdf5_writer::write_obstacle_data(Particle *p){
+  if(print_obstacle_num == 0) return;
+
+  const int* plist     = print_obstacle_list;
+  const int nump_print = print_obstacle_num;
+  const int nump_print3= 3*nump_print;
+
+  double* pdata = alloc_1d_double(nump_print3*2);
+
+  int i, jj;
+#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
+    jj = 3*j;
+
+    //total hydrodynamic force
+    pdata[jj]  = p[i].f_hydro_previous[0] + p[i].f_slip_previous[0];
+    pdata[jj+1]= p[i].f_hydro_previous[1] + p[i].f_slip_previous[1];
+    pdata[jj+2]= p[i].f_hydro_previous[2] + p[i].f_slip_previous[2];
+
+    //other forces (LJ, external, etc.)
+    pdata[nump_print3+jj]  = p[i].fr_previous[0];
+    pdata[nump_print3+jj+1]= p[i].fr_previous[1];
+    pdata[nump_print3+jj+2]= p[i].fr_previous[2];
+  }
+  this->write_obstacle_vectorn(&pdata[0], DIM, p_force_h_name);
+  this->write_obstacle_vectorn(&pdata[nump_print3], DIM, p_force_r_name);
+
   free_1d_double(pdata);
 }
 
 void hdf5_writer::show_parameter() {
   fprintf(stderr, "# *** HDF5 Parameters ***\n");
-  fprintf(stderr, "# Output Name          = %s.h5\n", out_path);
-  fprintf(stderr, "# Mem Layout           = (%d, %d, %d, %d)\n", NX, NY, NZ, NZ_);
-  fprintf(stderr, "# Grid spacing         = %.3g\n", DX);
-  fprintf(stderr, "# Time between frames  = %.3g\n", dt);
-  if(!print_particle.none){
-    fprintf(stderr, "# Particles Range      = %d -> %d\n", print_particle.first, nump-1);
-  }else{
-    fprintf(stderr, "# Particle Data is being suppressed\n");
-  }
+  fprintf(stderr, "# Output Name          : %s.h5\n", out_path);
+  fprintf(stderr, "# Mem Layout           : (%d, %d, %d, %d)\n", NX, NY, NZ, NZ_);
+  fprintf(stderr, "# Grid spacing         : %.3g\n", DX);
+  fprintf(stderr, "# Time between frames  : %.3g\n", dt);
   if(!print_field.none){
-    if(!crop_field.none){
-      fprintf(stderr, "# Field data is being cropped \n");
-      fprintf(stderr, "# Slab axis  : %d (0=yz, 1=xz, 2=xy)\n", crop_field.rank);
-      fprintf(stderr, "# Slab start : %d\n", crop_field.start);
-      fprintf(stderr, "# Slab width : %d\n", crop_field.width);
+    for(int d = 0; d < DIM; d++){
+      fprintf(stderr, "# %s-axis slicing       : start = %4d, stride = %4d, count = %4d\n",
+	      f_axis_name[d], crop_field.start[d], crop_field.stride[d], crop_field.count[d]
+	      );
     }
-    fprintf(stderr, "# Output Dimensions    = (%lld, %lld, %lld)\n", out_dims_field[0], out_dims_field[1], out_dims_field[2]);
-    fprintf(stderr, "# Output Origin        = (%.3g, %.3g, %.3g)\n", Origin[0], Origin[1], Origin[2]);
+    fprintf(stderr, "# Output Origin        : (%.3g, %.3g, %.3g)\n", Origin[0], Origin[1], Origin[2]);
     fprintf(stderr, "# Print velocity field : %s\n", (print_field.vel ? "YES" : "NO"));
     fprintf(stderr, "# Print phi field      : %s\n", (print_field.phi ? "YES" : "NO"));
     fprintf(stderr, "# Print charge field   : %s\n", (print_field.charge  ? "YES" : "NO"));
@@ -431,7 +521,7 @@ void hdf5_writer::show_parameter() {
 //
 //New functions
 //
-void hdf5_writer::write_conf_file(){
+void hdf5_writer::write_configure_file(){
   
   FILE* conf;
   char confname[128];
@@ -442,28 +532,55 @@ void hdf5_writer::write_conf_file(){
   fprintf(conf, "[Grid Dimensions]\n %lld %lld %lld\n", 
 	  out_dims_field[0], out_dims_field[1], out_dims_field[2]);
   fprintf(conf, "[Time Series]\n 0.0 %.6f %d\n", dt, ts);
-  fprintf(conf, "[Particle Number]\n %d\n", nump - print_particle.first);
+  fprintf(conf, "[Particle Number]\n %d\n", print_particle_num);
+  fprintf(conf, "[Obstacle Number]\n %d\n", print_obstacle_num);
+  fprintf(conf, "\n");
 
   //Particle Data
-  if(!print_particle.none){
+  if(print_particle_num > 0){
     //Particle Grid
     fprintf(conf, "[Particle Grid]\n %s\n", p_pos_name);
     fprintf(conf, "#[Particle Grid]\n#%s\n", p_pos_raw_name);
+
     //Scalar Particle Quantities
-    fprintf(conf, "[Particle Scalar]\n %s\n", p_id_name);
-    fprintf(conf, "[Particle Scalar]\n %s\n", p_spec_name);
+    fprintf(conf, "[Particle Scalar Const]\n %s\n", p_id_name);
+    fprintf(conf, "[Particle Scalar Const]\n %s\n", p_spec_name);
+
     //Vector Particle Quantities
     fprintf(conf, "[Particle Vector]\n %s\n", p_vel_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_omega_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_force_h_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_force_r_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_torque_h_name);
+
     //Tensor Particle Quantities
     fprintf(conf, "[Particle Tensor]\n %s\n", p_QR_name);
+
+    fprintf(conf, "\n");
+  }
+
+  //Obstacle Data
+  if(print_obstacle_num > 0){
+    //Particle Grid
+    fprintf(conf, "[Obstacle Grid Const]\n %s\n", p_pos_name);
+
+    //Scalar Particle Quantities
+    fprintf(conf, "[Obstacle Scalar Const]\n %s\n", p_id_name);
+    fprintf(conf, "[Obstacle Scalar Const]\n %s\n", p_spec_name);
+
+    //Vector Particle Quantities
+    fprintf(conf, "[Obstacle Vector]\n %s\n", p_force_h_name);
+    fprintf(conf, "[Obstacle Vector]\n %s\n", p_force_r_name);
+
+    fprintf(conf, "\n");
   }
 
   // Field Data
   if(!print_field.none){
+    fprintf(conf, "[Field GridX Const]\n %s\n", f_axis_name[0]);
+    fprintf(conf, "[Field GridY Const]\n %s\n", f_axis_name[1]);
+    fprintf(conf, "[Field GridZ Const]\n %s\n", f_axis_name[2]);
+
     if(print_field.vel)
       fprintf(conf, "[Field Vector]\n %s %s %s %s\n", 
 	      f_vel_name[0], f_vel_name[1], f_vel_name[2], f_vel_name[3]);
@@ -472,7 +589,6 @@ void hdf5_writer::write_conf_file(){
     if(print_field.pressure)
       fprintf(conf, "[Field Scalar]\n %s\n", f_pressure_name);
     if(print_field.tau){
-      //missing zz component to get symmetric tensor6 field...
       fprintf(conf, "[Field Scalar]\n %s\n", f_tau_name[0]);
       fprintf(conf, "[Field Scalar]\n %s\n", f_tau_name[1]);
       fprintf(conf, "[Field Scalar]\n %s\n", f_tau_name[2]);
@@ -484,11 +600,13 @@ void hdf5_writer::write_conf_file(){
       fprintf(conf, "[Field Scalar]\n %s\n", f_solute_charge_name);
       fprintf(conf, "[Field Scalar]\n %s\n", f_potential_charge_name);
     }
+
+    fprintf(conf, "\n");    
   }
   fclose(conf);
 }
 
-void hdf5_writer::write_xyz_coords(){
+void hdf5_writer::write_field_info(){
   double* work_v3[DIM];
   for(int d = 0; d < DIM; d++) 
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);
@@ -504,21 +622,90 @@ void hdf5_writer::write_xyz_coords(){
       }
     }
   }
-  hid_t gid_coord = H5Gcreate(fid, "/coord_data", 
+  hid_t gid_dmy = H5Gcreate(gid_sys_data, gid_field_name, 
 			      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  h5_check_err(gid_coord);
-  write_data(gid_coord, work_v3[0], "x", 
-	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
-	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  write_data(gid_coord, work_v3[1], "y", 
-	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
-	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  write_data(gid_coord, work_v3[2], "z", 
-	     H5T_NATIVE_DOUBLE, mem_dataspace_field,
-	     H5T_NATIVE_FLOAT, out_dataspace_field);
-  herr_t status = H5Gclose(gid_coord);
+  h5_check_err(gid_dmy);
+  
+  this->write_field_scalar(work_v3[0], f_axis_name[0], gid_dmy);
+  this->write_field_scalar(work_v3[1], f_axis_name[1], gid_dmy);
+  this->write_field_scalar(work_v3[2], f_axis_name[2], gid_dmy);
+  
+  herr_t status = H5Gclose(gid_dmy);
   h5_check_err(status);
   for(int d = 0; d < DIM; d++)
     free_1d_double(work_v3[d]);
+}
+
+void hdf5_writer::write_particle_info(Particle* p){
+  if(print_particle_num == 0) return;
+
+  const int* plist     = print_particle_list;
+  const int nump_print = print_particle_num;
+
+  int*    pid   = alloc_1d_int(nump_print);
+  int*    psp   = alloc_1d_int(nump_print);
+  
+  int i;
+#pragma omp parallel for schedule(dynamic, 1) private(i)
+  for(int j = 0; j < nump_print; j++){
+    i  = plist[j];
+    pid[j] = i;
+    psp[j] = p[i].spec;
+  }
+
+  hid_t gid_dmy = H5Gcreate(gid_sys_data, gid_part_name,
+			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_check_err(gid_dmy);
+
+  this-> write_particle_scalar(pid, p_id_name, gid_dmy);
+  this-> write_particle_scalar(psp, p_spec_name, gid_dmy);
+
+  herr_t status = H5Gclose(gid_dmy);
+  h5_check_err(status);
+  
+  free_1d_int(pid);
+  free_1d_int(psp);
+}
+
+void hdf5_writer::write_obstacle_info(Particle *p){
+  if(print_obstacle_num == 0) return;
+
+  const int* plist     = print_obstacle_list;
+  const int nump_print = print_obstacle_num;
+  const int nump_print3= 3*nump_print;
+
+  int*    pid   = alloc_1d_int(nump_print);
+  int*    psp   = alloc_1d_int(nump_print);
+  double* pdata = alloc_1d_double(nump_print3);
+
+  int i, jj;
+#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+  for(int j = 0; j < nump_print; j++){
+    jj = 3*j;
+
+    i = plist[j];
+    pid[j] = i;
+    psp[j] = p[i].spec;
+
+    pdata[jj]   = p[i].x[0];
+    pdata[jj+1] = p[i].x[1];
+    pdata[jj+2] = p[i].x[2];
+  }
+
+
+  hid_t gid_dmy = H5Gcreate(gid_sys_data, gid_pobs_name,
+			    H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  h5_check_err(gid_dmy);
+
+  this -> write_obstacle_scalar(pid, p_id_name, gid_dmy);
+  this -> write_obstacle_scalar(psp, p_spec_name, gid_dmy);
+  this -> write_obstacle_vectorn(&pdata[0], DIM, p_pos_name, gid_dmy);
+
+  herr_t status = H5Gclose(gid_dmy);
+  h5_check_err(status);
+
+  free_1d_int(pid);
+  free_1d_int(psp);
+  free_1d_double(pdata);
 }
 //end hdf5 writer

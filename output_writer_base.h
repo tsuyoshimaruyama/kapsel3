@@ -22,6 +22,9 @@ class output_writer {
   //virtual function to write particle data
   virtual void write_particle_data(Particle *p) = 0;
 
+  //virtual function to write obstacle data
+  virtual void write_obstacle_data(Particle *p) = 0;
+
   //virtual function to write output parameters to stderr
   virtual void show_parameter() = 0;
 };

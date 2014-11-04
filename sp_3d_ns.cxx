@@ -381,7 +381,7 @@ int main(int argc, char *argv[]){
 	  Init_Rigid(particles);
 	  }
   }
-  Init_output();
+  Init_output(particles);
   
   Init_zeta_k(zeta, uk_dc);
 
@@ -478,10 +478,6 @@ int main(int argc, char *argv[]){
 	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
     }
 
-    //////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
-    //-------------------------
     if(jikan.ts == MSTEP){
       
       Save_Restart_udf(zeta
@@ -492,7 +488,6 @@ int main(int argc, char *argv[]){
 		       );
     }
 
-    //-------------------------
     if(resumed_and_1st_loop){
       Force_restore_parameters(zeta
 			       ,uk_dc
@@ -503,19 +498,15 @@ int main(int argc, char *argv[]){
       delete ufin;
       fprintf(stderr,"############################ Parameters are restored.\n");
     }
-    //////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////
   }
-
-  //if(SW_EQ == Electrolyte){
-   //   Electrolyte_free_energy(MEAN,stderr,particles,Concentration,jikan);
-  //}
 
   if(SW_UDF){
     ufout->write();
     delete ufout;
     fprintf(stderr,"#%s end.\n",Out_udf);
+  }
+  {
+    //Always write restart file
     ufres->write();
     delete ufres;
     fprintf(stderr,"#%s end.\n",Res_udf);

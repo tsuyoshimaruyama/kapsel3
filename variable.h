@@ -84,10 +84,9 @@ typedef struct Index_range {
 } Index_range;
 
 typedef struct Field_crop{
-  bool none;
-  int rank;
-  int start;
-  int width;
+  int start[DIM];
+  int count[DIM];
+  int stride[DIM];
 } Field_crop;
 
 typedef struct Field_output{
@@ -101,7 +100,9 @@ typedef struct Field_output{
 
 typedef struct Particle_output{
   bool none;
-  int first;
+  int start;
+  int count;
+  int stride;
 } Particle_output;
 
 #endif

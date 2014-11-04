@@ -6,6 +6,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <assert.h>
+#include <vector>
 #include "macro.h"
 #include "parameter_define.h"
 #include "variable.h"
@@ -27,7 +28,6 @@ class hdf5_writer : public output_writer {
     \param[in] _out_name name of trajectory files
     \param[in] _field_crop hyperslab selection parameters
     \param[in] _print_field parameters to control how to print field data
-    \param[in] _print_particle parameters to control how to print particle data
    */
   hdf5_writer(const int&     _NX, 
 	      const int&     _NY,
@@ -40,7 +40,9 @@ class hdf5_writer : public output_writer {
 	      const char*    _out_name,
 	      const Field_crop& _field_crop,
 	      const Field_output& _print_field,
-	      const Particle_output& _print_particle
+	      std::vector<int> &_print_particle_list,
+	      std::vector<int> &_print_obstacle_list,
+	      Particle* p
 	      );
 
   /*!
@@ -69,8 +71,7 @@ class hdf5_writer : public output_writer {
   inline void write_frame_attributes(const char* name, const float* attr, 
 				     const int& rank){
     herr_t status;
-    status = H5LTset_attribute_float(gid_time, gid_time_name, name,
-				     attr, rank);
+    status = H5LTset_attribute_float(gid_time, "./", name, attr, rank);
     h5_check_err(status);
   }
 
@@ -89,6 +90,11 @@ class hdf5_writer : public output_writer {
     \brief Writes particle data to open frame
    */
   void write_particle_data(Particle *p);
+
+  /*!
+    \brief Writes obstacle data to open frame
+   */
+  void write_obstacle_data(Particle *p);
 
   /*!
     \brief Write output parameters to stderr
@@ -110,6 +116,11 @@ class hdf5_writer : public output_writer {
     Particle Data
   */
   int nump;
+  int print_particle_num;
+  int print_obstacle_num;
+  int* print_particle_list;
+  int* print_obstacle_list;
+
 
   /*
     Time Data
@@ -122,11 +133,11 @@ class hdf5_writer : public output_writer {
    */
   Field_crop   crop_field;
   Field_output print_field;
-  Particle_output print_particle;
   
   /*
     Output Param
   */
+  static const char* f_axis_name[];
   static const char* f_vel_name[];
   static const char* f_tau_name[];
   static const char* f_phi_name;
@@ -151,15 +162,21 @@ class hdf5_writer : public output_writer {
   /*
     HDF5 Parameters
    */
-  hid_t  fid;        //file id
-  hid_t  gid_time;   //time frame id
-  hid_t  gid_field;  //group id for field data
-  hid_t  gid_part;   //group id for particle data
+  char   gid_time_name[128];            //time frame group name
+  static const char* gid_sys_data_name; //system data group name
+  static const char* gid_trj_data_name; //trajectory data group name
+  static const char* gid_field_name;    //field group name
+  static const char* gid_part_name;     //particle group name
+  static const char* gid_pobs_name;     //obstacle group name
 
-  char   gid_time_name[128];       //time frame group name
-  static const char* gid_field_name;  //field group name
-  static const char* gid_part_name;   //particle group name
-
+  static const hid_t hid_null;
+  hid_t  fid;          //file id
+  hid_t  gid_sys_data; //group id for system data
+  hid_t  gid_trj_data; //group id for trajectory data
+  hid_t  gid_time;     //time frame id
+  hid_t  gid_field;    //group id for field data
+  hid_t  gid_part;     //group id for particle data
+  hid_t  gid_pobs;     //group id for obstacle data
 
   //Field Output
   static const hsize_t mem_rank_field = 1;
@@ -248,32 +265,59 @@ class hdf5_writer : public output_writer {
   /*!
     \brief Write scalar field data to current frame
    */
-  void write_field_scalar(const double* phi, const char* name);
+  void write_field_scalar(const double* phi, const char* name, hid_t _loc);
 
   /*!
     \brief Write scalar particle data to current frame
    */
-  void write_particle_scalar(const int* data, const char* name);
+  void write_particle_scalar(const int* data, const char* name, hid_t loc);
+
   /*!
     \brief Write vector particle data to current frame
    */
-  void write_particle_vectorn(const double* data, const int& dim, const char* name);
+  void write_particle_vectorn(const double* data, const int& dim, const char* name, hid_t loc);
 
   /*!
     \brief Write 3x3 square matrix particle data to current frame
    */
-  void write_particle_matrix3(const double* data, const char* name);
+  void write_particle_matrix3(const double* data, const char* name, hid_t loc);
+
+  /*!
+    \brief Write scalar obstacle data to current frame
+  */
+  void write_obstacle_scalar(const int* data, const char* name, hid_t loc);
+
+  /*!
+    \brief Write vector obstacle data to current frame
+   */
+  void write_obstacle_vectorn(const double* data, const int& dim, const char* name, hid_t loc);
+
+  /*!
+    \brief Write 3x3 square matrix obstacle data to current frame
+   */
+  void write_obstacle_matrix3(const double* data, const char* name, hid_t loc);
+
   /*!
     \brief Write hdf5/xdmf configuration file
     \details List all data required to build xdmf xml file
    */
-  void write_conf_file();
+  void write_configure_file();
   
   /*!
     \brief Print x,y,z coordiantes for ALL points 
     \details Required to obtain correct visualization using xdmf
    */
-  void write_xyz_coords();
+  void write_field_info();
+
+  /*!
+    \brief Write static particle properties
+   */
+  void write_particle_info(Particle *p);
+
+  /*!
+    \brief Write static obstacle properties
+   */
+  void write_obstacle_info(Particle *p);
 };
 
 #endif

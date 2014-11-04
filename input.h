@@ -78,7 +78,6 @@ extern OUTFORMAT SW_OUTFORMAT;
 extern EXTFORMAT SW_EXTFORMAT;
 extern Field_crop      print_field_crop;
 extern Field_output    print_field;
-extern Particle_output print_particle;
 
 extern const char *OUTFORMAT_name[];
 extern const char *EXTFORMAT_name[];

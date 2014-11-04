@@ -48,37 +48,41 @@ def parseConf(fname):
     dims = [0, 0, 0]
     time = [0, 0, 0]
     nump= 0
+    numo= 0
+
     scalar_field = []
     vector_field = []
     tensor6_field= []
-    tensor_field= []
+    tensor_field = []
 
+    const_scalar_particle= []
     scalar_particle =[]
     vector_particle =[]
     tensor6_particle=[]
-    tensor_particle=[]
+    tensor_particle =[]
+
+    const_scalar_obstacle= []
+    scalar_obstacle = []
+    vector_obstacle = []
+    
     lines = readConf(fname)
     i = 0
     while i < len(lines):
         tag = readTag(lines[i])
         if(tag == "filename"):
             h5file = readArg(lines[i+1], 1)
-        elif(tag == "time series"):
-            time = readArg(lines[i+1], 3)
         elif(tag == "grid dimensions"):
             dims  = readArg(lines[i+1], 3)
+        elif(tag == "time series"):
+            time = readArg(lines[i+1], 3)
         elif(tag == "particle number"):
             nump = readArg(lines[i+1], 1)
-        elif(tag == "field scalar"):
-            scalar_field.append(readArg(lines[i+1], 1))
-        elif(tag == "field vector"):
-            vector_field.append(readArg(lines[i+1], 4))
-        elif(tag == "field tensor6"):
-            tensor6_field.append(readArg(lines[i+1], 7))
-        elif(tag == "field tensor"):
-            tensor_field.append(readArg(lines[i+1], 10))
+        elif(tag == "obstacle number"):
+            numo = readArg(lines[i+1], 1)
         elif(tag == "particle grid"):
             particle_grid = readArg(lines[i+1], 1)
+        elif(tag == "particle scalar const"):
+            const_scalar_particle.append(readArg(lines[i+1], 1))
         elif(tag == "particle scalar"):
             scalar_particle.append(readArg(lines[i+1], 1))
         elif(tag == "particle vector"):
@@ -87,6 +91,28 @@ def parseConf(fname):
             tensor6_particle.append(readArg(lines[i+1], 1))
         elif(tag == "particle tensor"):
             tensor_particle.append(readArg(lines[i+1], 1))
+        elif(tag == "obstacle grid const"):
+            obstacle_grid = readArg(lines[i+1], 1)
+        elif(tag == "obstacle scalar const"):
+            const_scalar_obstacle.append(readArg(lines[i+1], 1))
+        elif(tag == "obstacle scalar"):
+            scalar_obstacle.append(readArg(lines[i+1], 1))
+        elif(tag == "obstacle vector"):
+            vector_obstacle.append(readArg(lines[i+1], 1))
+        elif(tag == "field gridx const"):
+            field_grid_x = readArg(lines[i+1], 1)
+        elif(tag == "field gridy const"):
+            field_grid_y = readArg(lines[i+1], 1)
+        elif(tag == "field gridz const"):
+            field_grid_z = readArg(lines[i+1], 1)
+        elif(tag == "field scalar"):
+            scalar_field.append(readArg(lines[i+1], 1))
+        elif(tag == "field vector"):
+            vector_field.append(readArg(lines[i+1], 4))
+        elif(tag == "field tensor6"):
+            tensor6_field.append(readArg(lines[i+1], 7))
+        elif(tag == "field tensor"):
+            tensor_field.append(readArg(lines[i+1], 10))
         else:
             print "Format Error: Unknown Tag"
             print lines[i-1]
@@ -94,12 +120,15 @@ def parseConf(fname):
             exit(-1)
         i+=2
 
-    print "data file  :", h5file
-    print "time series:", time
-    print "grid dims  :", dims
-    print "nump       :", nump
+    print "data file     :", h5file
+    print "time series   :", time
+    print "grid dims     :", dims
+    print "num particles :", nump
+    print "num obstacles :", numo
 
+    ###
     print "\n***Field Data***"
+    print "Grid Coord :", field_grid_x, field_grid_y, field_grid_z
 
     print "Scalar Fields:", len(scalar_field)
     for scalar in scalar_field:
@@ -116,10 +145,15 @@ def parseConf(fname):
     print "Tensor Fields:", len(tensor_field)
     for tensor in tensor_field:
         print "\t",tensor[:-1], "@", tensor[-1]
-    
-    print "\n***Particle Data***"
 
+    ###        
+    print "\n***Particle Data***"
     print "Particle Grid:", particle_grid
+
+    print "Particle Const Scalar:", len(const_scalar_particle)
+    for scalar in const_scalar_particle:
+        print "\t",scalar
+    
     print "Particle Scalar:", len(scalar_particle)
     for scalar in scalar_particle:
         print "\t",scalar
@@ -135,10 +169,28 @@ def parseConf(fname):
     print "Particle Tensor:", len(tensor_particle)
     for tensor in tensor_particle:
         print "\t",tensor
-    return [[h5file, time, dims, nump],\
-            [scalar_field, vector_field, tensor6_field, tensor_field],\
-            [particle_grid, scalar_particle, vector_particle,\
-             tensor6_particle, tensor_particle]]
+
+    ###
+    print "\n***Obstacle Data***"
+    print "Obstacle Grid:", obstacle_grid
+
+    print "Obstacle Const Scalar:", len(const_scalar_obstacle)
+    for scalar in const_scalar_obstacle:
+        print "\t",scalar
+
+    print "Obstacle Scalar:", len(scalar_obstacle)
+    for scalar in scalar_obstacle:
+        print "\t",scalar
+
+    print "Obstacle Vector:", len(vector_obstacle)
+    for vector in vector_obstacle:
+        print "\t",vector
+        
+    return [[h5file, time, dims, nump, numo],\
+            [[field_grid_x, field_grid_y, field_grid_z], scalar_field, vector_field, tensor6_field, tensor_field],\
+            [particle_grid, const_scalar_particle, scalar_particle, vector_particle,\
+             tensor6_particle, tensor_particle],\
+            [obstacle_grid, const_scalar_obstacle, scalar_obstacle, vector_obstacle]]
 
 
 #add xdmf doctype tag to xml and pretty print
@@ -196,7 +248,8 @@ def xdmf_init(time, name):
     return xdmf
 
 #create xml fluid grid
-def xdmf_fluid_grid(coord_loc, field_loc, dims, \
+def xdmf_fluid_grid(field0_loc, field_loc, dims, \
+                    coord_loc,
                     scalar_field, vector_field, tensor6_field, tensor_field):
     grid =[] 
     grid.append(et.Element("Grid"))
@@ -214,15 +267,15 @@ def xdmf_fluid_grid(coord_loc, field_loc, dims, \
     grid[-1].set('GeometryType', 'X_Y_Z')
     #grid->geometry->x axis
     grid.append(xdmf_addDataItem(grid[-1], dims, "HDF", floatType))
-    grid[-1].text = coord_loc+"x"
+    grid[-1].text = field0_loc + coord_loc[0]
     grid.pop()
     #grid->geometry->y axis
     grid.append(xdmf_addDataItem(grid[-1], dims, "HDF", floatType))
-    grid[-1].text = coord_loc+"y"
+    grid[-1].text = field0_loc + coord_loc[1]
     grid.pop()
     #grid->geometry->z axis
     grid.append(xdmf_addDataItem(grid[-1], dims, "HDF", floatType))
-    grid[-1].text = coord_loc+"z"
+    grid[-1].text = field0_loc + coord_loc[2]
     grid.pop()
     grid.pop()
 
@@ -266,8 +319,10 @@ def xdmf_fluid_grid(coord_loc, field_loc, dims, \
 
     return grid[0]
 
-def xdmf_part_grid(part_loc, coord_loc, nump, scalar_particle, vector_particle, \
-                   tensor6_particle, tensor_particle):
+def xdmf_part_grid(part0_loc, part_loc, nump,
+                   coord_loc, \
+                   const_scalar_particle, \
+                   scalar_particle, vector_particle, tensor6_particle, tensor_particle):
     grid=[]
     grid.append(et.Element("Grid"))
     grid[-1].set('Name', 'Particle Frame')
@@ -288,6 +343,14 @@ def xdmf_part_grid(part_loc, coord_loc, nump, scalar_particle, vector_particle, 
     grid[-1].text = part_loc + coord_loc
     grid.pop()
     grid.pop()
+
+    dmy_dims = nump + " 1"
+    for scalar in const_scalar_particle:
+        grid.append(xdmf_addAttribute(grid[-1], 'Scalar', scalar))
+        grid.append(xdmf_addDataItem(grid[-1], dmy_dims, "HDF", intType))
+        grid[-1].text = part0_loc + scalar
+        grid.pop()
+        grid.pop()
 
     dmy_dims = nump + " 1"
     for scalar in scalar_particle:
@@ -322,32 +385,120 @@ def xdmf_part_grid(part_loc, coord_loc, nump, scalar_particle, vector_particle, 
         grid.pop()
     return grid[0]
 
+def xdmf_obs_grid(obs0_loc, obs_loc, numo, \
+                  coord_loc, \
+                  const_scalar_obstacle, \
+                  scalar_obstacle, vector_obstacle):
+    grid=[]
+    grid.append(et.Element("Grid"))
+    grid[-1].set('Name', 'Obstacle Frame')
+    grid[-1].set('GridType', 'Uniform')
+    
+    #grid -> topology
+    grid.append(et.SubElement(grid[-1], 'Topology'))
+    grid[-1].set('TopologyType', 'Polyvertex')
+    grid[-1].set('NodesPerElement', numo)
+    grid.pop()
+    
+    #grid -> geometry
+    grid.append(et.SubElement(grid[-1], 'Geometry'))
+    grid[-1].set('GeometryType', 'XYZ')
+    #grid -> geometry -> coordinates
+    dmy_dims = numo + " 3"
+    grid.append(xdmf_addDataItem(grid[-1], dmy_dims, "HDF", floatType))
+    grid[-1].text = obs0_loc + coord_loc
+    grid.pop()
+    grid.pop()
+
+    dmy_dims = numo + " 1"
+    for scalar in const_scalar_obstacle:
+        grid.append(xdmf_addAttribute(grid[-1], 'Scalar', scalar))
+        grid.append(xdmf_addDataItem(grid[-1], dmy_dims, "HDF", intType))
+        grid[-1].text = obs0_loc + scalar
+        grid.pop()
+        grid.pop()
+
+    dmy_dims = numo + " 1"
+    for scalar in scalar_obstacle:
+        grid.append(xdmf_addAttribute(grid[-1], 'Scalar', scalar))
+        grid.append(xdmf_addDataItem(grid[-1], dmy_dims, "HDF", intType))
+        grid[-1].text = obs_loc + scalar
+        grid.pop()
+        grid.pop()
+
+    dmy_dims = numo + " 3"
+    for vector in vector_obstacle:
+        grid.append(xdmf_addAttribute(grid[-1], 'Vector', vector))
+        grid.append(xdmf_addDataItem(grid[-1], dmy_dims, "HDF", floatType))
+        grid[-1].text = obs_loc + vector
+        grid.pop()
+        grid.pop()
+
+    return grid[0]
+
 ##### MAIN ####
 if (not len(sys.argv) == 2) or (not os.path.isfile(str(sys.argv[1]))):
     print "Usage: ./kapselxdmf.py conf_file"
     exit(-1)
 conf_file = str(sys.argv[1])
-[[h5file, time, dims, nump],\
- [scalar_field, vector_field, tensor6_field, tensor_field],\
- [particle_grid, scalar_particle, vector_particle,\
-  tensor6_particle, tensor_particle]] = parseConf(conf_file)
+[[h5file, time, dims, nump, numo],\
+ [field_grid, scalar_field, vector_field, tensor6_field, tensor_field],\
+ [particle_grid, const_scalar_particle, scalar_particle, vector_particle,\
+  tensor6_particle, tensor_particle],\
+ [obstacle_grid, const_scalar_obstacle, scalar_obstacle, vector_obstacle]
+] = parseConf(conf_file)
 
 fx = xdmf_init(printList(time), "KAPSEL Fluid Trajectory")
 px = xdmf_init(printList(time), "KAPSEL Particle Trajectory")
-grid_loc=h5file+".h5:/coord_data/"
+ox = xdmf_init(printList(time), "KAPSEL Obstacle Trajectory")
 
+root        = h5file+".h5:/"
+
+sys_tag     = "system_data/"
+trj_tag     = "trajectory_data/"
+
+fluid_tag   = "field/"
+particle_tag= "particle/"
+obstacle_tag= "obstacle/"
+
+fluid0_loc    = root + sys_tag + fluid_tag
+particle0_loc = root + sys_tag + particle_tag
+obstacle0_loc = root + sys_tag + obstacle_tag
+
+frame_tag   = "frame_"
 for i in range(int(time[2])):
-    frame = h5file + ".h5:/frame_"+str(i)
-    fluid_loc   = frame+"/field_data/"
-    particle_loc= frame+"/particle_data/"
-    fx[-1].append(xdmf_fluid_grid(grid_loc, fluid_loc, printList(dims), \
-                                  scalar_field, vector_field, \
-                                  tensor6_field, tensor_field))
-    px[-1].append(xdmf_part_grid(particle_loc, particle_grid, nump, \
-                                 scalar_particle, vector_particle, \
-                                 tensor6_particle, tensor_particle))
+    frame_loc   = root + trj_tag + frame_tag + str(i) + "/"
+    fluid_loc   = frame_loc + fluid_tag 
+    particle_loc= frame_loc + particle_tag 
+    obstacle_loc= frame_loc + obstacle_tag 
+    fx[-1].append(xdmf_fluid_grid(fluid0_loc, \
+                                  fluid_loc, \
+                                  printList(dims), \
+                                  field_grid, \
+                                  scalar_field, \
+                                  vector_field, \
+                                  tensor6_field, \
+                                  tensor_field))
+    px[-1].append(xdmf_part_grid(particle0_loc,
+                                 particle_loc, \
+                                 nump, \
+                                 particle_grid, \
+                                 const_scalar_particle, \
+                                 scalar_particle, \
+                                 vector_particle, \
+                                 tensor6_particle,\
+                                 tensor_particle))
+    ox[-1].append(xdmf_obs_grid(obstacle0_loc, \
+                                obstacle_loc, \
+                                numo, \
+                                obstacle_grid, \
+                                const_scalar_obstacle, \
+                                scalar_obstacle, \
+                                vector_obstacle))
     
 fxx = open(h5file+'_fluid.xdmf', 'w')
 pxx = open(h5file+'_particle.xdmf', 'w')
+oxx = open(h5file+'_obstacle.xdmf', 'w')
 fxx.write(finalizexdmf(fx[0]))
 pxx.write(finalizexdmf(px[0]))
+oxx.write(finalizexdmf(ox[0]))

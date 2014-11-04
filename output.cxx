@@ -12,29 +12,23 @@
 output_writer *writer;    //pointer to base writer
 hdf5_writer   *h5writer;  //pointer to hdf5 writer
 #endif 
-void Init_output(){
+void Init_output(Particle *p){
 #ifdef WITH_EXTOUT
   writer = h5writer = NULL;
 #endif
   if(SW_OUTFORMAT == OUT_AVS_BINARY ||  SW_OUTFORMAT == OUT_AVS_ASCII){ // LEGACY AVS
-    //extended options not supported for AVS
-    //no cropping
-    print_field_crop.none = true;
-    print_field_crop.rank = -1; print_field_crop.start = 0; print_field_crop.width = 0;
-
-    //print all fields
     print_field.none = false;
-    print_field.vel = print_field.phi  = print_field.charge = true;
-    print_field.pressure = print_field.tau  = true;
+    print_field.vel = print_field.phi  = print_field.charge = print_field.pressure = print_field.tau  = true;
 
-    //print all particle data
-    print_particle.none = (Particle_Number > 0 ? false : true);
-    print_particle.first = 0;
+    for(int d = 0; d < DIM; d++){
+      print_field_crop.start[d] = 0;
+      print_field_crop.count[d] = Ns[d];
+      print_field_crop.stride[d]= 1;
+    }
 
     Set_avs_parameters(Avs_parameters);
     Init_avs(Avs_parameters);
-    if(!print_particle.none)
-      Init_avs_p(Avs_parameters);
+    if(Particle_Number > 0) Init_avs_p(Avs_parameters);
   }else if(SW_OUTFORMAT == OUT_EXT){
 #ifdef WITH_EXTOUT
     //Setup extended parameters
@@ -46,22 +40,22 @@ void Init_output(){
     }else{
       print_field.charge   = false;
     }
-    print_field.none = (print_field.vel || print_field.phi || print_field.pressure || 
-			print_field.tau || print_field.charge ? false : true);
+    print_field.none = (print_field.vel || print_field.phi || print_field.pressure || print_field.tau || print_field.charge
+			? false : true);
     
-    //hyper slab selection
-    print_field_crop.none = ((print_field_crop.rank >=0 && print_field_crop.rank < DIM 
-			      && !print_field.none)
-			     ? false : true);
-    
-    //particle selection
-    if(Particle_Number == 0 || print_particle.first < 0 || print_particle.first >= Particle_Number){
-      print_particle.first = Particle_Number;
-    }
-    print_particle.none = (print_particle.first != Particle_Number ? false : true);
-
     // Initialize writers
     if(SW_EXTFORMAT == EXT_OUT_HDF5){
+      //create particle and obstacle lists
+      std::vector<int> plist, olist;
+      plist.reserve(Particle_Number);
+      olist.reserve(Particle_Number);
+      for(int i = 0; i < Particle_Number; i++){
+	if(janus_propulsion[p[i].spec] != obstacle){
+	  plist.push_back(i);
+	}else{
+	  olist.push_back(i);
+	}
+      }
       h5writer = new hdf5_writer(NX, NY, NZ, NZ_, DX,
 				 Particle_Number, 
 				 DT*GTS,
@@ -69,7 +63,12 @@ void Init_output(){
 				 Out_name,
 				 print_field_crop,
 				 print_field,
-				 print_particle);
+				 plist,
+				 olist,
+				 p
+				 );
+      std::vector<int>().swap(plist);
+      std::vector<int>().swap(olist);
       writer = static_cast<output_writer*>(h5writer);
     }
 #endif
@@ -261,12 +260,13 @@ void Output_charge_field_data(double** zeta,
 }
 
 void Output_particle_data(Particle* p, const CTime& time){
-  if(print_particle.none) return;
+  if(Particle_Number == 0) return;
   if(SW_OUTFORMAT == OUT_AVS_BINARY || SW_OUTFORMAT == OUT_AVS_ASCII){
     Output_avs_p(Avs_parameters, p, time);
   }else{
 #ifdef WITH_EXTOUT
     writer->write_particle_data(p);
+    writer->write_obstacle_data(p);
 #endif
   }
 }
