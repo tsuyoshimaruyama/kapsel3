@@ -46,7 +46,7 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   int *head;
   head = alloc_1d_int(lcxyz);
   
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int d=0; d < lcxyz; d++) head[d] = -1;
   for(int n=0;n<Particle_Number ; n++){
       Particle *p_n = &p[n];
@@ -147,7 +147,7 @@ void Add_f_gravity(Particle *p){
    // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
-#pragma omp parallel for schedule(dynamic, 1) 
+#pragma omp parallel for  
   for(int n = 0; n < Particle_Number ; n++){
     p[n].fr[G_direction] -= Gravity_on_fluid * (MASS_RATIOS[p[n].spec] -1.0); 
   }
@@ -171,7 +171,7 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
     double dmyR;
     double dmy_phi;
     int pspec;
-#pragma omp parallel for schedule(dynamic, 1) \
+#pragma omp parallel for \
   private(xp,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,pspec) 
     for(int n = 0; n < Particle_Number; n++){
       for (int d = 0; d < DIM; d++) {
@@ -249,7 +249,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double c
       }
     }
 
-#pragma omp parallel for schedule(dynamic, 1) \
+#pragma omp parallel for \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,dmyR,dmy_phi,v_rot,pspec, \
           rigidID, forceg, torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
@@ -366,7 +366,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     
     Reset_phi(Hydro_force);
     Reset_phi(Hydro_force_new);
-#pragma omp parallel for schedule(dynamic, 1)\
+#pragma omp parallel for \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,force,torque,r_mesh,r,dmy_fp,x,\
           dmyR,dmy_phi,dmy_rhop,dmy_ry,v_rot,sign,im,forceg,torqueg) 
     for(int n = 0; n < Particle_Number ; n++){
@@ -487,7 +487,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
     sum_volume /= RHO;
 
     if(SW_PT == rigid){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
       for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
         for(int d = 0; d < DIM; d++){
           dVg[rigidID][d] = jikan.dt_md * Rigid_IMasses[rigidID] * forceGs[rigidID][d];
@@ -498,7 +498,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
       }
     }
     
-#pragma omp parallel for schedule(dynamic, 1) \
+#pragma omp parallel for \
   private(xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmyR,dmy_phi,dmy_ry,sign,im,dmy_rhop) 
     for(int n = 0; n < Particle_Number ; n++){
       int rigidID;

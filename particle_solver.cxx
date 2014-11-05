@@ -9,7 +9,7 @@
 #include "particle_solver.h"
 
 inline void reset_Forces(Particle *p){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
   for(int n = 0; n < Particle_Number; n++){
     for(int d = 0; d < DIM; d++){
       {
@@ -37,7 +37,7 @@ void MD_solver_position_Euler(Particle *p, const CTime &jikan)
 {
   if(SW_PT != rigid){
     double delta_x;
-#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
+#pragma omp parallel for private(delta_x)
     for(int n = 0; n < Particle_Number; n++) {
       
       if(janus_propulsion[p[n].spec] != obstacle){
@@ -64,7 +64,7 @@ void MD_solver_position_AB2(Particle *p, const CTime &jikan)
 {
   if(SW_PT != rigid){
     double delta_x;
-#pragma omp parallel for schedule(dynamic, 1) private(delta_x)
+#pragma omp parallel for private(delta_x)
     for(int n = 0; n < Particle_Number; n++) {
       
       if(janus_propulsion[p[n].spec] != obstacle){
@@ -113,7 +113,7 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan)
     double self_force[DIM];
     double self_torque[DIM];
     
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
     for(int n = 0; n < Particle_Number; n++){
       dmy = jikan.dt_md * IMASS[p[n].spec];
       dmy_rot = jikan.dt_md * IMOI[p[n].spec];
@@ -151,7 +151,7 @@ void MD_solver_velocity_slip_Euler(Particle *p, const CTime &jikan){
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic, 1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++){
     dmy = jikan.dt_md * IMASS[p[n].spec];
     dmy_rot = jikan.dt_md * IMOI[p[n].spec];
@@ -182,7 +182,7 @@ void MD_solver_velocity_slip_AB2(Particle *p, const CTime &jikan){
   double dmy_rot;
   double self_force[DIM];
   double self_torque[DIM];
-#pragma omp parallel for schedule(dynamic, 1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
   for(int n = 0; n < Particle_Number; n++){
     dmy = jikan.hdt_md * IMASS[p[n].spec];
     dmy_rot = jikan.hdt_md * IMOI[p[n].spec];
@@ -231,7 +231,7 @@ void MD_solver_velocity_slip_iter(Particle *p, const CTime &jikan,
     }
     
   }else if(iter_flag == reset_iter){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
     for(int n = 0; n < Particle_Number; n++){
       for(int d = 0; d < DIM; d++){
 	p[n].v[d] = p[n].v_old[d];
@@ -253,7 +253,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
     double self_force[DIM];
     double self_torque[DIM];
     
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
     for(int n = 0; n < Particle_Number; n++) {
       
       dmy = jikan.hdt_md * IMASS[p[n].spec];
@@ -292,7 +292,7 @@ void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan){
 void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
   if(SW_PT != rigid){
     double delta_x, delta_vx;
-#pragma omp parallel for schedule(dynamic, 1) private(delta_x, delta_vx)
+#pragma omp parallel for private(delta_x, delta_vx)
     for(int n = 0; n < Particle_Number; n++) {
       if(janus_propulsion[p[n].spec] != obstacle){
         for(int d = 0; d < DIM; d++) {
@@ -320,7 +320,7 @@ void MD_solver_position_Euler_OBL(Particle *p, const CTime &jikan){
 void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan){
   if(SW_PT != rigid){
     double delta_x, delta_vx;
-#pragma omp parallel for schedule(dynamic, 1) private(delta_x, delta_vx)
+#pragma omp parallel for private(delta_x, delta_vx)
     for(int n = 0; n < Particle_Number; n++) {
       if(janus_propulsion[p[n].spec] != obstacle){
         for(int d = 0; d < DIM; d++) {
@@ -354,7 +354,7 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan){
     double self_force[DIM];
     double self_torque[DIM];
     
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
     for(int n = 0; n < Particle_Number; n++) {
       if(janus_propulsion[p[n].spec] != obstacle){
         dmy = jikan.dt_md * IMASS[p[n].spec];
@@ -402,7 +402,7 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan){
     double self_force[DIM];
     double self_torque[DIM];
     
-#pragma omp parallel for schedule(dynamic,1) private(dmy, dmy_rot, self_force, self_torque)
+#pragma omp parallel for private(dmy, dmy_rot, self_force, self_torque)
     for(int n = 0; n < Particle_Number; n++) {
       if(janus_propulsion[p[n].spec] != obstacle){
         dmy = jikan.hdt_md * IMASS[p[n].spec];

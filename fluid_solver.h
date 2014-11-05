@@ -169,7 +169,7 @@ inline void Calc_shear_stress(const CTime &jikan
    static double factor=Ivolume/jikan.dt_fluid;
    int jm;
    Inertia_stress=0.;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:Inertia_stress) private(im,jm)
+#pragma omp parallel for reduction(+:Inertia_stress) private(im,jm)
    for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
        for(int k=0; k<NZ; k++){
@@ -184,7 +184,7 @@ inline void Calc_shear_stress(const CTime &jikan
   }
     
     double mean_force_x = 0.;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:mean_force_x) private(im)
+#pragma omp parallel for reduction(+:mean_force_x) private(im)
 	  for(int i=0; i<NX; i++){
 		for(int j=0; j<NY; j++){
 	      for(int k=0; k<NZ; k++){
@@ -203,7 +203,7 @@ inline void Calc_shear_stress(const CTime &jikan
 
 	double y;
 	double fx;
-#pragma omp parallel for schedule(dynamic,1) reduction(+:stress_yx) private(y,fx,im)
+#pragma omp parallel for reduction(+:stress_yx) private(y,fx,im)
 	    for(int i=0; i<NX; i++){
 		for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ; k++){
@@ -256,7 +256,7 @@ inline void Calc_hydro_stress(const CTime &jikan
 inline void Reset_phi_OBL(double *phi, double const* work_v1){
   int im, im_obl;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
+#pragma omp parallel for private(im, im_obl)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++) {
       
@@ -286,7 +286,7 @@ inline void Reset_U_OBL(double **u, double const* const* ucp, const int &flg){
   const double delta = (flg == 0 ? 1.0 : -1.0);
   int im, im_obl;
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_obl)
+#pragma omp parallel for private(im, im_obl)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++) {
       
@@ -316,7 +316,7 @@ inline void Reset_U_OBL(double **u, double const* const* ucp, const int &flg){
  */
 inline void Update_K2_OBL(void){
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZ_; k++){
@@ -341,7 +341,7 @@ inline void Update_K2_OBL(void){
 
 inline void Update_Obl_Coord(double **u, const double &delta_gamma){
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZ; k++){

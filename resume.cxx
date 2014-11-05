@@ -78,7 +78,7 @@ void Save_Restart_udf(double **zeta,
 }
 
 void Get_Rigid_Particle_Data( Particle *rigid_p, const Particle *p){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
   for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
     int rigid_first_n = Rigid_Particle_Cumul[rigidID];
 
@@ -340,7 +340,7 @@ void Force_restore_parameters(double **zeta
   
   if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
         for(int k = 0; k < NZ; k++){
@@ -528,7 +528,7 @@ void Read_Rigid_Particle_udf(){
 void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
 
   //rigid particles
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
     int rigid_first_n = Rigid_Particle_Cumul[rigidID];
     int rigid_last_n = Rigid_Particle_Cumul[rigidID];
@@ -562,7 +562,7 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
   }
 
   //bead particle data
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int n = 0; n < Particle_Number; n++){
     int rigidID = Particle_RigidID[n];
 

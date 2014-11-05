@@ -18,7 +18,7 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
   static double noise_intensity_o = kT_snap_o * sdv_omega;
 
   if(SW_PT != rigid){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
     for(int n=0; n<Particle_Number; n++){
       if(janus_propulsion[p[n].spec] != obstacle){
         double dmy[6];

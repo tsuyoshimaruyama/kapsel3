@@ -101,7 +101,7 @@ inline double Slip_particle_convergence(Particle *p){
  */
 inline void Update_slip_particle_velocity(Particle *p, const int &iter){
   if(iter == 0){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
     for(int n = 0; n < Particle_Number; n++){
       for(int d = 0; d < DIM; d++){
 	p[n].v_slip[d] =  p[n].v[d];
@@ -111,7 +111,7 @@ inline void Update_slip_particle_velocity(Particle *p, const int &iter){
   }else{
     double dmy_new = 0.7;
     double dmy_old = 1.0 - dmy_new;
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
     for(int n = 0; n < Particle_Number; n++){
       for(int d = 0; d < DIM; d++){
 	p[n].v_slip[d] = dmy_old*p[n].v_slip[d] + dmy_new*p[n].v[d];

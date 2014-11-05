@@ -30,7 +30,7 @@ void Make_surface_normal(double **surface_normal
     double dmy_r;
     double dmy;
     double ir;
-#pragma omp parallel for schedule(dynamic, 1) private(xp,x_int,residue,sw_in_cell,r_mesh,r,dmy_r,dmy,ir)
+#pragma omp parallel for private(xp,x_int,residue,sw_in_cell,r_mesh,r,dmy_r,dmy,ir)
   for(int n=0; n < Particle_Number; n++){
     for(int d=0;d<DIM;d++){
       xp[d] = p[n].x[d];
@@ -79,7 +79,7 @@ inline void Make_rho_field_primitive(double *phi
     double x[DIM];
     double dmy;
     double dmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) private(drho,xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi)
+#pragma omp parallel for private(drho,xp,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi)
     for(int n=0; n < Particle_Number; n++){
 	drho = RHO_particle[p[n].spec] - RHO;
 	for(int d=0;d<DIM;d++){
@@ -103,7 +103,7 @@ inline void Make_rho_field_primitive(double *phi
     }
 
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=0;i<Nlattice[0];i++){
 	for(int j=0;j<Nlattice[1];j++){
 	    for(int k=0;k<Nlattice[2];k++){
@@ -167,7 +167,7 @@ inline void Make_phi_u_primitive(double *phi
     double v_rot[DIM];
     int im;
 
-#pragma omp parallel for schedule(dynamic, 1) \
+#pragma omp parallel for \
   private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,im)
     for(int n=0; n < Particle_Number; n++){
 	for(int d=0;d<DIM;d++){
@@ -209,7 +209,7 @@ inline void Make_phi_u_primitive(double *phi
     // koba code //
     if(SW_UP){
 	double idmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) private(im,idmy_phi)
+#pragma omp parallel for private(im,idmy_phi)
 	for (int i = 0; i < NX; i++) {
 	    for (int j = 0; j < NY; j++) {
 		for (int k = 0; k < NZ; k++) {
@@ -235,7 +235,7 @@ inline void Make_phi_particle_sum_primitive(double *phi,
                                             int **sekibun_cell,
                                             const int Nlattice[DIM],
                                             const double radius){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int n = 0; n < Particle_Number; n++){
     double xp[DIM];
     for(int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
@@ -264,7 +264,7 @@ inline void Make_phi_particle_sum_primitive(double *phi,
 
   {
     int im;
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
         for(int k = 0; k < NZ; k++){
@@ -284,7 +284,7 @@ inline void Make_u_particle_sum_primitive(double **up,
                                           int const* const* sekibun_cell,
                                           const int Nlattice[DIM],
                                           const double radius){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int n = 0; n < Particle_Number; n++){
     double xp[DIM], vp[DIM], omega_p[DIM];
     for(int d = 0; d < DIM; d++){
@@ -342,7 +342,7 @@ inline void Make_phi_u_primitive_OBL(double *phi
     double v_rot[DIM];
     int sign;
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,sign,im)
+#pragma omp parallel for private(xp,vp,omega_p,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi,v_rot,sign,im)
     for(int n=0; n < Particle_Number; n++){
 	for(int d=0;d<DIM;d++){
 	    xp[d] = p[n].x[d];
@@ -390,7 +390,7 @@ inline void Make_phi_u_primitive_OBL(double *phi
     // koba code //
     if(SW_UP){
 	double idmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) private(im,idmy_phi)
+#pragma omp parallel for private(im,idmy_phi)
 	for (int i = 0; i < NX; i++) {
 	    for (int j = 0; j < NY; j++) {
 		for (int k = 0; k < NZ; k++) {
@@ -483,7 +483,7 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p){
     double x[DIM];
     double dmy;
     double dmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) private(xp,vp,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi)
+#pragma omp parallel for private(xp,vp,x_int,residue,sw_in_cell,r_mesh,r,x,dmy,dmy_phi)
   for(int n=0; n < Particle_Number; n++){
     for(int d=0;d<DIM;d++){
       xp[d] = p[n].x[d];
@@ -524,7 +524,7 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
   int const* const* sekibun_cell = Sekibun_cell;
   int const* nlattice = Ns;
 
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
     double dmy, dmy_phi, dmy_mass;
     int x_int[DIM], r_mesh[DIM];
@@ -565,7 +565,7 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
   int const* const* sekibun_cell = Sekibun_cell;
   int const* nlattice = Ns;
   
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
   for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
     double dmy, dmy_phi;
     int x_int[DIM], r_mesh[DIM];

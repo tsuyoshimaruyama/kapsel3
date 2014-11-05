@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# Python script to generate xdmf file.
+# Requires configure file >= v1.1
 import sys
 import os.path
 import xml.etree.ElementTree as et

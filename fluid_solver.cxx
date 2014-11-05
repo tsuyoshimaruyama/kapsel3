@@ -63,7 +63,7 @@ inline void Mean_shear_sustaining_yforce_PBC(double **zeta, double uk_dc[DIM], d
     double dmy_2;    
     int im1;
     int im2;
-#pragma omp parallel for schedule(dynamic, 1) private(dmy_1, dmy_2, im1, im2) 
+#pragma omp parallel for private(dmy_1, dmy_2, im1, im2) 
     for(int i=0; i<NX; i++){
 	for(int k=0; k<NZ; k++){
 	    im1=(i*NY*NZ_)+(j1*NZ_)+k;
@@ -94,7 +94,7 @@ inline void Mean_shear_sustaining_kforce_PBC(double **zeta, double uk_dc[DIM], d
   double dmy2;
   double dmy3;
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(dmy2, dmy3, im)
+#pragma omp parallel for private(dmy2, dmy3, im)
   for(int i=0; i<NX; i++){
    for(int j=0; j<NY; j++){
 	for(int k=0; k<NZ; k++){
@@ -122,7 +122,7 @@ inline void Mean_shear_sustaining_kforce_PBC(double **zeta, double uk_dc[DIM], d
 inline void Field_solver_Euler(const int &dim, double **zeta_k, const CTime &jikan, double **rhs, const Index_range &ijk_range){
 int im;
   for(int d=0; d<dim; d++){
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=ijk_range.istart; i<=ijk_range.iend; i++){
       for(int j=ijk_range.jstart; j<=ijk_range.jend; j++){
     	for(int k=ijk_range.kstart; k<=ijk_range.kend; k++){
@@ -336,7 +336,7 @@ void NS_solver_slavedEuler(double **zeta, const CTime &jikan, double uk_dc[DIM],
   int im;
   double dmy;
   for(int n=0;n<n_ijk_range;n++){
-#pragma omp parallel for schedule(dynamic, 1) private(im, dmy) 
+#pragma omp parallel for private(im, dmy) 
       for(int i=ijk_range[n].istart; i<=ijk_range[n].iend; i++){
 	  for(int j=ijk_range[n].jstart; j<=ijk_range[n].jend; j++){
 	  for(int k=ijk_range[n].kstart; k<=ijk_range[n].kend; k++){
@@ -371,7 +371,7 @@ void NS_solver_slavedEuler_Shear_PBC(double **zeta
     int im;
     double dmy; 
     for(int n=0;n<n_ijk_range;n++){
-#pragma omp parallel for schedule(dynamic, 1) private(dmy, im) 
+#pragma omp parallel for private(dmy, im) 
 	for(int i=ijk_range[n].istart; i<=ijk_range[n].iend; i++){
 	    for(int j=ijk_range[n].jstart; j<=ijk_range[n].jend; j++){
 		for(int k=ijk_range[n].kstart; k<=ijk_range[n].kend; k++){
@@ -412,7 +412,7 @@ void NS_solver_slavedEuler_Shear_OBL(double **zeta
     int im;
     double dmy; 
     for(int n=0;n<n_ijk_range;n++){
-#pragma omp parallel for schedule(dynamic, 1) private(dmy, im) 
+#pragma omp parallel for private(dmy, im) 
 	for(int i=ijk_range[n].istart; i<=ijk_range[n].iend; i++){
 	    for(int j=ijk_range[n].jstart; j<=ijk_range[n].jend; j++){
 		for(int k=ijk_range[n].kstart; k<=ijk_range[n].kend; k++){

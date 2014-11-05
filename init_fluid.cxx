@@ -9,7 +9,7 @@
 
 void Init_zeta_k(double **zeta, double *uk_dc){
     
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
 	  for(int i=0; i<NX; i++){
 		for(int j=0; j<NY; j++){
 		    for(int k=0; k<NZ; k++){

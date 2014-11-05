@@ -48,7 +48,7 @@ inline void Init_K(void){
 
   int kx, ky, kz;
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(kx,ky,kz,im) 
+#pragma omp parallel for private(kx,ky,kz,im) 
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ_; k++){
@@ -155,7 +155,7 @@ inline void A_k2dja_k_primitive(double *a
   int k2;
   int im;
   double wavenumber;
-#pragma omp parallel for schedule(dynamic, 1) private(k2, wavenumber,im)
+#pragma omp parallel for private(k2, wavenumber,im)
   for(int i=0; i<nx; i++){
     for(int j=0; j<ny; j++){
       for(int k=0; k<hnz_; k++){
@@ -181,7 +181,7 @@ void A_k2dza_k(double *a, double *da){
 void Omega_k2zeta_k(double **omega, double **zetak){
   int im;
 {
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ_; k++){
@@ -219,7 +219,7 @@ void Omega_k2zeta_k(double **omega, double **zetak){
 void Omega_k2zeta_k_OBL(double **omega, double **zetak){
   int im;
 {
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ_; k++){
@@ -257,7 +257,7 @@ void U_k2Stress_k(double **u, double *stress_k[QDIM]){
     u[d][0]= 0.0;
   }
 
-#pragma omp parallel for schedule(dynamic, 1) private(im0, im1, k2, ks, u_dmy)
+#pragma omp parallel for private(im0, im1, k2, ks, u_dmy)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
@@ -324,7 +324,7 @@ void U_k2Stress_k_OBL(double **zeta, double *stress_k[QDIM]){
     u[d][0] = 0.0;
   }
 
-#pragma omp parallel for schedule(dynamic, 1) private(im0, im1, k2, ks, u_dmy)
+#pragma omp parallel for private(im0, im1, k2, ks, u_dmy)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
@@ -380,7 +380,7 @@ void U_k2zeta_k(double **u, double **zeta, double uk_dc[DIM]){
 	uk_dc[0] = u[0][0]; 
 	uk_dc[1] = u[1][0]; 
 	uk_dc[2] = u[2][0]; 
-#pragma omp parallel for schedule(dynamic, 1) private(ks, omega_re, omega_im, k2, im)
+#pragma omp parallel for private(ks, omega_re, omega_im, k2, im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<HNZ_; k++){
@@ -464,7 +464,7 @@ void U_k2omega_k_OBL(double **u, double **omega, double uk_dc[DIM]){
   uk_dc[1] = u[1][0]; 
   uk_dc[2] = u[2][0]; 
   {
-#pragma omp parallel for schedule(dynamic, 1) private(u_re, u_im, ks, k2, im)
+#pragma omp parallel for private(u_re, u_im, ks, k2, im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<HNZ_; k++){
@@ -515,7 +515,7 @@ void U_k2zeta_k_OBL(double **u, double **zeta, double uk_dc[DIM]){
     uk_dc[1] = u[1][0]; 
     uk_dc[2] = u[2][0]; 
     {
-#pragma omp parallel for schedule(dynamic, 1) private(ks, u_re, u_im, omega_re, omega_im, k2, im)
+#pragma omp parallel for private(ks, u_re, u_im, omega_re, omega_im, k2, im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<HNZ_; k++){
@@ -582,7 +582,7 @@ void Zeta_k2u_k(double **zeta, double uk_dc[DIM], double **u){
   double dmy;
 
   {
-#pragma omp parallel for schedule(dynamic, 1) private(omega_re,omega_im, dmy1_re,dmy2_re,dmy1_im,dmy2_im, kx, ky, kz,ik2,im,k2,dmy)
+#pragma omp parallel for private(omega_re,omega_im, dmy1_re,dmy2_re,dmy1_im,dmy2_im, kx, ky, kz,ik2,im,k2,dmy)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
@@ -687,7 +687,7 @@ void Zeta_k2u_k_OBL(double **zeta, double uk_dc[DIM], double **u){
   double dmy;
 
   {
-#pragma omp parallel for schedule(dynamic, 1) private(omega_re,omega_im, dmy1_re,dmy2_re,dmy1_im,dmy2_im, kx, ky, kz,ik2,im,k2,dmy)
+#pragma omp parallel for private(omega_re,omega_im, dmy1_re,dmy2_re,dmy1_im,dmy2_im, kx, ky, kz,ik2,im,k2,dmy)
       for(int i=0; i<NX; i++){
 	  for(int j=0; j<NY; j++){
 	      for(int k=0; k<HNZ_; k++){
@@ -765,7 +765,7 @@ void Omega_k2u_k_OBL(double **omega, double uk_dc[DIM], double **u){
   int k2;
   int im;
 
-#pragma omp parallel for schedule(dynamic, 1) private(omega_re,omega_im,kx,ky,kz,ik2,k2,im)
+#pragma omp parallel for private(omega_re,omega_im,kx,ky,kz,ik2,k2,im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < HNZ_; k++){
@@ -814,7 +814,7 @@ void Zeta_k2omega_k_OBL(double **zeta, double **omega){
     double dmy;
     
     {
-#pragma omp parallel for schedule(dynamic, 1) private(dmy1, dmy2, kx, ky, kz, im, dmy)
+#pragma omp parallel for private(dmy1, dmy2, kx, ky, kz, im, dmy)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ_; k++){
@@ -861,7 +861,7 @@ void U_k2divergence_k(double **u, double *div){
     int k2;
     int im0, im1;
   {
-#pragma omp parallel for schedule(dynamic, 1) private(ks, k2, im0, im1)
+#pragma omp parallel for private(ks, k2, im0, im1)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<HNZ_; k++){
@@ -896,7 +896,7 @@ void U_k2rotation_k(double **u){
     int k2;
     int im;
     {
-#pragma omp parallel for schedule(dynamic, 1) private(ks, dmy_u_re, dmy_u_im, dmy_rot_re, dmy_rot_im, k2, im)
+#pragma omp parallel for private(ks, dmy_u_re, dmy_u_im, dmy_rot_re, dmy_rot_im, k2, im)
 	for(int i = 0; i < NX; i++){
 	    for(int j = 0; j < NY; j++){
 		for(int k = 0; k < HNZ_; k++){

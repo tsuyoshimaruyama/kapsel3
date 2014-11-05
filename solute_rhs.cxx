@@ -52,7 +52,7 @@ void Solute_impermeability(Particle *p
     double normal[DIM];
     double norm2;
 	double dmy;
-#pragma omp parallel for schedule(dynamic, 1) private(xp,x_int,residue,sw_in_cell,r_mesh,r,normal,norm2,dmy)
+#pragma omp parallel for private(xp,x_int,residue,sw_in_cell,r_mesh,r,normal,norm2,dmy)
   for(int n=0; n < Particle_Number; n++){
   // double xp[DIM];
     for(int d=0;d<DIM;d++){
@@ -63,7 +63,7 @@ void Solute_impermeability(Particle *p
     //double residue[DIM];
     //int sw_in_cell 
     sw_in_cell 
-      = Particle_cell(xp, DX, x_int, residue);// {1,0} $B$,JV$C$F$/$k(B
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
     sw_in_cell = 1;
     //int r_mesh[DIM];
     //double r[DIM];
@@ -115,7 +115,7 @@ void Rescale_solute(double *rescale_factor
     //double dmy = Count_single_solute(conc_x, phi);
     dmy = Count_single_solute(conc_x, phi);
     rescale_factor[n] = total_solute[n]/dmy;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
 	    for(int k=0;k<NZ_;k++){
@@ -134,7 +134,7 @@ double Count_single_solute(double *conc_x
   
   double dmy = 0.;
   int im;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy) private(im)
+#pragma omp parallel for reduction(+:dmy) private(im)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){
@@ -159,7 +159,7 @@ void Solute_solver_rhs_nonlinear_x_single(double **grad_potential
   double dmy_conc;
   double dmy_conc_flux[DIM];
   double dmy_interaction;
-#pragma omp parallel for schedule(dynamic, 1) private(im,dmy_u,dmy_grad_pot,dmy_conc,dmy_conc_flux,dmy_interaction)
+#pragma omp parallel for private(im,dmy_u,dmy_grad_pot,dmy_conc,dmy_conc_flux,dmy_interaction)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ; k++){
@@ -195,7 +195,7 @@ void Add_advection_flux(double **solute_flux
 			){
   int im;
   double dmy_conc;
-#pragma omp parallel for schedule(dynamic, 1) private(im,dmy_conc)
+#pragma omp parallel for private(im,dmy_conc)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ; k++){
@@ -217,7 +217,7 @@ void Diffusion_flux_single(double **diff_flux_x
 			    ,double *dmy_value // working memory
 			    ){
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ_; k++){

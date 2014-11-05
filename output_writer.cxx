@@ -387,7 +387,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   double* pdata = alloc_1d_double(nump_print3*3); 
   
   int i, jj;
-#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -408,7 +408,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_pos_raw_name);
   this->write_particle_vectorn(&pdata[nump_print6], DIM, p_vel_name);
 
-#pragma opm parallel for schedule(dynamic, 1) private(i, jj)
+#pragma opm parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -426,7 +426,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[0], DIM, p_force_h_name);
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_force_r_name);
 
-#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -450,7 +450,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_torque_h_name);
   //this->write_particle_vectorn(&pdata[nump_print6], DIM, p_torque_r_name);
   
-#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 9*j;
@@ -485,7 +485,7 @@ void hdf5_writer::write_obstacle_data(Particle *p){
   double* pdata = alloc_1d_double(nump_print3*2);
 
   int i, jj;
-#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -540,6 +540,8 @@ void hdf5_writer::write_configure_file(){
   sprintf(confname, "%s.conf", out_path);
   conf = filecheckopen(confname, "w");
   //Parameters
+  fprintf(conf, "#Configure file needed to generate xdmf trajectory\n");
+  fprintf(conf, "#v1.1\n");
   fprintf(conf, "[Filename]\n %s\n", out_name);
   fprintf(conf, "[Grid Dimensions]\n %lld %lld %lld\n", 
 	  out_dims_field[0], out_dims_field[1], out_dims_field[2]);
@@ -659,7 +661,7 @@ void hdf5_writer::write_particle_info(Particle* p){
   int*    psp   = alloc_1d_int(nump_print);
   
   int i;
-#pragma omp parallel for schedule(dynamic, 1) private(i)
+#pragma omp parallel for private(i)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     pid[j] = i;
@@ -692,7 +694,7 @@ void hdf5_writer::write_obstacle_info(Particle *p){
   double* pdata = alloc_1d_double(nump_print3);
 
   int i, jj;
-#pragma omp parallel for schedule(dynamic, 1) private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     jj = 3*j;
 

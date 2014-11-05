@@ -43,13 +43,13 @@ inline void Make_f_particle_dt_nonsole(double **f
 				       ,double **up
 				       ,double *phi
 				       ){
-  // !! $B$3$l$r8F$VA0$K!"(B up, phi $B$r7W;;$7$F$*$/$3$H!#(B
+  // !! これを呼ぶ前に、 up, phi を計算しておくこと。
   //
   // f = up - phi *u
   //
   int im;
   {
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=0; i<NX; i++){
       for(int j=0; j<NY; j++){
 	for(int k=0; k<NZ; k++){
@@ -73,7 +73,7 @@ inline void Make_f_particle_dt_sole(double **f
 				    ,double **up
 				    ,double *phi
 				    ){
-    // !! $B$3$l$r8F$VA0$K!"(B up, phi $B$r7W;;$7$F$*$/$3$H!#(B
+    // !! これを呼ぶ前に、 up, phi を計算しておくこと。
     Make_f_particle_dt_nonsole(f, u, up, phi);
   {
     // f = up - phi *u
@@ -81,10 +81,10 @@ inline void Make_f_particle_dt_sole(double **f
   }
 }
 inline void Add_f_particle(double **u, double **f, const int dim=DIM){
-    // !! $B$3$l$r8F$VA0$K!"(B f $B$r7W;;$7$F$*$/$3$H!#(B
+    // !! これを呼ぶ前に、 f を計算しておくこと。
 int im;
    // for(int d=0; d<dim; d++){
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
+#pragma omp parallel for private(im) 
     	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ; k++){

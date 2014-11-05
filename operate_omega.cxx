@@ -30,7 +30,7 @@ void U2advection_k(double **u, double **advection){
     int im;
     
     {
-#pragma omp parallel for schedule(dynamic, 1) private(u1, u2, u3, im)
+#pragma omp parallel for private(u1, u2, u3, im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ; k++){
@@ -57,7 +57,7 @@ void U2advection_k(double **u, double **advection){
 	    A2a_k(advection[1]);
 	}
 	
-#pragma omp parallel for schedule(dynamic, 1) private(k1,k2,k3,u2u3,u3u1,u1u2,u22_u32,u32_u12,u12_u22,k1k2,k2k3,k3k1,im)
+#pragma omp parallel for private(k1,k2,k3,u2u3,u3u1,u1u2,u22_u32,u32_u12,u12_u22,k1k2,k2k3,k3k1,im)
 	for(int i=0; i<NX; i++){
 	    for(int j=0; j<NY; j++){
 		for(int k=0; k<NZ_; k++){
@@ -129,7 +129,7 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
     double w1;
     double w2;
     double w3;
-#pragma omp parallel for schedule(dynamic, 1) private(u1,u2,u3,w1,w2,w3,im)
+#pragma omp parallel for private(u1,u2,u3,w1,w2,w3,im)
     for(int i = 0; i < NX; i++){
 	for(int j = 0; j < NY; j++){
 	    for(int k = 0; k < NZ; k++){
@@ -154,7 +154,7 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
 	A2a_k(u[d]);
     }
 
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
+#pragma omp parallel for private(im) 
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
 	for(int k = 0; k < NZ_; k++) {
@@ -171,7 +171,7 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
 
 void Add_zeta_viscous_term(double ** zeta, double **f, const Index_range &ijk_range){
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=ijk_range.istart; i<=ijk_range.iend; i++){
       for(int j=ijk_range.jstart; j<=ijk_range.jend; j++){
     	for(int k=ijk_range.kstart; k<=ijk_range.kend; k++){
@@ -191,7 +191,7 @@ void Solenoidal_uk(double **u){
     double dmy;
     int im;
     
-#pragma omp parallel for schedule(dynamic, 1) private(kx,ky,kz,dmy,im) 
+#pragma omp parallel for private(kx,ky,kz,dmy,im) 
     for(int i=0; i<NX; i++){
 	for(int j=0; j<NY; j++){
 	    for(int k=0; k<NZ_; k++){
@@ -229,7 +229,7 @@ double ky_contra;
 double dmy;
 int im;
 
-#pragma omp parallel for schedule(dynamic, 1) private(kx,ky,kz,kx_contra,ky_contra,dmy,im) 
+#pragma omp parallel for private(kx,ky,kz,kx_contra,ky_contra,dmy,im) 
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ_; k++){

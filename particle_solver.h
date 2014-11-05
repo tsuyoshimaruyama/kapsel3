@@ -129,7 +129,7 @@ inline void Force_OBL(Particle *p){
 
 inline void Pinning(Particle *p){
   if(SW_PT != rigid){
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
     for(int i = 0; i < N_PIN; i++){
       for(int d = 0; d < DIM; d++){
         p[Pinning_Numbers[i]].v[d] = 0.0;

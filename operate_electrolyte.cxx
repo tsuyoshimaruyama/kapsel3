@@ -26,7 +26,7 @@ inline void Add_external_electric_field_x(double *potential
   }
 
 	int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){
@@ -58,7 +58,7 @@ void Conc_k2charge_field(Particle *p
 
     for(int n=0;n< N_spec;n++){
       A_k2a_out(conc_k[n], dmy_value);
-#pragma omp parallel for schedule(dynamic, 1) private(im,dmy_phi,dmy_conc)
+#pragma omp parallel for private(im,dmy_phi,dmy_conc)
       for(int i=0;i<NX;i++){
 	  for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -76,7 +76,7 @@ void Conc_k2charge_field(Particle *p
 void Charge_field_k2Coulomb_potential_k_PBC(double *potential){
   const double iDielectric_cst = 1./Dielectric_cst;
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ_;k++){
@@ -131,8 +131,8 @@ void Make_Coulomb_force_x_on_fluid(double **force
   double electric_field;
 #pragma omp parallel
   {
-//#pragma omp parallel for schedule(dynamic, 1) private(im,electric_field)
-#pragma omp  for schedule(dynamic, 1) private(im,electric_field)
+//#pragma omp parallel for private(im,electric_field)
+#pragma omp  for private(im,electric_field)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -145,8 +145,8 @@ void Make_Coulomb_force_x_on_fluid(double **force
 	  }
       }
     }
-//#pragma omp parallel for schedule(dynamic, 1) private(im,electric_field)
-#pragma omp  for schedule(dynamic, 1) private(im,electric_field)
+//#pragma omp parallel for private(im,electric_field)
+#pragma omp  for private(im,electric_field)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -159,8 +159,8 @@ void Make_Coulomb_force_x_on_fluid(double **force
 	  }
       }
     }
-//#pragma omp parallel for schedule(dynamic, 1) private(im,electric_field)
-#pragma omp for schedule(dynamic, 1) private(im,electric_field)
+//#pragma omp parallel for private(im,electric_field)
+#pragma omp for private(im,electric_field)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -217,7 +217,7 @@ void Make_phi_qq_particle(double *phi
   {// volume of surface section is normalized to unity
     double dmy = 0.0;
 	int im;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:dmy) private(im)
+#pragma omp parallel for reduction(+:dmy) private(im)
     for(int i=0; i<NX; i++){
       for(int j=0; j<NY; j++){
 	  for(int k=0; k<NZ; k++){
@@ -228,7 +228,7 @@ void Make_phi_qq_particle(double *phi
       }
     }
     double rescale = abs_total_surface_charge / (dmy * DX3);
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=0; i<NX; i++){
       for(int j=0; j<NY; j++){
 	  for(int k=0; k<NZ; k++){
@@ -320,7 +320,7 @@ void Calc_free_energy_PB(double **conc_k
     
     for(int n=0;n< N_spec;n++){
       A_k2a_out(conc_k[n], dmy_value);
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:free_energy_ideal) private(im,dmy_conc,dmy_phi)
+#pragma omp parallel for reduction(+:free_energy_ideal) private(im,dmy_conc,dmy_phi)
       for(int i=0;i<NX;i++){
 	  for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -341,7 +341,7 @@ void Calc_free_energy_PB(double **conc_k
       Charge_field_k2Coulomb_potential_k_PBC(dmy_value);
       A_k2a(dmy_value);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
       for(int i=0;i<NX;i++){
 	  for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -355,7 +355,7 @@ void Calc_free_energy_PB(double **conc_k
 	Add_external_electric_field_x(dmy_value, jikan);
       }
     }
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:free_energy_electrostatic) private(im)
+#pragma omp parallel for reduction(+:free_energy_electrostatic) private(im)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
 	  for(int k=0;k<NZ;k++){
@@ -420,7 +420,7 @@ inline void Set_uniform_ion_charge_density_nosalt(double *Concentration
   
   double volume_phi = 0.;
   double dmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:volume_phi) private(dmy_phi)
+#pragma omp parallel for reduction(+:volume_phi) private(dmy_phi)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){
@@ -431,7 +431,7 @@ inline void Set_uniform_ion_charge_density_nosalt(double *Concentration
   }
 
   double Counterion_density = Counterion_number / (volume_phi * DX3);
-#pragma omp parallel for schedule(dynamic, 1) private(Counterion_density)
+#pragma omp parallel for private(Counterion_density)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){
@@ -470,7 +470,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_nosalt(double **Concentrati
     
     double rho_0 = 0.;
     double dmy_phi;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:rho_0) private(dmy_phi)
+#pragma omp parallel for reduction(+:rho_0) private(dmy_phi)
     for(int i=0;i<NX;i++){
       for(int j=0;j<NY;j++){
  	  for(int k=0;k<NZ;k++){
@@ -533,7 +533,7 @@ inline void Set_uniform_ion_charge_density_salt(double **Concentration
   double volume_phi = 0.;
   double dmy_phi;
   int im;
-#pragma omp parallel for schedule(dynamic, 1) reduction(+:volume_phi) private(dmy_phi,im)
+#pragma omp parallel for reduction(+:volume_phi) private(dmy_phi,im)
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){
@@ -550,7 +550,7 @@ inline void Set_uniform_ion_charge_density_salt(double **Concentration
   double Rho_inf_positive_ion=Rho_inf/(Valency[0]*(Valency[0]-Valency[1]));
   double Rho_inf_negative_ion=-Rho_inf/(Valency[1]*(Valency[0]-Valency[1]));
 
-#pragma omp parallel for schedule(dynamic, 1) 
+#pragma omp parallel for  
   for(int i=0;i<NX;i++){
     for(int j=0;j<NY;j++){
       for(int k=0;k<NZ;k++){

@@ -286,7 +286,7 @@ inline void phi2phi_oblique(double *phi){
   
   Copy_v1(work_v1, phi);
   
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+#pragma omp parallel for private(im, im_ob, im_ob_p)
   for (int i = 0; i < NX; i++) {
     for (int j = 0; j < NY; j++) {
       
@@ -318,7 +318,7 @@ inline void phi_oblique2phi(double *phi) {
   
   Copy_v1(work_v1, phi);
   
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+#pragma omp parallel for private(im, im_ob, im_p)
   for (int i = 0; i < NX; i++) {
     for (int j = 0; j < NY; j++) {
       
@@ -401,7 +401,7 @@ inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag, c
     exit_job(EXIT_FAILURE);
   }
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, dmy_x, delta_y)
+#pragma omp parallel for private(im, im_ob, dmy_x, delta_y)
   for(int j = 0; j < NY; j++){//original coord
     int np;    
 #ifndef _OPENMP
@@ -453,7 +453,7 @@ inline void U2u_oblique(double **uu) {
 
     Copy_v3(work_v3, uu);
     
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_ob_p)
+#pragma omp parallel for private(im, im_ob, im_ob_p)
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 
@@ -487,7 +487,7 @@ inline void U_oblique2u(double **uu, const bool &add_mean_flow = true) {
 
     Copy_v3(work_v3, uu);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+#pragma omp parallel for private(im, im_ob, im_p)
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 
@@ -526,7 +526,7 @@ inline void Stress_oblique2Stress(double **EE, const bool &add_mean_flow=true){
                            work_v2[1]};
   Copy_v5(work_v5, EE);
   
-#pragma omp parallel for schedule(dynamic, 1) private(im, im_ob, im_p)
+#pragma omp parallel for private(im, im_ob, im_p)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       
@@ -585,7 +585,7 @@ inline void contra2co(double **contra) {
 
     Copy_v3_k(work_v3, contra);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 	    for (int k = 0; k < NZ_; k++) {
@@ -610,7 +610,7 @@ inline void co2contra(double **contra) {
 
     Copy_v3_k(work_v3, contra);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for (int i = 0; i < NX; i++) {
 	for (int j = 0; j < NY; j++) {
 	    for (int k = 0; k < NZ_; k++) {
@@ -697,7 +697,7 @@ inline void A2a_k(double *a){
   double _Complex* x_out = new double _Complex[NX*NY*HNZ_];
   
   {
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for 
     for (int i = 0; i< NX; i++){
       for (int j = 0; j< NY; j++){
 	for (int l = 0; l< NZ; l++){
@@ -744,7 +744,7 @@ inline void A2a_k(double *a){
   }    
 
 
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for
   for (int i = 0; i< NX; i++){
     for (int j = 0; j< NY; j++){
       for (int l = 0; l< HNZ_; l++){
@@ -778,7 +778,7 @@ inline void A_k2a(double *a){
 #ifndef _OPENMP
  double ***a_cp;
  a_cp = alloc_3d_double(NX, NY, NZ_);
-  #pragma omp parallel for schedule(dynamic,1) // private(im) 
+  #pragma omp parallel for // private(im) 
  for (int i = 0; i< NX; i++){
  for (int j = 0; j< NY; j++){
  for (int l = 0; l< NZ/2+1; l++){
@@ -793,7 +793,7 @@ inline void A_k2a(double *a){
  rdft3dsort(NX, NY, NZ, -1, a_cp);
  rdft3d(NX, NY, NZ, -1, a_cp, t, ip, w);
 
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
+#pragma omp parallel for private(im) 
    for(int i=0; i<NX; i++){
       for(int j=0; j<NY; j++){
 	  for(int k=0; k<NZ/2+1; k++){
@@ -814,7 +814,7 @@ static double scale = 1.0/(NX * NY * NZ);
   double _Complex* x_out = new double _Complex[NX*NY*(NZ/2+1)];
 
 {
-    #pragma omp parallel for schedule(dynamic,1) //private(im)
+    #pragma omp parallel for //private(im)
 for (int i = 0; i< NX; i++){
 for (int j = 0; j< NY; j++){
 for (int l = 0; l< NZ/2+1; l++){
@@ -861,7 +861,7 @@ Status = DftiComputeBackward( Desc_Handle, x_out, x_in);
 Status = DftiFreeDescriptor(&Desc_Handle);
 }
 
-   #pragma omp parallel for schedule(dynamic, 1) // private(im)
+   #pragma omp parallel for // private(im)
 for (int i = 0; i< NX; i++){
 for (int j = 0; j< NY; j++){
 for (int l = 0; l< NZ; l++){
@@ -930,7 +930,7 @@ inline int Calc_KZ_Ooura(const int &i, const int &j, const int &k){
 }
 inline void Truncate_general(double *a, const Index_range &ijk_range){
   int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im) 
+#pragma omp parallel for private(im) 
   for(int i=ijk_range.istart; i<=ijk_range.iend; i++){
     for(int j=ijk_range.jstart; j<=ijk_range.jend; j++){
       for(int k=ijk_range.kstart; k<=ijk_range.kend; k++){

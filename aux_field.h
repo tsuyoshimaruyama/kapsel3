@@ -11,7 +11,7 @@ inline void Copy_v1_Primitive(double *ucp, double const *u,
 
   int im;
   int NZMAX = (flag == R_SPACE ? NZ : NZ_);
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZMAX; k++){
@@ -27,7 +27,7 @@ inline void Copy_v2_Primitive(double **ucp, double const* const* u,
 
   int im;
   int NZMAX = (flag == R_SPACE ? NZ : NZ_);
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZMAX; k++){
@@ -44,7 +44,7 @@ inline void Copy_v3_Primitive(double **ucp, double const* const* u,
 
   int im;
   int NZMAX = (flag == R_SPACE ? NZ : NZ_);
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZMAX; k++){
@@ -61,7 +61,7 @@ inline void Copy_v5_Primitive(double **ucp, double const* const* u,
 			      const FIELD_SPACE &flag){
   int im;
   int NZMAX = (flag == R_SPACE ? NZ : NZ_);
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
   for(int i = 0; i < NX; i++){
     for(int j = 0; j < NY; j++){
       for(int k = 0; k < NZMAX; k++){

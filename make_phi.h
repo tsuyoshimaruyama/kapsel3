@@ -416,7 +416,7 @@ inline void Reset_phi_primitive(double *phi
 				,const double &value
     ){
     int im;
-#pragma omp parallel for schedule(dynamic, 1) private(im)
+#pragma omp parallel for private(im)
     for(int i=0;i<nx;i++){
 	for(int j=0;j<ny;j++){
 	    for(int k=0;k<nz;k++){
@@ -449,10 +449,10 @@ inline void Reset_phi(double *phi, const double value = 0.0){
  */
 inline void Reset_phi_u(double *phi, double **up){
     int im;
-//#pragma omp parallel for schedule(dynamic, 8) private(im)
+//#pragma omp parallel for private(im)
 #pragma omp parallel private(im)
     {
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait 
 	for(int i=0;i<NX;i++){
 	    for(int j=0;j<NY;j++){
 		for(int k=0;k<NZ_;k++){
@@ -461,7 +461,7 @@ inline void Reset_phi_u(double *phi, double **up){
 		}
 	    }
 	}
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait
 	for(int i=0;i<NX;i++){
 	    for(int j=0;j<NY;j++){
 		for(int k=0;k<NZ_;k++){
@@ -470,7 +470,7 @@ inline void Reset_phi_u(double *phi, double **up){
 		}
 	    }
 	}
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait
 	for(int i=0;i<NX;i++){
 	    for(int j=0;j<NY;j++){
 		for(int k=0;k<NZ_;k++){
@@ -479,7 +479,7 @@ inline void Reset_phi_u(double *phi, double **up){
 		}
 	    }
 	}
-#pragma omp for schedule(dynamic, 1)
+#pragma omp for nowait
 	for(int i=0;i<NX;i++){
 	    for(int j=0;j<NY;j++){
 		for(int k=0;k<NZ_;k++){
@@ -495,7 +495,7 @@ inline void Reset_u(double **up){
   int im;
 #pragma omp parallel private(im)
   {
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
 	for(int k = 0; k < NZ_; k++){
@@ -505,7 +505,7 @@ inline void Reset_u(double **up){
       }
     }/* end omp for up[0] */
     
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
 	for(int k = 0; k < NZ_; k++){
@@ -515,7 +515,7 @@ inline void Reset_u(double **up){
       }
     }/* end omp for up[1] */
   
-#pragma omp for nowait schedule(dynamic, 1)
+#pragma omp for nowait
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
 	for(int k = 0; k < NZ_; k++){
