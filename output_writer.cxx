@@ -408,7 +408,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_pos_raw_name);
   this->write_particle_vectorn(&pdata[nump_print6], DIM, p_vel_name);
 
-#pragma opm parallel for private(i, jj)
+#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
