@@ -233,7 +233,7 @@ inline void Add_constant_field_k(double **grad_potential_k
   static const double nxnynz = (double)(NX*NY*NZ);
   double amp = nxnynz;
   if(AC){
-    amp = sin( Angular_Frequency * jikan.time);
+    amp *= sin( Angular_Frequency * jikan.time);
   }
 
   for(int d=0;d<DIM;d++){
