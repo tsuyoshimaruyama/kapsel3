@@ -216,7 +216,6 @@ hdf5_writer::~hdf5_writer(){
   status = H5Gclose(gid_trj_data);
   h5_check_err(status);
 
-  fprintf(stderr, "Close fid\n");
   status = H5Fclose(fid);
   h5_check_err(status);
 
