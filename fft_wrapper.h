@@ -388,7 +388,7 @@ inline void Free_Transform_obl(){
 }
 
 // Periodic spline interpolation
-inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag, const int &id){
+inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag){
   int im, im_ob;
   double dmy_x;
   double delta_y;
@@ -562,7 +562,7 @@ inline void Stress_oblique2Stress(double **EE, const bool &add_mean_flow=true){
 
 }
 
-inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &id){
+inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag){
   if(SW_OBL_INT == linear_int){
     if(flag == oblique2cartesian){
       U_oblique2u(uu);
@@ -572,7 +572,7 @@ inline void Transform_obl_u(double **uu, const OBL_TRANSFORM &flag, const int &i
       exit_job(EXIT_FAILURE);
     }
   }else if(SW_OBL_INT == spline_int){
-    Spline_u_oblique_transform(uu, flag, id);
+    Spline_u_oblique_transform(uu, flag);
   }else{
     exit_job(EXIT_FAILURE);
   }

@@ -222,10 +222,11 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	  Swap_mem(u,ucp);
 	  degree_oblique +=1.;
 	}
+        Update_K2_OBL();
 
         Copy_v3(ucp, u);
-        Transform_obl_u(ucp, oblique2cartesian, jikan.ts);
-        Update_K2_OBL();
+        Transform_obl_u(ucp, oblique2cartesian);
+
         // u   -> velocity field in oblique coordinates
         // ucp -> velocity fild in cartesian coordinates
 	//Calc_shear_rate_eff();
@@ -267,7 +268,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
           Reset_phi_u(phi, up);
           Make_phi_u_particle_OBL(phi, up, p);
           Make_f_particle_dt_nonsole(f, ucp, up, phi);
-          Transform_obl_u(f, cartesian2oblique, jikan.ts);
+          Transform_obl_u(f, cartesian2oblique);
           Add_f_particle(u, f);
 	}
 	
