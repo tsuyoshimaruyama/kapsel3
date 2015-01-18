@@ -245,7 +245,6 @@ inline void Make_phi_particle_sum_primitive(double *phi,
     int sw_in_cell = Particle_cell(xp, dx, x_int, residue);
     sw_in_cell = 1;
     
-    int im;
     int r_mesh[DIM];
     double dmy, dmy_phi;
     double r[DIM], x[DIM];
@@ -263,9 +262,9 @@ inline void Make_phi_particle_sum_primitive(double *phi,
   }
 
   {
-    int im;
 #pragma omp parallel for 
     for(int i = 0; i < NX; i++){
+      int im;      
       for(int j = 0; j < NY; j++){
         for(int k = 0; k < NZ; k++){
           im = (i * NY * NZ_) + (j * NZ_) + k;
