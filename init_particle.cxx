@@ -417,13 +417,23 @@ void Init_Particle(Particle *p){
     //Reset mass moments to account for particle overlap
     Reset_phi(phi);
     Reset_phi(phi_sum);
-    Make_phi_particle_sum(phi, phi_sum, p);
-    Make_phi_rigid_mass(phi_sum, p);        
+    if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
+      Make_phi_particle_sum(phi, phi_sum, p);
+      Make_phi_rigid_mass(phi_sum, p);        
+      
+      init_set_GRvecs(p);       
+      init_set_PBC(p);
+      
+      Make_phi_rigid_inertia(phi_sum, p);    
+    }else{
+      Make_phi_particle_sum_OBL(phi, phi_sum, p);
+      Make_phi_rigid_mass_OBL(phi_sum, p);
 
-    init_set_GRvecs(p);       
-    init_set_PBC(p);
-    Make_phi_rigid_inertia(phi_sum, p);    
-
+      init_set_GRvecs(p);
+      init_set_PBC_OBL(p);
+      
+      Make_phi_rigid_inertia_OBL(phi_sum, p);
+    }
     init_Rigid_Coordinates(p);
     init_set_vGs(p);
 

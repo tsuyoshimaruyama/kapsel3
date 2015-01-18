@@ -68,22 +68,35 @@ inline void init_set_PBC(Particle *p){
   }
 
   //place rigid particles (and beads) inside simulation box
-  if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
 #pragma omp parallel for
-    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      PBC(xGs[rigidID]);
-      for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++) 
-        PBC(p[n].x);
-    }
-  }else{
+  for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+    PBC(xGs[rigidID]);
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++) 
+      PBC(p[n].x);
+  }
+}
+
+/*
+  \brief Enforce PBC on rigid bodies for Lees-Edwards simulations
+  \warning Call only after center of mass and geometry has been initialized
+ */
+inline void init_set_PBC_OBL(Particle *p){
+  //set raw (no-pbc) coordinates for rigid particles
 #pragma omp parallel for
-    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      double dmy_vx;
-      //rigid velocities are not reset
-      PBC_OBL(xGs[rigidID], dmy_vx);
-      for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++) 
-        PBC_OBL(p[n].x, dmy_vx);
+  for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+    for(int d = 0; d < DIM; d++){
+      xGs_nopbc[rigidID][d] = xGs[rigidID][d];
+      xGs_previous[rigidID][d] = xGs[rigidID][d];
     }
+  }
+  
+#pragma omp parallel for
+  for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+    double dmy_vx;
+    //rigid velocities are not reset
+    PBC_OBL(xGs[rigidID], dmy_vx);
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++) 
+      PBC_OBL(p[n].x, dmy_vx);
   }
 }
 

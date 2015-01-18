@@ -56,7 +56,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double c
 /*!
   \brief Compute hydrodynamic force acting on particles in a system with oblique coordinates (Lees-Edwards PBC)
  */
-void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, const CTime &jikan);
+void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, double const* const* u, const CTime &jikan);
 
 double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)

@@ -146,6 +146,13 @@ inline double Distance(const double *x1
     return dmy;
 }
 
+inline double Distance_OBL(const double *x1, const double *x2){
+  double dmy = 0.0;
+  double dmy_x12[DIM];
+  Distance0_OBL(x1, x2, dmy, dmy_x12);
+  return dmy;
+}
+
 /*!
   \brief Magnitude of the force between two particles normalized by the
   distance between them
