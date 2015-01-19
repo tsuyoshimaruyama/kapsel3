@@ -437,6 +437,18 @@ void Init_Particle(Particle *p){
     init_Rigid_Coordinates(p);
     init_set_vGs(p);
 
+    double phi_vf = 0.0;    
+    {//compute initial volume fraction from phi field
+#pragma omp parallel for reduction(+:phi_vf)
+      for(int i = 0; i < NX; i++){
+	for(int j = 0; j < NY; j++){
+	  for(int k = 0; k < NZ; k++){
+	    phi_vf += phi[(i*NY*NZ_) + (j*NZ_) + k];
+	  }
+	}
+      }
+    }
+
     fprintf(stderr, "####\n");
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
       fprintf(stderr, "# Rigid Body %d built from %d spherical beads\n", rigidID, Rigid_Particle_Numbers[rigidID]);
@@ -454,6 +466,7 @@ void Init_Particle(Particle *p){
       fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
               Rigid_Moments_body[rigidID][2][0], Rigid_Moments_body[rigidID][2][1], Rigid_Moments_body[rigidID][2][2]);
     }
+    fprintf(stderr, "# Volume fraction = Sum phi / V = %10.4g\n", phi_vf * DX3 * RHO * Ivolume);
     fprintf(stderr, "####\n");
   }
 
