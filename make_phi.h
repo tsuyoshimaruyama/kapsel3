@@ -42,13 +42,16 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p);
   \param[in] p particel data
   \param[in] radius particle radius (domain over which profile field is non-zero)
  */
-void Make_phi_particle(double *phi
-		       ,Particle *p
-		       ,const double radius = RADIUS
-		       );
+void Make_phi_particle(double *phi, Particle *p, const double radius = RADIUS);
 
+/*!
+  \brief Compute smooth particle position normalization field
+ */
 void Make_phi_particle_sum(double *phi, double* phi_sum, Particle* p, const double radius = RADIUS);
 
+/*!
+  \brief Compute particle velocity field with correct phi normalization for particle overlaps
+ */
 void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p, const double radius = RADIUS);
 
 /*!
@@ -66,10 +69,25 @@ void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p, const d
   \param[in] p particle data
  */
 void Make_phi_u_particle(double *phi, double **up, Particle *p);
-void Make_phi_particle_OBL(double *phi
-			   ,Particle *p
-			   ,const double radius = RADIUS
-    );
+
+/*!
+  \brief Compute smooth particle position field for Lees-Edwards simulations
+ */
+void Make_phi_particle_OBL(double *phi, Particle *p, const double radius = RADIUS);
+
+/*!
+  \brief Compute smooth particle position normalization field for Lees-Edwards simulations
+ */
+void Make_phi_particle_sum_OBL(double *phi, double* phi_sum, Particle *p, const double radius = RADIUS);
+
+/*!
+  \brief Compute particle velocity field with correct phi normalization for particle overlaps for Lees-Edwards simulations
+ */
+void Make_u_particle_sum_OBL(double **up, double const* phi_sum, Particle *p, const double radius = RADIUS);
+
+/*!
+  \brief Compute smooth particle position and velocity fields
+ */
 void Make_phi_u_particle_OBL(double *phi, double **up, Particle *p);
 
 /*!
@@ -224,7 +242,7 @@ inline int Relative_coord_check_stepover_Y(const int *cell
 					   ,const double *residue
 					   ,const int &sw_in_cell
 					   ,const int Nlattice[DIM]
-					       ,const double dx
+					   ,const double dx
 					   ,int *r_mesh
 					   ,double *r){
     
@@ -534,6 +552,12 @@ inline void Reset_u(double **up){
   \param[in] p particle list
  */
 void Make_phi_rigid_mass(const double* phi_sum, Particle* p);
+
+/*!
+  \brief Compute total mass and mass center of rigid body for Lees-Edwards simulations
+ */
+void Make_phi_rigid_mass_OBL(const double* phi_sum, Particle* p);
+
 /*
   \brief Compute moment of inertia of rigid body composed of
   possibly overlapping spherical beads
@@ -543,5 +567,10 @@ void Make_phi_rigid_mass(const double* phi_sum, Particle* p);
   are assumed to be computed already
  */
 void Make_phi_rigid_inertia(const double* phi_sum, Particle* p);
+
+/*!
+  \brief Compute moment of inertia of rigid body for Lees-Edward simulations
+ */
+void Make_phi_rigid_inertia_OBL(const double*phi_sum, Particle* p);
 
 #endif

@@ -262,9 +262,9 @@ inline void Make_phi_particle_sum_primitive(double *phi,
   }
 
   {
-#pragma omp parallel for 
+#pragma omp parallel for
     for(int i = 0; i < NX; i++){
-      int im;      
+      int im;
       for(int j = 0; j < NY; j++){
         for(int k = 0; k < NZ; k++){
           im = (i * NY * NZ_) + (j * NZ_) + k;
@@ -273,6 +273,58 @@ inline void Make_phi_particle_sum_primitive(double *phi,
       }
     }
   }
+}
+
+inline void Make_phi_particle_sum_primitive_OBL(double *phi,
+						double *phi_sum,
+						Particle *p,
+						const double &dx,
+						const int &np_domain,
+						int **sekibun_cell,
+						const int Nlattice[DIM],
+						const double radius){
+  #pragma omp parallel for
+  for(int n = 0; n < Particle_Number; n++){
+    double xp[DIM];
+    for(int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
+
+    int x_int[DIM];
+    double residue[DIM];
+    int sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+    sw_in_cell = 1;
+
+    int sign;
+    int r_mesh[DIM];
+    double dmy, dmy_phi;
+    double r[DIM], x[DIM];
+    for(int mesh = 0; mesh < np_domain; mesh++){
+      sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh], x_int, residue,
+					     sw_in_cell, Nlattice, dx, r_mesh, r);
+
+      for(int d = 0; d < DIM; d++) x[d] = r_mesh[d] * dx;
+
+      dmy     = Distance_OBL(x, xp);
+      dmy_phi = Phi(dmy, radius);
+
+#pragma omp atomic
+      phi_sum[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_phi;
+    }
+  }
+
+  {
+    #pragma omp parallel for
+    for(int i = 0; i < NX; i++){
+      int im;
+
+      for(int j = 0; j < NY; j++){
+	for(int k = 0; k < NZ; k++){
+	  im = (i * NY * NZ_) + (j * NZ_) + k;
+	  phi[im] = MIN(phi_sum[im], 1.0);
+	}
+      }
+    }
+  }
+  
 }
 
 inline void Make_u_particle_sum_primitive(double **up,
@@ -314,6 +366,51 @@ inline void Make_u_particle_sum_primitive(double **up,
       up[1][im] += ((vp[1] + v_rot[1]) * dmy_phi);
 #pragma omp atomic
       up[2][im] += ((vp[2] + v_rot[2]) * dmy_phi);
+    }
+  }
+}
+
+inline void Make_u_particle_sum_primitive_OBL(double **up, double const* phi_sum, Particle* p,
+					      const double &dx, const int &np_domain,
+					      int const* const* sekibun_cell, const int Nlattice[DIM],
+					      const double radius){
+  #pragma omp parallel for
+  for(int n = 0; n < Particle_Number; n++){
+    double xp[DIM], vp[DIM], omega_p[DIM];
+    for(int d = 0; d < DIM; d++){
+      xp[d] = p[n].x[d];
+      vp[d] = p[n].v[d];
+      omega_p[d] = p[n].omega[d];
+    }
+
+
+    int x_int[DIM];
+    double residue[DIM];
+    int sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+    sw_in_cell = 1;
+
+    int im, sign;
+    int r_mesh[DIM];
+    double dmy, dmy_phi;
+    double r[DIM], x[DIM], v_rot[DIM];
+    for(int mesh = 0; mesh < np_domain; mesh++){
+      sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh], x_int, residue,
+					     sw_in_cell, Nlattice, dx, r_mesh, r);
+
+      for(int d = 0; d < DIM; d++) x[d] = r_mesh[d] * dx;
+
+      im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
+
+      dmy     = Distance_OBL(x, xp);
+      dmy_phi = Phi(dmy, radius) / MAX(phi_sum[im], 1.0);
+
+      Angular2v(omega_p, r, v_rot);
+#pragma omp atomic
+      up[0][im] += ((vp[0] - sign*Shear_rate_eff*L_particle[1] + v_rot[0]) * dmy_phi);
+#pragma omp atomic
+      up[1][im] += (vp[1] + v_rot[1]) * dmy_phi;
+#pragma omp atomic
+      up[2][im] += (vp[2] + v_rot[2]) * dmy_phi;
     }
   }
 }
@@ -425,10 +522,24 @@ void Make_phi_particle_sum(double *phi, double* phi_sum, Particle *p, const doub
   nlattice = Ns;
   Make_phi_particle_sum_primitive(phi, phi_sum, p, DX, NP_domain, Sekibun_cell, nlattice, radius);
 }
+
+void Make_phi_particle_sum_OBL(double *phi, double* phi_sum, Particle *p, const double radius)
+{
+  int *nlattice;
+  nlattice = Ns;
+  Make_phi_particle_sum_primitive_OBL(phi, phi_sum, p, DX, NP_domain, Sekibun_cell, nlattice, radius);
+}
+
 void Make_u_particle_sum(double **up,  double const* phi_sum,  Particle *p, const double radius){
   int *nlattice;
   nlattice = Ns;
   Make_u_particle_sum_primitive(up, phi_sum, p, DX, NP_domain, Sekibun_cell, nlattice, radius);
+}
+
+void Make_u_particle_sum_OBL(double **up, double const* phi_sum, Particle *p, const double radius){
+  int *nlattice;
+  nlattice = Ns;
+  Make_u_particle_sum_primitive_OBL(up, phi_sum, p, DX, NP_domain, Sekibun_cell, nlattice, radius);
 }
 
 void Make_phi_u_particle(double *phi
@@ -538,7 +649,7 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
       sw_in_cell = 1;
       for(int mesh = 0; mesh < np_domain; mesh++){
         Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, dx, r_mesh, r);
-        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d]*DX;
+        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d]*dx;
         int im = (r_mesh[0]*NY*NZ_) + (r_mesh[1]*NZ_) + r_mesh[2];
         
         dmy         = Distance(x, xp);
@@ -552,11 +663,60 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
     }
     
 
-    Rigid_Masses[rigidID] = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
+    Rigid_Masses[rigidID]  = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
     Rigid_IMasses[rigidID] = 1.0/Rigid_Masses[rigidID];
     for(int d = 0; d < DIM; d++) xGs[rigidID][d] = dmy_com[d] / dmy_mass;
   }
 }
+
+void Make_phi_rigid_mass_OBL(const double *phi_sum, Particle* p){
+  const double dx = DX;
+  const double dx3= DX3;
+  const int np_domain = NP_domain; 
+  int const* const* sekibun_cell = Sekibun_cell;
+  int const* nlattice = Ns;
+
+#pragma omp parallel for 
+  for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
+    double dmy, dmy_phi, dmy_mass;
+    int x_int[DIM], r_mesh[DIM];
+    double dmy_com[DIM], residue[DIM], r[DIM], x[DIM];
+    dmy_mass = dmy_com[0] = dmy_com[1] = dmy_com[2] = 0.0;
+    
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+      double xp[DIM];
+      for(int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
+
+      int sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+      sw_in_cell = 1;
+
+      int sign, im;
+      for(int mesh = 0; mesh < np_domain; mesh++){
+        sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh], x_int, residue,
+					       sw_in_cell, nlattice, dx, r_mesh, r);
+	
+        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d] * dx;
+	
+        im = (r_mesh[0]*NY*NZ_) + (r_mesh[1]*NZ_) + r_mesh[2];
+        
+        dmy         = Distance_OBL(x, xp);
+        dmy_phi     = Phi(dmy)/MAX(phi_sum[im], 1.0);
+        
+        dmy_mass   += dmy_phi;
+        for(int d = 0; d < DIM; d++){
+          dmy_com[d] += dmy_phi*(xp[d] + r[d]);
+        }
+      }
+    }
+    
+
+    Rigid_Masses[rigidID]  = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
+    Rigid_IMasses[rigidID] = 1.0/Rigid_Masses[rigidID];
+    for(int d = 0; d < DIM; d++) xGs[rigidID][d] = dmy_com[d] / dmy_mass;
+  }
+}
+
+
 void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
   const double dx = DX;
   const double dx3= DX3;
@@ -583,7 +743,7 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
       sw_in_cell = 1;
       for(int mesh = 0; mesh < np_domain; mesh++){
         Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, dx, r_mesh, r);
-        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d]*DX;
+        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d]*dx;
         int im = (r_mesh[0]*NY*NZ_) + (r_mesh[1]*NZ_) + r_mesh[2];
         
         ri_x = GRvecs[n][0] + r[0];
@@ -606,13 +766,79 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle* p){
       }
     }
       
-      for(int d=0;d<DIM;d++){
+    for(int d=0;d<DIM;d++){
       for(int e = 0; e < DIM; e++){
-        Rigid_Moments[rigidID][d][e] = dmy_inertia[d][e]*DX3*RHO_particle[ RigidID_Components[rigidID] ];
+        Rigid_Moments[rigidID][d][e] = dmy_inertia[d][e]*dx3*RHO_particle[ RigidID_Components[rigidID] ];
       }
     }
     Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
     check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
   }
 }
+
+void Make_phi_rigid_inertia_OBL(const double *phi_sum, Particle* p){
+  const double dx = DX;
+  const double dx3= DX3;
+  const int np_domain = NP_domain;
+  int const* const* sekibun_cell = Sekibun_cell;
+  int const* nlattice = Ns;
   
+#pragma omp parallel for 
+  for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
+    double dmy, dmy_phi;
+    int x_int[DIM], r_mesh[DIM];
+    double residue[DIM], r[DIM], x[DIM], dmy_inertia[DIM][DIM];
+    double ri_x, ri_y, ri_z;
+
+    dmy_inertia[0][0] = dmy_inertia[0][1] = dmy_inertia[0][2] = 0.0;
+    dmy_inertia[1][0] = dmy_inertia[1][1] = dmy_inertia[1][2] = 0.0;
+    dmy_inertia[2][0] = dmy_inertia[2][1] = dmy_inertia[2][2] = 0.0;
+
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++){
+      double xp[DIM];
+      for(int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
+
+      int sw_in_cell = Particle_cell(xp, dx, x_int, residue);
+      sw_in_cell = 1;
+
+      int im, sign;
+      for(int mesh = 0; mesh < np_domain; mesh++){
+        sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh], x_int, residue,
+					       sw_in_cell, nlattice, dx, r_mesh, r);
+	
+        for(int d = 0; d < DIM; d++) x[d] = r_mesh[d] * dx;
+	
+        im = (r_mesh[0]*NY*NZ_) + (r_mesh[1]*NZ_) + r_mesh[2];
+        
+        ri_x = GRvecs[n][0] + r[0];
+        ri_y = GRvecs[n][1] + r[1];
+        ri_z = GRvecs[n][2] + r[2];
+
+        dmy      = Distance_OBL(x, xp);
+        dmy_phi  = Phi(dmy)/MAX(phi_sum[im], 1.0);
+	
+        dmy_inertia[0][0] += dmy_phi*( ri_y*ri_y + ri_z*ri_z );
+        dmy_inertia[0][1] += dmy_phi*( -ri_x*ri_y );
+        dmy_inertia[0][2] += dmy_phi*( -ri_x*ri_z );
+        
+        dmy_inertia[1][0] += dmy_phi*( -ri_y*ri_x );
+        dmy_inertia[1][1] += dmy_phi*( ri_x*ri_x + ri_z*ri_z );
+        dmy_inertia[1][2] += dmy_phi*( -ri_y*ri_z );
+
+        dmy_inertia[2][0] += dmy_phi*( -ri_z*ri_x );
+        dmy_inertia[2][1] += dmy_phi*( -ri_z*ri_y );
+        dmy_inertia[2][2] += dmy_phi*( ri_x*ri_x + ri_y*ri_y );
+      }
+    }
+      
+    for(int d=0;d<DIM;d++){
+      for(int e = 0; e < DIM; e++){
+        Rigid_Moments[rigidID][d][e] = dmy_inertia[d][e]*dx3*RHO_particle[ RigidID_Components[rigidID] ];
+      }
+    }
+    
+    Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+    check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+  }
+}
+

@@ -244,8 +244,12 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 	}
 	
 	{// Calculation of hydrodynamic force
-	    Reset_phi_u(phi, up);
-	    Calc_f_hydro_correct_precision_OBL(p, ucp, jikan);
+	    Reset_phi(phi);
+	    Reset_phi(phi_sum);
+	    Reset_u(up);
+
+	    Make_phi_particle_sum_OBL(phi, phi_sum, p);
+	    Calc_f_hydro_correct_precision_OBL(p, phi_sum, ucp, jikan);
 	}
 
 	if(!Fixed_particle){// Update of Particle Velocity
@@ -265,8 +269,9 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
         }
 	
 	{
-          Reset_phi_u(phi, up);
-          Make_phi_u_particle_OBL(phi, up, p);
+          Reset_u(up);
+          Make_u_particle_sum_OBL(up, phi_sum, p);
+
           Make_f_particle_dt_nonsole(f, ucp, up, phi);
           Transform_obl_u(f, cartesian2oblique);
           Add_f_particle(u, f);

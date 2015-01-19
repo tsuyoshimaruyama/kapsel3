@@ -323,7 +323,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double c
     }//Particle_Number
 }
 
-void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, const CTime &jikan){
+void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, double const* const* u, const CTime &jikan){
     static const double dmy0 = -DX3*RHO;
     double dmy = dmy0 /jikan.dt_fluid; 
     
@@ -397,11 +397,13 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* const* u, con
           x[d] = r_mesh[d] * DX;
           dmyR += SQ(r[d]);
         }
-        dmyR = sqrt(dmyR);
-        dmy_phi= Phi(dmyR, RADIUS);
-        Angular2v(omega_p, r, v_rot);
-	
         im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
+	
+        dmyR = sqrt(dmyR);
+        dmy_phi= Phi(dmyR, RADIUS) / MAX(phi_sum[im], 1.0);
+
+        Angular2v(omega_p, r, v_rot);
+
         for(int d=0; d < DIM; d++ ){ 
           if (!(d==0)) {
             dmy_fp[d] =	((vp[d]+v_rot[d]) - u[d][im])*dmy_phi;

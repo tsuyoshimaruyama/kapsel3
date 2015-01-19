@@ -417,15 +417,37 @@ void Init_Particle(Particle *p){
     //Reset mass moments to account for particle overlap
     Reset_phi(phi);
     Reset_phi(phi_sum);
-    Make_phi_particle_sum(phi, phi_sum, p);
-    Make_phi_rigid_mass(phi_sum, p);        
+    if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
+      Make_phi_particle_sum(phi, phi_sum, p);
+      Make_phi_rigid_mass(phi_sum, p);        
+      
+      init_set_GRvecs(p);       
+      init_set_PBC(p);
+      
+      Make_phi_rigid_inertia(phi_sum, p);    
+    }else{
+      Make_phi_particle_sum_OBL(phi, phi_sum, p);
+      Make_phi_rigid_mass_OBL(phi_sum, p);
 
-    init_set_GRvecs(p);       
-    init_set_PBC(p);
-    Make_phi_rigid_inertia(phi_sum, p);    
-
+      init_set_GRvecs(p);
+      init_set_PBC_OBL(p);
+      
+      Make_phi_rigid_inertia_OBL(phi_sum, p);
+    }
     init_Rigid_Coordinates(p);
     init_set_vGs(p);
+
+    double phi_vf = 0.0;    
+    {//compute initial volume fraction from phi field
+#pragma omp parallel for reduction(+:phi_vf)
+      for(int i = 0; i < NX; i++){
+	for(int j = 0; j < NY; j++){
+	  for(int k = 0; k < NZ; k++){
+	    phi_vf += phi[(i*NY*NZ_) + (j*NZ_) + k];
+	  }
+	}
+      }
+    }
 
     fprintf(stderr, "####\n");
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
@@ -444,6 +466,7 @@ void Init_Particle(Particle *p){
       fprintf(stderr, "#  %10.4g %10.4g %10.4g\n", 
               Rigid_Moments_body[rigidID][2][0], Rigid_Moments_body[rigidID][2][1], Rigid_Moments_body[rigidID][2][2]);
     }
+    fprintf(stderr, "# Volume fraction = Sum phi / V = %10.4g\n", phi_vf * DX3 * RHO * Ivolume);
     fprintf(stderr, "####\n");
   }
 
