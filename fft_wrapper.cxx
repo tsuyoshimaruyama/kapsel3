@@ -308,7 +308,7 @@ void U_k2Stress_k(double **u, double *stress_k[QDIM]){
   }
 }
 
-void U_k2Stress_k_OBL(double **zeta, double *stress_k[QDIM]){
+void U_k2Stress_k_OBL(double **u, double *stress_k[QDIM]){
   // Stress_k は 5成分
   // E^{\mu\mu}
   double dmy[DIM]={0.,0.,0.};
