@@ -58,10 +58,10 @@ void Calc_f_hydro_correct_precision(Particle *p, double const* phi_sum, double c
  */
 void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, double const* const* u, const CTime &jikan);
 
-double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
-				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
-				      ,const double cap
-				       );
+void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
+						  ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
+						  ,const double cap
+						  );
 
 
 /*!
@@ -73,20 +73,20 @@ double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   \param[in] distance0_func distance function
   \param[in] cap cutoff value for the force (divided by particle distance)
  */
-double Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
-				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
-				      ,const double cap
-				       );
+void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
+					      ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
+					      ,const double cap
+					      );
 inline void Calc_f_Lennard_Jones(Particle *p){
 //  Calc_f_Lennard_Jones_shear_cap_primitive(p,Distance0,DBL_MAX);
     Calc_f_Lennard_Jones_shear_cap_primitive_lnk(p, Distance0, DBL_MAX);
 }
-inline double Calc_f_Lennard_Jones_OBL(Particle *p){
-    return Calc_f_Lennard_Jones_shear_cap_primitive(p, Distance0_OBL, DBL_MAX);
+inline void Calc_f_Lennard_Jones_OBL(Particle *p){
+  Calc_f_Lennard_Jones_shear_cap_primitive(p, Distance0_OBL, DBL_MAX);
 }
-inline double Calc_anharmonic_force_chain(Particle *p, 
-                                          void (*distance0_func)(const double *x1, const double *x2,double &r12, double *x12)){
-    double anharmonic_spring_cst=30.*EPSILON/SQ(SIGMA);
+inline void Calc_anharmonic_force_chain(Particle *p, 
+					void (*distance0_func)(const double *x1, const double *x2,double &r12, double *x12)){
+  double anharmonic_spring_cst=30.*EPSILON/SQ(SIGMA);
     const double R0=1.5*SIGMA;
     const double iR0=1./R0;
     const double iR02=SQ(iR0);
@@ -123,7 +123,8 @@ inline double Calc_anharmonic_force_chain(Particle *p,
       }//chains
 
     }//species
-    return shear_stress;
+
+    dev_shear_stress_lj += shear_stress;
 }
 
 /*!

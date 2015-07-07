@@ -130,10 +130,12 @@ double Shear_strain_realized;
 //AC
 double Shear_frequency;
 double Inertia_stress;
-double dev_shear_stress[0];
-double rigid_dev_shear_stress[0];
-double &dev_shear_stress_lj = dev_shear_stress[0];
-double &rigid_dev_shear_stress_lj = rigid_dev_shear_stress[0];
+double dev_shear_stress[2];
+double rigid_dev_shear_stress[2];
+double &dev_shear_stress_lj  = dev_shear_stress[0];
+double &dev_shear_stress_rot = dev_shear_stress[1];
+double &rigid_dev_shear_stress_lj  = rigid_dev_shear_stress[0];
+double &rigid_dev_shear_stress_rot = rigid_dev_shear_stress[1];
 //////
 double Delta_ETA;
 double Nu_ratio;

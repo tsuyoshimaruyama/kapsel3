@@ -270,6 +270,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 	Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
 	Calc_hydro_stress(jikan, p, phi, Hydro_force_new, hydro_stress_new);
 	double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
+	double dev_stress_rot = (SW_PT == rigid ? rigid_dev_shear_stress_rot : dev_shear_stress_rot);
 	
 	fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		,jikan.time
