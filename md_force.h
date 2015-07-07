@@ -13,6 +13,7 @@
 #include "input.h"
 #include "interaction.h"
 #include "make_phi.h"
+#include "particle_rotation_solver.h"
 
 extern double *Hydro_force;
 extern double *Hydro_force_new;

@@ -457,31 +457,8 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   \note set_Rigid_VOGs() after calculating xGs, Rigid_IMoments, forceGs and torqueGs!!
 */
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
-  static const double Gravity_on_fluid = G*RHO*4.0/3.0*M_PI*POW3(RADIUS);
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-    double rigid_lj[DIM] = {0.0, 0.0, 0.0};
-    for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
-      //remove gravity force from individual beads
-      for(int d=0; d<DIM; d++){
-	rigid_lj[d] = p[n].fr[d];
-      }
-      rigid_lj[G_direction] += Gravity_on_fluid * (MASS_RATIOS[p[n].spec] - 1.0);
-
-      //Particles treated as additive LJ centers: particle overlaps are not corrected
-      for(int d=0; d < DIM; d++){
-	forceGrs[rigidID][d] += rigid_lj[d];
-      }
-      torqueGrs[rigidID][0] += GRvecs[n][1]*rigid_lj[2] - GRvecs[n][2]*rigid_lj[1];
-      torqueGrs[rigidID][1] += GRvecs[n][2]*rigid_lj[0] - GRvecs[n][0]*rigid_lj[2];
-      torqueGrs[rigidID][2] += GRvecs[n][0]*rigid_lj[1] - GRvecs[n][1]*rigid_lj[0];
-    }
-
-    //add total gravity force on rigid body
-    const int rigid_spec      = RigidID_Components[rigidID];
-    const double rigid_volume = Rigid_Masses[rigidID]/RHO_particle[rigid_spec];
-    forceGrs[rigidID][G_direction] -= G*RHO*rigid_volume*(MASS_RATIOS[rigid_spec] - 1.0);
-    
     //set olds
     for(int d=0; d<DIM; d++){
       velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
@@ -490,74 +467,70 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   }
   
   //calc velocityGs and omegaGs
-  double dV[DIM], dVr[DIM], dW[DIM], dWr[DIM];
-  double dmy_shear = 0.0;
-  int rigid_spec;
   if(CASE == "Euler"){
-#pragma omp parallel for reduction(+:dmy_shear) private(dV, dVr, dW, dWr, rigid_spec)
+#pragma omp parallel for
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      rigid_spec = RigidID_Components[rigidID];
+      int rigid_spec = RigidID_Components[rigidID];      
 
-      for(int d1=0; d1<DIM; d1++){
-        dV[d1] = Rigid_IMasses[rigidID] * forceGs[rigidID][d1];
-        dVr[d1] = Rigid_IMasses[rigidID] * forceGrs[rigidID][d1];
-        dW[d1] = dWr[d1] = 0.0;
-        for(int d2=0; d2<DIM; d2++){
-          dW[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGs[rigidID][d2];
-          dWr[d1] += Rigid_IMoments[rigidID][d1][d2]*torqueGrs[rigidID][d2];
-        }
+      { // com velocity
+	double dmy = jikan.dt_md * Rigid_IMasses[rigidID];
+	
+	for(int d = 0; d < DIM; d++){
+	  if(Rigid_Motions_vel[rigid_spec][d] == 0) continue; // if "fix"
+	  velocityGs[rigidID][d] += (dmy * (forceGs[rigidID][d] + forceGrs[rigidID][d]));
+	}
       }
 
-      for(int d1=0; d1<DIM; d1++){
-        if(Rigid_Motions_vel[rigid_spec][d1] == 0) continue; // if "fix"
-        velocityGs[rigidID][d1] += jikan.dt_md*(dV[d1] + dVr[d1]);
-      }
-      for(int d1=0; d1<DIM; d1++){
-        if(Rigid_Motions_omega[rigid_spec][d1] == 0) continue; // if "fix"
-        omegaGs[rigidID][d1] += jikan.dt_md*(dW[d1] + dWr[d1]);
-      }
-
-
-      for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1] 
-                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
+      { // angular velocity
+	double torque[DIM] = {torqueGs[rigidID][0] + torqueGrs[rigidID][0],
+			      torqueGs[rigidID][1] + torqueGrs[rigidID][1],
+			      torqueGs[rigidID][2] + torqueGrs[rigidID][2]};
+	double Ibody[DIM] = {Rigid_Moments_body[rigidID][0][0],
+			     Rigid_Moments_body[rigidID][1][1],
+			     Rigid_Moments_body[rigidID][2][2]};
+	int rigid_first = Rigid_Particle_Cumul[rigidID];
+	
+	MD_solver_omega_Euler(omegaGs[rigidID], torque,
+			      Ibody, p[rigid_first].q,
+			      Rigid_Motions_omega[rigid_spec], jikan.dt_md);
       }
     }
-    
   }else if(CASE == "AB2"){
-#pragma omp parallel for reduction(+:dmy_shear) private(dV, dVr, dW, dWr, rigid_spec)
+#pragma omp parallel for 
     for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-      rigid_spec = RigidID_Components[rigidID];
-
-      for(int d1=0; d1<DIM; d1++){
-        dV[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGs[rigidID][d1]);
-        dVr[d1] = Rigid_IMasses[rigidID] * (2.0 * forceGrs[rigidID][d1]);
-        dW[d1] = dWr[d1] = 0.0;
-        for(int d2=0; d2<DIM; d2++){
-          dW[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGs[rigidID][d2]);
-          dWr[d1] += Rigid_IMoments[rigidID][d1][d2] * (2.0 * torqueGrs[rigidID][d2]);
-        }
+      int rigid_spec = RigidID_Components[rigidID];
+      
+      { // com velocity
+	double dmy = jikan.hdt_md * Rigid_IMasses[rigidID];
+	
+	for(int d = 0; d < DIM; d++){
+	  if(Rigid_Motions_vel[rigid_spec][d] == 0) continue; // if "fix"
+	  velocityGs[rigidID][d] += dmy * (2.0 * forceGs[rigidID][d]
+					   + forceGrs[rigidID][d] + forceGrs_previous[rigidID][d]);
+	}
       }
       
-      for(int d1=0; d1<DIM; d1++){
-        if(Rigid_Motions_vel[rigid_spec][d1] == 0) continue; //if "fix"
-        velocityGs[rigidID][d1] += jikan.hdt_md*(dV[d1] + dVr[d1]);
-      }
-      for(int d1=0; d1<DIM; d1++){
-        if(Rigid_Motions_omega[rigid_spec][d1] == 0) continue; // if "fix"
-        omegaGs[rigidID][d1] += jikan.hdt_md*(dW[d1] + dWr[d1]);
-      }
-
-      for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1];n++){
-        dmy_shear += ((dVr[0] + dWr[1]*GRvecs[n][2] - dWr[2]*GRvecs[n][1])*p[n].x[1]
-                      -dWr[2]*SQ(RADIUS)/5.0)*MASS[p[n].spec];
+      { // angular velocity
+	double torque[DIM] = {2.0*torqueGs[rigidID][0] + torqueGrs[rigidID][0],
+			      2.0*torqueGs[rigidID][1] + torqueGrs[rigidID][1],
+			      2.0*torqueGs[rigidID][2] + torqueGrs[rigidID][2]};
+	double torque_prev[DIM] = {torqueGrs_previous[rigidID][0],
+				   torqueGrs_previous[rigidID][1],
+				   torqueGrs_previous[rigidID][2]};
+	double Ibody[DIM] = {Rigid_Moments_body[rigidID][0][0],
+			     Rigid_Moments_body[rigidID][1][1],
+			     Rigid_Moments_body[rigidID][2][2]};
+	int rigid_first = Rigid_Particle_Cumul[rigidID];
+	
+	MD_solver_omega_AB2(omegaGs[rigidID], torque, torque_prev,
+			    Ibody, p[rigid_first].q, p[rigid_first].q_old,
+			    Rigid_Motions_omega[rigid_spec], jikan.hdt_md);
       }
     }
   }else{
     fprintf(stderr, "error, string CASE in calc_Rigid_VOGs()");
     exit_job(EXIT_FAILURE);
   }
-  rigid_dev_shear_stress_lj = -dmy_shear*Ivolume;
   
   // renew old previous and initialize
 #pragma omp parallel for
