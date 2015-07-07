@@ -18,6 +18,9 @@
 #include <time.h>
 #include <dirent.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 const double Euler_cst = 0.57721566490153286060651209008240243104215933593992359880576723488485;
 
@@ -240,5 +243,21 @@ inline int file_check(const char *filename){
     fclose(ftest);
     return true;
 }
+
+struct wall_timer{
+#ifndef _OPENMP
+  time_t t_start;
+  inline void start(){time(&t_start);}
+  inline double stop(){
+    time_t t_end;
+    time(&t_end);
+    return static_cast<double>(difftime(t_end, t_start));
+  }
+#else
+  double t_start;
+  inline void start(){t_start = omp_get_wtime();}
+  inline double stop(){return (omp_get_wtime() - t_start);}
+#endif
+};
 
 #endif 
