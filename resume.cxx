@@ -127,6 +127,10 @@ void Get_Rigid_Particle_Data( Particle *rigid_p, const Particle *p){
       rigid_p[rigidID].torque_slip[d] = 0.0;
       rigid_p[rigidID].torque_slip_previous[d] = 0.0;
 
+      //ext+lj+random torques
+      rigid_p[rigidID].torque_r[d] = torqueGrs[rigidID][d];
+      rigid_p[rigidID].torque_r_previous[d] = torqueGrs_previous[rigidID][d];
+
       //momentum_depend_fr
       rigid_p[rigidID].momentum_depend_fr[d] = 0.0;
     }
@@ -268,6 +272,17 @@ void Save_Particle_udf(const Particle *p, const int &n_out_particles){
     ufres->put(target.sub("torque_slip_previous.x"), p[j].torque_slip_previous[0]);
     ufres->put(target.sub("torque_slip_previous.y"), p[j].torque_slip_previous[1]);
     ufres->put(target.sub("torque_slip_previous.z"), p[j].torque_slip_previous[2]);
+
+    //random+lj+ext torque
+    ufres->put(target.sub("torque_r.x"), p[j].torque_r[0]);
+    ufres->put(target.sub("torque_r.y"), p[j].torque_r[1]);
+    ufres->put(target.sub("torque_r.z"), p[j].torque_r[2]);
+
+    //old random+lj+ext torque
+    ufres->put(target.sub("torque_r_previous.x"), p[j].torque_r_previous[0]);
+    ufres->put(target.sub("torque_r_previous.y"), p[j].torque_r_previous[1]);
+    ufres->put(target.sub("torque_r_previous.z"), p[j].torque_r_previous[2]);
+    
   }
 }
 
@@ -490,6 +505,17 @@ void Read_Particle_udf(Particle *p, const int &n_in_particles){
     ufin->get(target.sub("torque_slip_previous.y"), p[j].torque_slip_previous[1]);
     ufin->get(target.sub("torque_slip_previous.z"), p[j].torque_slip_previous[2]);
 
+    //random+lj+ext torque
+    ufin->get(target.sub("torque_r.x"),p[j].torque_r[0]);
+    ufin->get(target.sub("torque_r.y"),p[j].torque_r[1]);
+    ufin->get(target.sub("torque_r.z"),p[j].torque_r[2]);
+
+    //old random+lj+ext torque
+    ufin->get(target.sub("torque_r_previous.x"),p[j].torque_r_previous[0]);
+    ufin->get(target.sub("torque_r_previous.y"),p[j].torque_r_previous[1]);
+    ufin->get(target.sub("torque_r_previous.z"),p[j].torque_r_previous[2]);
+    
+
 
     {    //temp data (not saved)
       p[j].mass = 0.0;
@@ -558,6 +584,10 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
       //hydrodynamic torque
       torqueGs[rigidID][d] = rigid_p[rigidID].torque_hydro[d];
       torqueGs_previous[rigidID][d] = rigid_p[rigidID].torque_hydro_previous[d];
+
+      //ext+lj+random torques
+      torqueGrs[rigidID][d] = rigid_p[rigidID].torque_r[d];
+      torqueGrs_previous[rigidID][d] = rigid_p[rigidID].torque_r_previous[d];
     }
   }
 
@@ -621,6 +651,8 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
         p[n].torque_slip[d] = 0.0;
         p[n].torque_slip_previous[d] = 0.0;
 
+	p[n].torque_r[d] = 0.0;
+	p[n].torque_r_previous[d] = 0.0;
         p[n].momentum_depend_fr[d] = 0.0;
       }
     }

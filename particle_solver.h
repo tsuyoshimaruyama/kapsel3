@@ -110,21 +110,20 @@ inline void Force(Particle *p){
 
 inline void Force_OBL(Particle *p){
     
-    dev_shear_stress_lj = 0.0;
+  dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
+  rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
+  
+  if(LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
+  
+  if(G != 0.0) Add_f_gravity(p);
 
-    if(LJ_truncate >= 0){
-	double dummy_lj = Calc_f_Lennard_Jones_OBL(p);
-	dev_shear_stress_lj += dummy_lj;
-    }
-    
-    if(G != 0.0){
-	Add_f_gravity(p);
-    }
-    if(SW_PT == chain){
-	dev_shear_stress_lj +=
-          Calc_anharmonic_force_chain(p, Distance0_OBL);
-    }
-    dev_shear_stress_lj *= Ivolume;
+  if(SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0_OBL);
+
+  dev_shear_stress_lj  *= Ivolume;
+  dev_shear_stress_rot *= Ivolume;
+
+  rigid_dev_shear_stress_lj  *= Ivolume;
+  rigid_dev_shear_stress_rot *= Ivolume;
 }
 
 inline void Pinning(Particle *p){

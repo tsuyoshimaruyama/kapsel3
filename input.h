@@ -97,7 +97,9 @@ extern double Inertia_stress;
 extern double dev_shear_stress[];
 extern double rigid_dev_shear_stress[];
 extern double &dev_shear_stress_lj;
+extern double &dev_shear_stress_rot;
 extern double &rigid_dev_shear_stress_lj;
+extern double &rigid_dev_shear_stress_rot;
 extern double Delta_ETA;
 extern double Nu_ratio;
 extern double NU;
@@ -118,6 +120,14 @@ extern int RESUMED ;
 extern int last_ts ;
 extern double Srate_depend_LJ_cap;
 extern double LJ_dia;
+
+// PATCHY JANUS INTERACTIONS
+extern int    SW_PATCHY;
+extern int    PATCHY_POWER;
+extern double PATCHY_EPSILON;
+extern double PATCHY_LAMBDA;
+extern double PATCHY_A_R_cutoff;
+extern const double PATCHY_AXIS[];
 
 extern int SW_JANUS;
 extern int SW_JANUS_MOTOR;
