@@ -24,6 +24,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
   double r_ij = 0.0;
   double shear_stress[2] = {0.0, 0.0};
+  double rigid_shear_stress[2] = {0.0, 0.0};
   
   // List Constructor
   int i,j;
@@ -146,6 +147,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			
 
 			//rigid body forces & torques
+			//particles treated as additive LJ centers: overlaps are not corrected
 			if(SW_PT == rigid){
 			  int rigidID_j = Particle_RigidID[j];
 			  
@@ -162,6 +164,10 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			  torqueGrs[rigidID_j][1] += (dmy_tj[1] - (GRvecs[j][2]*dmy_fi[0] - GRvecs[j][0]*dmy_fi[2]));
 			  torqueGrs[rigidID_j][2] += (dmy_tj[2] - (GRvecs[j][0]*dmy_fi[1] - GRvecs[j][1]*dmy_fi[0]));
 			  
+			  double R_IJ_vec[DIM];
+			  double R_IJ;
+			  distance0_func(xGs[rigidID_i], xGs[rigidID_j], R_IJ, R_IJ_vec);
+			  rigid_shear_stress[0]  += (dmy_fi[0] * R_IJ_vec[1]);
 			}
 					  }
 				      }
@@ -180,6 +186,22 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   dev_shear_stress_lj  += shear_stress[0];
   dev_shear_stress_rot += shear_stress[1];
   
+  if(SW_PT == rigid){
+    double dmy_shear = 0.0;
+#pragma omp parallel for reduction(+:dmy_shear)
+    for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
+      double IinvN[DIM] = {0.0, 0.0, 0.0};
+      M_v_prod(IinvN, Rigid_IMoments[rigidID][0], torqueGrs[rigidID]);
+      const double Jyy = (Rigid_Moments[rigidID][2][2] + Rigid_Moments[rigidID][0][0] - Rigid_Moments[rigidID][1][1]) / 2.0;
+      const double Jzy = (-Rigid_Moments[rigidID][2][1]);
+      dmy_shear += (Jyy*IinvN[2] - Jzy*IinvN[1]);
+    }
+    rigid_shear_stress[1] = dmy_shear;
+
+    rigid_dev_shear_stress_lj  += rigid_shear_stress[0];
+    rigid_dev_shear_stress_rot += rigid_shear_stress[1];
+  }
+  
   free_1d_int(lscl);
   free_1d_int(head); 
 }
@@ -194,6 +216,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
   const double pair_cutoff = (!SW_PATCHY ? A_R_cutoff * LJ_dia : PATCHY_A_R_cutoff * SIGMA);
 
   double shear_stress[2] = {0.0, 0.0};
+  double rigid_shear_stress[2] = {0.0, 0.0};
   
   for(int n=0;n<Particle_Number ; n++){
     Particle *p_n = &p[n];
@@ -277,6 +300,10 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 	    torqueGrs[rigidID_m][1] += (dmy_tm[1] - (GRvecs[m][2]*dmy_fn[0] - GRvecs[m][0]*dmy_fn[2]));
 	    torqueGrs[rigidID_m][2] += (dmy_tm[2] - (GRvecs[m][0]*dmy_fn[1] - GRvecs[m][1]*dmy_fn[0]));
 
+	    double R_IJ_vec[DIM];
+	    double R_IJ;
+	    distance0_func(xGs[rigidID_n], xGs[rigidID_m], R_IJ, R_IJ_vec);
+	    rigid_shear_stress[0] += (dmy_fn[0] * R_IJ_vec[1]);
 	  }
 	}
       }
@@ -285,6 +312,22 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 
   dev_shear_stress_lj  += shear_stress[0];
   dev_shear_stress_rot += shear_stress[1];
+  
+  if(SW_PT == rigid){
+    double dmy_shear = 0.0;
+#pragma omp parallel for reduction(+:dmy_shear)
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      double IinvN[DIM] = {0.0, 0.0, 0.0};
+      M_v_prod(IinvN, Rigid_IMoments[rigidID][0], torqueGrs[rigidID]);
+      const double Jyy = (Rigid_Moments[rigidID][2][2] + Rigid_Moments[rigidID][0][0] - Rigid_Moments[rigidID][1][1]) / 2.0;
+      const double Jzy = (-Rigid_Moments[rigidID][2][1]);
+      dmy_shear += (Jyy*IinvN[2] - Jzy*IinvN[1]);
+    }
+    rigid_shear_stress[1] = dmy_shear;
+
+    rigid_dev_shear_stress_lj  += rigid_shear_stress[0];
+    rigid_dev_shear_stress_rot += rigid_shear_stress[1];
+  }
 }
 
 void Add_f_gravity(Particle *p){
