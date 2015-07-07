@@ -149,6 +149,26 @@ void NSsolute_solver_Euler(double **zeta
 			   ,const int &n_ijk_range
 			   );
 
+inline void Calc_Reynolds_shear_stress(double const* const* u, double &reynolds_shear_stress){
+  static const double ivolume = Ivolume * POW3(DX);
+
+  double stress_yx = 0.0;
+#pragma omp parallel for reduction(+:stress_yx)
+  for(int i = 0; i < NX; i++){
+    for(int j = 0; j < NY; j++){
+      double delta_y = (double)(j - NY/2)*DX;
+      for(int k = 0; k < NZ; k++){
+	const int im = (i*NY*NZ_) + (j*NZ_) + k;
+	
+	//only consider fluctuating velocities
+	stress_yx += (u[0][im] - Shear_rate_eff * delta_y)*(u[1][im]); 
+      }
+    }
+  }
+  
+  reynolds_shear_stress = -ivolume*RHO*stress_yx;
+}
+
 inline void Calc_shear_stress(const CTime &jikan
 			      ,Particle *p
 			      ,double *phi

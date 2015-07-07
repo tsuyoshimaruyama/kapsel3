@@ -208,12 +208,10 @@ inline double Update_strain(double &shear_strain_realized
 
 inline void Mean_shear_stress(const Count_SW &OPERATION
 			      ,FILE *fout
-			      ,double *virial
 			      ,Particle *p
 			      ,const CTime &jikan
 			      ,const double &srate_eff
 			      ){
-    static const int d_virial = 3;
     static const char *labels_zz_dc[]={""
 				 ,"time"
 				 ,"shear_rate_temporal"
@@ -237,6 +235,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 				    ,"lj_dev_stress_temporal"
 				    ,"shear_stress_temporal_old"
 				    ,"shear_stress_temporal_new"
+				    ,"reynolds_stress"
 				    ,"viscosity"
     };
 
@@ -271,7 +270,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 	Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
 	Calc_hydro_stress(jikan, p, phi, Hydro_force_new, hydro_stress_new);
 	double dev_stress = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
-	fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
+	
+	fprintf(fout, "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n"
 		,jikan.time
 		,srate_eff
 		,degree_oblique
@@ -279,7 +279,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION
 		,dev_stress
 		,hydro_stress[1][0]
 		,hydro_stress_new[1][0]
-		,(hydro_stress_new[1][0] + dev_stress)/srate_eff + ETA
+		,Inertia_stress
+		,(hydro_stress_new[1][0] + Inertia_stress + dev_stress)/srate_eff + ETA
 		);
       }else if(SW_EQ == Shear_Navier_Stokes){ 
 	if(!Shear_AC){

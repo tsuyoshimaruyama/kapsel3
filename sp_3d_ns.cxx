@@ -250,6 +250,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
 
 	    Make_phi_particle_sum_OBL(phi, phi_sum, p);
 	    Calc_f_hydro_correct_precision_OBL(p, phi_sum, ucp, jikan);
+	    Calc_Reynolds_shear_stress(ucp, Inertia_stress);
 	}
 
 	if(!Fixed_particle){// Update of Particle Velocity
@@ -417,7 +418,7 @@ int main(int argc, char *argv[]){
   Show_output_parameter();
 
   if ((SW_EQ == Shear_Navier_Stokes) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
-    Mean_shear_stress(INIT, stderr, NULL, particles, jikan, Shear_rate_eff);
+    Mean_shear_stress(INIT, stderr, particles, jikan, Shear_rate_eff);
   }else if(SW_EQ == Electrolyte){
     Electrolyte_free_energy(INIT,stderr,particles,Concentration,jikan);
   }
@@ -477,10 +478,10 @@ int main(int argc, char *argv[]){
 
     if(SW_EQ == Shear_Navier_Stokes){
 	Shear_rate_eff = Update_strain(Shear_strain_realized,jikan, zeta, uk_dc, u);
-	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
+	Mean_shear_stress(SHOW, stderr, particles, jikan, Shear_rate_eff);
     } else if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
 	Shear_strain_realized += Shear_rate_eff * jikan.dt_fluid;
-	Mean_shear_stress(SHOW, stderr, dev_shear_stress, particles, jikan, Shear_rate_eff);
+	Mean_shear_stress(SHOW, stderr, particles, jikan, Shear_rate_eff);
     }
 
     if(jikan.ts == MSTEP){
