@@ -649,10 +649,14 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, doub
       for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
         for(int d = 0; d < DIM; d++){
           dVg[rigidID][d] = jikan.dt_md * Rigid_IMasses[rigidID] * forceGs[rigidID][d];
-          dWg[rigidID][d] = jikan.dt_md * (Rigid_IMoments[rigidID][d][0] * torqueGs[rigidID][0] +
-                                           Rigid_IMoments[rigidID][d][1] * torqueGs[rigidID][1] +
-                                           Rigid_IMoments[rigidID][d][2] * torqueGs[rigidID][2]);
         }
+	
+	int rigid_first   = Rigid_Particle_Cumul[rigidID];
+	double Ibody[DIM] = {Rigid_Moments_body[rigidID][0][0],
+			     Rigid_Moments_body[rigidID][1][1],
+			     Rigid_Moments_body[rigidID][2][2]};
+	MD_solver_omega_Euler_update(dWg[rigidID], omegaGs[rigidID], torqueGs[rigidID],
+				     Ibody, p[rigid_first].q, jikan.dt_md);
       }
     }
     
