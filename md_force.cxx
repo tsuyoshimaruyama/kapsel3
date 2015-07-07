@@ -565,14 +565,15 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, doub
       for(int mesh=0; mesh < NP_domain; mesh++){
         sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue,
                                                sw_in_cell, nlattice, DX, r_mesh, r);
+        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
+	
         dmyR = 0.;
         for(int d=0;d<DIM;d++){
           dmyR += SQ(r[d]);
         }
         dmyR = sqrt(dmyR);
-        dmy_phi= Phi(dmyR, RADIUS);
+        dmy_phi= Phi(dmyR, RADIUS) / MAX(phi_sum[im], 1.0);
         
-        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
         double dmy_stress_p = p[n].momentum_depend_fr[0] / volume[n];
 
@@ -622,6 +623,7 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, doub
       for(int mesh=0; mesh < NP_domain; mesh++){
         sign = Relative_coord_check_stepover_Y(Sekibun_cell[mesh], x_int, residue, \
                                                sw_in_cell, nlattice, DX, r_mesh, r);
+        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);	
 
         dmyR = 0;
         for(int d=0;d<DIM;d++){
@@ -629,9 +631,8 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, doub
           dmyR += SQ(r[d]);
         }
         dmyR= sqrt(dmyR);
-        dmy_phi = Phi(dmyR, RADIUS);
+        dmy_phi = Phi(dmyR, RADIUS) / MAX(phi_sum[im], 1.0);
 
-        im = (r_mesh[0]*NY*NZ_ + r_mesh[1]*NZ_ + r_mesh[2]);
         dmy_ry = (r_mesh[1] + sign*L_particle[1]);
 #pragma omp atomic	
         Hydro_force[im] -= sum_force*dmy_ry*dmy_phi/sum_volume;//viscocity
