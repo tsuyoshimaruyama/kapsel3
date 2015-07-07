@@ -84,9 +84,9 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			  while (i != -1){
 			      j = head[cl];
 		double i_dir[DIM] = {0.0, 0.0, 0.0};
-
+		int rigidID_i = -1;
 		if(SW_PATCHY) rigid_body_rotation(i_dir, PATCHY_AXIS, p[i].q, BODY2SPACE);
-
+		if(SW_PT == rigid) rigidID_i = Particle_RigidID[i];
 		
 			      while (j != -1){
                                 if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
@@ -144,6 +144,25 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			shear_stress[0] += (dmy_fi[0] * r_ij_vec[1]);
 			shear_stress[1] += ((dmy_ti[2] + dmy_tj[2])/2.0);
 			
+
+			//rigid body forces & torques
+			if(SW_PT == rigid){
+			  int rigidID_j = Particle_RigidID[j];
+			  
+			  for(int d = 0; d < DIM; d++){
+			    forceGrs[rigidID_i][d] += dmy_fi[d];
+			    forceGrs[rigidID_j][d] -= dmy_fi[d];
+			  }
+			  
+			  torqueGrs[rigidID_i][0] += (dmy_ti[0] + (GRvecs[i][1]*dmy_fi[2] - GRvecs[i][2]*dmy_fi[1]));
+			  torqueGrs[rigidID_i][1] += (dmy_ti[1] + (GRvecs[i][2]*dmy_fi[0] - GRvecs[i][0]*dmy_fi[2]));
+			  torqueGrs[rigidID_i][2] += (dmy_ti[2] + (GRvecs[i][0]*dmy_fi[1] - GRvecs[i][1]*dmy_fi[0]));
+			  
+			  torqueGrs[rigidID_j][0] += (dmy_tj[0] - (GRvecs[j][1]*dmy_fi[2] - GRvecs[j][2]*dmy_fi[1]));
+			  torqueGrs[rigidID_j][1] += (dmy_tj[1] - (GRvecs[j][2]*dmy_fi[0] - GRvecs[j][0]*dmy_fi[2]));
+			  torqueGrs[rigidID_j][2] += (dmy_tj[2] - (GRvecs[j][0]*dmy_fi[1] - GRvecs[j][1]*dmy_fi[0]));
+			  
+			}
 					  }
 				      }
 				  }
@@ -179,7 +198,8 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
   for(int n=0;n<Particle_Number ; n++){
     Particle *p_n = &p[n];
     double n_dir[DIM] = {0.0, 0.0, 0.0};
-
+    int rigidID_n = -1;
+    if(SW_PT == rigid) rigidID_n = Particle_RigidID[n];
     if(SW_PATCHY) rigid_body_rotation(n_dir, PATCHY_AXIS, p_n->q, BODY2SPACE);
     
     for(int m=n+1; m < Particle_Number ; m++){
@@ -240,6 +260,24 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 	  shear_stress[0] += (dmy_fn[0] * r_ij_vec[1]);
 	  shear_stress[1] += ((dmy_tn[2] + dmy_tm[2])/2.0);
 
+	  // rigid body forces & torques
+	  if(SW_PT == rigid){
+	    int rigidID_m = Particle_RigidID[m];
+
+	    for(int d = 0; d < DIM; d++){
+	      forceGrs[rigidID_n][d] += dmy_fn[d];
+	      forceGrs[rigidID_m][d] -= dmy_fn[d];
+	    }
+
+	    torqueGrs[rigidID_n][0] += (dmy_tn[0] + (GRvecs[n][1]*dmy_fn[2] - GRvecs[n][2]*dmy_fn[1]));
+	    torqueGrs[rigidID_n][1] += (dmy_tn[1] + (GRvecs[n][2]*dmy_fn[0] - GRvecs[n][0]*dmy_fn[2]));
+	    torqueGrs[rigidID_n][2] += (dmy_tn[2] + (GRvecs[n][0]*dmy_fn[1] - GRvecs[n][1]*dmy_fn[0]));
+
+	    torqueGrs[rigidID_m][0] += (dmy_tm[0] - (GRvecs[m][1]*dmy_fn[2] - GRvecs[m][2]*dmy_fn[1]));
+	    torqueGrs[rigidID_m][1] += (dmy_tm[1] - (GRvecs[m][2]*dmy_fn[0] - GRvecs[m][0]*dmy_fn[2]));
+	    torqueGrs[rigidID_m][2] += (dmy_tm[2] - (GRvecs[m][0]*dmy_fn[1] - GRvecs[m][1]*dmy_fn[0]));
+
+	  }
 	}
       }
     }
@@ -255,9 +293,18 @@ void Add_f_gravity(Particle *p){
    // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
+  if(SW_PT != rigid){  
 #pragma omp parallel for  
   for(int n = 0; n < Particle_Number ; n++){
     p[n].fr[G_direction] -= Gravity_on_fluid * (MASS_RATIOS[p[n].spec] -1.0); 
+  }
+  }else{
+#pragma omp parallel for
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      const int rigid_spec = RigidID_Components[rigidID];
+      const double rigid_volume = Rigid_Masses[rigidID] / RHO_particle[rigid_spec];
+      forceGrs[rigidID][G_direction] -= G*RHO*rigid_volume*(MASS_RATIOS[rigid_spec] - 1.0);
+    }
   }
 }
 void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CTime &jikan){

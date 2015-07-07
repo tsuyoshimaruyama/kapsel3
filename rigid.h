@@ -457,31 +457,8 @@ inline void solver_Rigid_Position_OBL(Particle *p, const CTime &jikan, string CA
   \note set_Rigid_VOGs() after calculating xGs, Rigid_IMoments, forceGs and torqueGs!!
 */
 inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
-  static const double Gravity_on_fluid = G*RHO*4.0/3.0*M_PI*POW3(RADIUS);
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-    double rigid_lj[DIM] = {0.0, 0.0, 0.0};
-    for(int n=Rigid_Particle_Cumul[rigidID]; n<Rigid_Particle_Cumul[rigidID+1]; n++){
-      //remove gravity force from individual beads
-      for(int d=0; d<DIM; d++){
-	rigid_lj[d] = p[n].fr[d];
-      }
-      rigid_lj[G_direction] += Gravity_on_fluid * (MASS_RATIOS[p[n].spec] - 1.0);
-
-      //Particles treated as additive LJ centers: particle overlaps are not corrected
-      for(int d=0; d < DIM; d++){
-	forceGrs[rigidID][d] += rigid_lj[d];
-      }
-      torqueGrs[rigidID][0] += GRvecs[n][1]*rigid_lj[2] - GRvecs[n][2]*rigid_lj[1];
-      torqueGrs[rigidID][1] += GRvecs[n][2]*rigid_lj[0] - GRvecs[n][0]*rigid_lj[2];
-      torqueGrs[rigidID][2] += GRvecs[n][0]*rigid_lj[1] - GRvecs[n][1]*rigid_lj[0];
-    }
-
-    //add total gravity force on rigid body
-    const int rigid_spec      = RigidID_Components[rigidID];
-    const double rigid_volume = Rigid_Masses[rigidID]/RHO_particle[rigid_spec];
-    forceGrs[rigidID][G_direction] -= G*RHO*rigid_volume*(MASS_RATIOS[rigid_spec] - 1.0);
-    
     //set olds
     for(int d=0; d<DIM; d++){
       velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
