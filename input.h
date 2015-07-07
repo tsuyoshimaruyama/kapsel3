@@ -119,6 +119,14 @@ extern int last_ts ;
 extern double Srate_depend_LJ_cap;
 extern double LJ_dia;
 
+// PATCHY JANUS INTERACTIONS
+extern int    SW_PATCHY;
+extern int    PATCHY_POWER;
+extern double PATCHY_EPSILON;
+extern double PATCHY_LAMBDA;
+extern double PATCHY_A_R_cutoff;
+extern const double PATCHY_AXIS[];
+
 extern int SW_JANUS;
 extern int SW_JANUS_MOTOR;
 extern int SW_JANUS_SLIP;

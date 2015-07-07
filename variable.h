@@ -42,6 +42,8 @@ typedef struct Particle {
 
   double fr[DIM];
   double fr_previous[DIM];
+  double torque_r[DIM];
+  double torque_r_previous[DIM];
 
   double omega[DIM];
   double omega_old[DIM];

@@ -439,15 +439,13 @@ void hdf5_writer::write_particle_data(Particle *p){
     pdata[nump_print3+jj+1]= p[i].torque_hydro_previous[1] + p[i].torque_slip_previous[1];
     pdata[nump_print3+jj+2]= p[i].torque_hydro_previous[2] + p[i].torque_slip_previous[2];
 
-    /**** torque_r = 0
     pdata[nump_print6+jj]  = p[i].torque_r_previous[0];
     pdata[nump_print6+jj+1]= p[i].torque_r_previous[1];
     pdata[nump_print6+jj+2]= p[i].torque_r_previous[2];
-    ****/
   }
   this->write_particle_vectorn(&pdata[0], DIM, p_omega_name);
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_torque_h_name);
-  //this->write_particle_vectorn(&pdata[nump_print6], DIM, p_torque_r_name);
+  this->write_particle_vectorn(&pdata[nump_print6], DIM, p_torque_r_name);
   
 #pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
@@ -565,6 +563,7 @@ void hdf5_writer::write_configure_file(){
     fprintf(conf, "[Particle Vector]\n %s\n", p_force_h_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_force_r_name);
     fprintf(conf, "[Particle Vector]\n %s\n", p_torque_h_name);
+    fprintf(conf, "[Particle Vector]\n %s\n", p_torque_r_name);
 
     //Tensor Particle Quantities
     fprintf(conf, "[Particle Tensor]\n %s\n", p_QR_name);

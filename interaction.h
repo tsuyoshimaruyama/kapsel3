@@ -198,4 +198,41 @@ inline double Lennard_Jones_f(const double &x, const double sigma){
   }
   return answer;
 }
+
+inline double patchy_soft_core(const double &r, const double sigma){
+  double answer = 0.0;
+  double dmy6   = POW3(sigma / r) * POW3(sigma / r);
+  
+  if(PATCHY_POWER == 0){//12
+    static const double SF_coeff = 48.0 * EPSILON;
+    answer = SF_coeff / SQ(r) * (dmy6 * dmy6);
+  }
+  if(PATCHY_POWER == 1){//18
+    static const double SF_coeff = 72.0 * EPSILON;
+    answer = SF_coeff / SQ(r) * (dmy6 * dmy6 * dmy6);
+  }
+  if(PATCHY_POWER == 2){//24
+    static const double SF_coeff = 96.0 * EPSILON;
+    answer = SF_coeff / SQ(r) * (dmy6 * dmy6 * dmy6 * dmy6);
+  }
+  if(PATCHY_POWER == 3){//30
+    static const double SF_coeff = 120.0 * EPSILON;
+    answer = SF_coeff / SQ(r) * (dmy6 * dmy6 * dmy6 * dmy6 * dmy6);
+  }
+  if(PATCHY_POWER == 4){//36
+    static const double SF_coeff = 144.0 * EPSILON;
+    answer = SF_coeff / SQ(r) * (dmy6 * dmy6 * dmy6 * dmy6 * dmy6 * dmy6);
+  }
+  return answer;
+}
+inline void patchy_janus_f(double &f_r,
+			   double &f_n,
+			   const double &r,			   
+			   const double n_dot_r,
+			   const double sigma
+			   ){
+  double phi = (PATCHY_EPSILON*sigma/r)*exp(-PATCHY_LAMBDA*(r - sigma));
+  f_r = (patchy_soft_core(r, sigma) - (phi/POW3(r) * (PATCHY_LAMBDA*r + 2))*n_dot_r);
+  f_n = phi/r;
+}
 #endif
