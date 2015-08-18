@@ -72,7 +72,7 @@ extern SW_time SW_TIME;
 //////  
 extern EQ SW_EQ;
 extern const char *EQ_name[];
-////// 
+//////  
 extern ST SW_NSST;
 extern ST SW_CHST;
 extern PO SW_POTENTIAL;
@@ -238,6 +238,8 @@ extern double HXI ;
 extern double A;
 extern double RADIUS;
 extern double SIGMA ;
+extern double* RADII;
+extern double* SIGMAS;
 extern double A_R_cutoff ;
 extern double R_cutoff ;
 //////
