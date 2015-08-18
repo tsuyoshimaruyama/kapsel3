@@ -17,6 +17,7 @@ class Vector3d:{x: float, y: float, z: float}
 class Quaternion:{q0: float, q1: float, q2: float, q3: float}
 class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d}
 class SlabSelection:{start: int, count: int, stride: int}
+class ParticleRadius:{spec: int, A:double}
 
 constitutive_eq: {
    type: select {'Navier_Stokes','Shear_Navier_Stokes','Shear_Navier_Stokes_Lees_Edwards', 'Electrolyte'}
@@ -153,6 +154,13 @@ object_type: {
 A_XI: double "interface thickness in the unit of DX"
 
 A: double "colloid radius in the unit of DX"
+
+polydisperse: {
+   type: select {"ON", "OFF"}
+ ON:{
+       radii[]: ParticleRadius
+     }
+}
 
 gravity: {
    G: double "gravitaional acceleration constant"
