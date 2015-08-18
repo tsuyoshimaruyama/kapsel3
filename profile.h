@@ -9,6 +9,7 @@
 #define PROFILE_H
 
 #include <math.h>
+#include <algorithm>
 #include "input.h"
 #include "macro.h"
 #include "alloc.h"

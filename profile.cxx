@@ -22,6 +22,9 @@ inline void Copy_sekibun_cell(const int &np_domain
     free_2d_int(src);
   }
 }
+bool sekibun_comparison(int* a, int* b){
+  return SQ(a[0]) + SQ(a[1]) + SQ(a[2]) < SQ(b[0]) + SQ(b[1]) + SQ(b[2]);
+}
 void Particle_domain(double (*profile_func)(const double &x, const double radius)
 		     ,int &np_domain
 		     ,int** &sekibun_cell
@@ -71,4 +74,12 @@ void Particle_domain(double (*profile_func)(const double &x, const double radius
   np_domain = mesh;
 
   Copy_sekibun_cell(np_domain, dmy_sekibun_cell, sekibun_cell);
+  std::sort(sekibun_cell, sekibun_cell+np_domain, sekibun_comparison);
+  for(int i = 0; i < np_domain; i++){
+    fprintf(stderr, "%5d %5d %5d %5d %12.6f\n",
+	    sekibun_cell[i][0], sekibun_cell[i][1], sekibun_cell[i][2],
+	    SQ(sekibun_cell[i][0]) + SQ(sekibun_cell[i][1]) + SQ(sekibun_cell[i][2]),
+	    sqrt(SQ(sekibun_cell[i][0]) + SQ(sekibun_cell[i][1]) + SQ(sekibun_cell[i][2]))	    
+	    );
+  }
 }
