@@ -16,6 +16,7 @@
 #include "interaction.h"
 #include "make_phi.h"
 
+
 /*!
   \details
   \f[
@@ -203,7 +204,7 @@ inline double DPhi_compact_sin_norm(const double &x,
  */
 void Particle_domain(
 		     double (*profile_func)(const double &x, const double radius)
-		     ,int &np_domain
+		     ,int* &np_domain
 		     ,int** &sekibun_cell
 		     );
 

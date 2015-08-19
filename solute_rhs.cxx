@@ -67,7 +67,7 @@ void Solute_impermeability(Particle *p
     sw_in_cell = 1;
     //int r_mesh[DIM];
     //double r[DIM];
-    for(int mesh=0; mesh < NP_domain; mesh++){
+    for(int mesh=0; mesh < NP_domain[p[n].spec]; mesh++){
       Relative_coord(Sekibun_cell[mesh]
 		     ,x_int, residue, sw_in_cell, Ns, DX, r_mesh, r);
 

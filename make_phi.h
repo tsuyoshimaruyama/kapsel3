@@ -19,7 +19,7 @@
 #include "periodic_boundary.h"
 
 extern void (*Angular2v)(const double *omega, const double *r, double *v);
-extern int NP_domain;
+extern int *NP_domain;
 extern int **Sekibun_cell;
 
 /*!
@@ -43,17 +43,17 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p);
   \param[in] p particel data
   \param[in] radius particle radius (domain over which profile field is non-zero)
  */
-void Make_phi_particle(double *phi, Particle *p, const double radius = RADIUS);
+void Make_phi_particle(double *phi, Particle *p);
 
 /*!
   \brief Compute smooth particle position normalization field
  */
-void Make_phi_particle_sum(double *phi, double* phi_sum, Particle* p, const double radius = RADIUS);
+void Make_phi_particle_sum(double *phi, double* phi_sum, Particle* p);
 
 /*!
   \brief Compute particle velocity field with correct phi normalization for particle overlaps
  */
-void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p, const double radius = RADIUS);
+void Make_u_particle_sum(double **up, double const* phi_sum, Particle*p);
 
 /*!
   \brief Compute smooth particle position and velocity fields
@@ -74,17 +74,17 @@ void Make_phi_u_particle(double *phi, double **up, Particle *p);
 /*!
   \brief Compute smooth particle position field for Lees-Edwards simulations
  */
-void Make_phi_particle_OBL(double *phi, Particle *p, const double radius = RADIUS);
+void Make_phi_particle_OBL(double *phi, Particle *p);
 
 /*!
   \brief Compute smooth particle position normalization field for Lees-Edwards simulations
  */
-void Make_phi_particle_sum_OBL(double *phi, double* phi_sum, Particle *p, const double radius = RADIUS);
+void Make_phi_particle_sum_OBL(double *phi, double* phi_sum, Particle *p);
 
 /*!
   \brief Compute particle velocity field with correct phi normalization for particle overlaps for Lees-Edwards simulations
  */
-void Make_u_particle_sum_OBL(double **up, double const* phi_sum, Particle *p, const double radius = RADIUS);
+void Make_u_particle_sum_OBL(double **up, double const* phi_sum, Particle *p);
 
 /*!
   \brief Compute smooth particle position and velocity fields

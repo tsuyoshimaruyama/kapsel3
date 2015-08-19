@@ -57,6 +57,10 @@ void Make_phi_qq_particle(double *phi
 			   ,double *surface
 			   ,Particle *p);
 
+void Make_phi_qq_particle_norm(double *phi
+			   ,double *surface
+			   ,Particle *p);
+
 void Make_phi_qq_fixed_particle(double *phi
 			   ,double *surface
 			   ,Particle *p);

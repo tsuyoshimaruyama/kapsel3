@@ -8,15 +8,23 @@
 #include "fluct.h"
 
 void Add_random_force_thermostat(Particle *p, const CTime &jikan){
-  static const double Zeta_drag = 6.* M_PI * ETA * RADIUS;
-  static const double Zeta_drag_rot = 8.* M_PI * ETA * POW3(RADIUS);
-  
-  const double sdv_v = sqrt(Zeta_drag * jikan.dt_md * kBT * alpha_v);
-  const double sdv_omega = sqrt(Zeta_drag_rot * jikan.dt_md * kBT * alpha_o);
-   
-  static double noise_intensity_v = kT_snap_v * sdv_v;
-  static double noise_intensity_o = kT_snap_o * sdv_omega;
 
+  double* noise_intensity_v;
+  double* noise_intensity_o;
+
+  noise_intensity_v = alloc_1d_double(Component_Number);
+  noise_intensity_o = alloc_1d_double(Component_Number);
+
+  for(int i = 0 ; i < Component_Number ; i++){
+	  double Zeta_drag = 6.* M_PI * ETA * RADII[i];
+  	double Zeta_drag_rot = 8.* M_PI * ETA * POW3(RADII[i]);
+	  
+  	double sdv_v = sqrt(Zeta_drag * jikan.dt_md * kBT * alpha_v);
+	  double sdv_omega = sqrt(Zeta_drag_rot * jikan.dt_md * kBT * alpha_o);
+   
+  	noise_intensity_v[i] = kT_snap_v * sdv_v;
+  	noise_intensity_o[i] = kT_snap_o * sdv_omega;
+  }
   if(SW_PT != rigid){
 #pragma omp parallel for
     for(int n=0; n<Particle_Number; n++){
@@ -30,9 +38,9 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
         double imoi = IMOI[p[n].spec];
         
         for(int d=0; d<DIM; d++){
-          p[n].v[d] += dmy[d]*noise_intensity_v*imass;
+          p[n].v[d] += dmy[d]*noise_intensity_v[p[n].spec]*imass;
           if(ROTATION){
-            p[n].omega[d] += dmy[d+3]*noise_intensity_o*imoi;
+            p[n].omega[d] += dmy[d+3]*noise_intensity_o[p[n].spec]*imoi;
           }
         }
       }
@@ -57,8 +65,8 @@ void Add_random_force_thermostat(Particle *p, const CTime &jikan){
       rigidID = Particle_RigidID[n];
       
       for(int d=0; d<DIM; d++){
-        fdt[d] = dmy[d]*noise_intensity_v;
-        ndt[d] = dmy[d+3]*noise_intensity_o;
+        fdt[d] = dmy[d]*noise_intensity_v[p[n].spec];
+        ndt[d] = dmy[d+3]*noise_intensity_o[p[n].spec];
         forceGsdt[rigidID][d] += fdt[d];
         torqueGsdt[rigidID][d] += ndt[d];  // If same forces exist on a particle's surface,
                                            // sum of torques around gravity point of constituent particles and

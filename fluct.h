@@ -66,8 +66,11 @@ inline void Force_random_walk(Particle *p){
 inline void Random_Walk(Particle *p
 			,const double dr_factor = 0.5e-1*.5
 			){
-  const double dr = RADIUS * dr_factor;
-
+  double dr[Component_Number];
+  for(int i = 0 ; i < Component_Number ; i++){
+    dr[i] = RADII[i] * dr_factor;
+  }
+  
   for(int n=0; n<Particle_Number; n++){
     double dmy[4];
     Gauss2(dmy);
@@ -79,7 +82,7 @@ inline void Random_Walk(Particle *p
     }
     h = sqrt(h);
     if(h> 0.){    
-      h = dr/h;
+      h = dr[p[n].spec]/h;
     }
     for(int d=0; d<DIM; d++){      
 	  p[n].x[d] += h * dmy[d];
@@ -93,7 +96,10 @@ inline void Random_Walk(Particle *p
 inline void Steepest_descent(Particle *p
 			,const double dr_factor = 0.5e-1
 			){
-  const double dr = RADIUS * dr_factor;
+  double dr[Component_Number];
+  for(int i = 0 ; i < Component_Number ; i++){
+    dr[i] = RADII[i] * dr_factor;
+  }
 
   Force_random_walk(p);
   for(int n=0; n<Particle_Number; n++){
@@ -103,7 +109,7 @@ inline void Steepest_descent(Particle *p
     }
     h = sqrt(h);
     if(h> 0.){    
-      h = dr/h;
+      h = dr[p[n].spec]/h;
     }
     for(int d=0; d<DIM; d++){      
 	  p[n].x[d] += h * p[n].fr[d];

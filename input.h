@@ -235,7 +235,7 @@ extern double DX3;
 extern double A_XI;
 extern double XI;
 extern double HXI ;
-extern double A;
+extern double dmy_A;
 extern double RADIUS;
 extern double SIGMA ;
 extern double* RADII;

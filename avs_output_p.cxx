@@ -119,7 +119,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
   if(SW_OUTFORMAT == OUT_AVS_BINARY) {
     float dmy;
     for(int n = 0; n < Particle_Number; n++) {   //radius
-      dmy = (float)RADIUS;
+      dmy = (float)RADII[p[n].spec];
       fwrite(&dmy, sizeof(float), 1, fout);
     }
     for(int d1 = 0; d1 < DIM; d1++){              //body coordinate system (ex, ey, ez)
@@ -135,7 +135,7 @@ void Output_avs_p(AVS_parameters &Avs_parameters
     fprintf(fout, "%s\n", line);
     for(int n = 0; n < Particle_Number; n++) {
       fprintf(fout, "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g %.3g\n",
-	      RADIUS,
+	      RADII[p[n].spec],
 	      p[n].QR[0][0], p[n].QR[1][0], p[n].QR[2][0],
 	      p[n].QR[0][1], p[n].QR[1][1], p[n].QR[2][1],
 	      p[n].QR[0][2], p[n].QR[1][2], p[n].QR[2][2]);

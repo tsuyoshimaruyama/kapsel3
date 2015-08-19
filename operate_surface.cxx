@@ -12,7 +12,7 @@
 void Make_particle_momentum_factor(double const* const* u, Particle *p){
   //////////////////////////////
   const double dx = DX;
-  const int np_domain = NP_domain;
+  const int* np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* nlattice = Ns;
   const double radius = RADIUS;
@@ -52,7 +52,7 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
     
     sw_in_cell = Particle_cell(xp, dx, x_int, residue);
     sw_in_cell = 1;
-    for(int mesh = 0; mesh < np_domain; mesh++){
+    for(int mesh = 0; mesh < np_domain[pspec]; mesh++){
       Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, dx, r_mesh, r);
       int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
       for(int d = 0; d < DIM; d++){
@@ -169,7 +169,7 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
 void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
-  const int np_domain = NP_domain;
+  const int* np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* nlattice = Ns;
   const double radius = RADIUS;
@@ -213,7 +213,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
       sw_in_cell = Particle_cell(xp, dx, x_int, residue);
       sw_in_cell = 1;
 
-      for(int mesh = 0; mesh < np_domain; mesh++){
+      for(int mesh = 0; mesh < np_domain[pspec]; mesh++){
 	Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, dx, r_mesh, r);
 	int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 	for(int d = 0; d < DIM; d++){

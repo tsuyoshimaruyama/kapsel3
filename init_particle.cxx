@@ -441,7 +441,7 @@ void Init_Particle(Particle *p){
 		if (SW_EQ != Shear_Navier_Stokes_Lees_Edwards && SW_EQ != Shear_Navier_Stokes_Lees_Edwards_FDM && SW_EQ != Shear_NS_LE_CH_FDM) {
       init_set_PBC(p);
 			init_set_GRvecs(p);  // compute relative distance vectors with respect to trial com      
-
+      
 			Make_phi_particle_sum(phi, phi_sum, p);   // compute overlap factors
 			Make_phi_rigid_mass(phi_sum, p);          // compute correct com withouth PBC
       
@@ -528,7 +528,7 @@ void Show_parameter(Particle *p){
     fprintf(fp,"#\n");
     }
     fprintf(fp,"#(number of particles) = %d\n", Particle_Number);
-    fprintf(fp,"#(Radius, xi) = %g %g\n",RADIUS,XI);
+    fprintf(fp,"#(xi) = %g\n",XI);    
     for(int i = 0; i < Component_Number; i++){
       fprintf(fp, "# spec = %d radius = %.4f sigma = %.4f\n", i, RADII[i], SIGMAS[i]);
     }
@@ -566,8 +566,8 @@ void Show_parameter(Particle *p){
 	fprintf(fp,"# Debye length = %g\n", Debye_length);
 	for(int i=0; i<Component_Number; i++){
 	  double surface_charge_density
-	    = ABS(Surface_charge[i])*Elementary_charge/(4.*M_PI*SQ(RADIUS));
-	  double linear_zeta=RADIUS/(1.+RADIUS/Debye_length)/Dielectric_cst*surface_charge_density;
+	    = ABS(Surface_charge[i])*Elementary_charge/(4.*M_PI*SQ(RADII[i]));
+	  double linear_zeta=RADII[i]/(1.+RADII[i]/Debye_length)/Dielectric_cst*surface_charge_density;
 	  double thermal_potential = kBT/(Valency_positive_ion*Elementary_charge);
 	  if(linear_zeta < thermal_potential){
 	    fprintf(fp,"# linear electrostatics regime (for isolated sphere)\n");
@@ -692,8 +692,8 @@ void Show_parameter(Particle *p){
     }
     if(fabs(G) > 0.0){
       for(int i=0;i<Component_Number;i++){
-	fprintf(fp,"#interface Stokes time (XI/((2/9)*SQ(RADIUS)/ETA*G* DeltaRHO))= %g\n"
-		,XI / ((2./9.)*SQ(RADIUS)/ETA*G*(RHO_particle[i]-RHO)));
+	fprintf(fp,"#interface Stokes time (XI/((2/9)*SQ(RADII[i])/ETA*G* DeltaRHO))= %g\n"
+		,XI / ((2./9.)*SQ(RADII[i])/ETA*G*(RHO_particle[i]-RHO)));
       }
     }
     if(SW_TIME == AUTO){
@@ -719,13 +719,23 @@ void Show_parameter(Particle *p){
       }
     }
 
-    fprintf(fp, "#sekibun_mesh= %d\n", NP_domain);
+    int np_domain_max=0;
+    for(int comp = 0 ; comp < Component_Number ; comp++){
+      if(NP_domain[comp] > np_domain_max){
+				np_domain_max = NP_domain[comp];
+			}
+    }
+
+    fprintf(fp, "#sekibun_mesh= %d\n", np_domain_max);
     fprintf(fp, "#\n");
   }
   {
     double kmax = MIN(MIN(WAVE_X * TRN_X,WAVE_Y * TRN_Y), WAVE_Z * TRN_Z);
+   for(int i = 0 ; i < Component_Number ; i++){
+    fprintf(fp, "#for species %d",i);
     fprintf(fp, "#k_max * min(RADIUS,xi) = %g (must be >%g)\n"
-	    ,MIN(RADIUS,XI) * kmax, M_PI);
+	    ,MIN(RADII[i],XI) * kmax, M_PI);
+   }
     fprintf(fp, "#\n");
   }
       

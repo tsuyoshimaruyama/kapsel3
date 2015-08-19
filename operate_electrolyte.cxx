@@ -199,7 +199,7 @@ void Make_phi_qq_particle(double *phi
     sw_in_cell = 1;
     int r_mesh[DIM];
     double r[DIM];
-    for(int mesh=0; mesh < NP_domain; mesh++){
+    for(int mesh=0; mesh < NP_domain[p[n].spec]; mesh++){
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, Ns, DX, r_mesh, r);
       double x[DIM];
       for(int d=0;d<DIM;d++){
@@ -241,6 +241,75 @@ void Make_phi_qq_particle(double *phi
   }
 }
 
+void Make_phi_qq_particle_norm(double *phi
+			   ,double *surface
+			   ,Particle *p){
+  double radius;
+  double dmy_surface_area;
+  double abs_total_surface_charge = 0.;
+  for(int n=0; n < Particle_Number; n++){
+    radius = RADII[p[n].spec];
+    dmy_surface_area = PI4*SQ(radius);
+    double dmy_surface_charge = Surface_charge_e[p[n].spec];
+    double xp[DIM];
+    for(int d=0;d<DIM;d++){
+      xp[d] = p[n].x[d];
+      {
+	assert(p[n].x[d] >= 0);
+	assert(p[n].x[d] < L[d]);
+      }
+    }
+    
+    int x_int[DIM];
+    double residue[DIM];
+    int sw_in_cell 
+      = Particle_cell(xp, DX, x_int, residue);// {1,0} が返ってくる
+    sw_in_cell = 1;
+    int r_mesh[DIM];
+    double r[DIM];
+    for(int mesh=0; mesh < NP_domain[p[n].spec]; mesh++){
+      Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, Ns, DX, r_mesh, r);
+      double x[DIM];
+      for(int d=0;d<DIM;d++){
+	x[d] = r_mesh[d] * DX;
+      }
+      double dmy = Distance(x, xp);
+      double dmy_phi= Phi(dmy);
+      double dmy_Dphi= DPhi_compact_sin(dmy);
+
+      phi[(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += dmy_phi;
+      surface[(r_mesh[0]*NY*NZ_)+(r_mesh[1]*NZ_)+r_mesh[2]] += dmy_surface_charge * dmy_Dphi;
+    }
+    abs_total_surface_charge += fabs(dmy_surface_charge);
+  }
+  {// volume of surface section is normalized to unity
+    double dmy = 0.0;
+	int im;
+#pragma omp parallel for reduction(+:dmy) private(im)
+    for(int i=0; i<NX; i++){
+      for(int j=0; j<NY; j++){
+	  for(int k=0; k<NZ; k++){
+	  //int im=(i*NY*NZ_)+(j*NZ_)+k;
+	  im=(i*NY*NZ_)+(j*NZ_)+k;
+	  dmy += fabs(surface[im]);
+	  }
+      }
+    }
+    double rescale = abs_total_surface_charge / (dmy * DX3);
+#pragma omp parallel for private(im)
+    for(int i=0; i<NX; i++){
+      for(int j=0; j<NY; j++){
+	  for(int k=0; k<NZ; k++){
+	  //int im=(i*NY*NZ_)+(j*NZ_)+k;
+	  im=(i*NY*NZ_)+(j*NZ_)+k;
+	  surface[im] *= rescale*dmy_surface_area; 
+	  }
+      }
+    }
+  }
+}
+
+
 void Make_phi_qq_fixed_particle(double *phi
 			   ,double *surface
 			   ,Particle *p){
@@ -264,7 +333,7 @@ void Make_phi_qq_fixed_particle(double *phi
     sw_in_cell = 1;
     int r_mesh[DIM];
     double r[DIM];
-    for(int mesh=0; mesh < NP_domain; mesh++){
+    for(int mesh=0; mesh < NP_domain[p[n].spec]; mesh++){
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, Ns, DX, r_mesh, r);
       double x[DIM];
       for(int d=0;d<DIM;d++){
@@ -753,9 +822,11 @@ void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
     fprintf(stderr,"# counterion_density %g\n", Counterion_density);
     fprintf(stderr,"# Debye length (1/(4 pi Bjerrum_length rho_c)^{1/2}) %g\n"
 	    ,1./sqrt(PI4 * SQ(Valency[0]) * Bjerrum_length * Counterion_density));
+    for(int i = 0 ; i < Component_Number ; i++){
+    fprintf(stderr,"# for spec %d\n",i);
     fprintf(stderr,"# radius of particle / Debye length  %g\n"
-	    ,RADIUS * sqrt(PI4 * SQ(Valency[0]) * Bjerrum_length * Counterion_density));
-
+	    ,RADII[i] * sqrt(PI4 * SQ(Valency[0]) * Bjerrum_length * Counterion_density));
+    }
     if(Poisson_Boltzmann){
       Set_uniform_ion_charge_density_nosalt(Concentration[0], Total_solute, p);
       Set_Poisson_Boltzmann_ion_charge_density_nosalt(Concentration, Total_solute, p);
@@ -779,7 +850,10 @@ void Init_rho_ion(double **Concentration, Particle *p, CTime &jikan){
       exit_job(EXIT_FAILURE);
     }
     fprintf(stderr,"############################ initial state for positive and negative ions\n");
-    fprintf(stderr,"# radius of particle / Debye length  %g\n" ,RADIUS / Debye_length);
+    for(int i = 0 ; i < Component_Number ; i++){
+      fprintf(stderr,"# for spec %d\n",i);
+      fprintf(stderr,"# radius of particle / Debye length  %g\n" ,RADII[i] / Debye_length);
+    }
     if(Poisson_Boltzmann){
       if(External_field){
 	if(Particle_Number == 1){

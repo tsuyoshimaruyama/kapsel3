@@ -219,13 +219,12 @@ void Output_charge_field_data(double** zeta,
   }else if(print_field.phi && print_field.charge){
     Reset_phi(phi);
     Reset_phi(up[0]);
-    Make_phi_qq_particle(phi, up[0], p);
+    Make_phi_qq_particle_norm(phi, up[0], p);
   }//print phi/charge?
 
   if(print_field.charge){
     int im;
     double dmy;
-    double dmy_surface_area = PI4*SQ(RADIUS);
     //compute total concentration
     for(int i = 0; i < NX; i++){
       for(int j = 0; j < NY; j++){
@@ -235,7 +234,6 @@ void Output_charge_field_data(double** zeta,
 	  for(int n = 0; n < N_spec; n++){
 	    dmy += Elementary_charge*Valency[n]*Concentration[n][im];
 	  }
-	  up[0][im]*= dmy_surface_area;
 	  up[1][im] = dmy*(1.0 - phi[im]);
 	}
       }

@@ -159,7 +159,7 @@ double *S_surfaces;// pretilt scalar order
 double *W_surfaces;// spring cst. of anchoring
 double DX;
 double A_XI;
-double A;
+double dmy_A;
 //////
 double G;
 int G_direction;
@@ -252,6 +252,8 @@ double KMAX2;
 //////
 double RADIUS;
 double SIGMA;
+double dmy_RADIUS;
+double dmy_SIGMA;
 double* RADII;
 double* SIGMAS;
 
@@ -1942,21 +1944,21 @@ void Gourmet_file_io(const char *infile
 	ufout->put("A_XI",A_XI);
 	ufres->put("A_XI",A_XI);
 	XI= A_XI * DX; // surface thickness
-	ufin->get("A",A);
-	ufout->put("A",A);
-	ufres->put("A",A);
-	RADIUS= A*DX;
-	SIGMA = 2.0 * RADIUS;
+	ufin->get("A",dmy_A);
+	ufout->put("A",dmy_A);
+	ufres->put("A",dmy_A);
+	dmy_RADIUS= dmy_A*DX;
+	dmy_SIGMA = 2.0 * dmy_RADIUS;
 
 	for(int i = 0; i < Component_Number; i++){
-	  RADII[i] = RADIUS;
-	  SIGMAS[i] = SIGMA;
+	  RADII[i] = dmy_RADIUS;
+	  SIGMAS[i] = dmy_SIGMA;
 	}
     }
     
     {
       Location target("polydisperse");
-      if(ufin->seek(target) && SW_PT == spherical_particle){
+      if(ufin->seek(target)){
 	string str;
 	ufin->get(target.sub("type"), str);
 	ufout->put(target.sub("type"), str);

@@ -128,7 +128,7 @@ inline void update_angular(double* l, const double *x, const double *v, const do
 inline void momentum_check(double const* const* up, Particle *p, const CTime &jikan){
   ////////////////////////
   const double dx = DX;
-  const int np_domain = NP_domain;
+  const int* np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* Nlattice = Ns;
   const double radius = RADIUS;
@@ -161,7 +161,7 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 
     sw_in_cell = Particle_cell(xp, dx, x_int, residue);
     sw_in_cell = 1;
-    for(int mesh = 0; mesh < np_domain; mesh++){
+    for(int mesh = 0; mesh < np_domain[pspec]; mesh++){
       Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
       Angular2v(omega_p, r, v_rot);
       int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
