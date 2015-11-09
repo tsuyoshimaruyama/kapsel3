@@ -164,15 +164,6 @@ EPSILON: double "Lennard-Jones depth"
 
 LJ_powers: select {'12:6','24:12','36:18'} "set of power exponents of LJ potential" 
 
-Patchy:{
-  type: select {"ON", "OFF"}
-  ON:{
-    EPSILON: double "potential depth in units of LJ-EPSILON"
-    LAMBDA: double "potential screening length in units of 1/(2*RADIUS)"
-    POWER: select{'12', '18', '24', '30', '36'}
-  }
-}
-
 mesh: {
    NPX: int "number of mesh in x-direction = 2^NPX"
    NPY: int "number of mesh in y-direction = 2^NPY"
