@@ -131,7 +131,6 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
   const int* np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* Nlattice = Ns;
-  const double radius = RADIUS;
   /////////////////////////
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM], fu[DIM];
   int x_int[DIM], r_mesh[DIM];
@@ -143,6 +142,9 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
 
   double tot_w[DIM], part_w[DIM], fluid_w[DIM], md_w[DIM], full_w[DIM];
   double tot_int_w[DIM], part_int_w[DIM], fluid_int_w[DIM], md_int_w[DIM];
+  double radius;
+
+  
   for(int d = 0; d < DIM; d++){
     tot_p[d] = part_p[d] = fluid_p[d] = md_p[d] = 0.0;
     tot_int_p[d] = part_int_p[d] = fluid_int_p[d] = md_int_p[d] = 0.0;
@@ -153,6 +155,7 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
   dmy_mass = 0.0;
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
+    radius = RADII[pspec];
     for(int d = 0; d < DIM; d++){
       xp[d] = p[n].x[d];
       vp[d] = p[n].v[d];
