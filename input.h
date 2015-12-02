@@ -158,14 +158,23 @@ extern double *MASS;
 extern double *MOI;
 extern double *IMASS;
 extern double *IMOI;
-extern double EPSILON ;
+//LJ PARAMETERS
+extern double* EPSILON;
+extern double* A_R_cutoff;
+extern double* LJ_dia;
+extern int* LJ_powers ;
+extern int* LJ_truncate;
+//
+//extern double R_cutoff ;
+extern double SIGMA ;
+
+//
 extern double T_LJ;
-extern int LJ_powers ;
+extern double VF_LJ;
+extern double Srate_depend_LJ_cap;
+//
 extern int RESUMED ;
 extern int last_ts ;
-extern double Srate_depend_LJ_cap;
-extern double LJ_dia;
-
 extern int SW_JANUS;
 extern int SW_JANUS_MOTOR;
 extern int SW_JANUS_SLIP;
@@ -218,7 +227,7 @@ extern int &TRN_QS_Z;
 
 //////
 extern int ROTATION;
-extern int LJ_truncate;
+
 extern Particle_IC DISTRIBUTION;
 extern Particle_IO ORIENTATION;
 extern int N_iteration_init_distribution;
@@ -237,14 +246,12 @@ extern double XI;
 extern double HXI ;
 extern double dmy_A;
 extern double RADIUS;
-extern double SIGMA ;
 extern double* RADII;
 extern double* SIGMAS;
-extern double A_R_cutoff ;
-extern double R_cutoff ;
 //////
 extern double G;
 extern int G_direction;
+extern Force_filter G_filter;
 //////
 extern int Component_Number;
 extern int Particle_Number;
@@ -252,7 +259,7 @@ extern int *Particle_Numbers;
 extern int *Beads_Numbers;
 extern int *Chain_Numbers;
 extern double VF;
-extern double VF_LJ;
+
 extern double Ivolume;
 ////
 extern int Rigid_Number;
@@ -314,7 +321,6 @@ extern double Tdump;
 extern double DT_noise;
 extern double DT;
 /////// Two_fluid
-extern double Mean_Bulk_concentration;
 extern int N_spec;
 extern double Onsager_solute_coeff;
 /////// Electrolyte
@@ -352,6 +358,7 @@ extern double degree_oblique;
 
 extern char *In_udf,*Sum_udf,*Out_udf,*Def_udf,*Ctrl_udf,*Res_udf;
 extern UDFManager *ufin, *ufout, *ufres;
+
 //extern UDFManager *ufsum;
 /*!
   \brief Read udf files from command line prompt

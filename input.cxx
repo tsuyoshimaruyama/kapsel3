@@ -111,7 +111,7 @@ int NZ_;
 int HN2Z_;
 int N2Z_;
 int ROTATION;
-int LJ_truncate;
+
 Particle_IC DISTRIBUTION;
 Particle_IO ORIENTATION;
 int N_iteration_init_distribution;
@@ -123,12 +123,9 @@ int *Pinning_Numbers;
 int N_PIN_ROT;
 int *Pinning_ROT_Numbers;
 //////
-double EPSILON;
-double T_LJ;
-int LJ_powers;
+
 int RESUMED;
 int last_ts;
-double Srate_depend_LJ_cap;
 
 double RHO;
 double ETA;
@@ -251,28 +248,32 @@ double WAVE_Z;
 double KMAX2;
 //////
 double RADIUS;
-double SIGMA;
 double dmy_RADIUS;
 double dmy_SIGMA;
 double* RADII;
 double* SIGMAS;
 
-double R_cutoff;
 double XI;
 double HXI;
 double VF;
-double VF_LJ;
 double Ivolume;
 //////
 int MSTEP;
-//////
-double A_R_cutoff;
-double LJ_dia;
-/////// Two_fluid
-double Mean_Bulk_concentration;
+////// LJ PARAMETERS
+double SIGMA;
+double* EPSILON;
+double* A_R_cutoff;
+double* LJ_dia;
+int* LJ_truncate;
+int* LJ_powers;
+//
+//double R_cutoff;
+double T_LJ;
+double VF_LJ;
+double Srate_depend_LJ_cap;
+/////// Electrolyte
 int N_spec;
 double Onsager_solute_coeff;
-/////// Electrolyte
 int Poisson_Boltzmann;
 int External_field;
 int AC;
@@ -453,11 +454,7 @@ inline void Set_global_parameters(void){
     {
 	double radius_dmy = dummy_pow*LJ_dia*.5;
 	Ivolume = 1./(LX * LY * LZ);
-	double dmy = (double)Particle_Number * 4./3.*M_PI * Ivolume;
-	VF = dmy * POW3(RADIUS);
-	VF_LJ = dmy * POW3(radius_dmy);
-    }
-    //
+  VF = (double)Particle_Number * 4./3.*M_PI * Ivolume * POW3(RADIUS);
     
     if(SW_JANUS_SLIP){
       for(int i = 0; i < Component_Number; i++){
@@ -478,6 +475,7 @@ inline void Set_global_parameters(void){
         exit_job(EXIT_FAILURE);
       }
     }
+
 }
 
 UDFManager *ufin;
@@ -884,7 +882,7 @@ void Gourmet_file_io(const char *infile
 						ufres->put(target.sub("maximum_iteration"), maxiter_ns);
 						target.up();
 						target.up();
-					} else {
+	}else{
 						fprintf(stderr, "invalid NS SOLVER TYPE\n");
 						exit_job(EXIT_FAILURE);
 					}
@@ -1434,7 +1432,7 @@ void Gourmet_file_io(const char *infile
 		    IMASS_RATIOS=alloc_1d_double(Component_Number);
 		    MOI=alloc_1d_double(Component_Number);
 		    IMOI=alloc_1d_double(Component_Number);
-		    
+
 		    RADII=alloc_1d_double(Component_Number);
 		    SIGMAS=alloc_1d_double(Component_Number);
 		    
@@ -1444,6 +1442,13 @@ void Gourmet_file_io(const char *infile
 		    Surface_charge = alloc_1d_double(Component_Number);
 		    Surface_charge_e = alloc_1d_double(Component_Number);
 
+
+                    int num_pairs = Component_Number*Component_Number;
+		    EPSILON    = alloc_1d_double(num_pairs);
+		    A_R_cutoff = alloc_1d_double(num_pairs);
+                    LJ_dia     = alloc_1d_double(num_pairs);
+		    LJ_truncate= alloc_1d_int(num_pairs);
+		    LJ_powers  = alloc_1d_int(num_pairs);
 
 		    janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
 		    janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
@@ -1468,7 +1473,7 @@ void Gourmet_file_io(const char *infile
 		IMASS_RATIOS=alloc_1d_double(Component_Number);
 		MOI=alloc_1d_double(Component_Number);
 		IMOI=alloc_1d_double(Component_Number);
-		
+
 		RADII=alloc_1d_double(Component_Number);
 		SIGMAS=alloc_1d_double(Component_Number);
 		
@@ -1477,6 +1482,14 @@ void Gourmet_file_io(const char *infile
 		
 		Surface_charge = alloc_1d_double(Component_Number);
 		Surface_charge_e = alloc_1d_double(Component_Number);
+
+                int num_pairs = Component_Number*Component_Number;
+                EPSILON    = alloc_1d_double(num_pairs);
+                A_R_cutoff = alloc_1d_double(num_pairs);
+                LJ_dia     = alloc_1d_double(num_pairs);
+                LJ_truncate= alloc_1d_int(num_pairs);
+                LJ_powers  = alloc_1d_int(num_pairs);
+
 
 		janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
 		janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
@@ -1499,7 +1512,7 @@ void Gourmet_file_io(const char *infile
 		IMASS_RATIOS=alloc_1d_double(Component_Number);
 		MOI=alloc_1d_double(Component_Number);
 		IMOI=alloc_1d_double(Component_Number);
-		
+
 		RADII=alloc_1d_double(Component_Number);
 		SIGMAS=alloc_1d_double(Component_Number);
 		
@@ -1513,6 +1526,14 @@ void Gourmet_file_io(const char *infile
                 Rigid_Motions_omega = alloc_2d_int(Component_Number, DIM);
 		Rigid_Velocities = alloc_2d_double(Component_Number, DIM);
 		Rigid_Omegas = alloc_2d_double(Component_Number, DIM);
+
+                int num_pairs = Component_Number*Component_Number;
+                EPSILON    = alloc_1d_double(num_pairs);
+                A_R_cutoff = alloc_1d_double(num_pairs);
+                LJ_dia     = alloc_1d_double(num_pairs);
+                LJ_truncate= alloc_1d_int(num_pairs);
+                LJ_powers  = alloc_1d_int(num_pairs);
+
 
                 janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
                 janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
@@ -1955,7 +1976,7 @@ void Gourmet_file_io(const char *infile
 	  SIGMAS[i] = dmy_SIGMA;
 	}
     }
-    
+
     {
       Location target("polydisperse");
       if(ufin->seek(target)){
@@ -2012,28 +2033,46 @@ void Gourmet_file_io(const char *infile
     }
 
     {
-      ufin->get("EPSILON",EPSILON);
-      ufout->put("EPSILON",EPSILON);
-      ufres->put("EPSILON",EPSILON);
+      int dmy_powers;
+      double dmy_epsilon;
       string str;
+      ufin->get("EPSILON",dmy_epsilon);
+      ufout->put("EPSILON",dmy_epsilon);
+      ufres->put("EPSILON",dmy_epsilon);
+      if(dmy_epsilon < 0.0){
+        fprintf(stderr, "invalide EPSILON\n");
+        exit_job(EXIT_FAILURE);
+      }
+
       ufin->get("LJ_powers",str);
+      ufout->put("LJ_powers",str);  
+      ufres->put("LJ_powers",str);  
       if(str == "12:6"){
-	LJ_powers = 0;
+	dmy_powers = 0;
       }else if(str == "24:12"){
-	LJ_powers = 1;
+	dmy_powers = 1;
       }else if(str == "36:18"){
-	LJ_powers = 2;
-		} else if (str == "macro_vdw") {
-			LJ_powers = 3;
+	dmy_powers = 2;
       }else {
 	fprintf(stderr, "invalid LJ_powers\n"); 
 	exit_job(EXIT_FAILURE);
       }
-      ufout->put("LJ_powers",str);  
-      ufres->put("LJ_powers",str);
-    }
+      
     
-    //  printf("%d\n",LJ_powers);
+      for(int i = 0; i < Component_Number; i++){
+	int im, im2; 
+	im = i*Component_Number + i;
+	EPSILON[im]   = dmy_epsilon;
+	LJ_powers[im] = dmy_powers;
+	for(int j = i+1; j < Component_Number; j++){
+	  im = i*Component_Number + j;
+	  im2= j*Component_Number + i;
+	  EPSILON[im]  = EPSILON[im2]  = dmy_epsilon;
+	  LJ_powers[im]= LJ_powers[im2]= dmy_powers;
+	}
+      }
+      
+    }
     {
 	int np[DIM];
 	Location target("mesh");
@@ -2101,40 +2140,113 @@ void Gourmet_file_io(const char *infile
 	    }
 	}
 
+	{ // Set default LJ truncation
+	  int dmy_truncate;
 	ufin->get(target.sub("LJ_truncate"),str);
 	ufout->put(target.sub("LJ_truncate"),str);
 	ufres->put(target.sub("LJ_truncate"),str);
 	if(str == "ON"){
-	    LJ_truncate = 1;
+	    dmy_truncate = 1;
 	}else if(str == "OFF"){
-	    LJ_truncate = 0;
+	    dmy_truncate = 0;
 	}else if(str == "NONE"){
-	    LJ_truncate = -1;
+	    dmy_truncate = -1;
 	}else{
 	    fprintf(stderr, "invalid LJ_truncate\n"); 
 	    exit_job(EXIT_FAILURE);
 	}
-	if(LJ_truncate > 0){
-	    // A_R_cutoff = pow(2.0,1./6.); //Lennard-Jones minimum;
-	    if(LJ_powers == 0){
-		A_R_cutoff = pow(2.,1./6.);
+	  for(int i = 0; i < Component_Number; i++){
+	    int im, im2;
+	    im = i*Component_Number + i;
+	    LJ_truncate[im]= dmy_truncate;
+	    for(int j = i+1; j < Component_Number; j++){
+	      im = i*Component_Number + j;
+	      im2= j*Component_Number + i;
+	      LJ_truncate[im]= LJ_truncate[im2]= dmy_truncate;
+	    }
+	  }
 	    }	
-	    if(LJ_powers == 1){
-		A_R_cutoff = pow(2.,1./12.);
+
+        {//set specific LJ parameters for given species pair interactions
+	  if(ufin->get(target.sub("LJ_params"), str)){
+	    ufout->put(target.sub("LJ_params"), str);
+	    ufres->put(target.sub("LJ_params"), str);
+	    if(str == "LJ_spec"){
+	      Location target_lj = Location(target.sub("LJ_spec.LJ_ij[]"));
+
+              int spec_i, spec_j, truncate_ij, powers_ij, pair_id, pair_id2;
+              double epsilon_ij;
+              string truncate_str, powers_str;
+	      int N_PAIRS = ufin->size(target_lj);
+              bool invalid_ij = false;
+              for(int npair = 0; npair < N_PAIRS && Component_Number > 0; npair++){
+                target_lj.next();
+
+                ufin->get(target_lj.sub("spec_i"), spec_i);
+                ufout->put(target_lj.sub("spec_i"), spec_i);
+                ufres->put(target_lj.sub("spec_i"), spec_i);
+
+                ufin->get(target_lj.sub("spec_j"), spec_j);
+                ufout->put(target_lj.sub("spec_j"), spec_j);
+                ufres->put(target_lj.sub("spec_j"), spec_j);
+
+                ufin->get(target_lj.sub("epsilon"), epsilon_ij);
+                ufout->put(target_lj.sub("epsilon"), epsilon_ij);
+                ufres->put(target_lj.sub("epsilon"), epsilon_ij);
+
+                ufin->get(target_lj.sub("powers"), powers_str);
+                ufout->put(target_lj.sub("powers"), powers_str);
+                ufres->put(target_lj.sub("powers"), powers_str);
+
+                ufin->get(target_lj.sub("truncate"), truncate_str);
+                ufout->put(target_lj.sub("truncate"), truncate_str);
+                ufres->put(target_lj.sub("truncate"), truncate_str);
+
+                //validate input
+                if(spec_i < 0 || spec_j < 0 || spec_i >= Component_Number || spec_j >= Component_Number){
+                  fprintf(stderr, "# Error: invalid particle species in LJ_spec:\n");
+                  invalid_ij = true;
 	    }
-	    if(LJ_powers == 2){
-		A_R_cutoff = pow(2.,1./18.);
+                if(epsilon_ij < 0.0){
+                  fprintf(stderr, "# Error: invalid epsilon in LJ_spec:\n");
+                  invalid_ij = true;
 	    }
-			if (LJ_powers == 3) {
-				A_R_cutoff = 1.0;
+                if(powers_str == "12:6"){
+                  powers_ij = 0;
+                }else if(powers_str == "24:12"){
+                  powers_ij = 1;
+                }else if(powers_str == "36:18"){
+                  powers_ij = 2;
+                }else{
+                  fprintf(stderr, "# Error: invalid powers in LJ_spec:\n");
+                  invalid_ij = true;
 			}
-	}else if(LJ_truncate == 0){
-	    const double max_A_R_cutoff = 2.5;
-	    A_R_cutoff = MIN(Nmin*DX*.5/SIGMA, max_A_R_cutoff);
+
+                if(truncate_str == "ON"){
+                  truncate_ij = 1;
+                }else if(truncate_str == "OFF"){
+                  truncate_ij = 0;
+                }else if(truncate_str == "NONE"){
+                  truncate_ij = -1;
 	}else{
-	    A_R_cutoff = 0.;
+                  invalid_ij = true;
+                }
+                if(invalid_ij){
+                  fprintf(stderr, "#        spec_i=%d spec_j=%d epsilon=%.3f powers=%s truncate=%s\n", 
+                          spec_i, spec_j, epsilon_ij, powers_str.c_str(), truncate_str.c_str());
+                  exit_job(EXIT_FAILURE);
+                }
+
+                //reset i-j interaction parameters
+                pair_id = spec_i*Component_Number + spec_j;
+                pair_id2 = spec_j*Component_Number + spec_i;
+                EPSILON[pair_id]    = EPSILON[pair_id2]    = epsilon_ij;
+                LJ_powers[pair_id]  = LJ_powers[pair_id2]  = powers_ij;
+                LJ_truncate[pair_id]= LJ_truncate[pair_id2]= truncate_ij;
+              }
+	    }
+	  }
 	}
-	fprintf(stderr, "# A_R_cutoff %f\n", A_R_cutoff);
 	
 	{
             target.down("INIT_distribution");

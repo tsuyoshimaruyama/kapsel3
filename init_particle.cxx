@@ -9,7 +9,66 @@
 
 #include "init_particle.h"
 
+inline void Init_LJ_parameters(){
+  
+  {
+    double dmy_vf = (double)Particle_Number * 4./3.*M_PI * Ivolume;
+    VF_LJ = 0.0;
+    
+    double dmy_pow;
+    //R_cutoff = A_R_cutoff * LJ_dia;
+    if((SW_EQ == Shear_Navier_Stokes ) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
+      for(int pair_id = 0; pair_id < Component_Number*Component_Number; pair_id++){
+        dmy_pow = LJ_truncation(LJ_powers[pair_id], 1); 
+        double dmy_sigma = (SIGMA+XI)/dmy_pow;
+        if(dmy_sigma < SIGMA){
+          LJ_dia[pair_id] = dmy_sigma;
+          VF_LJ = MAX(VF_LJ, dmy_vf*POW3(dmy_sigma*dmy_pow*0.5));
+        }else{
+          LJ_dia[pair_id] = SIGMA;
+          VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA*0.5));
+        }
+      }
+    }else { //!Shear
+      for(int pair_id = 0; pair_id < Component_Number*Component_Number; pair_id++){
+        LJ_dia[pair_id] = SIGMA;
+        VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA*0.5));
+      }
+    }
+  }
+
+  {
+    for(int i = 0; i < Component_Number; i++){
+      int im, im2;
+      im = i*Component_Number + i;
+      A_R_cutoff[im] = LJ_truncation(LJ_powers[im], LJ_truncate[im]);
+      for(int j = 0; j < Component_Number; j++){
+        im = i*Component_Number + j;
+        im2= j*Component_Number + i;
+        A_R_cutoff[im] = LJ_truncation(LJ_powers[im], LJ_truncate[im]);
+        A_R_cutoff[im2]= LJ_truncation(LJ_powers[im2], LJ_truncate[im2]);
+      }
+    }
+  }
+  {
+    for(int i = 0; i < Component_Number; i++){
+      for(int j = 0; j < Component_Number; j++){
+        int im = i*Component_Number + j;
+        int im2= j*Component_Number + i;
+        assert(LJ_truncate[im] == LJ_truncate[im2]);
+        assert(LJ_powers[im]   == LJ_powers[im2]);
+        assert(LJ_dia[im] == LJ_dia[im2]);
+        assert(A_R_cutoff[im] == A_R_cutoff[im2]);
+        assert(EPSILON[im] == EPSILON[im2]);
+      }
+    }
+  }
+
+
+}
+
 void Init_Particle(Particle *p){
+  Init_LJ_parameters();
   Particle_domain(Phi, NP_domain, Sekibun_cell);
 
 	// particle properties, velocities, forces, etc.
@@ -184,18 +243,14 @@ void Init_Particle(Particle *p){
 	    p[n].torque_r_previous[d] = 0.0;
 	  }
 	}
-	  const double save_A_R_cutoff = A_R_cutoff;
+
 	  {
-		if(LJ_powers == 0){
-	    A_R_cutoff = pow(2.,1./6.);
-	    }	
-		if(LJ_powers == 1){
-	    A_R_cutoff = pow(2.,1./12.);
-        fprintf(stderr,"# A_R_cutoff %f\n", A_R_cutoff);
-		}
-		if(LJ_powers == 2){
-	    A_R_cutoff = pow(2.,1./18.);
-        fprintf(stderr,"# A_R_cutoff %f\n", A_R_cutoff); 
+        int num_pairs = Component_Number*Component_Number;
+        double* save_A_R_cutoff = alloc_1d_double(num_pairs);
+        for(int i = 0; i < num_pairs; i++){
+          save_A_R_cutoff[i] = A_R_cutoff[i];
+          //assume truncated potential with same LJ powers
+          A_R_cutoff[i] = LJ_truncation(LJ_powers[i], 1);
 		}
 				if (LJ_powers == 3) {
 					A_R_cutoff = 1.0;
@@ -228,7 +283,9 @@ void Init_Particle(Particle *p){
 		   ||
 		   miny < ymin || maxy > ymax
 		   );
-	    A_R_cutoff = save_A_R_cutoff;
+
+        for(int i = 0; i < num_pairs; i++) A_R_cutoff[i] = save_A_R_cutoff[i];
+        free_1d_double(save_A_R_cutoff);
 	  }
 	}
     if(DISTRIBUTION == random_walk){
@@ -246,15 +303,20 @@ void Init_Particle(Particle *p){
 	}
       }
       {
-	const double save_A_R_cutoff = A_R_cutoff;
-	{
-	  A_R_cutoff = pow(2.,1./6.);
+        int num_pairs = Component_Number*Component_Number;
+	double* save_A_R_cutoff = alloc_1d_double(num_pairs);
+        for(int i = 0; i < num_pairs; i++) {
+          save_A_R_cutoff[i] = A_R_cutoff[i];
+          //assume truncated 12:6 potential
+          A_R_cutoff[i] = LJ_truncation(0, 1); 
+        }
 	  for(int n=0;n<N_iteration_init_distribution;n++){
 	    Random_Walk(p);
 	    Steepest_descent(p);
 	  }
-	  A_R_cutoff = save_A_R_cutoff;
-	}
+
+        for(int i = 0; i < num_pairs; i++) A_R_cutoff[i] = save_A_R_cutoff[i];
+        free_1d_double(save_A_R_cutoff);
       }
     }
   }else if(DISTRIBUTION == user_specify){
@@ -704,11 +766,13 @@ void Show_parameter(Particle *p){
 
     {
       double mass_min = DBL_MAX;
+      double epsilon_max = 0.0;
       for(int i=0; i<Component_Number; i++){
 	mass_min = MIN(mass_min, MASS[i]);
+        epsilon_max= MAX(epsilon_max, EPSILON[i]);
       }
-      T_LJ = sqrt(mass_min/EPSILON)*SIGMA;
-      fprintf(fp,"#  = %g (LJ time[ (M_{min}/EPSILON)^{0.5} SIGMA])\n"
+      T_LJ = (epsilon_max > 0.0 ? sqrt(mass_min/epsilon_max)*SIGMA : DBL_MAX);
+      fprintf(fp,"#  = %g (LJ time[ (M_{min}/EPSILON_{max})^{0.5} SIGMA])\n"
 	      ,DT/T_LJ);
 			if (SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
 				|| SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
@@ -718,6 +782,137 @@ void Show_parameter(Particle *p){
 		,Srate_depend_LJ_cap * DT/mass_min);
       }
     }
+    {
+      fprintf(fp, "#### Lennard-Jones Parameters\n");
+      {
+        const char* lj_rep = "repulsive";
+        const char* lj_att = "attractive";
+        const char* lj_off = "no force";
+        
+        fprintf(fp, "# Type: \n");
+        for(int i = 0; i < Component_Number; i++){
+          fprintf(fp, "# ");
+          for(int j = 0; j < Component_Number; j++){
+            int im = i * Component_Number + j;
+            if(LJ_truncate[im] > 0){
+              fprintf(fp, "%12s  (%2d)\t", lj_rep, LJ_truncate[im]);
+            }else if(LJ_truncate[im] == 0){
+              fprintf(fp, "%12s  (%2d)\t", lj_att, LJ_truncate[im]);
+            }else if(LJ_truncate[im] == -1){
+              fprintf(fp, "%12s  (%2d)\t", lj_off, LJ_truncate[im]);
+            }else{
+              fprintf(fp, "invalid lj truncation\n");
+              exit_job(EXIT_FAILURE);
+            }
+          }
+          fprintf(fp, "\n");
+        }
+        
+        fprintf(fp, "# Powers: \n");
+        const char* dmy_powers[] = {"6-12", "24-12", "18-36"};
+        for(int i = 0; i < Component_Number; i++){
+          fprintf(fp, "# ");
+          for(int j = 0; j < Component_Number; j++){
+            int im = i * Component_Number + j;
+            if(LJ_truncate[im] >= 0){
+              fprintf(fp, "%12s  (%2d)\t", dmy_powers[LJ_powers[im]], LJ_powers[im]);
+            }else{
+              fprintf(fp, "%12s  (%2d)\t", lj_off, LJ_powers[im]);
+            }
+          }
+          fprintf(fp, "\n");
+        }
+        
+        fprintf(fp, "# Sigma / particle diameter :\n");
+        for(int i = 0; i < Component_Number; i++){
+          fprintf(fp, "# ");
+          for(int j = 0; j < Component_Number; j++){
+            int im = i*Component_Number + j;
+            if(LJ_truncate[im] >=0){
+              fprintf(fp, "%18.5f\t", LJ_dia[im]/SIGMA);
+            }else{
+              fprintf(fp, "%18s\t", lj_off);
+            }
+          }
+          fprintf(fp, "\n");
+        }
+
+        fprintf(fp, "# Cutoff / particle diameter :\n");
+        for(int i = 0; i < Component_Number; i++){
+          fprintf(fp, "# ");
+          for(int j = 0; j < Component_Number; j++){
+            int im = i*Component_Number + j;
+            if(LJ_truncate[im] >= 0){
+              fprintf(fp, "%18.5f\t", A_R_cutoff[im]);
+            }else{
+              fprintf(fp, "%18s\t", lj_off);
+            }
+          }
+          fprintf(fp, "\n");
+        }
+        
+        fprintf(fp, "# Epsilon :\n");
+        for(int i = 0; i < Component_Number; i++){
+          fprintf(fp, "# ");
+          for(int j = 0; j < Component_Number; j++){
+            int im = i*Component_Number + j;
+            if(LJ_truncate[im] >= 0){
+              fprintf(fp, "%18.5f\t", EPSILON[i*Component_Number+j]);
+            }else if(LJ_truncate[im] == -1){
+              fprintf(fp, "%18s\t", lj_off);
+            }
+          }
+          fprintf(fp, "\n");
+        }
+        if((SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards) &&
+           Srate_depend_LJ_cap < DBL_MAX){
+          fprintf(fp, "# Cap (shear) = %10.5g\n", Srate_depend_LJ_cap);
+        }
+        
+        {
+          FILE* FLJ;
+          fprintf(fp, "# Writing force data to F_LJ.dat\n");
+          FLJ = filecheckopen("F_LJ.dat", "w");
+          fprintf(FLJ, 
+                  "# Particle of species i is at the origin, particle of species j lies along positive x axis.\n"
+                  "# This file contains F_ji, the force on j due to i, as a function of x.\n"
+                  "# Postive (Negative) values indicate a repulsive (attractive) force.\n"
+                  "# Distances are scaled by the hard-core particle diameter SIGMA=2*RADIUS.\n"
+                  "# \n"
+                  "# x/SIGMA\t"
+                  );
+          int count = 0;
+          for(int i = 0; i < Component_Number; i++){
+            for(int j = i; j < Component_Number; j++){
+              int im = i*Component_Number + j;
+              fprintf(FLJ, " %3d:%2d-%2d\t", count, i, j);
+              count++;
+            }
+          }
+          fprintf(FLJ, "\n");
+          
+          double rij_max = (double)Nmin*DX*0.5;
+          double rij_min = SIGMA*0.99;
+          double drij    = SIGMA*0.0025;
+          double rij, fij;
+          int    max_points = (int)((MIN(rij_max, 2.5*SIGMA) - rij_min)/drij);
+          for(int l = 0; l < max_points; l++){
+            rij = rij_min + (double)(l)*drij;
+            fprintf(FLJ, "%9.5g\t", rij/SIGMA);
+            for(int i = 0; i < Component_Number; i++){
+              for(int j = i; j < Component_Number; j++){
+                int im = i*Component_Number + j;
+                fij = ( rij < A_R_cutoff[im]*LJ_dia[im] ? 
+                        MIN(DBL_MAX/rij, Lennard_Jones_f(rij, LJ_dia[im], EPSILON[im], LJ_powers[im])) : 0.0);
+                fprintf(FLJ, " %9.5g\t", fij*rij);
+              }
+            }
+            fprintf(FLJ, "\n");
+          }
+          fclose(FLJ);
+        }
+      }
+      fprintf(fp, "####\n");
 
     int np_domain_max=0;
     for(int comp = 0 ; comp < Component_Number ; comp++){
@@ -752,11 +947,6 @@ void Show_parameter(Particle *p){
 	    }
 	}
     }
-    /*for (int n = 0; n < Particle_Number; n++){
-	for (int d = 0; d < DIM; d++) {
-	    p[n].x_previous[d] = p[n].x[d];
-	}
-    }*/
 }
 void Init_Chain(Particle *p){
 

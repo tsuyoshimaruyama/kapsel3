@@ -13,6 +13,7 @@
 #include <assert.h> 
 #include "macro.h"
 #include "variable.h"
+#include "interaction.h"
 #include "md_force.h"
 #include "avs_output.h"
 #include "input.h"

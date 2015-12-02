@@ -123,6 +123,12 @@ time_increment:{"auto",{1.00000000000000}{1.00000000000000e-001}}
 switch:{
  "ON",
  "ON",
+ "LJ_global"
+ {
+  [
+   {0, 0, 1.2, "12:6", "ON"} //spec_i, spec_j, epsilon, powers, truncate
+  ]
+ }
  {
   "uniform_random",
   {100}

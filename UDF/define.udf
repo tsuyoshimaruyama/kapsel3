@@ -16,6 +16,10 @@
 class Vector3d:{x: float, y: float, z: float}
 class Quaternion:{q0: float, q1: float, q2: float, q3: float}
 class Particle:{R:Vector3d,  v:Vector3d, q:Quaternion, omega:Vector3d}
+class LJ_param:{spec_i:int, spec_j:int, 
+                epsilon:double, 
+		powers:select{'12:6','24:12','36:18'},
+		truncate:select{'ON', 'OFF'}}
 class SlabSelection:{start: int, count: int, stride: int}
 class ParticleRadius:{spec: int, A:double}
 
@@ -169,7 +173,6 @@ gravity: {
 
 
 EPSILON: double "Lennard-Jones depth"
-
 LJ_powers: select {'12:6','24:12','36:18'} "set of power exponents of LJ potential" 
 
 mesh: {
@@ -191,6 +194,10 @@ time_increment: {
 switch: {
    ROTATION: select {'ON','OFF'} "OFF: not solve rotation, ON: solve rotation"
    LJ_truncate: select {'ON','OFF','NONE'} "OFF:normal LJ, ON:WCA, NONE: no-intaction at all"
+   LJ_params:select {'LJ_global', 'LJ_spec'} "specify pair parameters individually"
+   LJ_spec:{ 
+    LJ_ij[]:LJ_param 
+   } "Overwrite default epsilon/truncation parameters for individual pairs"
    INIT_distribution: {
       type: select {'uniform_random','random_walk','FCC','BCC','user_specify'} 
 	"uniform_random:distributed uniformly in box, random_walk:distributed uniformly in box, FCC:distributed on FCC latice, BCC:distributed on BCC latice, user_specify:configuration and velocity specified by user"

@@ -146,6 +146,37 @@ inline double Distance(const double *x1
     return dmy;
 }
 
+/*!
+  \brief Compute cutoff distance, normalized by the LJ diameter,
+  depending on the value of the powers and the type of truncation
+  scheme
+  \param[in] dmy_powers if 0 use "6:12", if 1 use "12:24", if 2 use "18:36"
+  \param[in] dmy_truncate if greater than 0 truncate (repulsive), if 0
+  do not truncate (attractive), and if less than zero truncat all (no interaction)
+ */
+inline double LJ_truncation(const int &dmy_powers, const int &dmy_truncate){
+  double dmy_cutoff = 0.0;
+  if(dmy_truncate > 0){
+    // A_R_cutoff = pow(2.0,1./6.); //Lennard-Jones minimum;
+    if(dmy_powers == 0){
+      dmy_cutoff = pow(2.,1./6.);
+    }else if(dmy_powers == 1){
+      dmy_cutoff = pow(2.,1./12.);
+    }else if(dmy_powers == 2){
+      dmy_cutoff = pow(2.,1./18.);
+    }else{
+      fprintf(stderr, "Error: invalid LJ_powers\n");
+      exit_job(EXIT_FAILURE);
+    }
+  }else if(dmy_truncate == 0){
+    const double max_cutoff = 2.5;
+    dmy_cutoff = MIN(Nmin*DX*.5/SIGMA, max_cutoff);
+  }else{
+    dmy_cutoff = 0.;
+  }
+  return dmy_cutoff;
+}
+
 inline double Distance_OBL(const double *x1, const double *x2){
   double dmy = 0.0;
   double dmy_x12[DIM];
@@ -171,26 +202,26 @@ inline double Distance_OBL(const double *x1, const double *x2){
   This function returns the quantity in square brackets.
   \param[in] x distance between particles
   \param[in] sigma LJ diameter
+  \param[in] epsilon LJ well depth
+  \param[in] LJ powers
  */
-inline double Lennard_Jones_f(const double &x, const double sigma){
-  //    printf("%d\n",LJ_powers);
-  // ! x== 0.0 の処理を省略
+inline double Lennard_Jones_f(const double &x, const double &sigma, const double &epsilon, int lj_powers){
   double answer=0.0;
   {
-    if(LJ_powers==0){//12:6
-      static const double LJ_coeff1= 24. * EPSILON;
+    if(lj_powers==0){//12:6
+      static const double LJ_coeff1= 24. * epsilon;
       double dmy = sigma/x;
       dmy = SQ(dmy) * SQ(dmy) * SQ(dmy);
       answer = LJ_coeff1 / SQ(x) * ( 2.0 * SQ(dmy) - dmy );
     }
-    if(LJ_powers==1){//24:12
-      static const double LJ_coeff1= 48. * EPSILON;
+    if(lj_powers==1){//24:12
+      static const double LJ_coeff1= 48. * epsilon;
       double dmy = sigma/x;
       dmy = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
       answer = LJ_coeff1 / SQ(x) * ( 2.0 * SQ(dmy) - dmy );
     }
-    if(LJ_powers==2){//36:18
-      static const double LJ_coeff1= 72. * EPSILON;
+    if(lj_powers==2){//36:18
+      static const double LJ_coeff1= 72. * epsilon;
       double dmy = sigma/x;
       dmy = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
       answer = LJ_coeff1 / SQ(x) * ( 2.0 * SQ(dmy) - dmy );
@@ -204,8 +235,8 @@ inline double Lennard_Jones_f(const double &x, const double sigma){
 			static const double LJ_coeff_I = EPSILON / (24.*SQ(sigma)*SQ(LJ_coeff_N - 1.0)*(LJ_coeff_N - 1.0));
 			static const double LJ_coeff_J = EPSILON / (24.*sigma*SQ(LJ_coeff_N - 1.0)*(LJ_coeff_N - 1.0));
 			answer = -LJ_coeff_I + LJ_coeff_J / x;
-		}
-	}
+  }
+}
   }
   return answer;
 }

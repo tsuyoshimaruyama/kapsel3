@@ -13,21 +13,23 @@ double *Hydro_force_new;
 
 #define Cell_length 16
 
-void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
+double Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 						  ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
 						  ,const double cap
 						  ){
   // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
-	const double pair_cutoff = A_R_cutoff * LJ_dia;
-  double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
-  double r_ij = 0.0;
-  double shear_stress[2] = {0.0, 0.0};
+  double LJ_cutoff;
+  double r_ij_vec[DIM];
+  double r_ij;
+  int rigid_pair;
+  double shear_stress[2]={0.0, 0.0};
   double rigid_shear_stress[2] = {0.0, 0.0};
   
   // List Constructor
   int i,j;
+  int pair_id;
   int *lscl;
   lscl = alloc_1d_int(Particle_Number);
   int lc[DIM];
@@ -90,6 +92,8 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			      while (j != -1){
                                 if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
 				      distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
+					  pair_id = p[i].spec * Component_Number + p[j].spec;
+                      LJ_cutoff = A_R_cutoff[pair_id]*LJ_dia[pair_id];
 		    
 		    if (r_ij < pair_cutoff){
 											double dmy_r = 0.0;
@@ -193,7 +197,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 		double sum_torqueGrs_0 = 0.0;
 		double sum_torqueGrs_1 = 0.0;
 		double sum_torqueGrs_2 = 0.0;
-
+    
 #pragma omp parallel for reduction(+: ss0, rs0, sum_dmy_fn_0, sum_dmy_fn_1, sum_dmy_fn_2, sum_torqueGrs_0, sum_torqueGrs_1, sum_torqueGrs_2)
     for(int m=n+1; m < Particle_Number ; m++){
 			Particle *p_m = &p[m];
@@ -220,10 +224,14 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 	  //stress
 					ss0 += (dmy_fn[0] * r_ij_vec[1]);
 
+    int rigid_pair;
+    int pair_id;
 	  // rigid body forces & torques
 	  if(SW_PT == rigid){
 	    int rigidID_m = Particle_RigidID[m];
 
+		Min_rij = MIN(r_ij, Min_rij);
+	    }
 	    for(int d = 0; d < DIM; d++){
 	      forceGrs[rigidID_m][d] -= dmy_fn[d];
 	    }
@@ -243,10 +251,10 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 	    double R_IJ;
 	    distance0_func(xGs[rigidID_n], xGs[rigidID_m], R_IJ, R_IJ_vec);
 						rs0 += (dmy_fn[0] * R_IJ_vec[1]);
-					}
 	  }
 	}
       }
+    }
 
 		if (SW_PT == rigid) {
 			forceGrs[rigidID_n][0] += sum_dmy_fn_0;
@@ -256,7 +264,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 			torqueGrs[rigidID_n][0] += sum_torqueGrs_0;
 			torqueGrs[rigidID_n][1] += sum_torqueGrs_1;
 			torqueGrs[rigidID_n][2] += sum_torqueGrs_2;
-    }
+  }
 		(*p_n).fr[0] += sum_dmy_fn_0;
 		(*p_n).fr[1] += sum_dmy_fn_1;
 		(*p_n).fr[2] += sum_dmy_fn_2;
@@ -285,7 +293,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 
 void Add_f_gravity(Particle *p){
   static const double Gravity_on_fluid 
-    = G*RHO * 4./3.*M_PI * SQ(RADIUS)* RADIUS;
+    = G*RHO * 4./3.*M_PI * POW3(RADIUS);
 	// Particle 変数の f に 
   // !! += 
 	//で足す. f の初期値 が正しいと仮定している!!
