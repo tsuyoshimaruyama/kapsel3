@@ -454,7 +454,10 @@ inline void Set_global_parameters(void){
     {
 	double radius_dmy = dummy_pow*LJ_dia*.5;
 	Ivolume = 1./(LX * LY * LZ);
-  VF = (double)Particle_Number * 4./3.*M_PI * Ivolume * POW3(RADIUS);
+	VF = 0.0;
+	for(int ci = 0 ; ci < Component_Number ; ci ++){
+	  VF += (double)Particle_Numbers[ci] * 4./3.*M_PI * Ivolume * POW3(RADII[ci]);
+	}
     
     if(SW_JANUS_SLIP){
       for(int i = 0; i < Component_Number; i++){
