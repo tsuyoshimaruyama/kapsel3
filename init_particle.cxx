@@ -20,19 +20,19 @@ inline void Init_LJ_parameters(){
     if((SW_EQ == Shear_Navier_Stokes ) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards)){
       for(int pair_id = 0; pair_id < Component_Number*Component_Number; pair_id++){
         dmy_pow = LJ_truncation(LJ_powers[pair_id], 1); 
-        double dmy_sigma = (SIGMA+XI)/dmy_pow;
-        if(dmy_sigma < SIGMA){
+        double dmy_sigma = (SIGMA[pair_id]+XI)/dmy_pow;
+        if(dmy_sigma < SIGMA[pair_id]){
           LJ_dia[pair_id] = dmy_sigma;
           VF_LJ = MAX(VF_LJ, dmy_vf*POW3(dmy_sigma*dmy_pow*0.5));
         }else{
-          LJ_dia[pair_id] = SIGMA;
-          VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA*0.5));
+          LJ_dia[pair_id] = SIGMA[pair_id];
+          VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA[pair_id]*0.5));
         }
       }
     }else { //!Shear
       for(int pair_id = 0; pair_id < Component_Number*Component_Number; pair_id++){
-        LJ_dia[pair_id] = SIGMA;
-        VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA*0.5));
+        LJ_dia[pair_id] = SIGMA[pair_id];
+        VF_LJ = MAX(VF_LJ, dmy_vf*POW3(SIGMA[pair_id]*0.5));
       }
     }
   }
@@ -112,7 +112,6 @@ void Init_Particle(Particle *p){
   }else if(DISTRIBUTION == uniform_random){ // position,  method1 
     fprintf(stderr, "#init_particle: uniformly distributed: ");
     fprintf(stderr,"(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
-    const double overlap_length = SIGMA * 1.05;
     //const double overlap_length = SIGMA * pow(2.,1./6.);
     for(int i=0; i<Particle_Number; i++){
       int overlap = 1;
@@ -122,6 +121,8 @@ void Init_Particle(Particle *p){
 	}
 	int j;
 	for(j=0; j< i; j++){
+	  int pair_id = p[i].spec * Component_Number + p[j].spec;
+	  double overlap_length = SIGMA[pair_id] * 1.05
 	  if(Distance(p[i].x, p[j].x)<= overlap_length){ // if overlap
 	    break;
 	  }
@@ -203,6 +204,11 @@ void Init_Particle(Particle *p){
       ///////////////////////////////////
       double lattice[DIM];
       double origin[DIM];
+      double SIGMAMAX;
+      SIGMAMAX = 0.0;
+      for(int pairi = 0 ; pairi < Component_Number * Component_Number ; pairi ++){
+	SIGMAMAX = MAX(SIGMAMAX,SIGMA[pairi]);
+      }
       for(int d=0;d<DIM;d++){
 	lattice[d] = l_particle[d]/nn[d];
 	if(!SW_just_packed && d==2){
@@ -210,10 +216,10 @@ void Init_Particle(Particle *p){
 	}
 	origin[d] = lattice[d]*.25;
 	//origin[d] = RADIUS;
-	if(lattice[d]< SIGMA*sqrt(2.)){
+	if(lattice[d]< SIGMAMAX*sqrt(2.)){
 	fprintf(stderr, "beyond closed packing in x%d-direction. lattice[%d]=%g < %g\n"
 		,d
-		,d,lattice[d],SIGMA*sqrt(2.));
+		  ,d,lattice[d],SIGMAMAX*sqrt(2.));
 	fprintf(stderr, "set the value of A <= %g\n"
 		,lattice[d]/sqrt(2.)*.5/DX);
 	fprintf(stderr, "(closely packed VF = %g) < (VF=%g)\n"
@@ -592,7 +598,7 @@ void Show_parameter(Particle *p){
     fprintf(fp,"#(number of particles) = %d\n", Particle_Number);
     fprintf(fp,"#(xi) = %g\n",XI);    
     for(int i = 0; i < Component_Number; i++){
-      fprintf(fp, "# spec = %d radius = %.4f sigma = %.4f\n", i, RADII[i], SIGMAS[i]);
+      fprintf(fp, "# spec = %d radius = %.4f\n", i, RADII[i]);
     }
 
   }
@@ -767,11 +773,13 @@ void Show_parameter(Particle *p){
     {
       double mass_min = DBL_MAX;
       double epsilon_max = 0.0;
+      double SIGMAMIN = DBL_MAX;
       for(int i=0; i<Component_Number; i++){
 	mass_min = MIN(mass_min, MASS[i]);
+	SIGMAMIN = MIN(SIGMAMIN,SIGMA[i]);
         epsilon_max= MAX(epsilon_max, EPSILON[i]);
       }
-      T_LJ = (epsilon_max > 0.0 ? sqrt(mass_min/epsilon_max)*SIGMA : DBL_MAX);
+      T_LJ = (epsilon_max > 0.0 ? sqrt(mass_min/epsilon_max)*SIGMAMIN : DBL_MAX);
       fprintf(fp,"#  = %g (LJ time[ (M_{min}/EPSILON_{max})^{0.5} SIGMA])\n"
 	      ,DT/T_LJ);
 			if (SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
@@ -829,14 +837,14 @@ void Show_parameter(Particle *p){
           for(int j = 0; j < Component_Number; j++){
             int im = i*Component_Number + j;
             if(LJ_truncate[im] >=0){
-              fprintf(fp, "%18.5f\t", LJ_dia[im]/SIGMA);
+              fprintf(fp, "%18.5f\t", LJ_dia[im]/SIGMA[im]);
             }else{
               fprintf(fp, "%18s\t", lj_off);
             }
           }
           fprintf(fp, "\n");
         }
-
+        
         fprintf(fp, "# Cutoff / particle diameter :\n");
         for(int i = 0; i < Component_Number; i++){
           fprintf(fp, "# ");
@@ -892,16 +900,18 @@ void Show_parameter(Particle *p){
           fprintf(FLJ, "\n");
           
           double rij_max = (double)Nmin*DX*0.5;
-          double rij_min = SIGMA*0.99;
-          double drij    = SIGMA*0.0025;
-          double rij, fij;
-          int    max_points = (int)((MIN(rij_max, 2.5*SIGMA) - rij_min)/drij);
           for(int l = 0; l < max_points; l++){
-            rij = rij_min + (double)(l)*drij;
-            fprintf(FLJ, "%9.5g\t", rij/SIGMA);
+            //fprintf(FLJ, "%9.5g\t", rij/SIGMA);
             for(int i = 0; i < Component_Number; i++){
               for(int j = i; j < Component_Number; j++){
                 int im = i*Component_Number + j;
+		double rij_min = SIGMA[im]*0.99;
+		double drij    = SIGMA[im]*0.0025;
+		double rij, fij;
+		int    max_points = (int)((MIN(rij_max, 2.5*SIGMA[im]) - rij_min)/drij);
+		
+		rij = rij_min + (double)(l)*drij;
+           	
                 fij = ( rij < A_R_cutoff[im]*LJ_dia[im] ? 
                         MIN(DBL_MAX/rij, Lennard_Jones_f(rij, LJ_dia[im], EPSILON[im], LJ_powers[im])) : 0.0);
                 fprintf(FLJ, " %9.5g\t", fij*rij);
@@ -933,6 +943,11 @@ void Show_parameter(Particle *p){
    }
     fprintf(fp, "#\n");
   }
+	fprintf(stderr, "#\n# With patchy particles: \n");
+
+	for(int pairi=0 ; pairi< Component_Number*Component_Number ; pairi++){
+	  int ii = pairi / Component_Number;
+	  int jj = pairi % Component_Number;
       
 	if ((SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) && !Fixed_particle) {
 	for(int n = 0; n < Particle_Number ; n++){
@@ -948,12 +963,14 @@ void Show_parameter(Particle *p){
 	}
     }
 }
+
+
+  
 void Init_Chain(Particle *p){
 
     fprintf(stderr, "#init_particle: Chain distributed randomly ");
     fprintf(stderr,"(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
     
-    const double overlap_length =0.9*SIGMA;	  
      for(int d=0; d<DIM; d++){
        p[0].x[d]=HL_particle[d];
      }
@@ -963,7 +980,9 @@ void Init_Chain(Particle *p){
      for(int n=0; n<Particle_Number-1; n++){
       overlap=1;
        do{
-         double dmy0 = 0.96*SIGMA; 
+	int pair_id = p[n].spec * Component_Number + p[n+1].spec;
+	double overlap_length =0.9*SIGMA[pair_id];	  
+	double dmy0 = 0.96*SIGMA[pair_id]; 
 	     double dmy1 = RAx(PI2);
          double dmy2 = RAx(M_PI);
     
@@ -999,7 +1018,6 @@ void Init_Rigid(Particle *p){
 	
 	for(int d=0; d<1000; d++) dmy = RAx(PI2);
 	
-	double overlap_length = 0.9 * SIGMA;
 	
 	int rigidID = -1;
 	int m, n = 0, rn = 0;
@@ -1016,6 +1034,8 @@ void Init_Rigid(Particle *p){
 				for(int d=0; d<DIM; d++) p[n].x[d] = fmod(p[n].x[d] + L_particle[d], L_particle[d]);
 				fprintf(stderr, "debug0: p[%d]: (%f, %f, %f)\n", n, p[n].x[0], p[n].x[1], p[n].x[2]);
 				for(m=0; m<n; m++){
+	    int pair_id = p[m].spec * Component_Number + p[n].spec;
+	    double overlap_length = 0.9 * SIGMA[pair_id];
 					if(Distance(p[m].x, p[n].x) <= overlap_length){
 						fprintf(stderr, "debug0: p[%d] and p[%d] overlap...\n", m, n);
 						break;
@@ -1028,7 +1048,9 @@ void Init_Rigid(Particle *p){
 			}
 		} else if (rn == 1) {
 			while(1){	// set the 2-nd particle of a rigid
-				dmy0 = 0.96 * SIGMA;
+	  int pair_id = p[n].spec * Component_Number + p[n-1].spec;
+	  double overlap_length = 0.9 * SIGMA[pair_id];
+	  dmy0 = 0.96 * SIGMA[pair_id];
 				dmy1 = RAx(M_PI);
 				dmy2 = RAx(PI2);
 				p[n].x[0] = p[n-1].x[0] + dmy0*sin(dmy1)*cos(dmy2);
@@ -1075,6 +1097,9 @@ void Init_Rigid(Particle *p){
 				for(int d=0; d<DIM; d++) p[n].x[d] = fmod(p[n].x[d] + L_particle[d], L_particle[d]);
 				fprintf(stderr, "debug2: p[%d]: (%f, %f, %f)\n", n, p[n].x[0], p[n].x[1], p[n].x[2]);
 				for(m=0; m<n; m++){
+	    int pair_id = p[m].spec * Component_Number + p[n].spec;
+	    double overlap_length = 0.9 * SIGMA[pair_id];
+	    
 					if(Distance(p[m].x, p[n].x) <= overlap_length){
 						fprintf(stderr, "debug2: p[%d] and p[%d] overlap...\n", m, n);
 						n -= rn + 1;

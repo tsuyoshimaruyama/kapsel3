@@ -247,11 +247,11 @@ double WAVE_Y;
 double WAVE_Z;
 double KMAX2;
 //////
-double RADIUS;
+//double RADIUS;
 double dmy_RADIUS;
 double dmy_SIGMA;
 double* RADII;
-double* SIGMAS;
+//double* SIGMAS;
 
 double XI;
 double HXI;
@@ -260,7 +260,7 @@ double Ivolume;
 //////
 int MSTEP;
 ////// LJ PARAMETERS
-double SIGMA;
+double* SIGMA;
 double* EPSILON;
 double* A_R_cutoff;
 double* LJ_dia;
@@ -429,30 +429,6 @@ inline void Set_global_parameters(void){
     //////
     MSTEP= GTS * Num_snap;
     //////
-    double dummy_pow = 1.0;
-	if ((SW_EQ == Shear_Navier_Stokes) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) || (SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM)
-		|| (SW_EQ == Shear_NS_LE_CH_FDM)) {
-	if(LJ_powers == 0){
-	    dummy_pow = pow(2.,1./6.);
-	}	
-	if(LJ_powers == 1){
-	    dummy_pow = pow(2.,1./12.);
-	}
-	if(LJ_powers == 2){
-	    dummy_pow = pow(2.,1./18.);
-	}
-		if (LJ_powers == 3) {
-			dummy_pow = 1.0;
-		}
-	LJ_dia = MIN((SIGMA+XI)/dummy_pow, SIGMA);
-    }else {
-	LJ_dia = SIGMA;
-    }
-    fprintf(stderr, "# LJ_sigma = %10.6f (%10.6f)\n",
-	    LJ_dia, LJ_dia / SIGMA);
-    R_cutoff = A_R_cutoff * LJ_dia;
-    {
-	double radius_dmy = dummy_pow*LJ_dia*.5;
 	Ivolume = 1./(LX * LY * LZ);
 	VF = 0.0;
 	for(int ci = 0 ; ci < Component_Number ; ci ++){
@@ -509,6 +485,10 @@ void Gourmet_file_io(const char *infile
 	    exit_job(EXIT_FAILURE);
 	}
     }
+
+
+
+    // section_RESUMED
     if(!RESUMED){
 	//if(file_check(deffile)) ufout= new UDFManager(outfile,deffile,true);
 	if(file_check(deffile)) ufout= new UDFManager(outfile,deffile,false);
@@ -525,6 +505,9 @@ void Gourmet_file_io(const char *infile
     */
     // --------------------------------------------------------
 
+
+
+    //section_udf version
     {//check udf version
 		string code_version = "v3.3";
       fprintf(stderr, "# Kapsel: UDF %s\n", code_version.c_str());
@@ -549,6 +532,9 @@ void Gourmet_file_io(const char *infile
 	//ufres->put("resume.CONTINUE.Saved_Data.jikan.ts",last_ts);
     }
     
+
+
+    // section_select constitutive eq
     /////// select constitutive eq
     {
 	Location target("constitutive_eq");
@@ -1437,7 +1423,6 @@ void Gourmet_file_io(const char *infile
 		    IMOI=alloc_1d_double(Component_Number);
 
 		    RADII=alloc_1d_double(Component_Number);
-		    SIGMAS=alloc_1d_double(Component_Number);
 		    
 		    S_surfaces = alloc_1d_double(Component_Number);
 		    W_surfaces = alloc_1d_double(Component_Number);
@@ -1452,7 +1437,13 @@ void Gourmet_file_io(const char *infile
                     LJ_dia     = alloc_1d_double(num_pairs);
 		    LJ_truncate= alloc_1d_int(num_pairs);
 		    LJ_powers  = alloc_1d_int(num_pairs);
+	      SIGMA = alloc_1d_double(num_paris);
 
+	      PATCHY_POWER = alloc_1d_int(num_pairs);
+	      PATCHY_LAMBDA = alloc_1d_double(num_pairs);
+	      PATCHY_EPSILON = alloc_1d_double(num_pairs);
+	      PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
+	      
 		    janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
 		    janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
 		    janus_force = alloc_2d_double(Component_Number, DIM);
@@ -1478,7 +1469,6 @@ void Gourmet_file_io(const char *infile
 		IMOI=alloc_1d_double(Component_Number);
 
 		RADII=alloc_1d_double(Component_Number);
-		SIGMAS=alloc_1d_double(Component_Number);
 		
 		S_surfaces = alloc_1d_double(Component_Number);
 		W_surfaces = alloc_1d_double(Component_Number);
@@ -1492,7 +1482,12 @@ void Gourmet_file_io(const char *infile
                 LJ_dia     = alloc_1d_double(num_pairs);
                 LJ_truncate= alloc_1d_int(num_pairs);
                 LJ_powers  = alloc_1d_int(num_pairs);
+	    SIGMA = alloc_1d_double(num_pairs);
 
+	    PATCHY_POWER = alloc_1d_int(num_pairs);
+	    PATCHY_LAMBDA = alloc_1d_double(num_pairs);
+	    PATCHY_EPSILON = alloc_1d_double(num_pairs);
+	    PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
 
 		janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
 		janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
@@ -1517,7 +1512,6 @@ void Gourmet_file_io(const char *infile
 		IMOI=alloc_1d_double(Component_Number);
 
 		RADII=alloc_1d_double(Component_Number);
-		SIGMAS=alloc_1d_double(Component_Number);
 		
 		S_surfaces = alloc_1d_double(Component_Number);
 		W_surfaces = alloc_1d_double(Component_Number);
@@ -1536,7 +1530,12 @@ void Gourmet_file_io(const char *infile
                 LJ_dia     = alloc_1d_double(num_pairs);
                 LJ_truncate= alloc_1d_int(num_pairs);
                 LJ_powers  = alloc_1d_int(num_pairs);
+	    SIGMA = alloc_1d_double(num_pairs);
 
+	    PATCHY_POWER = alloc_1d_int(num_pairs);
+	    PATCHY_LAMBDA = alloc_1d_double(num_pairs);
+	    PATCHY_EPSILON = alloc_1d_double(num_pairs);
+	    PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
 
                 janus_axis = (JAX*) malloc(sizeof(JAX) * Component_Number);
                 janus_propulsion = (JP*) malloc(sizeof(JP) * Component_Number);
@@ -1548,6 +1547,10 @@ void Gourmet_file_io(const char *infile
 	}
     }
     
+
+
+
+    //section Janus_setting
     {
 	{
 	    fprintf(stderr, "#\n");
@@ -1698,7 +1701,6 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    ufres->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		    ufres->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
-
 		}
 		if(SW_EQ == Electrolyte){
 		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
@@ -1963,6 +1965,10 @@ void Gourmet_file_io(const char *infile
 	}
     }
     fprintf(stderr, "#\n");
+
+
+    
+    //section surface_thickness
     {
 	ufin->get("A_XI",A_XI);
 	ufout->put("A_XI",A_XI);
@@ -1972,14 +1978,17 @@ void Gourmet_file_io(const char *infile
 	ufout->put("A",dmy_A);
 	ufres->put("A",dmy_A);
 	dmy_RADIUS= dmy_A*DX;
-	dmy_SIGMA = 2.0 * dmy_RADIUS;
+      //dmy_SIGMA = 2.0 * dmy_RADIUS;
 
 	for(int i = 0; i < Component_Number; i++){
 	  RADII[i] = dmy_RADIUS;
-	  SIGMAS[i] = dmy_SIGMA;
+	  //SIGMAS[i] = dmy_SIGMA;
 	}
     }
 
+
+
+    //section polydisperse
     {
       Location target("polydisperse");
       if(ufin->seek(target)){
@@ -2004,7 +2013,7 @@ void Gourmet_file_io(const char *infile
 	    ufres->put(target_radii.sub("A"), dmy_radius);
 	    if(dmy_spec >= 0 && dmy_spec < Component_Number){
 	      RADII[dmy_spec] = dmy_radius * DX;
-	      SIGMAS[dmy_spec] = 2.0*RADII[dmy_spec];
+	      //SIGMAS[dmy_spec] = 2.0*RADII[dmy_spec];
 	    }else{
 	      fprintf(stderr, "# Warning: Unable to set radius of species %d\n", dmy_spec);
 	    }
@@ -2013,6 +2022,10 @@ void Gourmet_file_io(const char *infile
       }
     }
     
+
+
+
+    //section gravity
     {
 	Location target("gravity");
 	ufin->get(target.sub("G"),G);
@@ -2035,10 +2048,13 @@ void Gourmet_file_io(const char *infile
 	ufres->put(target.sub("G_direction"),str);
     }
 
+
+
+    //section LJ_powers
     {
       int dmy_powers;
       double dmy_epsilon;
-      string str;
+    string str;
       ufin->get("EPSILON",dmy_epsilon);
       ufout->put("EPSILON",dmy_epsilon);
       ufres->put("EPSILON",dmy_epsilon);
@@ -2047,19 +2063,19 @@ void Gourmet_file_io(const char *infile
         exit_job(EXIT_FAILURE);
       }
 
-      ufin->get("LJ_powers",str);
+ ufin->get("LJ_powers",str);
       ufout->put("LJ_powers",str);  
       ufres->put("LJ_powers",str);  
-      if(str == "12:6"){
+    if(str == "12:6"){
 	dmy_powers = 0;
-      }else if(str == "24:12"){
+    }else if(str == "24:12"){
 	dmy_powers = 1;
-      }else if(str == "36:18"){
+    }else if(str == "36:18"){
 	dmy_powers = 2;
-      }else {
+    }else {
 	fprintf(stderr, "invalid LJ_powers\n"); 
 	exit_job(EXIT_FAILURE);
-      }
+    }
       
     
       for(int i = 0; i < Component_Number; i++){
@@ -2067,15 +2083,27 @@ void Gourmet_file_io(const char *infile
 	im = i*Component_Number + i;
 	EPSILON[im]   = dmy_epsilon;
 	LJ_powers[im] = dmy_powers;
+	SIGMA[im] = 2.0 * RADII[i];
+	PATCHY_POWER[im] = dmy_patchy_powers;
+	PATCHY_LAMBDA[im] = dmy_patchy_lambda;
+	PATCHY_EPSILON[im] = dmy_patchy_epsilon;
 	for(int j = i+1; j < Component_Number; j++){
 	  im = i*Component_Number + j;
 	  im2= j*Component_Number + i;
 	  EPSILON[im]  = EPSILON[im2]  = dmy_epsilon;
 	  LJ_powers[im]= LJ_powers[im2]= dmy_powers;
+	  SIGMA[im] = SIGMA[im2] = (RADII[i] + RADII[j]);
+	  PATCHY_POWER[im] = PATCHY_POWER[im2] = dmy_patchy_powers;
+	  PATCHY_LAMBDA[im] = PATCHY_LAMBDA[im2] = dmy_patchy_lambda;
+	  PATCHY_EPSILON[im] = PATCHY_EPSILON[im2] = dmy_patchy_epsilon;
 	}
       }
       
     }
+
+
+    
+    //section mesh
     {
 	int np[DIM];
 	Location target("mesh");
@@ -2100,6 +2128,10 @@ void Gourmet_file_io(const char *infile
 	Nmax = MAX(NX, MAX(NY, NZ));
 	Nmin = MIN(NX, MIN(NY, NZ));
     }
+
+
+
+    //section time_increment
     {
 	Location target("time_increment");
 	string str;
@@ -2121,10 +2153,14 @@ void Gourmet_file_io(const char *infile
 	    exit_job(EXIT_FAILURE);
 	}
     }
+
+
+    //section switch
     {
 	Location target("switch");
 	string str;
 	
+      //section rotation
 	ufin->get(target.sub("ROTATION"),str);
 	ufout->put(target.sub("ROTATION"),str);
 	ufres->put(target.sub("ROTATION"),str);
@@ -2143,6 +2179,7 @@ void Gourmet_file_io(const char *infile
 	    }
 	}
 
+      // section LJ truncation
 	{ // Set default LJ truncation
 	  int dmy_truncate;
 	ufin->get(target.sub("LJ_truncate"),str);
@@ -2168,7 +2205,7 @@ void Gourmet_file_io(const char *infile
 	      LJ_truncate[im]= LJ_truncate[im2]= dmy_truncate;
 	    }
 	  }
-	    }	
+	}
 
         {//set specific LJ parameters for given species pair interactions
 	  if(ufin->get(target.sub("LJ_params"), str)){
@@ -2209,7 +2246,7 @@ void Gourmet_file_io(const char *infile
                 if(spec_i < 0 || spec_j < 0 || spec_i >= Component_Number || spec_j >= Component_Number){
                   fprintf(stderr, "# Error: invalid particle species in LJ_spec:\n");
                   invalid_ij = true;
-	    }
+	    }	
                 if(epsilon_ij < 0.0){
                   fprintf(stderr, "# Error: invalid epsilon in LJ_spec:\n");
                   invalid_ij = true;
@@ -2223,7 +2260,7 @@ void Gourmet_file_io(const char *infile
                 }else{
                   fprintf(stderr, "# Error: invalid powers in LJ_spec:\n");
                   invalid_ij = true;
-			}
+	    }
 
                 if(truncate_str == "ON"){
                   truncate_ij = 1;
@@ -2251,6 +2288,9 @@ void Gourmet_file_io(const char *infile
 	  }
 	}
 	
+
+
+      //section INIT_distribution
 	{
             target.down("INIT_distribution");
 	    ufin->get(target.sub("type"),str);
@@ -2280,6 +2320,9 @@ void Gourmet_file_io(const char *infile
             target.up();
 	}
 	
+
+
+      //section INIT_orientation tolerance and iteration number for squirmers
 	{
 	    ufin->get(target.sub("INIT_orientation"), str);
 	    ufout->put(target.sub("INIT_orientation"), str);
@@ -2306,6 +2349,10 @@ void Gourmet_file_io(const char *infile
 	    ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
 	    assert(MAX_SLIP_ITER >= 1);
 	}
+
+
+
+      //section FIX_CELL
         {
 	    target.down("FIX_CELL");
 	    {
@@ -2331,6 +2378,9 @@ void Gourmet_file_io(const char *infile
 	    FIX_CELL = (FIX_CELLxyz[0] | FIX_CELLxyz[1] | FIX_CELLxyz[2]);
 	    target.up();
         }
+
+
+      //section PINNING
 	{
             Location target("switch.pin");
             ufin->get(target.sub("type"), str);
@@ -2383,6 +2433,10 @@ void Gourmet_file_io(const char *infile
 		}
 	    }
 	}
+
+
+
+      //section Rigid Body Degree of Freedom
         {
           if(SW_PT == rigid){
             fprintf(stderr, "#\n");
@@ -2453,6 +2507,8 @@ void Gourmet_file_io(const char *infile
           }
         }
 
+
+      // section ns_solver
         {
           Location target("switch.ns_solver");
           string str;
@@ -2471,6 +2527,10 @@ void Gourmet_file_io(const char *infile
         }
     }
     
+
+
+
+    //section output
     { // output;
 	string str;
 	Location target("output");
