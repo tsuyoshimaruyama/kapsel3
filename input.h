@@ -251,7 +251,6 @@ extern double* SIGMAS;
 //////
 extern double G;
 extern int G_direction;
-extern Force_filter G_filter;
 //////
 extern int Component_Number;
 extern int Particle_Number;

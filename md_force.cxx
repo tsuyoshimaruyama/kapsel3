@@ -14,20 +14,19 @@ double *Hydro_force_new;
 #define Cell_length 16
 
 void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
-				       ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
-				      ,const double cap
-				       ){
+						  ,void (*distance0_func)(const double *x1,const double *x2,double &r12,double *x12)
+						  ,const double cap
+						  ){
   // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
-  const double pair_cutoff = A_R_cutoff * LJ_dia;
   double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
   double r_ij = 0.0;
   int rigid_pair;
-  double shear_stress[2]={0.0, 0.0};
+  double shear_stress[2] = {0.0, 0.0};
   double rigid_shear_stress[2] = {0.0, 0.0};
-
-// List Constructor
+  
+  // List Constructor
   int i,j;
   int pair_id;
   int *lscl;
@@ -93,12 +92,14 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
                                 if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
 				      distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
 					  pair_id = p[i].spec * Component_Number + p[j].spec;
-                      LJ_cutoff = A_R_cutoff[pair_id]*LJ_dia[pair_id];
+                      double LJ_cutoff = A_R_cutoff[pair_id]*LJ_dia[pair_id];
+		      double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
 		    
 		    if (r_ij < pair_cutoff){
 											double dmy_r = 0.0;
 		      
-			dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));			
+			dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia[pair_id]));			
+		      }
 		      
 		      {
 			//spherical particle forces
@@ -204,7 +205,11 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
       double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
       double r_ij = 0.0;
 
+      distance0_func( (*p_n).x, p[m].x, r_ij, r_ij_vec);
 			distance0_func((*p_n).x, (*p_m).x, r_ij, r_ij_vec);
+      distance0_func( (*p_n).x, p[m].x, r_ij, r_ij_vec);
+      pair_id = p[n].spec*Component_Number + p[m].spec;
+      double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
 
 			if (r_ij < pair_cutoff && !rigid_chain(n, m) &&
 				!obstacle_chain((*p_n).spec, (*p_m).spec)) {
@@ -226,6 +231,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p, void(*distance0_func)
 
     int rigid_pair;
     int pair_id;
+    double Min_rij = DBL_MAX;
 	  // rigid body forces & torques
 	  if(SW_PT == rigid){
 	    int rigidID_m = Particle_RigidID[m];
