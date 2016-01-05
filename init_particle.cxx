@@ -13,52 +13,17 @@ void Init_Particle(Particle *p){
   Particle_domain(Phi, NP_domain, Sekibun_cell);
 
   // particle properties, velocities, forces, etc.
-  int offset=0;
-  SRA(GIVEN_SEED, 10);
-  for(int j = 0; j < Component_Number ; j++){
-    for(int n = 0; n < Particle_Numbers[j] ; n++){
-      int i= offset + n;
-      p[i].spec = j;
-      p[i].mass = 0.0;
-      p[i].surface_mass = 0.0;
-      for(int d=0; d< DIM; d++){
-	p[i].x_nopbc[d] = p[i].x[d];
-	p[i].v[d] = 0.e0 * RA();
-	p[i].v_old[d] = 0.e0;
-	p[i].v_slip[d] = 0.0;
-	p[i].f_hydro[d] = 0.0;
-	p[i].f_hydro_previous[d] = 0.0;
-	p[i].f_hydro1[d] = 0.0;
-	p[i].f_slip[d] = 0.0;
-	p[i].f_slip_previous[d] = 0.0;
-	p[i].fr[d] = 0.0;
-	p[i].fr_previous[d] = 0.0;
-	p[i].torque_r[d] = 0.0;
-	p[i].torque_r_previous[d] = 0.0;
-        
-	p[i].omega[d] = 0.0e0 *RA();
-	p[i].omega_old[d] = 0.0;
-	p[i].omega_slip[d] = 0.0;
-	p[i].torque_hydro[d] = 0.0;
-	p[i].torque_hydro_previous[d] = 0.0;
-	p[i].torque_hydro1[d] = 0.0;
-	p[i].torque_slip[d] = 0.0;
-	p[i].torque_slip_previous[d] = 0.0;
-        
-        p[i].momentum_depend_fr[d] = 0.0;
-        
-	p[i].mass_center[d] = 0.0;
-	p[i].surface_mass_center[d] = 0.0;
-	p[i].surface_dv[d] = 0.0;
-	p[i].surface_dw[d] = 0.0;
-	for(int l = 0; l < DIM; l++){
-	  p[i].inertia[d][l] = 0.0;
-	  p[i].surface_inertia[d][l] = 0.0;
-        }
+  {
+    int offset=0;
+    SRA(GIVEN_SEED, 10);
+    for(int j = 0; j < Component_Number ; j++){
+      for(int n = 0; n < Particle_Numbers[j] ; n++){
+	int i= offset + n;
+	p[i].spec = j;
       }
+      offset += Particle_Numbers[j]; 
     }
-    offset += Particle_Numbers[j]; 
-  }  
+  }
 
   if(ROTATION){
     Angular2v = Angular2v_rot_on;
@@ -410,6 +375,54 @@ void Init_Particle(Particle *p){
       qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
       qtn_isnormal(p[i].q);
       qtn_init(p[i].q_old, p[i].q);
+    }
+  }
+
+  // particle properties, velocities, forces, etc.
+  {
+    int offset=0;
+    for(int j = 0; j < Component_Number ; j++){
+      for(int n = 0; n < Particle_Numbers[j] ; n++){
+	int i= offset + n;
+	p[i].mass = 0.0;
+	p[i].surface_mass = 0.0;
+	for(int d=0; d< DIM; d++){
+	  p[i].x_nopbc[d] = p[i].x[d];
+	  p[i].v[d] = 0.e0 * RA();
+	  p[i].v_old[d] = 0.e0;
+	  p[i].v_slip[d] = 0.0;
+	  p[i].f_hydro[d] = 0.0;
+	  p[i].f_hydro_previous[d] = 0.0;
+	  p[i].f_hydro1[d] = 0.0;
+	  p[i].f_slip[d] = 0.0;
+	  p[i].f_slip_previous[d] = 0.0;
+	  p[i].fr[d] = 0.0;
+	  p[i].fr_previous[d] = 0.0;
+	  p[i].torque_r[d] = 0.0;
+	  p[i].torque_r_previous[d] = 0.0;
+	  
+	  p[i].omega[d] = 0.0e0 *RA();
+	  p[i].omega_old[d] = 0.0;
+	  p[i].omega_slip[d] = 0.0;
+	  p[i].torque_hydro[d] = 0.0;
+	  p[i].torque_hydro_previous[d] = 0.0;
+	  p[i].torque_hydro1[d] = 0.0;
+	  p[i].torque_slip[d] = 0.0;
+	  p[i].torque_slip_previous[d] = 0.0;
+	  
+	  p[i].momentum_depend_fr[d] = 0.0;
+	  
+	  p[i].mass_center[d] = 0.0;
+	  p[i].surface_mass_center[d] = 0.0;
+	  p[i].surface_dv[d] = 0.0;
+	  p[i].surface_dw[d] = 0.0;
+	  for(int l = 0; l < DIM; l++){
+	    p[i].inertia[d][l] = 0.0;
+	    p[i].surface_inertia[d][l] = 0.0;
+	  }
+	}
+      }
+      offset += Particle_Numbers[j]; 
     }
   }
 
