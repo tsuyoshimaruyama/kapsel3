@@ -379,24 +379,26 @@ int main(int argc, char *argv[]){
 
   Particle *particles = new Particle [Particle_Number];
   if(Particle_Number > 0){
-      Init_Particle(particles);
-      //if(SW_PT == chain){
-      if((SW_PT == chain) && !(DISTRIBUTION == user_specify)){
-	  Init_Chain(particles);
-      }
-      else if((SW_PT == rigid) && !(DISTRIBUTION == user_specify)){
-	  Init_Rigid(particles);
-	  }
+    Init_Particle(particles);
+    //if(SW_PT == chain){
+    if((SW_PT == chain) && !(DISTRIBUTION == user_specify)){
+      Init_Chain(particles);
+    }
+    else if((SW_PT == rigid) && !(DISTRIBUTION == user_specify)){
+      Init_Rigid(particles);
+    }
   }
   Init_output(particles);
   
   Init_zeta_k(zeta, uk_dc);
 
   {
-    Reset_phi_u(phi, up);    
-    Make_phi_u_particle(phi, up, particles);
+    Reset_phi_u(phi, up);
+    Reset_phi(phi_sum);
+    Make_phi_particle_sum(phi, phi_sum, particles);    
+    Make_u_particle_sum(up, phi_sum, particles);
     Zeta_k2u(zeta, uk_dc, u);
-
+    
     Make_f_particle_dt_sole(f_particle, u, up, phi);
     Add_f_particle(u, f_particle);
     U2zeta_k(zeta, uk_dc, u);

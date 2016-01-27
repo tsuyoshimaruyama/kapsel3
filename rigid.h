@@ -230,6 +230,10 @@ inline void set_Particle_Velocities_OBL(Particle *p){
   }
 }
 inline void init_set_vGs(Particle *p){
+  for(int rigidID=0; rigidID < Rigid_Number; rigidID++){
+    rigid_body_rotation(omegaGs[rigidID], p[Rigid_Particle_Cumul[rigidID]].q, BODY2SPACE);
+  }
+  
   if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
     set_Particle_Velocities(p);
   }else{
