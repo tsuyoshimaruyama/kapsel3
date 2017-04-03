@@ -66,7 +66,7 @@ void Read_Particle_udf(Particle *p, const int &n_in_particles);
 /*!
   \brief Read rigid body connectivity data from restart file
  */
-void Read_Rigid_Particle_udf();
+void Read_Rigid_Particle_udf(Particle *rigid_p);
 
 /*!
   \brief Recover rigid body configurations

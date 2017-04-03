@@ -164,6 +164,22 @@ void Save_Rigid_Particle_udf(){
       ufres->put(target.sub("y"), GRvecs_body[j][1]);
       ufres->put(target.sub("z"), GRvecs_body[j][2]);
     }
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      char str[256];
+      sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
+      Location target(str);
+
+      ufres->put(target, Rigid_Masses[rigidID]);
+    }
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      char str[256];
+      sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
+      Location target(str);
+
+      string axis[DIM] = {"x", "y", "z"};
+      for(int l = 0; l < DIM; l++) for(int m = 0; m < DIM; m++)
+				     ufres->put(target.sub(axis[l]+axis[m]), Rigid_Moments_body[rigidID][l][m]);
+    }
   }
 }
 
@@ -334,7 +350,7 @@ void Force_restore_parameters(double **zeta
   }else{
     Particle *rigid_p = new Particle [Rigid_Number];
     Read_Particle_udf(rigid_p, Rigid_Number);
-    Read_Rigid_Particle_udf();
+    Read_Rigid_Particle_udf(rigid_p);
     Set_Rigid_Particle_Data(rigid_p, p);
     delete [] rigid_p;
   }
@@ -536,7 +552,7 @@ void Read_Particle_udf(Particle *p, const int &n_in_particles){
   }
 }
 
-void Read_Rigid_Particle_udf(){
+void Read_Rigid_Particle_udf(Particle* rigid_p){
   if(SW_PT == rigid){
     for(int j = 0; j < Particle_Number; j++){
       char str[256];
@@ -546,7 +562,27 @@ void Read_Rigid_Particle_udf(){
       ufin->get(target.sub("x"), GRvecs_body[j][0]);
       ufin->get(target.sub("y"), GRvecs_body[j][1]);
       ufin->get(target.sub("z"), GRvecs_body[j][2]);
+    }
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      char str[256];
+      sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
+      Location target(str);
 
+      ufin->get(target, Rigid_Masses[rigidID]);
+      Rigid_IMasses[rigidID] = 1.0 / Rigid_Masses[rigidID];
+    }
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+      char str[256];
+      sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
+      Location target(str);
+
+      string axis[DIM] = {"x", "y", "z"};
+      for(int l = 0; l < DIM; l++) for(int m = 0; m < DIM; m++)
+				     ufin->get(target.sub(axis[l]+axis[m]), Rigid_Moments_body[rigidID][l][m]);
+      rigid_body_matrix_rotation(Rigid_Moments[rigidID][0], Rigid_Moments_body[rigidID][0],
+				 rigid_p[rigidID].q, BODY2SPACE);
+      Matrix_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
+      check_Inverse(Rigid_Moments[rigidID], Rigid_IMoments[rigidID], DIM);
     }
   }
 }
@@ -561,32 +597,32 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
 
     for(int d = 0; d < DIM; d++){
       //positions
-      xGs[rigidID][d] = rigid_p[rigidID].x[d];
+      xGs[rigidID][d]          = rigid_p[rigidID].x[d];
       xGs_previous[rigidID][d] = rigid_p[rigidID].x_previous[d];
-      xGs_nopbc[rigidID][d] = rigid_p[rigidID].x_nopbc[d];
+      xGs_nopbc[rigidID][d]    = rigid_p[rigidID].x_nopbc[d];
 
       //velocities
-      velocityGs[rigidID][d] = rigid_p[rigidID].v[d];
-      velocityGs_old[rigidID][d] = rigid_p[rigidID].v_old[d];
+      velocityGs[rigidID][d]    =  rigid_p[rigidID].v[d];
+      velocityGs_old[rigidID][d]= rigid_p[rigidID].v_old[d];
 
       //angular velocities
-      omegaGs[rigidID][d] = rigid_p[rigidID].omega[d];
+      omegaGs[rigidID][d]     = rigid_p[rigidID].omega[d];
       omegaGs_old[rigidID][d] = rigid_p[rigidID].omega_old[d];
 
       //hydrodynamic forces
-      forceGs[rigidID][d] = rigid_p[rigidID].f_hydro[d];
+      forceGs[rigidID][d]          = rigid_p[rigidID].f_hydro[d];
       forceGs_previous[rigidID][d] = rigid_p[rigidID].f_hydro_previous[d];
 
       //ext+lj+random forces
-      forceGrs[rigidID][d] = rigid_p[rigidID].fr[d];
+      forceGrs[rigidID][d]          = rigid_p[rigidID].fr[d];
       forceGrs_previous[rigidID][d] = rigid_p[rigidID].fr_previous[d];
 
       //hydrodynamic torque
-      torqueGs[rigidID][d] = rigid_p[rigidID].torque_hydro[d];
+      torqueGs[rigidID][d]          = rigid_p[rigidID].torque_hydro[d];
       torqueGs_previous[rigidID][d] = rigid_p[rigidID].torque_hydro_previous[d];
 
       //ext+lj+random torques
-      torqueGrs[rigidID][d] = rigid_p[rigidID].torque_r[d];
+      torqueGrs[rigidID][d]          = rigid_p[rigidID].torque_r[d];
       torqueGrs_previous[rigidID][d] = rigid_p[rigidID].torque_r_previous[d];
     }
   }
@@ -622,10 +658,10 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
     //old data
     for(int d = 0; d < DIM; d++){
       p[n].x_previous[d] = p[n].x[d];
-      p[n].x_nopbc[d] = p[n].x[d];
+      p[n].x_nopbc[d]    = p[n].x[d];
 
-      p[n].v_old[d] = p[n].v[d];
-      p[n].omega_old[d] = p[n].omega[d];
+      p[n].v_old[d]      = p[n].v[d];
+      p[n].omega_old[d]  = p[n].omega[d];
     }
 
     //unused data

@@ -292,7 +292,10 @@ class sParticle:{
       torque_r_previous:Vector3d,
       q:Quaternion,
       q_old:Quaternion
-}      
+}
+class Matrix3d:{xx: float, xy: float, xz: float,
+      	        yx: float, yy: float, yz: float,
+		zx: float, zy: float, zz:float}
 
 class CTime:{
       ts:int
@@ -306,8 +309,10 @@ resume:{
    CONTINUE:{
       Saved_Data:{
          jikan: CTime
-         Particles[]: sParticle
-         GR_body[]: Vector3d
+         Particles[] : sParticle
+         GR_body[]   : Vector3d
+	 GR_masses[] : float
+	 GR_moments_body[]: Matrix3d
          Zeta[][][]:{
             zeta0: float
             zeta1: float
