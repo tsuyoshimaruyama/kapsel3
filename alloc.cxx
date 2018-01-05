@@ -8,13 +8,15 @@
 
 #include "alloc.h"
 
+static const int MEMORY_ALIGNMENT = 128;
+
 template<typename T>  T*  alloc_1d(int n1){
-  T* p = (T*) std::malloc(n1*sizeof(T));
+  T* p = (T*) _mm_malloc(n1*sizeof(T), MEMORY_ALIGNMENT);
   alloc_error_check(p);
   return p;
 }
 template<typename T>  void free_1d(T* p){
-  std::free(p);
+  _mm_free(p);
 }
 
 template<typename T> T** initview_2d(int n1, int n2,  T * const p){

@@ -150,8 +150,10 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       h5_check_err(status);
 
       //dimensions of output field data
-      int dmy_dims[DIM] = {out_dims_field[0], out_dims_field[1], out_dims_field[2]};
-      status = H5LTset_attribute_int(fid, "/", "nxnynz", dmy_dims, DIM);
+      const long long dmy_dims[DIM] = {static_cast<long long>(out_dims_field[0]),
+				     static_cast<long long>(out_dims_field[1]),
+				     static_cast<long long>(out_dims_field[2])};
+      status = H5LTset_attribute_long_long(fid, "/", "nxnynz", dmy_dims, DIM);
       h5_check_err(status);
 
       //grid origin
@@ -297,19 +299,19 @@ inline void hdf5_writer::write_field_scalar(const double* phi, const char* name,
 inline void hdf5_writer::write_particle_scalar(const int* data, const char* name,
 					       hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[1] = {print_particle_num};
+  hsize_t dmy_dims[1] = {static_cast<hsize_t>(print_particle_num)};
   write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
 }
 inline void hdf5_writer::write_particle_vectorn(const double* data, const int& dim, const char* name,
 						hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[2] = {print_particle_num, DIM};
+  hsize_t dmy_dims[2] = {static_cast<hsize_t>(print_particle_num), DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
 }
 inline void hdf5_writer::write_particle_matrix3(const double* data, const char* name,
 						hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[3] = {print_particle_num, DIM, DIM};
+  hsize_t dmy_dims[3] = {static_cast<hsize_t>(print_particle_num), DIM, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
 }
 
@@ -317,19 +319,19 @@ inline void hdf5_writer::write_particle_matrix3(const double* data, const char* 
 inline void hdf5_writer::write_obstacle_scalar(const int* data, const char* name,
 					       hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[1] = {print_obstacle_num};
+  hsize_t dmy_dims[1] = {static_cast<hsize_t>(print_obstacle_num)};
   write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
 }
 inline void hdf5_writer::write_obstacle_vectorn(const double* data, const int& dim, const char* name,
 						hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[2] = {print_obstacle_num, DIM};
+  hsize_t dmy_dims[2] = {static_cast<hsize_t>(print_obstacle_num), DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
 }
 inline void hdf5_writer::write_obstacle_matrix3(const double* data, const char* name,
 						hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[3] = {print_obstacle_num, DIM, DIM};
+  hsize_t dmy_dims[3] = {static_cast<hsize_t>(print_obstacle_num), DIM, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
 }
 

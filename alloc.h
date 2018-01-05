@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <mm_malloc.h>
 
 #define alloc_error_check(p) {			\
     if ((p) == NULL) { \
