@@ -35,7 +35,7 @@ template<typename T> void free_1d(T *p);
   \details Allocates array ii of size n1, each element of ii give view of rows of i
   ii[I][J] = i[I*n2 + J]
  */
-template<typename T> T** initview_2d(int n1, int n2,  T * const p);
+template<typename T> T** allocview_2d(int n1, int n2,  T * const p);
 
 /*!
   \brief Destroy 2d view
@@ -57,7 +57,7 @@ template<typename T> void free_2d(T **ii);
   \details Allocates array iii of size n1, each iii[.] points to 2D array ii such that
   iii[I][J][K] = i[I*n2*n3 + J*n3 + K]
  */
-template<typename T>  T*** initview_3d(int n1, int n2, int n3, T * const p);
+template<typename T>  T*** allocview_3d(int n1, int n2, int n3, T * const p);
 /*!
   \brief Destroy 3d view
  */
@@ -76,8 +76,8 @@ template<typename T> void  free_3d(T ***ii);
 int*      alloc_1d_int(int n1);
 int**     alloc_2d_int(int n1, int n2);
 int***    alloc_3d_int(int n1, int n2, int n3);
-int**     initview_2d_int(int n1, int n2, int * const i);
-int***    initview_3d_int(int n1, int n2, int n3, int * const i);
+int**     allocview_2d_int(int n1, int n2, int * const i);
+int***    allocview_3d_int(int n1, int n2, int n3, int * const i);
 
 void      free_1d_int(int *i);
 void      free_2d_int(int **ii);
@@ -88,8 +88,8 @@ void      freeview_3d_int(int ***iii);
 double*   alloc_1d_double(int n1);
 double**  alloc_2d_double(int n1, int n2);
 double*** alloc_3d_double(int n1, int n2, int n3);
-double**  initview_2d_double(int n1, int n2, double * const d);
-double*** initview_3d_double(int n1, int n2, int n3, double * const d);
+double**  allocview_2d_double(int n1, int n2, double * const d);
+double*** allocview_3d_double(int n1, int n2, int n3, double * const d);
 
 void      free_1d_double(double *d);
 void      free_2d_double(double **dd);

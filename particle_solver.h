@@ -18,11 +18,6 @@
 #include "rigid.h"
 #include "periodic_boundary.h"
 
-
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 enum ITER {start_iter, new_iter, reset_iter, end_iter};
 
 /*!

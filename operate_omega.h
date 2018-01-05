@@ -12,10 +12,6 @@
 #include "variable.h"
 #include "fft_wrapper.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 /*!
   \brief Compute the reduced advection term appearing on the rhs of the NS equation (reciprocal space) from the velocity field (real space)
   \details \f[
