@@ -52,11 +52,7 @@ char Out_dir[128];
 char Out_name[128];
 //////
 int SW_UDF;
-/////// FFT
-//int SW_FFT=MPI_RFFTW; 
-//int SW_FFT=RFFTW;
-//int SW_FFT=Ooura;
-int SW_FFT=IMKL_FFT;
+
 //////
 /////// 計算条件の設定
 int Nmax;

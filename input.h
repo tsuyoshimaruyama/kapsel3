@@ -145,9 +145,6 @@ extern char Out_dir[];
 extern char Out_name[];
 //////
 extern int SW_UDF;
-////// FFT select
-extern int SW_FFT;
-//////
 
 /////// 計算条件の設定
 extern int Nmax;
