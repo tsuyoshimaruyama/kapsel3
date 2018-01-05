@@ -241,7 +241,7 @@ $(XYZ): $(XYZ_OBJS)
 ## Clean
 
 clean:
-	rm -f $(OBJS) $(AUX)/$(XYZ_OBJS) $(TARGET) $(XYZ)
+	rm -f *.o $(AUX)/*.o $(TARGET) $(XYZ)
 	rm -f *~ *.bak
 
 ## Install

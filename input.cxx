@@ -1059,7 +1059,7 @@ void Gourmet_file_io(const char *infile
 		    if(janus_propulsion[i] == slip){
 		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]); //B1 coeff
 		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]); //alpha=B2/B1
-		      assert(janus_slip_vel > 0);
+		      assert(janus_slip_vel[i] > 0);
 		    }else{
 		      janus_slip_vel[i] = 0.0;
 		      janus_slip_mode[i] = 0.0;
