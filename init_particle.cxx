@@ -743,9 +743,6 @@ void Init_Chain(Particle *p){
     }
     
     int overlap;
-    for(int d=0;d<1000;d++){
-      double dmy=RAx(PI2); 
-    } 
     
     for(int n=0; n<Particle_Number-1; n++){
       overlap=1;

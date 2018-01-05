@@ -26,7 +26,7 @@ void Particle_domain(double (*profile_func)(const double &x, const double radius
 		     ,int &np_domain
 		     ,int** &sekibun_cell
 		     ){
-  // sekibun_cell $B$N=i4|2=4X?t(B
+  // sekibun_cell の初期化関数
   
   double dmy_xp[DIM];
 
@@ -55,7 +55,7 @@ void Particle_domain(double (*profile_func)(const double &x, const double radius
 			  +SQ(dmy_x[1]-dmy_xp[1])
 			  +SQ(dmy_x[2]-dmy_xp[2])
 			  );
-	double dmy_phi=profile_func(dmy,RADIUS+DX);
+	//double dmy_phi=profile_func(dmy,RADIUS+DX);
 
 	//if(dmy_phi > 0.0){
 	//if(dmy_phi > 1.e-10){

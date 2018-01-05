@@ -348,7 +348,6 @@ inline void Set_global_parameters(void){
 	    //Tdump = MIN(Tdump, shear_stokes_time);
 	}else if(SW_EQ == Electrolyte){
 	    Tdump=1./(NU * KMAX2);
-	    double KMAX=sqrt(KMAX2);
 	    double dmy_onsager_coeff = 0.0;
 	    if(N_spec==1){
 		dmy_onsager_coeff=Onsager_coeff_counterion;
