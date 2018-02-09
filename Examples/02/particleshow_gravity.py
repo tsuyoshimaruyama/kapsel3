@@ -1,5 +1,5 @@
 type=$constitutive_eq.type
-print type
+print( type)
 time=$t
 if type == "Navier_Stokes" :
 	dx=$constitutive_eq.Navier_Stokes.DX
@@ -21,8 +21,8 @@ elif objType=="chain":
 size_Ns=len(Ns)
 RAD=($A*dx)*1.
 for i in range(size_Ns):
-	print Ns[i][0],
-print LX,LY,LZ
+	print( Ns[i][0], end='')
+print( LX,LY,LZ)
 cells=[[0,0,0],[0,LY,0],[LX,LY,0],[LX,0,0],[0,0,0],[0,0,LZ],[LX,0,LZ],[LX,LY,LZ],[0,LY,LZ],[0,0,LZ]]
 polyline(cells,1)
 line([ 0,LY, 0],[ 0,LY,LZ],1)
@@ -44,7 +44,7 @@ itemList= [0]
 S=[]
 n_offset = 0
 if time == 0.0:
-	print time
+	print( time)
 	out_f = open('select_data', 'w')
 	for i in range(size_Ns):
 		for n in range(Ns[i][0]):

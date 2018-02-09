@@ -20,7 +20,7 @@ for n in range(0,totalRecord()):
 	vx = $Particles[0].v.x
 	vy = $Particles[0].v.y
 	vz = $Particles[0].v.z
-#	print n,rx,ry,rz,vx,vy,vz,time
+#	print( n,rx,ry,rz,vx,vy,vz,time)
 	tmpData.append(time)
 	for i in range(0,N1):
 		tmpData.append(rx)
@@ -31,13 +31,13 @@ for n in range(0,totalRecord()):
 		tmpData.append(vz)
 	for n in range(0, nLocation):
 		dataList[n].append(tmpData[n])
-#print dataList
+#print( dataList)
 for i in range(0,N1):
 	for j in range(0,len(particleList)):
-		timeList.append(particleList[j] + `i`)
+		timeList.append(particleList[j] + repr(i))
 tagList = timeList
-#print tagList
-#print len(tagList)
+#print( tagList)
+#print( len(tagList))
 for n in range(0, nLocation):
 	createSheetCol(n,tagList[n])
 	setSheetCol(n,dataList[n])

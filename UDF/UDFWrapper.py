@@ -154,19 +154,19 @@ class UDFReader:
     def __init__(self, fileName):
         self.fileName = fileName
         if os.path.isfile(fileName)==False:
-            print "UDF file does not exist!"
+            print( "UDF file does not exist!")
             sys.exit(2)
         self.uobj = UDFManager(fileName)
 
         ###
         # Check udf version
         if not self.uobj.getEngineVersion() == "v3.02":
-            print "#######################################"
-            print "# Warning   : Engine version mismatch"
-            print "# UDFReader : v3.02"
-            print "# UDF       :",str(self.uobj.getEngineVersion())
-            print "#######################################"
-            print 
+            print( "#######################################")
+            print( "# Warning   : Engine version mismatch")
+            print( "# UDFReader : v3.02")
+            print( "# UDF       :",str(self.uobj.getEngineVersion()))
+            print( "#######################################")
+            print( 
 
         ###
         # constitutive equation
@@ -336,32 +336,32 @@ class UDFReader:
         return pData
                                      
     def printDetails(self):
-        print "# UDF file name  : ", self.fileName
-        print "# Constitutive Eq: ", self.eqType
-        print "# DX             : ", self.dx
-        print "# Number Records : ", self.numRecords
+        print( "# UDF file name  : ", self.fileName)
+        print( "# Constitutive Eq: ", self.eqType)
+        print( "# DX             : ", self.dx)
+        print( "# Number Records : ", self.numRecords)
         if self.isRigid:
-            print "# Rigid Particles" 
+            print( "# Rigid Particles" )
         elif self.isChain:
-            print "# Flexible Chains" 
+            print( "# Flexible Chains" )
         else:
-            print "# Spherical Particles"
-        print "#"
-        print "# Species        : ", self.numSpec
-        print "# Particle No.   : ", self.numBeads
-        print "# Rigid No.      : ", self.numChains
-        print "#"
-        print "# Particle Data:"
-        print "#\t\tId\tRigidId\tSpecies"
+            print( "# Spherical Particles")
+        print( "#")
+        print( "# Species        : ", self.numSpec)
+        print( "# Particle No.   : ", self.numBeads)
+        print( "# Rigid No.      : ", self.numChains)
+        print( "#")
+        print( "# Particle Data:")
+        print( "#\t\tId\tRigidId\tSpecies")
         for i in range(self.numBeads):
-            print ("#\t%10i %10i %10i") % (i, self.beadChainID[i], self.chainSpecID[self.beadChainID[i]])
-        print "#"
-        print "# Rigid Data :"
-        print "#\t\tId\t Start\t End\t Beads\t Species"
+            print( ("#\t%10i %10i %10i") % (i, self.beadChainID[i], self.chainSpecID[self.beadChainID[i]]))
+        print( "#")
+        print( "# Rigid Data :")
+        print( "#\t\tId\t Start\t End\t Beads\t Species")
         for i in range(self.numChains):
-            print ("#\t%8i %8i %8i %8i %8i") % \
+            print( ("#\t%8i %8i %8i %8i %8i") % \
                 (i, self.nCumBead[i], self.nCumBead[i+1] -1, \
-                 self.nCumBead[i+1]-self.nCumBead[i], self.chainSpecID[i])
+                 self.nCumBead[i+1]-self.nCumBead[i], self.chainSpecID[i]))
 
 class UDFContainer(UDFReader):
     'Container Class for UDF particle data'
@@ -445,5 +445,5 @@ class UDFContainer(UDFReader):
                 self.torque_r = self.getRigidData("torque_r")
                 self.torque_s = self.getRigidData("torque_s")
         else:
-            print "Time step out of bounds\n"
+            print( "Time step out of bounds\n")
                     
