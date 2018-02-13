@@ -107,15 +107,6 @@ int RESUMED;
 int last_ts;
 double Srate_depend_LJ_cap;
 
-////// PATCHY JANUS INTERACTIONS
-int SW_PATCHY;
-int    PATCHY_POWER;
-double PATCHY_EPSILON;
-double PATCHY_LAMBDA;
-double PATCHY_A_R_cutoff;
-const double PATCHY_AXIS[DIM] = {0.0, 0.0, 1.0};
-
-//////
 double RHO;
 double ETA;
 double kBT;
@@ -1411,72 +1402,6 @@ void Gourmet_file_io(const char *infile
       }
       ufout->put("LJ_powers",str);  
       ufres->put("LJ_powers",str);
-    }
-    
-    {
-      string str;
-      SW_PATCHY = 0;
-      PATCHY_POWER   = 0;
-      PATCHY_EPSILON = 0.0;
-      PATCHY_LAMBDA  = 0.0;
-      PATCHY_A_R_cutoff = 0.0;
-      
-      Location target("Patchy");	      
-      if(ufin->seek(target)){
-
-	ufin->get(target.sub("type"), str);	
-
-	if(str == "ON"){
-	  ufout->put(target.sub("type"), str);
-	  ufres->put(target.sub("type"), str);
-	  
-	  target.down("ON");
-	  
-	  ufin->get(target.sub("EPSILON"), PATCHY_EPSILON);
-	  ufout->put(target.sub("EPSILON"), PATCHY_EPSILON);
-	  ufres->put(target.sub("EPSILON"), PATCHY_EPSILON);
-	  if(PATCHY_EPSILON < 0.0){
-	    fprintf(stderr, "# Error: PATCHY EPSILON < 0.0 : %10.6g\n", PATCHY_EPSILON);
-	    exit_job(EXIT_FAILURE);
-	  }
-
-	  ufin->get(target.sub("LAMBDA"), PATCHY_LAMBDA);
-	  ufout->put(target.sub("LAMBDA"), PATCHY_LAMBDA);
-	  ufres->put(target.sub("LAMBDA"), PATCHY_LAMBDA);
-	  if(PATCHY_LAMBDA < 0.0){
-	    fprintf(stderr, "# Error: PATCHY LAMBDA < 0.0 : %10.6g\n", PATCHY_LAMBDA);
-	    exit_job(EXIT_FAILURE);
-	  }
-
-	  string dmy_power;
-	  ufin->get(target.sub("POWER"), dmy_power);
-	  if(dmy_power == "12"){
-	    PATCHY_POWER = 0;
-	  }else if (dmy_power == "18"){
-	    PATCHY_POWER = 1;
-	  }else if (dmy_power == "24"){
-	    PATCHY_POWER = 2;
-	  }else if (dmy_power == "30"){
-	    PATCHY_POWER = 3;
-	  }else if (dmy_power == "36"){
-	    PATCHY_POWER = 4;
-	  }else{
-	    fprintf (stderr, "# invalid PATCHY_POWER: %s\n", dmy_power.c_str());
-	    exit_job(EXIT_FAILURE);
-	  }
-	  ufout->put(target.sub("POWER"), dmy_power);
-	  ufres->put(target.sub("POWER"), dmy_power);
-
-	  SW_PATCHY = 1;	  	  	  
-	  target.up();
-	}else{
-	  if(str == "OFF"){
-	    ufout->put(target.sub("type"), str);
-	    ufres->put(target.sub("type"), str);
-	  }
-	}
-	
-      }
     }
     
     //  printf("%d\n",LJ_powers);
