@@ -23,7 +23,6 @@ void Mean_shear_sustaining_force_PBC_OBL(double **u){
     }
 
 
-    const double dmy0= -2./SQ(M_PI) * LY* NY * NX * NZ * 0. * .5;
     for(int m = 1; m < 2*Max_mean_shear_mode_PBC + 2; m++){
 	
 	int j = m;

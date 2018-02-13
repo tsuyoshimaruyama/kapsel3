@@ -592,9 +592,6 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
   //rigid particles
 #pragma omp parallel for 
   for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
-    int rigid_first_n = Rigid_Particle_Cumul[rigidID];
-    int rigid_last_n = Rigid_Particle_Cumul[rigidID];
-
     for(int d = 0; d < DIM; d++){
       //positions
       xGs[rigidID][d]          = rigid_p[rigidID].x[d];
@@ -646,7 +643,6 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
 
     //periodic boundary conditions
-    int sign;
     double delta_vx;
     if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
       PBC(p[n].x);

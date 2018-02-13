@@ -9,8 +9,6 @@
 
 #include "operate_omega.h"
 
-const int DIM2 = 2*DIM;
-
 void U2advection_k(double **u, double **advection){
     double u1;
     double u2;

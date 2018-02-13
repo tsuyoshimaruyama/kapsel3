@@ -132,7 +132,6 @@ inline void momentum_check(double const* const* up, Particle *p, const CTime &ji
   int const* const* sekibun_cell = Sekibun_cell;
   const int* Nlattice = Ns;
   const double radius = RADIUS;
-  static const double dmy0 = DX3 * RHO;
   /////////////////////////
   double xp[DIM], vp[DIM], omega_p[DIM], v_rot[DIM], r[DIM], x[DIM], fv[DIM],residue[DIM], fu[DIM];
   int x_int[DIM], r_mesh[DIM];

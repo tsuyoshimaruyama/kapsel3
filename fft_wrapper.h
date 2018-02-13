@@ -403,7 +403,7 @@ inline void Free_Transform_obl(){
 
 // Periodic spline interpolation
 inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag){
-  int im, im_ob;
+  int im;
   double dmy_x;
   double delta_y;
   double sign;
@@ -415,7 +415,7 @@ inline void Spline_u_oblique_transform(double **uu, const OBL_TRANSFORM &flag){
     exit_job(EXIT_FAILURE);
   }
 
-#pragma omp parallel for private(im, im_ob, dmy_x, delta_y)
+#pragma omp parallel for private(im, dmy_x, delta_y)
   for(int j = 0; j < NY; j++){//original coord
     int np;    
 #ifndef _OPENMP

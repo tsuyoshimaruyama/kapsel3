@@ -32,7 +32,6 @@ inline void Add_pfield_description(AVS_parameters &Avs_parameters
 				   )
 {
   FILE *fout;
-  char line[512];
   fout = filecheckopen(Avs_parameters.pfld_file, "a");
   fprintf(fout, "time value = \"step%dtime%g\"\n"
 	  , time.ts, time.time);

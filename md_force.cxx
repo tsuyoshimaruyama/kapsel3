@@ -20,7 +20,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   // Particle 変数の f に 
   // !! += 
   //で足す. f の初期値 が正しいと仮定している!!
-  const double pair_cutoff = (!SW_PATCHY ? A_R_cutoff * LJ_dia : PATCHY_A_R_cutoff * SIGMA);
+  const double pair_cutoff = A_R_cutoff * LJ_dia;
   double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
   double r_ij = 0.0;
   double shear_stress[2] = {0.0, 0.0};
@@ -39,7 +39,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
   lc[1] = int (NY / Cell_length);
   lc[2] = int (NZ / Cell_length);
   for(int d=0; d < DIM; d++ ){ 
-      lc_r[d] = Cell_length * DX;
+    lc_r[d] = Cell_length * DX;
   }
   lcyz = lc[1]*lc[2];
   lcxyz = lc[0]*lcyz;
@@ -50,102 +50,66 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 #pragma omp parallel for 
   for(int d=0; d < lcxyz; d++) head[d] = -1;
   for(int n=0;n<Particle_Number ; n++){
-      Particle *p_n = &p[n];
-      for(int d=0; d < DIM; d++ ){ 
-	  mc[d] = int( (*p_n).x[d] / lc_r[d] ) ;
-      }
-      cn = mc[0]*lcyz+mc[1]*lc[2]+mc[2];
-      lscl[n] = head[cn];
-      head[cn] = n;
+    Particle *p_n = &p[n];
+    for(int d=0; d < DIM; d++ ){ 
+      mc[d] = int( (*p_n).x[d] / lc_r[d] ) ;
+    }
+    cn = mc[0]*lcyz+mc[1]*lc[2]+mc[2];
+    lscl[n] = head[cn];
+    head[cn] = n;
   }
   
   for (ic[0]= 0 ; ic[0] < lc[0] ; ic[0]++){ 
-      for (ic[1]= 0 ; ic[1] < lc[1] ; ic[1]++){
-	  for (ic[2]= 0 ; ic[2] < lc[2] ; ic[2]++){
-	      cn = ic[0]*lcyz+ic[1]*lc[2]+ic[2];
-// Scan the neighbor cells (including itself) of cell c
-	      int icl[DIM],icls[DIM];
-	      for (icl[0]= ic[0]-1 ; icl[0] <= ic[0]+1 ; icl[0]++){ 
-		  for (icl[1]= ic[1]-1 ; icl[1] <= ic[1]+1 ; icl[1]++){
-		      for (icl[2]= ic[2]-1 ; icl[2] <= ic[2]+1 ; icl[2]++){
-// Consider periodic condition
-			  for(int d=0; d < DIM; d++ ){ 
-			      icls[d] = icl[d];
-			      if(icls[d] < 0){
-				  icls[d] = lc[d] -1;
-			      }
-			      if(icls[d] > (lc[d]-1)){
-				  icls[d] = 0;
-			      }
-			  }
-// Calculate the scalar cell index of the neighbor cell
-			  int cl = ((icls[0]+lc[0])%lc[0])*lcyz+((icls[1]+lc[1])%lc[1])*lc[2]+((icls[2]+lc[2])%lc[2]);
-// Scan atom i in cell c
-			  i = head[cn];
-			  while (i != -1){
-			      j = head[cl];
-		double i_dir[DIM] = {0.0, 0.0, 0.0};
+    for (ic[1]= 0 ; ic[1] < lc[1] ; ic[1]++){
+      for (ic[2]= 0 ; ic[2] < lc[2] ; ic[2]++){
+	cn = ic[0]*lcyz+ic[1]*lc[2]+ic[2];
+	// Scan the neighbor cells (including itself) of cell c
+	int icl[DIM],icls[DIM];
+	for (icl[0]= ic[0]-1 ; icl[0] <= ic[0]+1 ; icl[0]++){ 
+	  for (icl[1]= ic[1]-1 ; icl[1] <= ic[1]+1 ; icl[1]++){
+	    for (icl[2]= ic[2]-1 ; icl[2] <= ic[2]+1 ; icl[2]++){
+	      // Consider periodic condition
+	      for(int d=0; d < DIM; d++ ){ 
+		icls[d] = icl[d];
+		if(icls[d] < 0){
+		  icls[d] = lc[d] -1;
+		}
+		if(icls[d] > (lc[d]-1)){
+		  icls[d] = 0;
+		}
+	      }
+	      // Calculate the scalar cell index of the neighbor cell
+	      int cl = ((icls[0]+lc[0])%lc[0])*lcyz+((icls[1]+lc[1])%lc[1])*lc[2]+((icls[2]+lc[2])%lc[2]);
+	      // Scan atom i in cell c
+	      i = head[cn];
+	      while (i != -1){
+		j = head[cl];
 		int rigidID_i = -1;
-		if(SW_PATCHY) rigid_body_rotation(i_dir, PATCHY_AXIS, p[i].q, BODY2SPACE);
 		if(SW_PT == rigid) rigidID_i = Particle_RigidID[i];
 		
-			      while (j != -1){
-                                if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
-				      distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
+		while (j != -1){
+		  if (i > j && !rigid_chain(i,j) && !obstacle_chain(p[i].spec,p[j].spec)) {
+		    distance0_func( p[i].x, p[j].x, r_ij, r_ij_vec);
 		    
 		    if (r_ij < pair_cutoff){
-		      double dmy_r, dmy_o;
-		      double j_dir[DIM] = {0.0, 0.0, 0.0};
-		      double n_ij_vec[DIM] = {0.0, 0.0, 0.0};
-		      dmy_r = dmy_o = 0.0;
+		      double dmy_r = 0.0;
 		      
-		      if(SW_PATCHY){
-			rigid_body_rotation(j_dir, PATCHY_AXIS, p[j].q, BODY2SPACE);
-			n_ij_vec[0] = (j_dir[0] - i_dir[0]);
-			n_ij_vec[1] = (j_dir[1] - i_dir[1]);
-			n_ij_vec[2] = (j_dir[2] - i_dir[2]);
-
-			patchy_janus_f(dmy_r, dmy_o, r_ij,
-				       n_ij_vec[0]*r_ij_vec[0] + n_ij_vec[1]*r_ij_vec[1] + n_ij_vec[2]*r_ij_vec[2],
-				       SIGMA);
-			dmy_r = MIN(cap/r_ij,dmy_r);
-		      }else{
-			dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));			
-		      }
+		      dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));			
 		      
 		      {
 			//spherical particle forces
 			double dmy_fi[DIM] = {0.0, 0.0, 0.0};
-					  for(int d=0; d < DIM; d++ ){ 
-			  dmy_fi[d] = (dmy_r)*(-r_ij_vec[d]) + (dmy_o)*(-n_ij_vec[d]);
+			for(int d=0; d < DIM; d++ ){ 
+			  dmy_fi[d] = (dmy_r)*(-r_ij_vec[d]);
 			  
 			  p[i].fr[d] += dmy_fi[d];
 			  p[j].fr[d] -= dmy_fi[d];			  
 			}
-
-			//spherical particle torques
-			double dmy_ti[DIM] = {0.0, 0.0, 0.0};
-			double dmy_tj[DIM] = {0.0, 0.0, 0.0};
-
-			if(SW_PATCHY){
-			  dmy_ti[0] = (dmy_o) * (r_ij_vec[1]*i_dir[2] - r_ij_vec[2]*i_dir[1]);
-			  dmy_ti[1] = (dmy_o) * (r_ij_vec[2]*i_dir[0] - r_ij_vec[0]*i_dir[2]);
-			  dmy_ti[2] = (dmy_o) * (r_ij_vec[0]*i_dir[1] - r_ij_vec[1]*i_dir[0]);		     
-			  
-			  dmy_tj[0] = (-dmy_o) * (r_ij_vec[1]*j_dir[2] - r_ij_vec[2]*j_dir[1]);
-			  dmy_tj[1] = (-dmy_o) * (r_ij_vec[2]*j_dir[0] - r_ij_vec[0]*j_dir[2]);
-			  dmy_tj[2] = (-dmy_o) * (r_ij_vec[0]*j_dir[1] - r_ij_vec[1]*j_dir[0]);
-			}
-			for(int d = 0; d < DIM; d++){
-			  p[i].torque_r[d] += dmy_ti[d];
-			  p[j].torque_r[d] += dmy_tj[d];			  
-			}
-
+			
 			//stress
 			shear_stress[0] += (dmy_fi[0] * r_ij_vec[1]);
-			shear_stress[1] += ((dmy_ti[2] + dmy_tj[2])/2.0);
 			
-
+			
 			//rigid body forces & torques
 			//particles treated as additive LJ centers: overlaps are not corrected
 			if(SW_PT == rigid){
@@ -156,33 +120,33 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
 			    forceGrs[rigidID_j][d] -= dmy_fi[d];
 			  }
 			  
-			  torqueGrs[rigidID_i][0] += (dmy_ti[0] + (GRvecs[i][1]*dmy_fi[2] - GRvecs[i][2]*dmy_fi[1]));
-			  torqueGrs[rigidID_i][1] += (dmy_ti[1] + (GRvecs[i][2]*dmy_fi[0] - GRvecs[i][0]*dmy_fi[2]));
-			  torqueGrs[rigidID_i][2] += (dmy_ti[2] + (GRvecs[i][0]*dmy_fi[1] - GRvecs[i][1]*dmy_fi[0]));
+			  torqueGrs[rigidID_i][0] += ((GRvecs[i][1]*dmy_fi[2] - GRvecs[i][2]*dmy_fi[1]));
+			  torqueGrs[rigidID_i][1] += ((GRvecs[i][2]*dmy_fi[0] - GRvecs[i][0]*dmy_fi[2]));
+			  torqueGrs[rigidID_i][2] += ((GRvecs[i][0]*dmy_fi[1] - GRvecs[i][1]*dmy_fi[0]));
 			  
-			  torqueGrs[rigidID_j][0] += (dmy_tj[0] - (GRvecs[j][1]*dmy_fi[2] - GRvecs[j][2]*dmy_fi[1]));
-			  torqueGrs[rigidID_j][1] += (dmy_tj[1] - (GRvecs[j][2]*dmy_fi[0] - GRvecs[j][0]*dmy_fi[2]));
-			  torqueGrs[rigidID_j][2] += (dmy_tj[2] - (GRvecs[j][0]*dmy_fi[1] - GRvecs[j][1]*dmy_fi[0]));
+			  torqueGrs[rigidID_j][0] += ((GRvecs[j][1]*dmy_fi[2] - GRvecs[j][2]*dmy_fi[1]));
+			  torqueGrs[rigidID_j][1] += ((GRvecs[j][2]*dmy_fi[0] - GRvecs[j][0]*dmy_fi[2]));
+			  torqueGrs[rigidID_j][2] += ((GRvecs[j][0]*dmy_fi[1] - GRvecs[j][1]*dmy_fi[0]));
 			  
 			  double R_IJ_vec[DIM];
 			  double R_IJ;
 			  distance0_func(xGs[rigidID_i], xGs[rigidID_j], R_IJ, R_IJ_vec);
 			  rigid_shear_stress[0]  += (dmy_fi[0] * R_IJ_vec[1]);
 			}
-					  }
-				      }
-				  }
-				  j = lscl[j];
-			      }
-			      i = lscl[i];
-			  }
 		      }
+		    }
 		  }
+		  j = lscl[j];
+		}
+		i = lscl[i];
 	      }
+	    }
 	  }
+	}
       }
+    }
   }
-
+  
   dev_shear_stress_lj  += shear_stress[0];
   dev_shear_stress_rot += shear_stress[1];
   
@@ -197,7 +161,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(Particle *p
       dmy_shear += (Jyy*IinvN[2] - Jzy*IinvN[1]);
     }
     rigid_shear_stress[1] = dmy_shear;
-
+    
     rigid_dev_shear_stress_lj  += rigid_shear_stress[0];
     rigid_dev_shear_stress_rot += rigid_shear_stress[1];
   }
@@ -213,75 +177,39 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
   // Particle $BJQ?t$N(B f $B$K(B 
   // !! += 
   //$B$GB-$9(B. f $B$N=i4|CM(B $B$,@5$7$$$H2>Dj$7$F$$$k(B!!
-  const double pair_cutoff = (!SW_PATCHY ? A_R_cutoff * LJ_dia : PATCHY_A_R_cutoff * SIGMA);
+  const double pair_cutoff = A_R_cutoff * LJ_dia;
 
   double shear_stress[2] = {0.0, 0.0};
   double rigid_shear_stress[2] = {0.0, 0.0};
   
   for(int n=0;n<Particle_Number ; n++){
     Particle *p_n = &p[n];
-    double n_dir[DIM] = {0.0, 0.0, 0.0};
     int rigidID_n = -1;
     if(SW_PT == rigid) rigidID_n = Particle_RigidID[n];
-    if(SW_PATCHY) rigid_body_rotation(n_dir, PATCHY_AXIS, p_n->q, BODY2SPACE);
     
     for(int m=n+1; m < Particle_Number ; m++){
-      double m_dir[DIM] = {0.0, 0.0, 0.0};
-      double n_ij_vec[DIM] = {0.0, 0.0, 0.0};
       double r_ij_vec[DIM] = {0.0, 0.0, 0.0};
       double r_ij = 0.0;
 
       distance0_func( (*p_n).x, p[m].x, r_ij, r_ij_vec);
 
       if(r_ij < pair_cutoff && !rigid_chain(n,m) && !obstacle_chain(p[n].spec,p[m].spec)){
-	double dmy_r, dmy_o;
-	dmy_r = dmy_o = 0.0;
+	double dmy_r = 0.0;
 
-	if(SW_PATCHY){
-	  rigid_body_rotation(m_dir, PATCHY_AXIS, p[m].q, BODY2SPACE);
-	  n_ij_vec[0] = (m_dir[0] - n_dir[0]);
-	  n_ij_vec[1] = (m_dir[1] - n_dir[1]);
-	  n_ij_vec[2] = (m_dir[2] - n_dir[2]);
-	  
-	  patchy_janus_f(dmy_r, dmy_o, r_ij,
-			 n_ij_vec[0]*r_ij_vec[0] + n_ij_vec[1]*r_ij_vec[1] + n_ij_vec[2]*r_ij_vec[2],
-			 SIGMA
-			 );	  
-	}else{
-	  dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));
-	  dmy_o = 0.0;
-	}
+	dmy_r = MIN(cap/r_ij,Lennard_Jones_f( r_ij , LJ_dia));
 
 	{
 	  //forces
 	  double dmy_fn[DIM] = {0.0, 0.0, 0.0};
 	  for(int d=0; d < DIM; d++ ){ 
-	    dmy_fn[d] = (dmy_r) * (-r_ij_vec[d]) + (dmy_o) * (-n_ij_vec[d]);
+	    dmy_fn[d] = (dmy_r) * (-r_ij_vec[d]);
 	    
 	    (*p_n).fr[d] += dmy_fn[d];
 	    p[m].fr[d]   -= dmy_fn[d];
 	  }
 
-	  //torques	  
-	  double dmy_tn[DIM] = {0.0, 0.0, 0.0};
-	  double dmy_tm[DIM] = {0.0, 0.0, 0.0};
-	  if(SW_PATCHY){	
-	    dmy_tn[0] = (dmy_o)*(r_ij_vec[1]*n_dir[2] - r_ij_vec[2]*n_dir[1]);
-	    dmy_tn[1] = (dmy_o)*(r_ij_vec[2]*n_dir[0] - r_ij_vec[0]*n_dir[2]);
-	    dmy_tn[2] = (dmy_o)*(r_ij_vec[0]*n_dir[1] - r_ij_vec[1]*n_dir[0]);
-	    
-	    dmy_tm[0] = (-dmy_o)*(r_ij_vec[1]*m_dir[2] - r_ij_vec[2]*m_dir[1]);
-	    dmy_tm[1] = (-dmy_o)*(r_ij_vec[2]*m_dir[0] - r_ij_vec[0]*m_dir[2]);
-	    dmy_tm[2] = (-dmy_o)*(r_ij_vec[0]*m_dir[1] - r_ij_vec[1]*m_dir[0]);
-	  }
-	  for(int d = 0; d < DIM; d++){
-	    (*p_n).torque_r[d] += dmy_tn[d];
-	    p[m].torque_r[d]   += dmy_tm[d];
-	  }
-
 	  //stress
 	  shear_stress[0] += (dmy_fn[0] * r_ij_vec[1]);
-	  shear_stress[1] += ((dmy_tn[2] + dmy_tm[2])/2.0);
 
 	  // rigid body forces & torques
 	  if(SW_PT == rigid){
@@ -292,13 +220,13 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(Particle *p
 	      forceGrs[rigidID_m][d] -= dmy_fn[d];
 	    }
 
-	    torqueGrs[rigidID_n][0] += (dmy_tn[0] + (GRvecs[n][1]*dmy_fn[2] - GRvecs[n][2]*dmy_fn[1]));
-	    torqueGrs[rigidID_n][1] += (dmy_tn[1] + (GRvecs[n][2]*dmy_fn[0] - GRvecs[n][0]*dmy_fn[2]));
-	    torqueGrs[rigidID_n][2] += (dmy_tn[2] + (GRvecs[n][0]*dmy_fn[1] - GRvecs[n][1]*dmy_fn[0]));
+	    torqueGrs[rigidID_n][0] += ((GRvecs[n][1]*dmy_fn[2] - GRvecs[n][2]*dmy_fn[1]));
+	    torqueGrs[rigidID_n][1] += ((GRvecs[n][2]*dmy_fn[0] - GRvecs[n][0]*dmy_fn[2]));
+	    torqueGrs[rigidID_n][2] += ((GRvecs[n][0]*dmy_fn[1] - GRvecs[n][1]*dmy_fn[0]));
 
-	    torqueGrs[rigidID_m][0] += (dmy_tm[0] - (GRvecs[m][1]*dmy_fn[2] - GRvecs[m][2]*dmy_fn[1]));
-	    torqueGrs[rigidID_m][1] += (dmy_tm[1] - (GRvecs[m][2]*dmy_fn[0] - GRvecs[m][0]*dmy_fn[2]));
-	    torqueGrs[rigidID_m][2] += (dmy_tm[2] - (GRvecs[m][0]*dmy_fn[1] - GRvecs[m][1]*dmy_fn[0]));
+	    torqueGrs[rigidID_m][0] += ((GRvecs[m][1]*dmy_fn[2] - GRvecs[m][2]*dmy_fn[1]));
+	    torqueGrs[rigidID_m][1] += ((GRvecs[m][2]*dmy_fn[0] - GRvecs[m][0]*dmy_fn[2]));
+	    torqueGrs[rigidID_m][2] += ((GRvecs[m][0]*dmy_fn[1] - GRvecs[m][1]*dmy_fn[0]));
 
 	    double R_IJ_vec[DIM];
 	    double R_IJ;
@@ -383,7 +311,6 @@ void Calc_f_slip_correct_precision(Particle *p, double const* const* u, const CT
       
       for(int mesh=0; mesh < NP_domain; mesh++){
 	Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);
-	double x[DIM];
 	for(int d=0;d<DIM;d++){
 	  x[d] = r_mesh[d] * DX;
 	}
