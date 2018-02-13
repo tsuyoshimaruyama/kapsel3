@@ -508,7 +508,7 @@ void Make_phi_particle(double *phi
 		       ,const double radius
 		       ){
   const int SW_UP = 0;
-  double **dmy_up = nullptr;
+  double **dmy_up = NULL;
   int *nlattice;
   nlattice = Ns;
   Make_phi_u_primitive(phi, dmy_up, p, SW_UP,DX,NP_domain
@@ -556,7 +556,7 @@ void Make_phi_particle_OBL(double *phi
 			   ,const double radius
     ){
     const int SW_UP = 0;
-    double **dmy_up = nullptr;
+    double **dmy_up = NULL;
     int *nlattice;
     nlattice = Ns;
     Make_phi_u_primitive_OBL(phi, dmy_up, p, SW_UP,DX,NP_domain
