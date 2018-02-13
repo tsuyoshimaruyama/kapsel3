@@ -181,8 +181,8 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
 void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Particle *p, CTime &jikan){
     //AC
     Angular_Frequency = PI2*Shear_frequency;
-    double ifreq = 1/Angular_Frequency;
-    double shear_amp = Shear_rate * ifreq;
+    //    double ifreq = 1/Angular_Frequency;
+    //    double shear_amp = Shear_rate * ifreq;
     //
     const Index_range* ijk_range = ijk_range_two_third_filter;
     const int n_ijk_range = n_ijk_range_two_third_filter;

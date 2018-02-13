@@ -353,11 +353,14 @@ inline void Set_global_parameters(void){
 	}else if(SW_EQ == Electrolyte){
 	    Tdump=1./(NU * KMAX2);
 	    double KMAX=sqrt(KMAX2);
-	    double dmy_onsager_coeff;
+	    double dmy_onsager_coeff = 0.0;
 	    if(N_spec==1){
 		dmy_onsager_coeff=Onsager_coeff_counterion;
 	    }else if(N_spec==2){
 		dmy_onsager_coeff=MAX(Onsager_coeff_positive_ion,Onsager_coeff_negative_ion);
+	    }else{
+	      fprintf(stderr, "# Error : N_spec should be 1 or 2\n");
+	      exit_job(EXIT_FAILURE);
 	    }
 	    double diffusion_time
 		= 1./(kBT * dmy_onsager_coeff * KMAX2);

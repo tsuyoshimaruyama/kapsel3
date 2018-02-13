@@ -154,17 +154,15 @@ void Solute_solver_rhs_nonlinear_x_single(double **grad_potential
 					  ,double &onsager_coeff
 					  ){
   int im;
-  double dmy_u[DIM];
   double dmy_grad_pot[DIM];
   double dmy_conc;
   double dmy_conc_flux[DIM];
   double dmy_interaction;
-#pragma omp parallel for private(im,dmy_u,dmy_grad_pot,dmy_conc,dmy_conc_flux,dmy_interaction)
+#pragma omp parallel for private(im,dmy_grad_pot,dmy_conc,dmy_conc_flux,dmy_interaction)
   for(int i=0; i<NX; i++){
     for(int j=0; j<NY; j++){
       for(int k=0; k<NZ; k++){
 	im=(i*NY*NZ_)+(j*NZ_)+k;
-	//double dmy_u[DIM];
 	//double dmy_grad_pot[DIM];
 
 	for(int d=0;d<DIM;d++){

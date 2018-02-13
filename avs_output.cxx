@@ -208,7 +208,6 @@ inline void Add_field_description(AVS_parameters &Avs_parameters
 				  ,const int &veclen
 				  ){
   FILE *fout;
-  char line[512];
   fout=filecheckopen(Avs_parameters.fld_file,"a");
   fprintf(fout,"time value = \"step%dtime%g\"\n"
 	  ,time.ts, time.time);
@@ -347,7 +346,6 @@ void Output_avs_charge(AVS_parameters &Avs_parameters
 	  Out_dir, Avs_parameters.out_pfx, time.ts);
   fout=filecheckopen(Avs_parameters.data_file,"wb");
   
-  double dmy_surface_area = PI4 * RADIUS * RADIUS;
   if(SW_OUTFORMAT == OUT_AVS_BINARY){
     Binary_write(fout, Avs_parameters, u[0]);
     Binary_write(fout, Avs_parameters, u[1]);

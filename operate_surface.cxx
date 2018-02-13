@@ -12,7 +12,6 @@
 void Make_particle_momentum_factor(double const* const* u, Particle *p){
   //////////////////////////////
   const double dx = DX;
-  const double dx3 = DX3;
   const int np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* nlattice = Ns;
@@ -170,7 +169,6 @@ inline void slip_droplet(double *vp, double *wp, double *delta_v, double *delta_
 void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p, const CTime &jikan){
   //////////////////////// System parameters
   const double dx = DX;
-  const double dx3 = DX3;
   const int np_domain = NP_domain;
   int const* const* sekibun_cell = Sekibun_cell;
   const int* nlattice = Ns;
@@ -185,14 +183,14 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   double r[DIM], x[DIM], residue[DIM], u_fluid[DIM];
   
   double dmy_xi, dmy_theta, dmy_tau;
-  double dmy_vslip, slip_mode, slip_vel, dmy_us;
+  double dmy_vslip, slip_mode, slip_vel;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double dmy_fv[DIM], force_s[DIM], torque_s[DIM], force_p[DIM], torque_p[DIM];
 
 #pragma omp parallel for \
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_sr, dmy_phi, dmy_phi_s, xp, vp, omega_p, v_rot, \
 	  delta_v, delta_w, delta_v_rot, r, x, residue, u_fluid, \
-	  dmy_xi, dmy_theta, dmy_tau, dmy_vslip, slip_mode, slip_vel, dmy_us,  \
+	  dmy_xi, dmy_theta, dmy_tau, dmy_vslip, slip_mode, slip_vel,  \
 	  n_r, n_theta, n_tau, dmy_fv, force_s, torque_s, force_p, torque_p)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;

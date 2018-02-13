@@ -124,7 +124,7 @@ void Make_rho_field(double *phi
 //
 inline double janus_geometry(const Particle &p, const double normal[DIM]){
   double body_normal[DIM];
-  double cos_theta;
+  double cos_theta = 1.0;
 
   rigid_body_rotation(body_normal, normal, p.q, SPACE2BODY);
   if(janus_axis[p.spec] == x_axis){
@@ -133,8 +133,7 @@ inline double janus_geometry(const Particle &p, const double normal[DIM]){
     cos_theta = body_normal[1];
   }else if(janus_axis[p.spec] == z_axis){
     cos_theta = body_normal[2];
-  }
-  else if(janus_axis[p.spec] == no_axis){
+  }else if(janus_axis[p.spec] == no_axis){
     cos_theta = 1.0;
   }else{
     fprintf(stderr, "Error: %d not a janus particle\n", p.spec);
@@ -509,7 +508,7 @@ void Make_phi_particle(double *phi
 		       ,const double radius
 		       ){
   const int SW_UP = 0;
-  double **dmy_up;
+  double **dmy_up = nullptr;
   int *nlattice;
   nlattice = Ns;
   Make_phi_u_primitive(phi, dmy_up, p, SW_UP,DX,NP_domain
@@ -557,7 +556,7 @@ void Make_phi_particle_OBL(double *phi
 			   ,const double radius
     ){
     const int SW_UP = 0;
-    double **dmy_up;
+    double **dmy_up = nullptr;
     int *nlattice;
     nlattice = Ns;
     Make_phi_u_primitive_OBL(phi, dmy_up, p, SW_UP,DX,NP_domain
