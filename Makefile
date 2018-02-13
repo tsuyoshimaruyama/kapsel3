@@ -41,6 +41,9 @@ GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
 TARGET_DIR=$(ENGINE_HOME_PATH)/bin/$(ARCH)
 OSTYPE = $(shell uname)
 
+GITREF     := $(shell git describe --all)
+GITVERSION := $(shell git describe --long --dirty --always --tags)
+GITFLAGS   = -DGIT_VERSION=\"$(GITVERSION)\" -DGIT_REF=\"$(GITREF)\"
 ifeq ($(ENV),)
   ifneq (,$(findstring CYGWIN,$(OSTYPE)))
     ifeq ($(ARCH),win32)
@@ -233,10 +236,10 @@ $(XYZ): $(XYZ_OBJS)
 ## Compile
 
 .cxx.o: 
-	$(CXX) -c $< $(CFLAGS) -o $@
+	$(CXX) -c $< $(CFLAGS) $(GITFLAGS) -o $@
 
 .c.o: 
-	$(CC) -c $< $(CFLAGS) -o $@
+	$(CC) -c $< $(CFLAGS) $(GITFLAGS) -o $@
 
 ## Clean
 
