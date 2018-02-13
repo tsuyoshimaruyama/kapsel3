@@ -496,8 +496,10 @@ void Gourmet_file_io(const char *infile
     // --------------------------------------------------------
 
     {//check udf version
-      string code_version="v3.13";
-      fprintf(stderr, "# Kapsel: UDF %s\n", code_version.c_str());
+      string code_version="v3.3";
+      fprintf(stderr, "# Kapsel       : UDF %s\n", code_version.c_str());
+      fprintf(stderr, "# Git Version  : %s\n", GIT_VERSION);
+      fprintf(stderr, "# Git Reference: %s\n", GIT_REF);
 
       string udf_name = ufin->getEngineName();
       string udf_version = ufin->getEngineVersion();

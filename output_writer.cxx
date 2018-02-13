@@ -171,6 +171,13 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       //total number of particles in system
       status = H5LTset_attribute_int(fid, "/", "nump_total", &nump, 1);
       h5_check_err(status);
+
+      //git veresion information
+      status = H5LTset_attribute_string(fid, "/", "git_version", GIT_VERSION);
+      h5_check_err(status);
+
+      status = H5LTset_attribute_string(fid, "/", "git_ref", GIT_REF);
+      h5_check_err(status);
     }
 
     //create main groups
