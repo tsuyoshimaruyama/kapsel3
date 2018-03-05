@@ -388,7 +388,8 @@ void Init_Particle(Particle *p){
 	p[i].surface_mass = 0.0;
 	for(int d=0; d< DIM; d++){
 	  p[i].x_nopbc[d] = p[i].x[d];
-	  p[i].v[d] = 0.e0 * RA();
+
+	  if(DISTRIBUTION != user_specify) p[i].v[d] = 0.e0;
 	  p[i].v_old[d] = 0.e0;
 	  p[i].v_slip[d] = 0.0;
 	  p[i].f_hydro[d] = 0.0;
@@ -400,8 +401,8 @@ void Init_Particle(Particle *p){
 	  p[i].fr_previous[d] = 0.0;
 	  p[i].torque_r[d] = 0.0;
 	  p[i].torque_r_previous[d] = 0.0;
-	  
-	  p[i].omega[d] = 0.0e0 *RA();
+
+	  if(DISTRIBUTION != user_specify) p[i].omega[d] = 0.e0;	  
 	  p[i].omega_old[d] = 0.0;
 	  p[i].omega_slip[d] = 0.0;
 	  p[i].torque_hydro[d] = 0.0;
