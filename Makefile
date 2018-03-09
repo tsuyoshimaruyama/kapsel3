@@ -30,8 +30,8 @@
 #ARCH              = $(PF_ENGINEARCH)
 # OR
 # Define environment variables explicitly here
-GOURMET_HOME_PATH  = /usr/local/OCTA8/GOURMET
-ENGINE_HOME_PATH   = /usr/local/OCTA8/ENGINES
+GOURMET_HOME_PATH  = /usr/local/OCTA83/GOURMET
+ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
 ARCH               = linux_64
 #
 AUX= ./Tools

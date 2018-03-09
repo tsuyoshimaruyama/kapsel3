@@ -13,4 +13,4 @@ for i in range(n):
 	cord[0]=x0+r-r*cos(th)
 	cord[1]=y0-r*sin(th)
 	cord[2]=z0
-	print i,cord
+	print( i,cord)

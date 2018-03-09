@@ -1,5 +1,5 @@
 type=$constitutive_eq.type
-print type
+print( type)
 if type == "Navier_Stokes" :
 	dx=$constitutive_eq.Navier_Stokes.DX
 elif type == "Shear_Navier_Stokes" :
@@ -27,8 +27,8 @@ elif objType=="rigid":
 size_Ns=len(Ns)
 RAD=($A*dx)*1.
 for i in range(size_Ns):
-	print Ns[i][0],
-print LX,LY,LZ
+	print Ns[i][0], end='')
+print( LX,LY,LZ)
 cells=[[0,0,0],[0,LY,0],[LX,LY,0],[LX,0,0],[0,0,0],[0,0,LZ],[LX,0,LZ],[LX,LY,LZ],[0,LY,LZ],[0,0,LZ]]
 polyline(cells,1)
 line([ 0,LY, 0],[ 0,LY,LZ],1)
@@ -94,7 +94,7 @@ def setAVS():
 	avs_ts = str(int($t))
 	avs_file_path = join(os.path.join(os.path.split(_udf_.udfFile())[:-1])) + "/" + $output.ON.Out_dir + "/avs"
 	avs_file_name = join([$output.ON.Out_name,"_",avs_ts,".dat"],"")
-	print os.path.join(avs_file_path,avs_file_name)
+	print( os.path.join(avs_file_path,avs_file_name))
 	return os.path.join(avs_file_path,avs_file_name)
 def setData():
 	global	u
@@ -150,7 +150,7 @@ def showVelocity():
 						std_usize = norm*math.sqrt(usize)
 						hue = color_start*(1 - std_usize)
 						if(hue < (color_start - 1)):
-							print 'hue over'
+							print( 'hue over')
 						while (hue < 0):
 							hue += 1
 						li_rgb = colorsys.hsv_to_rgb(hue,1.0,1.0)

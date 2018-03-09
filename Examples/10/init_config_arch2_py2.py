@@ -15,17 +15,17 @@ cord=[0.,0.,0.]
 cord[0]=x0+r*sin(th0)
 cord[1]=y0-r*cos(th0)
 cord[2]=z0
-print( ii,cord)
+print ii,cord
 for i in range(nn):
 	ii=ii+1
 	th=th0+g*float(i+1)/r
 	cord[0]=x0+r*sin(th)
 	cord[1]=y0-r*cos(th)
 	cord[2]=z0
-	print( ii,cord)
+	print ii,cord
 	ii=ii+1
 	th=th0-g*float(i+1)/r
 	cord[0]=x0+r*sin(th)
 	cord[1]=y0-r*cos(th)
 	cord[2]=z0
-	print( ii,cord)
+	print ii,cord

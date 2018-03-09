@@ -1,23 +1,12 @@
 type=$constitutive_eq.type
-print( type)
+shear_rate_v=0.
+print type
 if type == "Navier_Stokes" :
 	dx=$constitutive_eq.Navier_Stokes.DX
-elif type == "Qian_Sheng" :
-	dx=$constitutive_eq.Qian_Sheng.DX
-elif type == "nematic_Allen_Cahn" :
-	dx=$constitutive_eq.nematic_Allen_Cahn.DX
-elif type == "Olmsted_Goldbart" :
-	dx=$constitutive_eq.Olmsted_Goldbart.DX
-elif type == "Slippy_Navier_Stokes" :
-	dx=$constitutive_eq.Slippy_Navier_Stokes.DX
 elif type == "Shear_Navier_Stokes" :
 	dx=$constitutive_eq.Shear_Navier_Stokes.DX
-elif type == "Shear_Navier_Stokes_Lees_Edwards" :
-	dx=$constitutive_eq.Shear_Navier_Stokes_Lees_Edwards.DX
 elif type == "Electrolyte" :
 	dx=$constitutive_eq.Electrolyte.DX
-elif type == "Two_fluid" :
-	dx=$constitutive_eq.Two_fluid.DX
 NX=2**$mesh.NPX
 NY=2**$mesh.NPY
 NZ=2**$mesh.NPZ
@@ -25,26 +14,29 @@ LX=dx*NX
 LY=dx*NY
 LZ=dx*NZ
 objType=$object_type.type
-if type == "Shear_Navier_Stokes" :
-	shear_rate_v=0.5*LY*$constitutive_eq.Shear_Navier_Stokes.External_field.DC.Shear_rate
-elif type == "Shear_Navier_Stokes_Lees_Edwards" :
-	shear_rate_v=0.5*LY*$constitutive_eq.Shear_Navier_Stokes_Lees_Edwards.External_field.DC.Shear_rate
+shear_type=$constitutive_eq.Shear_Navier_Stokes.External_field.type
+if shear_type == "AC":
+	shear_rate_v=0.25*LY*$constitutive_eq.Shear_Navier_Stokes.External_field.AC.Shear_rate
+elif shear_type == "DC":
+	shear_rate_v=0.25*LY*$constitutive_eq.Shear_Navier_Stokes.External_field.DC.Shear_rate
 if objType=="spherical_particle":
 	Ns=getArray($object_type.spherical_particle.Particle_spec[])
 elif objType=="chain":
 	Ns=getArray($object_type.chain.Chain_spec[])
+elif objType=="rigid":
+	Ns=getArray($object_type.rigid.Rigid_spec[])
 size_Ns=len(Ns)
 RAD=($A*dx)*1.
 for i in range(size_Ns):
-	print( Ns[i][0], end='')
-print( LX,LY,LZ)
+	print Ns[i][0],
+print LX,LY,LZ
 cells=[[0,0,0],[0,LY,0],[LX,LY,0],[LX,0,0],[0,0,0],[0,0,LZ],[LX,0,LZ],[LX,LY,LZ],[0,LY,LZ],[0,0,LZ]]
 polyline(cells,1)
 line([ 0,LY, 0],[ 0,LY,LZ],1)
 line([LX, 0, 0],[LX, 0,LZ],1)
 line([LX,LY, 0],[LX,LY,LZ],1)
 #cells2=[[-0.5,-0.5,LZ/2],[-0.5,LY-0.5,LZ/2],[LX-0.5,LY-0.5,LZ/2],[LX-0.5,-0.5,LZ/2]]
-cells2=[[0,0,LZ/2],[0,LY,LZ/2],[LX,LY,LZ/2],[LX,0,LZ/2]]
+#cells2=[[0,0,LZ/2],[0,LY,LZ/2],[LX,LY,LZ/2],[LX,0,LZ/2]]
 #polyline(cells2,1)
 spat=[
 	[1.0,0,0,1.0,RAD],
@@ -57,11 +49,10 @@ spat=[
 	]
 n_offset = 0
 for i in range(size_Ns):
-	NN=Ns[i][0]*Ns[i][1]
-	for n in range(NN):
+	for n in range(Ns[i][0]):
 		r=$Particles[n_offset+n].R
 		sphere(r,spat[i%len(spat)])
-	n_offset += NN
+	n_offset += Ns[i][0]
 #n_offset = 0
 #for i in range(size_Ns):
 #	for n in range(Ns[i][0]):
@@ -86,7 +77,7 @@ SHOW_VEC_VOLUME = 0
 SHOW_PRESSURE = 0
 SHOW_VOLUME = 0
 ### Velocity
-coord_skip = 1
+coord_skip = 2
 color_start = 0.66666666666
 z_factor = 1
 arrow_factor = 4
@@ -102,10 +93,9 @@ ii = [[1,0,0],
 vn = ii[view_axes]
 def setAVS():
 	avs_ts = str(int($t))
-	avs_file_path = join(os.path.join(os.path.split(_udf_.udfFile())[:-1]))
-	avs_file_path = join([avs_file_path,"/",$output.ON.Out_dir,"/avs/"],"")
+	avs_file_path = join(os.path.join(os.path.split(_udf_.udfFile())[:-1])) + "/" + $output.ON.Out_dir + "/avs"
 	avs_file_name = join([$output.ON.Out_name,"_",avs_ts,".dat"],"")
-	print( os.path.join(avs_file_path,avs_file_name))
+	print os.path.join(avs_file_path,avs_file_name)
 	return os.path.join(avs_file_path,avs_file_name)
 def setData():
 	global	u
@@ -122,14 +112,10 @@ def showVelocity():
 		for j in range(NY):
 			for i in range(NX):
 				iijk = [i,j,k]
-				if((((i%coord_skip)==0)
-				    and ((j%coord_skip)==0)
-				    and ((k%coord_skip)==0))
-				   and (iijk[view_axes]==slice[view_axes])):
+				#if((((i%coord_skip)==0)and((j%coord_skip)==0)and ((k%coord_skip)==0))and(iijk[view_axes]==slice[view_axes])):
+				if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and((iijk[0]==slice[0])or(iijk[1]==slice[1])or(iijk[2]==slice[2]))):
 					[ux,uy,uz]=[u[offset],u[offset+msize],u[offset+msize*2]]
 					usize = dot([ux,uy,uz],[ux,uy,uz])
-					if usize > shear_rate_v*shear_rate_v:
-						usize = shear_rate_v*shear_rate_v
 					if(i==0 and j==0 and k==0):
 						minmax = [usize,usize]
 					if(minmax[0] > usize):
@@ -149,26 +135,19 @@ def showVelocity():
 		for j in range(NY):
 			for i in range(NX):
 				iijk = [i,j,k]
-				if((((i%coord_skip)==0)
-				    and ((j%coord_skip)==0)
-				    and ((k%coord_skip)==0))
-				   and (iijk[view_axes]==slice[view_axes])):
+				#if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and(iijk[view_axes]==slice[view_axes])):
+				if((((i%coord_skip)==0)and((j%coord_skip)==0)and((k%coord_skip)==0))and((iijk[0]==slice[0])or(iijk[1]==slice[1])or(iijk[2]==slice[2]))):
 					[ux,uy,uz]=[u[offset],u[offset+msize],u[offset+msize*2]]
 					usize = dot([ux,uy,uz],[ux,uy,uz])
-					if usize > shear_rate_v*shear_rate_v:
-						usize = shear_rate_v*shear_rate_v
 					if(norm):
 						std_usize = norm*math.sqrt(usize)
 						hue = color_start*(1 - std_usize)
 						if(hue < (color_start - 1)):
-							print( 'hue over')
+							print 'hue over'
 						while (hue < 0):
 							hue += 1
 						li_rgb = colorsys.hsv_to_rgb(hue,1.0,1.0)
-						if dot([ux,uy,uz],[ux,uy,uz]) < shear_rate_v*shear_rate_v:
-							scale = 80.
-						else:
-							scale = 80.*shear_rate_v/math.sqrt(dot([ux,uy,uz],[ux,uy,uz]))
+						scale = 0.2
 						dmyvn=[1,1,1]
 						dmyvn[view_axes]=z_factor
 						ux *= scale*dmyvn[0]
@@ -183,7 +162,7 @@ def showVelocity():
 						#      )
 						cone ([i,j,k],
 						      [i+ux,j+uy,k+uz],
-						      [li_rgb[0],li_rgb[1],li_rgb[2],1.0,0.4]
+						      [li_rgb[0],li_rgb[1],li_rgb[2],1.0,0.2]
 						      )
 				offset+=1
 def showPressure():
@@ -233,7 +212,11 @@ def showVecVolume():
 				field.setSubValue([i,j,k],msusize)
 				offset+=1
 	if(SHOW_VEC_VOLUME):
-		field.drawVolume([0,0,1,1,0,1,1,1],intensity=2,slope_factor=4)
+		field.drawVolume([0,0,1,1,0,1,1,1],intensity=0.5,slope_factor=5)
 setData()
-if(SHOW_VELOCITY):
+if(SHOW_VEC_VOLUME):
+	showVecVolume()
+elif(SHOW_VELOCITY):
 	showVelocity()
+else:
+	showPressure()
