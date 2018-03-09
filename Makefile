@@ -4,10 +4,9 @@
 ### Command line options for make ###
 #
 ### FOR LINUX ##
-#ENV = GCC
-#ENV = ICC
-#ENV = ICC_MKL_OMP
-#
+# ENV = GCC
+# ENV = ICC
+# ENV = ICC_OMP
 ### FOR WINDOWS ###
 #ENV = CYGWIN
 #ENV = MINGW64
@@ -17,6 +16,10 @@
 #ENV = GCC_MAC
 #ENV = CLANG
 #
+### FFT LIB ###
+# FFT = FFTW
+# FFT = IMKL
+# FFT = OOURA
 ### HDF5 SUPPORT ###
 #HDF5 = ON
 
@@ -135,26 +138,41 @@ ifeq ($(ENV), ICC)
       ARCH   = linux_64
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -w0
+      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -w0
 #      LINKS  = -lm -lplatform -lcxaguard -lstdc++
       LINKS  = -lm -lplatform -lstdc++ -static-intel
 	ifeq ($(HDF5), ON)
 		LINKS  += -L/opt/hdf5.1.8/lib
 		CCOPT  += -I/opt/hdf5.1.8/include
 	endif
+	ifeq ($(FFT), FFTW)
+		CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
+		LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
+	endif
+	ifeq ($(FFT), IMKL)
+		CCOPT += -D_FFT_IMKL
+		LINKS += -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread
+	endif
 endif
 
-## options for GCC+MKL+OMP/LINUX
-ifeq ($(ENV), ICC_MKL_OMP)
+## options for ICC+OMP/LINUX
+ifeq ($(ENV), ICC_OMP)
       ARCH   = linux_64
       CC     = icc 
       CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axAVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
-#      LINKS  = -lplatform -lcxaguard -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread  -lmkl_core -lm
-      LINKS  = -lplatform -lstdc++ -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lm -static-intel
+      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
+      LINKS  = -lm -lplatform -lstdc++
 	ifeq ($(HDF5), ON)
 		LINKS  += -L/opt/hdf5.1.8/lib
 		CCOPT  += -I/opt/hdf5.1.8/include
+	endif
+	ifeq ($(FFT), FFTW)
+		CCOPT += -I/opt/fftw/3.3.7 -D_FFT_FFTW
+		LINKS += -L/opt/fftw/3.3.7 -lfftw3_threads -lfftw3 
+	endif
+	ifeq ($(FFT), IMKL)
+		CCOPT += -D_FFT_IMKL
+		LINKS += -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -static_intel 
 	endif
 endif
 

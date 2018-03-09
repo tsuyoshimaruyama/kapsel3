@@ -19,7 +19,7 @@
 #include "alloc.h"
 #include "macro.h"
 
-#include <complex.h>
+#include <complex>
 
 #ifdef _OPENMP
 #include <omp.h>
