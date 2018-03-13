@@ -152,7 +152,7 @@ void Init_fft(void){
   fprintf(stderr,"# Intel Math Kernel Library FFT is selected.\n");        
   Init_fft_imkl();
 #elif  _FFT_FFTW
-  fprintf(stderr, "# FFTW is selecteed");
+  fprintf(stderr, "# FFTW is selected.\n");
   Init_fft_fftw();
 #else
   fprintf(stderr,"# Ooura rdft3d is selected.\n");  

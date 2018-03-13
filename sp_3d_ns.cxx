@@ -336,12 +336,6 @@ inline void init_threads(){
     {
       tid = omp_get_thread_num();
       if(tid == 0){
-	procs    = omp_get_thread_num();
-	nthreads = omp_get_threads();
-	maxt     = omp_get_max_threads();
-	inpar    = omp_get_dynamic();
-	nested   = omp_get_nested();
-	
 	cerr << "#" << endl;
 	cerr << "# OMP RUNTIME : " << endl;
 	cerr << "# Number of processors        : " << omp_get_thread_num()  << endl;
