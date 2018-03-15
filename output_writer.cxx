@@ -32,6 +32,9 @@ const char* hdf5_writer::gid_pobs_name="./obstacle";
 
 const hid_t hdf5_writer::hid_null=static_cast<hid_t>(-1);
 
+template<hsize_t, hsize_t> hsize_t* alloc_1d(hsize_t n1);
+template<hsize_t> void free_1d(hsize_t* i);
+
 //hdf5 writer Constructor / Destroyer
 hdf5_writer::hdf5_writer(const int&    _NX,
 			 const int&    _NY,
@@ -101,7 +104,8 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       h5_check_err(status);
       
       int i, j, k;
-      hsize_t im;
+      hsize_t  im = 0;
+      hsize_t* coords = (hsize_t*) malloc(sizeof(hsize_t) * mem_dims_field[0]);
       for(int ii = 0; ii < crop_field.count[0]; ii++){
 	i = crop_field.start[0] + ii*crop_field.stride[0];
 	
@@ -111,12 +115,15 @@ hdf5_writer::hdf5_writer(const int&    _NX,
 	  for(int kk = 0; kk < crop_field.count[2]; kk++){
 	    k = crop_field.start[2] + kk*crop_field.stride[2];
 	    
-	    im = (i*NY*NZ_) + (j*NZ_) + k;
-	    status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, 1, &im);
-	    h5_check_err(status);
+	    coords[im++] = (i*NY*NZ_) + (j*NZ_) + k;
+	    //status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, 1, &im);
+	    //h5_check_err(status);
 	  }
 	}
       }
+      status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, im, coords);
+      h5_check_err(status);
+      free(coords);
     }
 
     //Initialize Disk Dataspace
