@@ -10,7 +10,7 @@
 
 // FFTW
 #ifdef _FFT_IMKL
-DFTI_DESCRIPTOR_HANDLE imkl_p;
+DFTI_DESCRIPTOR_HANDLE imkl_p_fw, imkl_p_bw;
 #elif  _FFT_FFTW
 fftw_plan   fftw_p_fw, fftw_p_bw;
 #else
@@ -134,16 +134,23 @@ inline void Init_fft_imkl(void){
   long lengths[DIM]       = {NX, NY, NZ};
   long strides_in[DIM+1]  = {0, NY*NZ_,  NZ_,  1};
   long strides_out[DIM+1] = {0, NY*HNZ_, HNZ_, 1};
-  status = DftiCreateDescriptor(&imkl_p, DFTI_DOUBLE, DFTI_REAL, DIM, lengths);
-  status = DftiSetValue(imkl_p, DFTI_PLACEMENT, DFTI_INPLACE);
-  status = DftiSetValue(imkl_p, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
-  status = DftiSetValue(imkl_p, DFTI_INPUT_STRIDES,  strides_in);
-  status = DftiSetValue(imkl_p, DFTI_OUTPUT_STRIDES, strides_out);
-  status = DftiSetValue(imkl_p, DFTI_BACKWARD_SCALE, 1.0 / static_cast<double>(NX*NY*NZ));
-  status = DftiCommitDescriptor(imkl_p);
+  status = DftiCreateDescriptor(&imkl_p_fw, DFTI_DOUBLE, DFTI_REAL, DIM, lengths);
+  status = DftiSetValue(imkl_p_fw, DFTI_PLACEMENT, DFTI_INPLACE);
+  status = DftiSetValue(imkl_p_fw, DFTI_CONJUGATE_EVEN_STORAGE, DFTI_COMPLEX_COMPLEX);
+  status = DftiSetValue(imkl_p_fw, DFTI_INPUT_STRIDES,  strides_in);
+  status = DftiSetValue(imkl_p_fw, DFTI_OUTPUT_STRIDES, strides_out);
+  status = DftiCommitDescriptor(imkl_p_fw);
+  
+  status = DftiCopyDescriptor(imkl_p_fw, &imkl_p_bw);
+  status = DftiSetValue(imkl_p_bw, DFTI_INPUT_STRIDES,  strides_out);
+  status = DftiSetValue(imkl_p_bw, DFTI_OUTPUT_STRIDES, strides_in);
+  status = DftiSetValue(imkl_p_bw, DFTI_BACKWARD_SCALE, 1.0 / static_cast<double>(NX*NY*NZ));
+  status = DftiCommitDescriptor(imkl_p_bw);
 }
 inline void Free_fft_imkl(void){
-  long status = DftiFreeDescriptor(&imkl_p);
+  long status;
+  status = DftiFreeDescriptor(&imkl_p_fw);
+  status = DftiFreeDescriptor(&imkl_p_bw);
 }
 #endif  
 

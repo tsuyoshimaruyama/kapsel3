@@ -44,7 +44,7 @@ extern void rdft3dsort(int, int, int, int, double ***);
 typedef std::complex<double> Complex;
 /////////////  FFT
 #ifdef _FFT_IMKL
-extern DFTI_DESCRIPTOR_HANDLE imkl_p;
+extern DFTI_DESCRIPTOR_HANDLE imkl_p_fw, imkl_p_bw;
 #elif  _FFT_FFTW
 extern fftw_plan   fftw_p_fw, fftw_p_bw;
 #endif
@@ -678,9 +678,8 @@ inline void co2contra_single(double co[]) {
  */
 
 inline void A2a_k(double *a){
-  
 #ifdef _FFT_IMKL
-  long status = DftiComputeForward(imkl_p, a);    
+  long status = DftiComputeForward(imkl_p_fw, a);    
 #elif  _FFT_FFTW
   fftw_execute_dft_r2c(fftw_p_fw, a, reinterpret_cast<fftw_complex*>(a));
 #else
@@ -703,7 +702,7 @@ inline void A2a_k(double *a){
 
 inline void A_k2a(double *a){
 #ifdef _FFT_IMKL
-  long status = DftiComputeBackward(imkl_p, a);
+  long status = DftiComputeBackward(imkl_p_bw, a);
 #elif  _FFT_FFTW
   static const double scale = 1.0/(NX * NY * NZ);
   Complex* ak = reinterpret_cast<Complex*>(a);
