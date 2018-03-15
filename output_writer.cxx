@@ -32,7 +32,7 @@ const char* hdf5_writer::gid_pobs_name="./obstacle";
 
 const hid_t hdf5_writer::hid_null=static_cast<hid_t>(-1);
 
-template<hsize_t, size_t> hsize_t* alloc_1d(size_t n1);
+template<hsize_t, hsize_t> hsize_t* alloc_1d(hsize_t n1);
 template<hsize_t> void free_1d(hsize_t* i);
 
 //hdf5 writer Constructor / Destroyer
@@ -104,8 +104,8 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       h5_check_err(status);
       
       int i, j, k;
-      size_t   im = 0;
-      hsize_t* coords = alloc_1d<hsize_t, size_t>(static_cast<size_t>(mem_dims_field[0]));
+      hsize_t  im = 0;
+      hsize_t* coords = alloc_1d<hsize_t, size_t>(static_cast<hsize_t>(mem_dims_field[0]));
       for(int ii = 0; ii < crop_field.count[0]; ii++){
 	i = crop_field.start[0] + ii*crop_field.stride[0];
 	
