@@ -340,7 +340,10 @@ inline void init_threads(){
 	cerr << "# OMP RUNTIME : " << endl;
 	cerr << "# Number of processors        : " << omp_get_thread_num()  << endl;
 	cerr << "# Number of threads           : " << omp_get_num_threads() << endl;
-	cerr << "# Max threads                 : " << omp_get_max_threads() << endl;
+	cerr << "# Max OMP threads             : " << omp_get_max_threads() << endl;
+#ifdef _FFT_IMKL
+	cerr << "# Max MKL threads             : " << mkl_get_max_threads() << endl;
+#endif
 	cerr << "# Dynamic thread enabled?     : " << omp_get_dynamic()     << endl;
 	cerr << "# Nested parallelism enabled? : " << omp_get_nested() << endl;
 	cerr << "#" << endl;

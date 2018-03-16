@@ -99,6 +99,7 @@ inline void Free_fft_ooura(void){
 inline void Init_fft_fftw(void){
 #ifdef _OPENMP
   fftw_init_threads();
+  fftw_plan_with_nthreads(omp_get_max_threads());
 #endif
   double* input = alloc_1d_double(NX*NY*NZ_);
   fftw_complex* output = reinterpret_cast<fftw_complex*>(input);
