@@ -32,16 +32,18 @@
 # Define environment variables explicitly here
 GOURMET_HOME_PATH  = /usr/local/OCTA83/GOURMET
 ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
+#GOURMET_HOME_PATH  = /opt/OCTA/OCTA83_gcc
+#ENGINE_HOME_PATH   = /opt/OCTA/OCTA83_gcc/ENGINES
 ARCH               = linux_64
+OSX_GCC            = gcc-7
+OSX_GCXX           = g++-7
+
 #
 AUX= ./Tools
 CC     = gcc
 CXX    = g++
 CCOPT  = -O
 LINKS  = -lm -lplatform -lstdc++
-GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
-GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
-TARGET_DIR=$(ENGINE_HOME_PATH)/bin/$(ARCH)
 OSTYPE = $(shell uname)
 
 GITREF     := $(shell git describe --all)
@@ -114,10 +116,35 @@ endif
 ## options for GCC/MAC
 ifeq ($(ENV), GCC_MAC)
      ARCH    = macosx
-     CC	     = gcc-5
-     CXX     = g++-5
-     CCOPT  = -I/usr/local/include -O3 -fno-inline
-     LINKS  = -L/usr/local/lib -lm -lplatform_gcc-5 
+     CC	     = $(OSX_GCC)
+     CXX     = $(OSX_GCXX)
+     CCOPT  = -O3 -fno-inline
+     LINKS  = -lm -lplatform
+     ifeq ($(HDF5), ON)
+	LINKS += -L/opt/hdf5/lib
+	CCOPT += -I/opt/hdf5/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
+     endif 
+endif
+
+## options for GCC/MAC
+ifeq ($(ENV), GCC_MAC_OMP)
+     ARCH    = macosx
+     CC	     = $(OSX_GCC)
+     CXX     = $(OSX_GCXX)
+     CCOPT  = -O3 -fno-inline -fopenmp
+     LINKS  = -lm -lplatform
+     ifeq ($(HDF5), ON)
+	LINKS += -L/opt/hdf5/lib
+	CCOPT += -I/opt/hdf5/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3_threads -lfftw3
+     endif 
 endif
 
 ## options for GCC/LINUX
@@ -212,8 +239,13 @@ ifeq ($(HDF5), ON)
       OBJS   += output_writer.o
 endif
 
-CFLAGS 	= $(CCOPT) -I$(GOURMET_INCLUDE_PATH)
-LINKS  += -L$(GOURMET_LIB_PATH) 
+GOURMET_LIB_PATH = $(GOURMET_HOME_PATH)/lib/$(ARCH)
+GOURMET_INCLUDE_PATH = $(GOURMET_HOME_PATH)/include
+TARGET_DIR=$(ENGINE_HOME_PATH)/bin/$(ARCH)
+
+LINKS   := -L$(GOURMET_LIB_PATH) $(LINKS)
+CFLAGS 	= -I$(GOURMET_INCLUDE_PATH) $(CCOPT)
+
 
 XYZ_OBJS= alloc.o\
 	rigid_body.o\
