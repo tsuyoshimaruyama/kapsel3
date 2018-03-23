@@ -328,8 +328,32 @@ inline void Mem_alloc_var(double **zeta){
   Hydro_force_new = alloc_1d_double(NX*NY*NZ_);
 }
 
-int main(int argc, char *argv[]){
+inline void init_threads(){
+#ifdef _OPENMP
+  {
+    int nthreads, tid, procs, maxt, inpar, dynamic, nested;
+#pragma omp parallel private(nthreads, tid)
+    {
+      tid = omp_get_thread_num();
+      if(tid == 0){
+	cerr << "#" << endl;
+	cerr << "# OMP RUNTIME : " << endl;
+	cerr << "# Number of processors        : " << omp_get_thread_num()  << endl;
+	cerr << "# Number of threads           : " << omp_get_num_threads() << endl;
+	cerr << "# Max OMP threads             : " << omp_get_max_threads() << endl;
+#ifdef _FFT_IMKL
+	cerr << "# Max MKL threads             : " << mkl_get_max_threads() << endl;
+#endif
+	cerr << "# Dynamic thread enabled?     : " << omp_get_dynamic()     << endl;
+	cerr << "# Nested parallelism enabled? : " << omp_get_nested() << endl;
+	cerr << "#" << endl;
+      }
+    }
+  }
+#endif
+}
 
+int main(int argc, char *argv[]){
 #ifndef NDEBUG 
   cerr << "###########################" << endl;
   cerr << "#  " << endl;
@@ -338,6 +362,7 @@ int main(int argc, char *argv[]){
   cerr << "#  " << endl;
   cerr << "###########################" << endl;
 #endif
+  init_threads();
   wall_timer global_timer, block_timer;
 
   global_timer.start();

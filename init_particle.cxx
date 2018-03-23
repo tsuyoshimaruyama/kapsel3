@@ -401,7 +401,7 @@ void Init_Particle(Particle *p){
 	  p[i].fr_previous[d] = 0.0;
 	  p[i].torque_r[d] = 0.0;
 	  p[i].torque_r_previous[d] = 0.0;
-
+	  
 	  if(DISTRIBUTION != user_specify) p[i].omega[d] = 0.e0;	  
 	  p[i].omega_old[d] = 0.0;
 	  p[i].omega_slip[d] = 0.0;
@@ -712,7 +712,7 @@ void Show_parameter(Particle *p){
 	    ,MIN(RADIUS,XI) * kmax, M_PI);
     fprintf(fp, "#\n");
   }
-  
+      
     if((SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards) && !Fixed_particle){
 	for(int n = 0; n < Particle_Number ; n++){
 	    p[n].v[0] = 0.0e0;
@@ -738,44 +738,41 @@ void Init_Chain(Particle *p){
     fprintf(stderr,"(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
     
     const double overlap_length =0.9*SIGMA;	  
-    for(int d=0; d<DIM; d++){
-      p[0].x[d]=HL_particle[d];
-    }
-    
+     for(int d=0; d<DIM; d++){
+       p[0].x[d]=HL_particle[d];
+     }
+
     int overlap;
-    for(int d=0;d<1000;d++){
-      double dmy=RAx(PI2); 
-    } 
-    
-    for(int n=0; n<Particle_Number-1; n++){
+
+     for(int n=0; n<Particle_Number-1; n++){
       overlap=1;
-      do{
-	double dmy0 = 0.96*SIGMA; 
-	double dmy1 = RAx(PI2);
-	double dmy2 = RAx(M_PI);
-	
-	p[n+1].x[0]=p[n].x[0]+dmy0*sin(dmy2)*sin(dmy1);
-	p[n+1].x[1]=p[n].x[1]+dmy0*sin(dmy2)*cos(dmy1);
-	p[n+1].x[2]=p[n].x[2]+dmy0*cos(dmy2); 
-        
-	for(int d=0; d<DIM ;d++){
-	  p[n+1].x[d] = fmod(p[n+1].x[d]+L_particle[d] , L_particle[d]);
-	}
-	
-	int m;
-	for(m=0; m<n+1; m++){
-	  if(Distance(p[m].x, p[n+1].x) <= overlap_length){
-	    break;
+       do{
+         double dmy0 = 0.96*SIGMA; 
+	     double dmy1 = RAx(PI2);
+         double dmy2 = RAx(M_PI);
+    
+         p[n+1].x[0]=p[n].x[0]+dmy0*sin(dmy2)*sin(dmy1);
+         p[n+1].x[1]=p[n].x[1]+dmy0*sin(dmy2)*cos(dmy1);
+         p[n+1].x[2]=p[n].x[2]+dmy0*cos(dmy2); 
+         
+	  for(int d=0; d<DIM ;d++){
+	    p[n+1].x[d] = fmod(p[n+1].x[d]+L_particle[d] , L_particle[d]);
 	  }
-	}
-	if(m >= n+1){
-	  overlap = 0 ; 
-	}
-      }while(overlap);
-      
-      qtn_init(p[n].q, 1.0, 0.0, 0.0, 0.0);
-      qtn_init(p[n].q_old, p[n].q);
-    }
+	 
+	 int m;
+         for(m=0; m<n+1; m++){
+             if(Distance(p[m].x, p[n+1].x) <= overlap_length){
+	       break;
+             }
+          }
+         if(m >= n+1){
+           overlap = 0 ; 
+       }
+       }while(overlap);
+    
+    qtn_init(p[n].q, 1.0, 0.0, 0.0, 0.0);
+    qtn_init(p[n].q_old, p[n].q);
+     }
 }
 
 void Init_Rigid(Particle *p){

@@ -13,10 +13,6 @@
 #include "input.h"
 #include "make_phi.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 extern double **f_particle;
 
 /*!

@@ -52,11 +52,7 @@ char Out_dir[128];
 char Out_name[128];
 //////
 int SW_UDF;
-/////// FFT
-//int SW_FFT=MPI_RFFTW; 
-//int SW_FFT=RFFTW;
-//int SW_FFT=Ooura;
-int SW_FFT=IMKL_FFT;
+
 //////
 /////// 計算条件の設定
 int Nmax;
@@ -352,7 +348,6 @@ inline void Set_global_parameters(void){
 	    //Tdump = MIN(Tdump, shear_stokes_time);
 	}else if(SW_EQ == Electrolyte){
 	    Tdump=1./(NU * KMAX2);
-	    double KMAX=sqrt(KMAX2);
 	    double dmy_onsager_coeff = 0.0;
 	    if(N_spec==1){
 		dmy_onsager_coeff=Onsager_coeff_counterion;
@@ -497,7 +492,7 @@ void Gourmet_file_io(const char *infile
 
     {//check udf version
       string code_version="v3.3";
-      fprintf(stderr, "# Kapsel       : UDF %s\n", code_version.c_str());
+      fprintf(stderr, "# Kapsel: UDF %s\n", code_version.c_str());
       fprintf(stderr, "# Git Version  : %s\n", GIT_VERSION);
       fprintf(stderr, "# Git Reference: %s\n", GIT_REF);
 

@@ -105,7 +105,7 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       
       int i, j, k;
       hsize_t  im = 0;
-      hsize_t* coords = (hsize_t*) malloc(sizeof(hsize_t) * mem_dims_field[0]);
+      hsize_t* coords = alloc_1d<hsize_t, size_t>(static_cast<hsize_t>(mem_dims_field[0]));
       for(int ii = 0; ii < crop_field.count[0]; ii++){
 	i = crop_field.start[0] + ii*crop_field.stride[0];
 	
@@ -123,7 +123,7 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       }
       status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, im, coords);
       h5_check_err(status);
-      free(coords);
+      free_1d(coords);
     }
 
     //Initialize Disk Dataspace
