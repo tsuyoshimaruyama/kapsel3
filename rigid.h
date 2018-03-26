@@ -62,7 +62,7 @@ inline void init_set_PBC(Particle *p){
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     for(int d = 0; d < DIM; d++){
-      xGs_nopbc[rigidID][d] = xGs[rigidID][d];
+      xGs_nopbc[rigidID][d]    = xGs[rigidID][d];
       xGs_previous[rigidID][d] = xGs[rigidID][d];
     }
   }

@@ -429,17 +429,17 @@ void Init_Particle(Particle *p){
 
   // initialize rigid status
   if(SW_PT == rigid){
-    /* Old version assumed no overlap between beads
-    init_set_xGs(p);
-    init_set_GRvecs(p);
-    init_set_PBC(p);
-    set_Rigid_MMs(p);
-    */
+    // save initial topology : IGNORE PBC and particle overlaps
+    init_set_xGs(p);     // compute "trial" com assuming no bead overlap
+    init_set_GRvecs(p);  // compute relative distance vectors with respect to trial com
 
     //Reset mass moments to account for particle overlap
     Reset_phi(phi);
     Reset_phi(phi_sum);
+
     if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
+      init_set_PBC(p);
+      
       Make_phi_particle_sum(phi, phi_sum, p);
       Make_phi_rigid_mass(phi_sum, p);        
       
@@ -448,12 +448,14 @@ void Init_Particle(Particle *p){
       
       Make_phi_rigid_inertia(phi_sum, p);    
     }else{
+      init_set_PBC_OBL(p);
+      
       Make_phi_particle_sum_OBL(phi, phi_sum, p);
       Make_phi_rigid_mass_OBL(phi_sum, p);
 
       init_set_GRvecs(p);
       init_set_PBC_OBL(p);
-      
+
       Make_phi_rigid_inertia_OBL(phi_sum, p);
     }
     init_Rigid_Coordinates(p);
