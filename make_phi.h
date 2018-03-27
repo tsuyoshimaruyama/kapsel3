@@ -16,6 +16,7 @@
 #include "rigid_body.h"
 #include "operate_omega.h"
 #include "Matrix_Inverse.h"
+#include "periodic_boundary.h"
 
 extern void (*Angular2v)(const double *omega, const double *r, double *v);
 extern int NP_domain;

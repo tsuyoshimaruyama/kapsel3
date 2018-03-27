@@ -33,6 +33,7 @@ inline void init_set_xGs(Particle *p){
       for(int d=0; d<DIM; d++) xGs[rigidID][d] += p[n].x[d];
     }
     
+    
     for(int d=0; d<DIM; d++) xGs[rigidID][d] /= (double) Rigid_Particle_Numbers[rigidID];
   }
 }
@@ -48,7 +49,7 @@ inline void init_set_GRvecs(Particle *p){
   for(int n=0; n<Particle_Number; n++){
     int rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++) {
-      GRvecs[n][d] = p[n].x[d] - xGs[rigidID][d];
+      GRvecs[n][d] = p[n].x_nopbc[d] - xGs_nopbc[rigidID][d];
     }
   }
 }
@@ -62,8 +63,14 @@ inline void init_set_PBC(Particle *p){
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     for(int d = 0; d < DIM; d++){
-      xGs_nopbc[rigidID][d] = xGs[rigidID][d];
+      xGs_nopbc[rigidID][d]    = xGs[rigidID][d];
       xGs_previous[rigidID][d] = xGs[rigidID][d];
+    }
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+      for(int d = 0; d < DIM; d++){
+	p[n].x_previous[d] = p[n].x[d];
+	p[n].x_nopbc[d]    = p[n].x[d];
+      }
     }
   }
 
@@ -71,7 +78,7 @@ inline void init_set_PBC(Particle *p){
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     PBC(xGs[rigidID]);
-    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++) 
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++)
       PBC(p[n].x);
   }
 }
@@ -85,8 +92,14 @@ inline void init_set_PBC_OBL(Particle *p){
 #pragma omp parallel for
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     for(int d = 0; d < DIM; d++){
-      xGs_nopbc[rigidID][d] = xGs[rigidID][d];
+      xGs_nopbc[rigidID][d]    = xGs[rigidID][d];
       xGs_previous[rigidID][d] = xGs[rigidID][d];
+    }
+    for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+      for(int d = 0; d < DIM; d++){
+	p[n].x_previous[d] = p[n].x[d];
+	p[n].x_nopbc[d]    = p[n].x[d];
+      }
     }
   }
   
@@ -125,7 +138,7 @@ inline void init_Rigid_Coordinates(Particle *p){
     for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
       qtn_init(p[n].q, dmy_q);
     }
-    free(eigen_vector);
+    free_2d_double(eigen_vector);
 
     //Rigid_Moments_body gives inertia tensor in body-frame
     //By construction it should be diagonal
