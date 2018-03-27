@@ -664,7 +664,8 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle* p){
 
     Rigid_Masses[rigidID]  = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
     Rigid_IMasses[rigidID] = 1.0/Rigid_Masses[rigidID];
-    for(int d = 0; d < DIM; d++) xGs[rigidID][d] = (dmy_com[d] / dmy_mass + xGs_nopbc[rigidID][d]);
+    for(int d = 0; d < DIM; d++) xGs_nopbc[rigidID][d] += (dmy_com[d] / dmy_mass);
+    PBC(xGs_nopbc[rigidID], xGs[rigidID]);
   }
 }
 
@@ -703,15 +704,15 @@ void Make_phi_rigid_mass_OBL(const double *phi_sum, Particle* p){
         
         dmy_mass   += dmy_phi;
         for(int d = 0; d < DIM; d++){
-          dmy_com[d] += dmy_phi*(xp[d] + r[d]);
+          dmy_com[d] += dmy_phi*(GRvecs[n][d] + r[d]);
         }
       }
     }
-    
 
     Rigid_Masses[rigidID]  = dmy_mass*dx3*RHO_particle[ RigidID_Components[rigidID] ];
     Rigid_IMasses[rigidID] = 1.0/Rigid_Masses[rigidID];
-    for(int d = 0; d < DIM; d++) xGs[rigidID][d] = dmy_com[d] / dmy_mass;
+    for(int d = 0; d < DIM; d++) xGs_nopbc[rigidID][d] = (dmy_com[d] / dmy_mass);
+    PBC_OBL(xGs_nopbc[rigidID], xGs[rigidID], dmy);
   }
 }
 

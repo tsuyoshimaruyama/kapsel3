@@ -13,6 +13,10 @@ inline void PBC(double *x){
     assert(x[d] < L[d]);
   }
 }
+inline void PBC(double *x, double *xpbc){
+  for(int d = 0; d < DIM; d++) xpbc[d] = x[d];
+  PBC(xpbc);
+}
 
 /*!
   \brief Enforce Lees-Edwards pbc on position
@@ -39,5 +43,9 @@ inline int PBC_OBL(double *x, double &delta_vx){
   
   delta_vx = -(double)sign * Shear_rate_eff * L_particle[1];
   return sign;
+}
+inline int PBC_OBL(double *x, double *xpbc, double &delta_vx){
+  for(int d = 0; d < DIM; d++) xpbc[d] = x[d];
+  return PBC_OBL(xpbc, delta_vx);
 }
 #endif
