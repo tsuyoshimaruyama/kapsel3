@@ -194,6 +194,9 @@ void Save_Particle_udf(const Particle *p, const int &n_out_particles){
     ufres->put(target.sub("R.x"),p[j].x[0]);
     ufres->put(target.sub("R.y"),p[j].x[1]);
     ufres->put(target.sub("R.z"),p[j].x[2]);
+    ufres->put(target.sub("R_raw.x"), p[j].x_nopbc[0]);
+    ufres->put(target.sub("R_raw.y"), p[j].x_nopbc[1]);
+    ufres->put(target.sub("R_raw.z"), p[j].x_nopbc[2]);
     
     //velocities
     ufres->put(target.sub("v.x"),p[j].v[0]);
@@ -406,11 +409,17 @@ void Read_Particle_udf(Particle *p, const int &n_in_particles){
     ufin->get(target.sub("R.y"),p[j].x[1]);
     ufin->get(target.sub("R.z"),p[j].x[2]);
 
-    //old/raw positions (not saved)
-    for(int d = 0; d < DIM; d++){
-      p[j].x_previous[d] = p[j].x[d];
-      p[j].x_nopbc[d] = p[j].x[d];
+    //old/raw positions (not saved by older versions)
+    for(int d = 0; d < DIM; d++) p[j].x_previous[d] = p[j].x[d];
+    
+    //read no_pbc data if found
+    if(ufin->get(target.sub("R_raw.x"), p[j].x_nopbc[0])){
+      ufin->get(target.sub("R_raw.y"), p[j].x_nopbc[1]);
+      ufin->get(target.sub("R_raw.z"), p[j].x_nopbc[2]);
+    }else{
+      for(int d = 0; d < DIM; d++) p[j].x_nopbc[d] = p[j].x[d];
     }
+      
     
     //velocities
     ufin->get(target.sub("v.x"),p[j].v[0]);
@@ -637,8 +646,9 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
     rigid_body_rotation(GRvecs[n], GRvecs_body[n], p[n].q, BODY2SPACE);
     for(int d = 0; d < DIM; d++){
       p[n].x[d] = xGs[rigidID][d] + GRvecs[n][d];
+      p[n].x_nopbc[d] = xGs_nopbc[rigidID][d] + GRvecs[n][d];
+      
       p[n].omega[d] = omegaGs[rigidID][d];
-
     }
     rigid_Velocity(p[n].v, GRvecs[n], velocityGs[rigidID], omegaGs[rigidID]);
 
@@ -654,7 +664,6 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
     //old data
     for(int d = 0; d < DIM; d++){
       p[n].x_previous[d] = p[n].x[d];
-      p[n].x_nopbc[d]    = p[n].x[d];
 
       p[n].v_old[d]      = p[n].v[d];
       p[n].omega_old[d]  = p[n].omega[d];

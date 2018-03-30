@@ -283,15 +283,23 @@ void Output_udf(UDFManager *ufout
   ufout->put("E", 1.0);
   ufout->put("t", time.ts);
   for(int j = 0; j < Particle_Number; j++) {
+    const Particle &pj = p[j];
+    double Rx[DIM]    = {pj.x[0], pj.x[1], pj.x[2]};
+    double Rx_raw[DIM]= {pj.x_nopbc[0], pj.x_nopbc[1], pj.x_nopbc[2]};
+    if(SW_PT == rigid){
+      int rigidID = Particle_RigidID[j];
+      for(int d = 0; d < DIM; d++) Rx[d]     = xGs[rigidID][d] + GRvecs[j][d];
+      for(int d = 0; d < DIM; d++) Rx_raw[d] = xGs_nopbc[rigidID][d] + GRvecs[j][d];
+    }
     char str[256];
     sprintf(str, "Particles[%d]", j);
     Location target(str);
-    ufout->put(target.sub("R.x"), p[j].x[0]);
-    ufout->put(target.sub("R.y"), p[j].x[1]);
-    ufout->put(target.sub("R.z"), p[j].x[2]);
-    ufout->put(target.sub("R_raw.x"), p[j].x_nopbc[0]);
-    ufout->put(target.sub("R_raw.y"), p[j].x_nopbc[1]);
-    ufout->put(target.sub("R_raw.z"), p[j].x_nopbc[2]);
+    ufout->put(target.sub("R.x"), Rx[0]);
+    ufout->put(target.sub("R.y"), Rx[1]);
+    ufout->put(target.sub("R.z"), Rx[2]);
+    ufout->put(target.sub("R_raw.x"), Rx_raw[0]);
+    ufout->put(target.sub("R_raw.y"), Rx_raw[1]);
+    ufout->put(target.sub("R_raw.z"), Rx_raw[2]);
     ufout->put(target.sub("v.x"), p[j].v[0]);
     ufout->put(target.sub("v.y"), p[j].v[1]);
     ufout->put(target.sub("v.z"), p[j].v[2]);

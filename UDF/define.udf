@@ -272,6 +272,7 @@ RigidParticles[]: outParticle
 \begin{def}
 class sParticle:{ 
       R:Vector3d ,
+      R_raw:Vector3d ,
       v:Vector3d ,
       v_old:Vector3d ,
       f_hydro:Vector3d ,

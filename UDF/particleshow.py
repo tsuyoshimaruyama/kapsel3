@@ -1,4 +1,10 @@
 showRigidCOM=0
+withoutPBC=0
+getPos = lambda n: $Particles[n].R
+getCOM = lambda n: $RigidParticles[n].R
+if withoutPBC:
+	getPos = lambda n : $Particles[n].R_raw
+	getCOM = lambda n : $RigidParticles[n].R_raw
 type=$constitutive_eq.type
 print( type)
 if type == "Navier_Stokes" :
@@ -53,7 +59,7 @@ if objType=="rigid" or objType=="chain":
                         for m in range(Ns[i][1]):
                                 #beads
                                 for n in range(Ns[i][0]):
-                                        r=$Particles[n_offset+n].R
+                                        r=getPos(n_offset+n)
                                         sphere(r,spat[i%len(spat)])
                                 n_offset += Ns[i][0]
         elif showRigidCOM == 1:
@@ -61,7 +67,7 @@ if objType=="rigid" or objType=="chain":
                 for i in range(size_Ns):
                         #chains
                         for m in range(Ns[i][1]):
-                                r=$RigidParticles[n_offset+m].R
+                                r=getCOM(n_offset+m)
                                 sphere(r,spat[i%len(spat)])
                         n_offset+=Ns[i][1]
 else:
@@ -69,6 +75,6 @@ else:
         for i in range(size_Ns):
                 #particles
                 for n in range(Ns[i][0]):
-                        r=$Particles[n_offset+n].R
+                        r=getPos(n_offset+n)
                         sphere(r,spat[i%len(spat)])
                 n_offset+=Ns[i][0]
