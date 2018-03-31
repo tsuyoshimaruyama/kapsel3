@@ -137,7 +137,7 @@ ifeq ($(ENV), GCC_MAC)
      CC	     = $(OSX_GCC)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline
-     LINKS  = -lm -lplatform
+     LINKS  = -lm -lplatform_gcc-7
      ifeq ($(HDF5), ON)
 	LINKS += -L/opt/hdf5/lib
 	CCOPT += -I/opt/hdf5/include
@@ -154,7 +154,7 @@ ifeq ($(ENV), GCC_MAC_OMP)
      CC	     = $(OSX_GCC)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline -fopenmp
-     LINKS  = -lm -lplatform
+     LINKS  = -lm -lplatform_gcc-7
      ifeq ($(HDF5), ON)
 	LINKS += -L/opt/hdf5/lib
 	CCOPT += -I/opt/hdf5/include
