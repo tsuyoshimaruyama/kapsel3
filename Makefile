@@ -79,14 +79,32 @@ endif
 ## options for GCC/CYGWIN/WINDOWS
 ifeq ($(ENV), CYGWIN)
 #ifneq (,$(findstring CYGWIN,$(OSTYPE)))
-      ARCH   = cygwin
-      CC     = gcc 
-      CXX    = g++ 
-      CCOPT  = -O3 -fno-inline
-      LINKS  = -lm -lplatform 
+     ARCH   = cygwin
+     CC     = gcc 
+     CXX    = g++ 
+     CCOPT  = -O3 -fno-inline
+     LINKS  = -lm -lplatform 
+     ifeq ($(FFT), FFTW)
+	CCOPT += -D_FFT_FFTW
+	LINKS += -lfftw3
+     endif 
 endif
 
-## options for MINGW32/CYGWIN/WINDOWS
+## options for GCC/CYGWIN/WINDOWS with OpenMP
+ifeq ($(ENV), CYGWIN_OMP)
+#ifneq (,$(findstring CYGWIN,$(OSTYPE)))
+     ARCH   = cygwin
+     CC     = gcc 
+     CXX    = g++ 
+     CCOPT  = -O3 -fno-inline -fopenmp
+     LINKS  = -lm -lplatform 
+     ifeq ($(FFT), FFTW)
+	CCOPT += -D_FFT_FFTW
+	LINKS += -lfftw3_threads -lfftw3
+     endif 
+endif
+
+## options for MINGW32/CYGWIN/WINDOWS (not supported)
 ifeq ($(ENV), MINGW)
       ARCH   = win32
       CC     = i686-w64-mingw32-gcc
@@ -95,7 +113,7 @@ ifeq ($(ENV), MINGW)
       LINKS  = -static -lm -lplatform 
 endif
 
-## options for MINGW64/CYGWIN/WINDOWS
+## options for MINGW64/CYGWIN/WINDOWS (not supported)
 ifeq ($(ENV), MINGW64)
       ARCH   = win64
       CC     = x86_64-w64-mingw32-gcc
@@ -130,7 +148,7 @@ ifeq ($(ENV), GCC_MAC)
      endif 
 endif
 
-## options for GCC/MAC
+## options for GCC/MAC with OpenMP
 ifeq ($(ENV), GCC_MAC_OMP)
      ARCH    = macosx
      CC	     = $(OSX_GCC)
@@ -149,58 +167,79 @@ endif
 
 ## options for GCC/LINUX
 ifeq ($(ENV), GCC)
-      ARCH   = linux_64
-      CC     = gcc
-      CXX    = g++
-      CCOPT  = -O3 
-      LINKS  = -lm -lplatform -lstdc++ -static
-	ifeq ($(HDF5), ON)
-		LINKS  += -L/opt/hdf5.1.8/lib
-		CCOPT  += -I/opt/hdf5.1.8/include
-	endif
+     ARCH   = linux_64
+     CC     = gcc
+     CXX    = g++
+     CCOPT  = -O3 
+     LINKS  = -lm -lplatform -lstdc++ -static
+     ifeq ($(HDF5), ON)
+	LINKS  += -L/opt/hdf5.1.8/lib
+	CCOPT  += -I/opt/hdf5.1.8/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/usr/local/include -D_FFT_FFTW
+	LINKS += -L/usr/local/lib -lfftw3
+     endif 
+endif
+
+## options for GCC/LINUX with OpenMP
+ifeq ($(ENV), GCC_OMP)
+     ARCH   = linux_64
+     CC     = gcc
+     CXX    = g++
+     CCOPT  = -O3 -fopenmp
+     LINKS  = -lm -lplatform -lstdc++ -static
+     ifeq ($(HDF5), ON)
+	LINKS  += -L/opt/hdf5.1.8/lib
+	CCOPT  += -I/opt/hdf5.1.8/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/usr/local/include -D_FFT_FFTW
+	LINKS += -L/usr/local/lib -lfftw3_threads -lfftw3
+     endif 
 endif
 
 ## options for ICC/LINUX
 ifeq ($(ENV), ICC)
-      ARCH   = linux_64
-      CC     = icc 
-      CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -w0
-#      LINKS  = -lm -lplatform -lcxaguard -lstdc++
-      LINKS  = -lm -lplatform -lstdc++ -static-intel
-	ifeq ($(HDF5), ON)
-		LINKS  += -L/opt/hdf5.1.8/lib
-		CCOPT  += -I/opt/hdf5.1.8/include
-	endif
-	ifeq ($(FFT), FFTW)
-		CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
-		LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
-	endif
-	ifeq ($(FFT), IMKL)
-		CCOPT += -D_FFT_IMKL
-		LINKS += -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread
-	endif
+     ARCH   = linux_64
+     CC     = icc 
+     CXX    = icpc 
+     CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -w0
+#     LINKS  = -lm -lplatform -lcxaguard -lstdc++
+     LINKS  = -lm -lplatform -lstdc++ -static-intel
+     ifeq ($(HDF5), ON)
+	LINKS  += -L/opt/hdf5.1.8/lib
+	CCOPT  += -I/opt/hdf5.1.8/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
+     endif
+     ifeq ($(FFT), IMKL)
+	CCOPT += -D_FFT_IMKL
+	LINKS += -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread
+     endif
 endif
 
-## options for ICC+OMP/LINUX
+## options for ICC/LINUX with OMP
 ifeq ($(ENV), ICC_OMP)
-      ARCH   = linux_64
-      CC     = icc 
-      CXX    = icpc 
-      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
-      LINKS  = -lm -lplatform -lstdc++
-	ifeq ($(HDF5), ON)
-		LINKS  += -L/opt/hdf5.1.8/lib
-		CCOPT  += -I/opt/hdf5.1.8/include
-	endif
-	ifeq ($(FFT), FFTW)
-		CCOPT += -I/opt/fftw/3.3.7 -D_FFT_FFTW
-		LINKS += -L/opt/fftw/3.3.7 -lfftw3_threads -lfftw3 
-	endif
-	ifeq ($(FFT), IMKL)
-		CCOPT += -D_FFT_IMKL
-		LINKS += -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -static_intel 
-	endif
+     ARCH   = linux_64
+     CC     = icc 
+     CXX    = icpc 
+     CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
+     LINKS  = -lm -lplatform -lstdc++
+     ifeq ($(HDF5), ON)
+	LINKS  += -L/opt/hdf5.1.8/lib
+	CCOPT  += -I/opt/hdf5.1.8/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -I/opt/fftw/3.3.7 -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.7 -lfftw3_threads -lfftw3 
+     endif
+     ifeq ($(FFT), IMKL)
+	CCOPT += -D_FFT_IMKL
+	LINKS += -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread -static_intel 
+     endif
 endif
 
 OBJS  	= mt19937ar.o\
