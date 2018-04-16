@@ -100,7 +100,7 @@ ifeq ($(ENV), CYGWIN_OMP)
      LINKS  = -lm -lplatform 
      ifeq ($(FFT), FFTW)
 	CCOPT += -D_FFT_FFTW
-	LINKS += -lfftw3_threads -lfftw3
+	LINKS += -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -161,7 +161,7 @@ ifeq ($(ENV), GCC_MAC_OMP)
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3_threads -lfftw3
+	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -195,7 +195,7 @@ ifeq ($(ENV), GCC_OMP)
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/usr/local/include -D_FFT_FFTW
-	LINKS += -L/usr/local/lib -lfftw3_threads -lfftw3
+	LINKS += -L/usr/local/lib -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -234,7 +234,7 @@ ifeq ($(ENV), ICC_OMP)
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/opt/fftw/3.3.7 -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7 -lfftw3_threads -lfftw3 
+	LINKS += -L/opt/fftw/3.3.7 -lfftw3_omp -lfftw3 
      endif
      ifeq ($(FFT), IMKL)
 	CCOPT += -D_FFT_IMKL
