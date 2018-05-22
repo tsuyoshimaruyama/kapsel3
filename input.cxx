@@ -160,6 +160,8 @@ double **janus_force;
 double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
+double *janus_azimuth_C1;
+double *janus_azimuth_mode;
 
 ////
 int Rigid_Number;
@@ -868,6 +870,9 @@ void Gourmet_file_io(const char *infile
 		    janus_torque = alloc_2d_double(Component_Number, DIM);
 		    janus_slip_vel = alloc_1d_double(Component_Number);
 		    janus_slip_mode = alloc_1d_double(Component_Number);
+		    janus_azimuth_C1 = alloc_1d_double(Component_Number);
+		    janus_azimuth_mode = alloc_1d_double(Component_Number);
+		    
 
 		}
 	    }
@@ -898,6 +903,8 @@ void Gourmet_file_io(const char *infile
 		janus_torque = NULL;
 		janus_slip_vel = NULL;
 		janus_slip_mode = NULL;
+		janus_azimuth_C1 = NULL;
+		janus_azimuth_mode = NULL;
 	    }
 	}else if(str == PT_name[rigid]){
 	    SW_PT=rigid;
@@ -931,6 +938,8 @@ void Gourmet_file_io(const char *infile
                 janus_torque = NULL;
                 janus_slip_vel = NULL;
                 janus_slip_mode = NULL;
+		janus_azimuth_C1 = NULL;
+		janus_azimuth_mode = NULL;
 	    }
 	}
     }
@@ -1050,10 +1059,14 @@ void Gourmet_file_io(const char *infile
 		    if(janus_propulsion[i] == slip){
 		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]); //B1 coeff
 		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]); //alpha=B2/B1
+		      ufin->get(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]); //C1 coeff
+		      ufin->get(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]); //beta=C2/C1
 		      assert(janus_slip_vel[i] > 0);
 		    }else{
 		      janus_slip_vel[i] = 0.0;
 		      janus_slip_mode[i] = 0.0;
+		      janus_azimuth_C1[i] = 0.0;
+		      janus_azimuth_mode[i] = 0.0;
 		    }
 		}
 		{
@@ -1070,6 +1083,8 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    ufout->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		    ufout->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
+		    ufout->put(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]);
+		    ufout->put(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]);
 		}
 		{
 		    ufres->put(target.sub("Particle_number"),Particle_Numbers[i]);
@@ -1085,7 +1100,8 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    ufres->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		    ufres->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
-
+                    ufres->put(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]);
+		    ufres->put(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]);
 		}
 		if(SW_EQ == Electrolyte){
 		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
@@ -1099,6 +1115,8 @@ void Gourmet_file_io(const char *infile
 			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
 			    ,janus_slip_vel[i]
 			    ,janus_slip_mode[i]
+			    ,janus_azimuth_C1[i]
+			    ,janus_azimuth_mode[i]
 			);
 		}else {
 		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
@@ -1111,6 +1129,8 @@ void Gourmet_file_io(const char *infile
 			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
 			    ,janus_slip_vel[i]
 			    ,janus_slip_mode[i]
+			    ,janus_azimuth_C1[i]
+			    ,janus_azimuth_mode[i]
 			    );
 		}
 		
@@ -1168,6 +1188,8 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("janus_torque.z"), 0.0);
 		    ufout->put(target.sub("janus_slip_vel"), 0.0);
 		    ufout->put(target.sub("janus_slip_mode"), 0.0);
+		    ufout->put(target.sub("janus_azimuth_C1"), 0.0);
+		    ufout->put(target.sub("janus_azimuth_mode"), 0.0);
 		}
 		{
 		    ufres->put(target.sub("Beads_number"),Beads_Numbers[i]);
@@ -1185,6 +1207,8 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.z"), 0.0);
 		    ufres->put(target.sub("janus_slip_vel"), 0.0);
 		    ufres->put(target.sub("janus_slip_mode"), 0.0);
+		    ufres->put(target.sub("janus_azimuth_C1"), 0.0);
+		    ufres->put(target.sub("janus_azimuth_mode"), 0.0);
 
 		}
 		
