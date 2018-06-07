@@ -84,7 +84,7 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 	
 	SM0 += dmy_phi_s;
 	Squirmer_coord(r, n_r, n_theta, n_tau, dmy_sr, dmy_theta, dmy_tau, p[n]);
-	slip_magnitude = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta));
+	slip_magnitude = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*sin(dmy_theta));
 	slip_azimuthal = C1 * (sin(dmy_theta) + beta * 1.5 * (2.0*dmy_theta));
         for(int d = 0; d < DIM; d++){
           us[d] = n_theta[d] * slip_magnitude + n_tau[d] * slip_azimuthal - u_fluid[d];
