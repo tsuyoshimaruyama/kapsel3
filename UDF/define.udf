@@ -125,8 +125,14 @@ object_type: {
 	 janus_torque: Vector3d "self-propulsion torque"
 	 janus_slip_vel: float "Slip velocity coeff B1"
 	 janus_slip_mode: float "Blake squirmer mode B2/B1"
+	 janus_slip_B3: float "coefficient B3"
+	 janus_slip_B4: float "coefficient B4"
+	 janus_slip_B5: float "coefficient B5"
 	 janus_azimuth_C1: float "first mode C1"
 	 janus_azimuth_mode: float "beta=C2/C1"
+	 janus_azimuth_C3: float "C3"
+	 janus_azimuth_C4: float "C4"
+	 janus_azimuth_C5: float "C5"
       }
    }//end spherical_particle
 

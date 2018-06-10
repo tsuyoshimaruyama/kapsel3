@@ -132,8 +132,14 @@ extern double **janus_force;
 extern double **janus_torque;
 extern double *janus_slip_vel;
 extern double *janus_slip_mode;
+extern double *janus_slip_B3;
+extern double *janus_slip_B4;
+extern double *janus_slip_B5;
 extern double *janus_azimuth_C1;
 extern double *janus_azimuth_mode;
+extern double *janus_azimuth_C3;
+extern double *janus_azimuth_C4;
+extern double *janus_azimuth_C5;
 
 extern char Out_dir[];
 extern char Out_name[];
