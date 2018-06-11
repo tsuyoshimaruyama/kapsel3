@@ -160,8 +160,14 @@ double **janus_force;
 double **janus_torque;
 double *janus_slip_vel;
 double *janus_slip_mode;
+double *janus_slip_B3;
+double *janus_slip_B4;
+double *janus_slip_B5;
 double *janus_azimuth_C1;
 double *janus_azimuth_mode;
+double *janus_azimuth_C3;
+double *janus_azimuth_C4;
+double *janus_azimuth_C5;
 
 ////
 int Rigid_Number;
@@ -870,9 +876,14 @@ void Gourmet_file_io(const char *infile
 		    janus_torque = alloc_2d_double(Component_Number, DIM);
 		    janus_slip_vel = alloc_1d_double(Component_Number);
 		    janus_slip_mode = alloc_1d_double(Component_Number);
+		    janus_slip_B3 = alloc_1d_double(Component_Number);
+		    janus_slip_B4 = alloc_1d_double(Component_Number);
+		    janus_slip_B5 = alloc_1d_double(Component_Number);
 		    janus_azimuth_C1 = alloc_1d_double(Component_Number);
 		    janus_azimuth_mode = alloc_1d_double(Component_Number);
-		    
+		    janus_azimuth_C3 = alloc_1d_double(Component_Number);
+		    janus_azimuth_C4 = alloc_1d_double(Component_Number);
+		    janus_azimuth_C5 = alloc_1d_double(Component_Number);
 
 		}
 	    }
@@ -903,8 +914,14 @@ void Gourmet_file_io(const char *infile
 		janus_torque = NULL;
 		janus_slip_vel = NULL;
 		janus_slip_mode = NULL;
+		janus_slip_B3 = NULL;
+		janus_slip_B4 = NULL;
+		janus_slip_B5 = NULL;
 		janus_azimuth_C1 = NULL;
 		janus_azimuth_mode = NULL;
+		janus_azimuth_C3 = NULL;
+		janus_azimuth_C4 = NULL;
+		janus_azimuth_C5= NULL;
 	    }
 	}else if(str == PT_name[rigid]){
 	    SW_PT=rigid;
@@ -938,8 +955,14 @@ void Gourmet_file_io(const char *infile
                 janus_torque = NULL;
                 janus_slip_vel = NULL;
                 janus_slip_mode = NULL;
+		janus_slip_B3 = NULL;
+		janus_slip_B4 = NULL;
+		janus_slip_B5 = NULL;
 		janus_azimuth_C1 = NULL;
 		janus_azimuth_mode = NULL;
+		janus_azimuth_C3 = NULL;
+		janus_azimuth_C4 = NULL;
+		janus_azimuth_C5= NULL;
 	    }
 	}
     }
@@ -965,6 +988,14 @@ void Gourmet_file_io(const char *infile
 		fprintf(stderr, " %d:janus_trq_z[i]",d++);
                 fprintf(stderr, " %d:squirm_b1[i]",d++);
                 fprintf(stderr, " %d:squirm_b2[i]",d++);
+		fprintf(stderr, " %d:squirm_b3[i]",d++);
+		fprintf(stderr, " %d:squirm_b4[i]",d++);
+		fprintf(stderr, " %d:squirm_b5[i]",d++);
+		fprintf(stderr, " %d:C1",d++);
+		fprintf(stderr, " %d:C2/C1",d++);
+		fprintf(stderr, " %d:C3",d++);
+		fprintf(stderr, " %d:C4",d++);
+		fprintf(stderr, " %d:C5",d++);
 	    }else if(SW_PT == chain){
 		    int d=1;
 		    fprintf(stderr, "#%d:species",d++);
@@ -1059,14 +1090,26 @@ void Gourmet_file_io(const char *infile
 		    if(janus_propulsion[i] == slip){
 		      ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]); //B1 coeff
 		      ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]); //alpha=B2/B1
+		      ufin->get(target.sub("janus_slip_B3"), janus_slip_B3[i]); //B3
+		      ufin->get(target.sub("janus_slip_B4"), janus_slip_B4[i]); //B4
+		      ufin->get(target.sub("janus_slip_B5"), janus_slip_B5[i]); //B5
 		      ufin->get(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]); //C1 coeff
 		      ufin->get(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]); //beta=C2/C1
+		      ufin->get(target.sub("janus_azimuth_C3"), janus_azimuth_C3[i]); //C3 coeff
+		      ufin->get(target.sub("janus_azimuth_C4"), janus_azimuth_C4[i]); //C4 coeff
+		      ufin->get(target.sub("janus_azimuth_C5"), janus_azimuth_C5[i]); //C5 coeff
 		      assert(janus_slip_vel[i] > 0);
 		    }else{
 		      janus_slip_vel[i] = 0.0;
 		      janus_slip_mode[i] = 0.0;
+		      janus_slip_B3[i] = 0.0;
+		      janus_slip_B4[i] = 0.0;
+		      janus_slip_B5[i] = 0.0;
 		      janus_azimuth_C1[i] = 0.0;
 		      janus_azimuth_mode[i] = 0.0;
+		      janus_azimuth_C3[i] = 0.0;
+		      janus_azimuth_C4[i] = 0.0;
+		      janus_azimuth_C5[i] = 0.0;
 		    }
 		}
 		{
@@ -1082,9 +1125,15 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("janus_torque.y"), janus_torque[i][1]);
 		    ufout->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    ufout->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
+		    ufout->put(target.sub("janus_slip_B3"), janus_slip_B3[i]);
+		    ufout->put(target.sub("janus_slip_B4"), janus_slip_B4[i]);
+		    ufout->put(target.sub("janus_slip_B5"), janus_slip_B5[i]);
 		    ufout->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
 		    ufout->put(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]);
 		    ufout->put(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]);
+		    ufout->put(target.sub("janus_azimuth_C3"), janus_azimuth_C3[i]);
+		    ufout->put(target.sub("janus_azimuth_C4"), janus_azimuth_C4[i]);
+		    ufout->put(target.sub("janus_azimuth_C5"), janus_azimuth_C5[i]);
 		}
 		{
 		    ufres->put(target.sub("Particle_number"),Particle_Numbers[i]);
@@ -1100,11 +1149,17 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
 		    ufres->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
 		    ufres->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
+		    ufres->put(target.sub("janus_slip_B3"), janus_slip_B3[i]);
+		    ufres->put(target.sub("janus_slip_B4"), janus_slip_B4[i]);
+		    ufres->put(target.sub("janus_slip_B5"), janus_slip_B5[i]);
                     ufres->put(target.sub("janus_azimuth_C1"), janus_azimuth_C1[i]);
 		    ufres->put(target.sub("janus_azimuth_mode"), janus_azimuth_mode[i]);
+		    ufres->put(target.sub("janus_azimuth_C3"), janus_azimuth_C3[i]);
+		    ufres->put(target.sub("janus_azimuth_C4"), janus_azimuth_C4[i]);
+		    ufres->put(target.sub("janus_azimuth_C5"), janus_azimuth_C5[i]);
 		}
 		if(SW_EQ == Electrolyte){
-		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
+		    fprintf(stderr, "#%d %d %g %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]
@@ -1115,11 +1170,17 @@ void Gourmet_file_io(const char *infile
 			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
 			    ,janus_slip_vel[i]
 			    ,janus_slip_mode[i]
+			    ,janus_slip_B3[i]
+			    ,janus_slip_B4[i]
+			    ,janus_slip_B5[i]
 			    ,janus_azimuth_C1[i]
 			    ,janus_azimuth_mode[i]
+			    ,janus_azimuth_C3[i]
+			    ,janus_azimuth_C4[i]
+			    ,janus_azimuth_C5[i]
 			);
 		}else {
-		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
+		    fprintf(stderr, "#%d %d %g %s %s %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n"
 			    ,i
 			    ,Particle_Numbers[i]
 			    ,MASS_RATIOS[i]
@@ -1129,8 +1190,14 @@ void Gourmet_file_io(const char *infile
 			    ,janus_torque[i][0], janus_torque[i][1], janus_torque[i][2]
 			    ,janus_slip_vel[i]
 			    ,janus_slip_mode[i]
+			    ,janus_slip_B3[i]
+			    ,janus_slip_B4[i]
+			    ,janus_slip_B5[i]
 			    ,janus_azimuth_C1[i]
 			    ,janus_azimuth_mode[i]
+			    ,janus_azimuth_C3[i]
+			    ,janus_azimuth_C4[i]
+			    ,janus_azimuth_C5[i] 
 			    );
 		}
 		
@@ -1188,8 +1255,14 @@ void Gourmet_file_io(const char *infile
 		    ufout->put(target.sub("janus_torque.z"), 0.0);
 		    ufout->put(target.sub("janus_slip_vel"), 0.0);
 		    ufout->put(target.sub("janus_slip_mode"), 0.0);
+		    ufout->put(target.sub("janus_slip_B3"), 0.0);
+		    ufout->put(target.sub("janus_slip_B4"), 0.0);
+		    ufout->put(target.sub("janus_slip_B5"), 0.0);
 		    ufout->put(target.sub("janus_azimuth_C1"), 0.0);
 		    ufout->put(target.sub("janus_azimuth_mode"), 0.0);
+		    ufout->put(target.sub("janus_azimuth_C3"), 0.0);
+		    ufout->put(target.sub("janus_azimuth_C4"), 0.0);
+		    ufout->put(target.sub("janus_azimuth_C5"), 0.0);
 		}
 		{
 		    ufres->put(target.sub("Beads_number"),Beads_Numbers[i]);
@@ -1206,9 +1279,15 @@ void Gourmet_file_io(const char *infile
 		    ufres->put(target.sub("janus_torque.y"), 0.0);
 		    ufres->put(target.sub("janus_torque.z"), 0.0);
 		    ufres->put(target.sub("janus_slip_vel"), 0.0);
+		    ufres->put(target.sub("janus_slip_B3"), 0.0);
+		    ufres->put(target.sub("janus_slip_B4"), 0.0);
+		    ufres->put(target.sub("janus_slip_B5"), 0.0);
 		    ufres->put(target.sub("janus_slip_mode"), 0.0);
 		    ufres->put(target.sub("janus_azimuth_C1"), 0.0);
 		    ufres->put(target.sub("janus_azimuth_mode"), 0.0);
+		    ufres->put(target.sub("janus_azimuth_C3"), 0.0);
+		    ufres->put(target.sub("janus_azimuth_C4"), 0.0);
+		    ufres->put(target.sub("janus_azimuth_C5"), 0.0);
 
 		}
 		
