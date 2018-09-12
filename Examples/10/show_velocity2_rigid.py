@@ -71,8 +71,8 @@ from math import *
 from string import *
 import os
 import colorsys
-SHOW_VELOCITY = 1
-SHOW_VEC_VOLUME = 0
+SHOW_VELOCITY = 0
+SHOW_VEC_VOLUME = 1
 ### Pressure
 SHOW_PRESSURE = 0
 SHOW_VOLUME = 0
@@ -93,8 +93,10 @@ ii = [[1,0,0],
 vn = ii[view_axes]
 def setAVS():
 	avs_ts = str(int($t))
-	avs_file_path = join(os.path.join(os.path.split(_udf_.udfFile())[:-1])) + "/" + $output.ON.Out_dir + "/avs"
-	avs_file_name = join([$output.ON.Out_name,"_",avs_ts,".dat"],"")
+#	avs_file_path = join(os.path.join(os.path.split(_udf_.udfFile())[:-1])) + "/" + $output.ON.Out_dir + "/avs"
+#	avs_file_name = join([$output.ON.Out_name,"_",avs_ts,".dat"],"")
+	avs_file_path = os.path.dirname(_udf_.udfFile()) + "/" + $output.ON.Out_dir + "/avs"
+	avs_file_name = "".join([$output.ON.Out_name,"_",avs_ts,".dat"])
 	print( os.path.join(avs_file_path,avs_file_name))
 	return os.path.join(avs_file_path,avs_file_name)
 def setData():
