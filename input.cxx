@@ -6,6 +6,13 @@
   \version 1.3
  */
 
+/*!
+  \file input.cxx
+  \updates to insert the azimuthal modes for the squirmer
+  \author F. Fadda
+  \date 2018/06/11
+*/
+
 #include "input.h"
 
 /////////////////////

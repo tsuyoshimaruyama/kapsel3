@@ -9,6 +9,14 @@
   \details \see \ref page_design_swimmer for a detailed description
  */
 
+/*! 
+  \file operate_surface.cxx
+  \author F. Fadda
+  \date 2018/06/11
+  \version 1.1
+  \brief More polar modes (\f$B_{3}\f$, \f$B_{4}\f$,...) and new azimuthal modes (\f$C_{1}\f$, \f$C_{2}\f$,...) for the squirmer added following the paper \f$\textit{O.S. Pak and E. Lauga J. Eng. Math. (2014) 88:1–28}\f$ https://link.springer.com/content/pdf/10.1007%2Fs10665-014-9690-9.pdf
+ */
+
 void Make_particle_momentum_factor(double const* const* u, Particle *p){
   //////////////////////////////
   const double dx = DX;
