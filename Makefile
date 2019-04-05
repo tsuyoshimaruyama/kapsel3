@@ -35,8 +35,10 @@ ENV = ICC_MKL_MPI
 #ARCH              = $(PF_ENGINEARCH)
 # OR
 # Define environment variables explicitly here
-GOURMET_HOME_PATH  = /home/OCTA81/GOURMET
-ENGINE_HOME_PATH   = /home/OCTA81/ENGINES
+GOURMET_HOME_PATH  = /usr/local/OCTA83/GOURMET
+ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
+#GOURMET_HOME_PATH  = /home/OCTA81/GOURMET
+#ENGINE_HOME_PATH   = /home/OCTA81/ENGINES
 ARCH               = linux_64
 #
 ## FFTW options

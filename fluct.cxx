@@ -6,7 +6,7 @@
   \brief Routines to compute random thermal fluctuation forces
  */
 #include "fluct.h"
-#include "mt19937ar.h"
+//#include "mt19937ar.h"
 
 void Add_random_force_thermostat(Particle *p, const CTime &jikan){
     static const double Zeta_drag = 6.* M_PI * ETA * RADIUS;

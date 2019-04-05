@@ -44,7 +44,7 @@
 #endif
 
 #include "dc.h"
-#include "mt19937ar.h"
+//#include "mt19937ar.h"
 
 inline void Electrolyte_free_energy(const Count_SW &OPERATION, FILE *fout, Particle *p, double **Concentration_rhs1, const CTime &jikan){
     static const char *labels[]={"", "nu", "radius", "xi", "M", "I", "kBT", "kBT/M"};

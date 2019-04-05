@@ -18,7 +18,6 @@
 #include "operate_omega.h"
 #include "make_phi.h"
 #include "particle_solver.h"
-#include "mt19937ar.h"
 #ifdef _MPI
 #include "operate_mpi_particle.h"
 #endif
@@ -30,9 +29,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "mt19937ar.h"
 
-//extern void init_genrand(unsigned long s);
-//extern double genrand_real3(void);
+  //void init_genrand(unsigned long s);
+  //double genrand_real3(void);
 
 #ifdef __cplusplus
 }
