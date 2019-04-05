@@ -12,7 +12,9 @@
 #include "macro.h"
 #include "operate_omega.h"
 #include "input.h"
-
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 /*!
   \brief Initializes velocity field for fluid at rest
   \param[out] zeta reduced vorticity field

@@ -4,7 +4,9 @@
  */
 #ifndef MATRIX_DIAGONAL_H
 #define MATRIX_DIAGONAL_H
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include "alloc.h"
 #include "macro.h"
 

@@ -9,7 +9,10 @@
 
 #ifndef MACRO_H_
 #define MACRO_H_
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
+#include <chrono>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,11 +20,17 @@
 #include <float.h>
 #include <time.h>
 #include <dirent.h>
-
+#include <stdarg.h>
+#include "variable.h"
+#ifdef _MPI
+#include "operate_mpi.h"
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-
+#if !defined (NDEBUG)
+#include "dc.h"
+#endif
 const double Euler_cst = 0.57721566490153286060651209008240243104215933593992359880576723488485;
 
 const double PI4 = 4. * M_PI;
@@ -36,6 +45,13 @@ const double EPSILON_MP= DBL_EPSILON;// E-16
 const double TOL_MP=10.0*EPSILON_MP;// E-15
 const double LARGE_TOL_MP=1.0e3*TOL_MP;// E-12
 const double HUGE_TOL_MP=1.0e6*LARGE_TOL_MP;//E-6
+
+const static double QTOL=TOL_MP;
+const double QTOL2 = sqrt(QTOL);
+const double QTOL4 = sqrt(QTOL2);
+const double QTOL6 = pow(QTOL2, 1.0/3.0);
+
+
 /////////////////////// inline function prototype if necessary
 void exit_job(int status);
 // 
@@ -49,6 +65,17 @@ inline int Nint(const double &a){
     }
     return ans;
 }
+
+// inline function prototype if necessary
+inline void fprintf_single (FILE *stream, const char *format, ...) {
+    va_list arg;
+    va_start (arg, format);
+    if (procid == root) {
+        vfprintf (stream, format, arg);
+    }
+    va_end (arg);
+}
+
 /////////////////////// random number generator:fast linear congruential method
 const unsigned long ARA = 1664525UL;
 const unsigned long BRA = 1073904223UL;
@@ -63,17 +90,17 @@ inline double ra(){ //[0,1]
 }
 
 /////////////////////// uniform random in [-1.0,1.0] with rand() 
-const int GIVEN_SEED = 0;
-const int RANDOM_SEED = 1;
+//const int GIVEN_SEED = 0;
+//const int RANDOM_SEED = 1;
 inline void SRA(const int &SW_seed, const unsigned int &seed){
     if(SW_seed == RANDOM_SEED){
       srand(time(NULL));
-      fprintf(stderr, "# rand_seed= time(NULL)\n");
+      fprintf_single(stderr, "# rand_seed= time(NULL)\n");
    }else if(SW_seed == GIVEN_SEED){
       srand(seed);
-      fprintf(stderr, "# rand_seed= %u\n",seed);
+      fprintf_single(stderr, "# rand_seed= %u\n",seed);
     }else {
-      fprintf(stderr, "SRA(): invalid SW_seed.\n");
+      fprintf_single(stderr, "SRA(): invalid SW_seed.\n");
       exit_job(EXIT_FAILURE);
     }
 }
@@ -214,7 +241,7 @@ inline int dircheckmake(const char *dname){
     system(dmy_cmd);
     DIR* dnew;
     if((dnew=opendir(dname)) == NULL){
-      fprintf(stderr, "%s not succeeded\n", dmy_cmd);
+      fprintf_single(stderr, "%s not succeeded\n", dmy_cmd);
       exit_job(EXIT_FAILURE);
     }
     closedir(dnew);
@@ -227,7 +254,7 @@ inline FILE *filecheckopen(const char *fname, const char st[]){
   FILE *fp;
   
   if ((fp=fopen(fname,st))==NULL) {
-    fprintf(stderr,"file open %s not succeeded\n",fname);
+    fprintf_single(stderr,"file open %s not succeeded\n",fname);
     exit_job(EXIT_FAILURE);
   }
   return(fp);
@@ -246,6 +273,7 @@ inline int file_check(const char *filename){
 
 struct wall_timer{
 #ifndef _OPENMP
+/*
   time_t t_start;
   inline void start(){time(&t_start);}
   inline double stop(){
@@ -253,6 +281,16 @@ struct wall_timer{
     time(&t_end);
     return static_cast<double>(difftime(t_end, t_start));
   }
+*/
+	std::chrono::system_clock::time_point t_start; 
+	inline void start() {
+		t_start = std::chrono::system_clock::now();
+	}
+	inline double stop() {
+		std::chrono::system_clock::time_point t_end;
+		t_end = std::chrono::system_clock::now();
+		return std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start).count() / 1000.;
+	}
 #else
   double t_start;
   inline void start(){t_start = omp_get_wtime();}

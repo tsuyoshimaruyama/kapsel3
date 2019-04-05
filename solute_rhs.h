@@ -7,27 +7,24 @@
  */
 #ifndef SOLUTE_RHS_H
 #define SOLUTE_RHS_H
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include "operate_omega.h"
 #include "operate_electrolyte.h"
 #include "f_particle.h"
-
-extern int NS_source;//!< (Unused) flag to enable solute source calculations
-
-extern double *Valency_e;//!< Charge valency for each species
-
-
-extern double *Total_solute;//!< Total amount of solute for each species
-
-extern double **Surface_normal;//!< Surface normal field at particle interface
-extern double **Concentration;//!< Concentration field for each species
-extern double **Concentration_rhs0;//!< Auxiliary concentration field to solve solute advection-diffusion equation
-extern double **Concentration_rhs1;//!< Auxiliary concentration field to sovle solute-advection-diffusion equation
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#ifdef _MPI
+#include "operate_mpi.h"
+#endif
 
 /*!
   \brief Allocate solute concentration memory
  */
-void Mem_alloc_solute(void);
+//not exist
+//void Mem_alloc_solute(void);
 
 /*!
   \brief Add the non-linear diffusive flux (due to the total charge distribution) to the rhs of the solute advection-diffusion equation for a given species

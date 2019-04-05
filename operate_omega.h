@@ -12,6 +12,10 @@
 #include "variable.h"
 #include "fft_wrapper.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 /*!
   \brief Compute the reduced advection term appearing on the rhs of the NS equation (reciprocal space) from the velocity field (real space)
   \details \f[
@@ -78,28 +82,6 @@ void Solenoidal_uk(double **u);
 void Solenoidal_uk_OBL(double **u);
 
 /*!
-  \brief Compute Fourier transform of vector field u
-  \details \f[\vec{u}(\vec{r}) \longrightarrow \ft{\vec{u}}(\vec{k})\f]
-  \param[in,out] u vector field to transform
- */
-inline void U2u_k(double **u){
-    A2a_k(u[0]);
-    A2a_k(u[1]);
-    A2a_k(u[2]);
-}
-
-/*!
-  \brief Compute inverse Fourier transform of vector field u
-  \details \f[\ft{\vec{u}}(\vec{k}) \longrightarrow \vec{u}(\vec{r})\f]
-  \param[in,out] u Fourier transform of vector field to inverse transform
- */
-inline void U_k2u(double **u){
-    A_k2a(u[0]);
-    A_k2a(u[1]);
-    A_k2a(u[2]);
-}
-
-/*!
   \brief Enforce zero divergence of field u (in real space)
   \details \f[
   \vec{u} \longrightarrow \vec{u}', \qquad \nabla\cdot\vec{u}' = 0
@@ -109,7 +91,7 @@ inline void U_k2u(double **u){
 inline void Solenoidal_u(double **u){
   U2u_k(u);
   for(int d=0; d<DIM; d++){
-      Truncate_two_third_rule(u[d]);
+      Truncate_two_third_rule_ooura(u[d]);
   }
   Solenoidal_uk(u);
   U_k2u(u);
@@ -122,7 +104,7 @@ inline void Solenoidal_u(double **u){
  */
 inline void Truncate_vector_two_third_rule(double **vector,const int &dim){
   for(int d=0; d<dim; d++){
-      Truncate_two_third_rule(vector[d]);
+      Truncate_two_third_rule_ooura(vector[d]);
   }
 }
 

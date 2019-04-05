@@ -112,15 +112,17 @@ inline void check_Inverse(double **A, double **B, int n){
 
 inline void Matrix_output(double **A, int n, char *filename){
 	FILE *output;
-	output = fopen(filename, "w+");
-	for(int i=0; i<n; i++){
-		for(int j=0; j<n; j++){
-			fprintf(output, "%f", A[i][j]);
-			if(j == n-1) fprintf(output, "\n");
-			else fprintf(output, "\t");
-		}
-	}
-	fclose(output);
+    if (procid == 0) {
+        output = fopen(filename, "w+");
+        for(int i=0; i<n; i++){
+            for(int j=0; j<n; j++){
+                fprintf(output, "%f", A[i][j]);
+                if(j == n-1) fprintf(output, "\n");
+                else fprintf(output, "\t");
+            }
+        }
+        fclose(output);
+    }
 }
 #endif
 

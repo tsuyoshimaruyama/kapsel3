@@ -10,6 +10,13 @@
 
 #include "variable.h"
 #include "rigid_body.h"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#ifdef _MPI
+#include "operate_mpi_particle.h"
+#endif
 //Orientation solvers
 //First-order Euler
 inline void MD_solver_orientation_Euler(Particle &p, const double &dt){

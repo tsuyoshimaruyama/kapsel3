@@ -7,7 +7,9 @@
  */
 #ifndef AVS_OUTPUT_P_H
 #define AVS_OUTPUT_P_H
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include "avs_output.h"
 
 void Init_avs_p(const AVS_parameters &Avs_parameters);

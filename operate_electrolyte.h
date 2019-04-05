@@ -7,22 +7,18 @@
  */
 #ifndef OPERATE_ELECTROLYTE_H
 #define OPERATE_ELECTROLYTE_H
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include "fluid_solver.h"
 #include "solute_rhs.h"
-
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 ///////////////////////////////////////
-extern double Bjerrum_length;
-extern double Surface_ion_number;
-extern double Counterion_number;
-extern double *Valency;
-extern double *Onsager_coeff;
 
 const double TOL = 1.e-4;
 ///////////////////////////////////////
-
-
-extern double *Total_solute;
 
 /*!
   \brief Determine how to initialize the solute density

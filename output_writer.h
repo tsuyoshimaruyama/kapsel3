@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <hdf5.h>
-#include <hdf5_hl.h>
+#include "hdf5.h"
+#include "hdf5_hl.h"
 #include <assert.h>
 #include <vector>
 #include "macro.h"
@@ -12,6 +12,7 @@
 #include "variable.h"
 #include "alloc.h"
 #include "output_writer_base.h"
+#include "quaternion.h"
 
 class hdf5_writer : public output_writer {
  public:
@@ -319,5 +320,6 @@ class hdf5_writer : public output_writer {
    */
   void write_obstacle_info(Particle *p);
 };
+
 
 #endif

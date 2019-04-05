@@ -7,22 +7,15 @@
  */
 #ifndef MD_FORCE_H
 #define MD_FORCE_H
-
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include <assert.h> 
 #include "variable.h"
 #include "input.h"
 #include "interaction.h"
 #include "make_phi.h"
 #include "particle_rotation_solver.h"
-
-extern double *Hydro_force;
-extern double *Hydro_force_new;
-
-enum Particle_BC {
-  PBC_particle
-  ,Lees_Edwards
-  ,Shear_hydro
-};
 
 void Add_f_gravity(Particle *p);
 
@@ -85,45 +78,58 @@ inline void Calc_f_Lennard_Jones(Particle *p){
 inline void Calc_f_Lennard_Jones_OBL(Particle *p){
   Calc_f_Lennard_Jones_shear_cap_primitive(p, Distance0_OBL, DBL_MAX);
 }
-inline void Calc_anharmonic_force_chain(Particle *p, 
-					void (*distance0_func)(const double *x1, const double *x2,double &r12, double *x12)){
-  double anharmonic_spring_cst=30.*EPSILON/SQ(SIGMA);
+inline void Calc_anharmonic_force_chain(Particle *p, void (*distance0_func)(const double *x1, const double *x2,double &r12, double *x12)){
+    double anharmonic_spring_cst=30.*EPSILON/SQ(SIGMA);
     const double R0=1.5*SIGMA;
     const double iR0=1./R0;
     const double iR02=SQ(iR0);
-    
+
     int n_first_chain = 0;    
     double shear_stress = 0.0;
-    for(int i = 0; i < Component_Number; i++){
 
-      for(int j = 0; j < Chain_Numbers[i]; j++){
+#ifdef _MPI
+    Particle_Gather (p, p_tmp, SW_OFF);
+#endif
+    if (procid == root) {
+#ifdef _MPI
+        Particle_qsort (p_tmp, Particle_Number);
+        for (int i = 0; i < Particle_Number; i++) {
+            p[i] = p_tmp[i];
+        }
+#endif
 
-        for(int k = 0; k < Beads_Numbers[i] - 1; k++){
-          int n = n_first_chain + k;
-          int m = n + 1;
-          //fprintf(stdout, "# %d %d %d %d %d\n", i, j, k, n, m);
+        for(int i = 0; i < Component_Number; i++){
+            for(int j = 0; j < Chain_Numbers[i]; j++){
+                for(int k = 0; k < Beads_Numbers[i] - 1; k++){
+                    int n = n_first_chain + k;
+                    int m = n + 1;
+                    //fprintf(stdout, "# %d %d %d %d %d\n", i, j, k, n, m);
 
-          double dmy_r1[DIM];
-          double dm_r1 = 0.0;
-          distance0_func(p[m].x, p[n].x, dm_r1, dmy_r1);
+                    double dmy_r1[DIM];
+                    double dm_r1 = 0.0;
+                    distance0_func(p[m].x, p[n].x, dm_r1, dmy_r1);
 
-          double dm1 = 1.0/(1.0 - SQ(dm_r1)*iR02);
-          if(dm1 < 0.0){
-            fprintf(stderr, "### anharmonic error: %d %d %g\n", n, m, dm_r1);
-          }
+                    double dm1 = 1.0/(1.0 - SQ(dm_r1)*iR02);
+                    if(dm1 < 0.0){
+                        fprintf(stderr, "### anharmonic error: %d %d %g\n", n, m, dm_r1);
+                    }
 
-          for(int d = 0; d < DIM; d++){
-            double dmy = dm1 * dmy_r1[d];
-            p[n].fr[d] += (-anharmonic_spring_cst)*dmy;
-            p[m].fr[d] += (anharmonic_spring_cst)*dmy;
-          }
-          shear_stress += ((-anharmonic_spring_cst * dm1 * dmy_r1[0]) * (dmy_r1[1]));
+                    for(int d = 0; d < DIM; d++){
+                        double dmy = dm1 * dmy_r1[d];
+                        p[n].fr[d] += (-anharmonic_spring_cst)*dmy;
+                        p[m].fr[d] += (anharmonic_spring_cst)*dmy;
+                    }
+                    shear_stress += ((-anharmonic_spring_cst * dm1 * dmy_r1[0]) * (dmy_r1[1]));
+                }// beads
+                n_first_chain += Beads_Numbers[i];
+            }//chains
+        }//species
+    }
 
-        }// beads
-        n_first_chain += Beads_Numbers[i];
-      }//chains
-
-    }//species
+#ifdef _MPI
+    Particle_Group_Communication (p, ONE_TO_MANY);
+    MPI_Bcast(&shear_stress, 1, MPI_DOUBLE, root, MPI_COMM_WORLD);
+#endif
 
     dev_shear_stress_lj += shear_stress;
 }

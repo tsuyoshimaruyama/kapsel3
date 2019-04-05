@@ -14,16 +14,7 @@
 #include <float.h>
 #include "macro.h"
 #include "parameter_define.h"
-
-const static double QTOL=TOL_MP;
-const double QTOL2 = sqrt(QTOL);
-const double QTOL4 = sqrt(QTOL2);
-const double QTOL6 = pow(QTOL2, 1.0/3.0);
-
-typedef struct quaternion {
-  double s; //scalar part
-  double v[DIM]; //vector part
-} quaternion;
+#include "variable.h"
 
 /*!
   \brief Get q0 component of quaternion
@@ -391,7 +382,6 @@ inline void rv_rqtn(quaternion &q, const double v[DIM]){
   \brief Compute rotation angle and (normal) axis vector from rotation quaternion
  */
 inline void rqtn_rv(double &phi, double n[DIM], const quaternion &q){
-
   qtn_isnormal(q);
   qtn_vector(n, q);
   double ds =  sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]);

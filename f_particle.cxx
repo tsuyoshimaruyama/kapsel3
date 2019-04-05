@@ -7,6 +7,8 @@
  */
 #include "f_particle.h"
 
+//This function is moved to Mem_alloc_var() and is not used because of MPI.
+/*
 double **f_particle;
 
 void Mem_alloc_f_particle(void){
@@ -15,5 +17,4 @@ void Mem_alloc_f_particle(void){
     f_particle[d] = alloc_1d_double(NX*NY*NZ_);
   }
 }
-
- 
+*/

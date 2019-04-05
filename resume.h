@@ -21,18 +21,12 @@
 /*!
   \brief Save system parameters needed to restart a simulation
  */
-void Save_Restart_udf(
-		      double **zeta
-		      ,double *uk_dc
-		      ,const Particle *p
-		      ,const CTime &time
-		      ,double **conc_k
-		      );
+void Save_Restart_udf(double **zeta, double *uk_dc, Particle *p, CTime &time, double **conc_k);
 
 /*!
   \brief Write particle data to udf restart file
  */
-void Save_Particle_udf(const Particle *p, const int &n_out_particles);
+void Save_Particle_udf(Particle *p, const int &n_out_particles);
 
 /*!
   \brief Write rigid body connectivity data to restart file
@@ -44,19 +38,11 @@ void Save_Rigid_Particle_udf();
  */
 void Get_Rigid_Particle_Data(Particle *rigid_p, const Particle *p);
 
-
-
 //UDF RESTART READING
 /*!
   \brief Set system parameters from restart file
  */
-void Force_restore_parameters(
-			      double **zeta
-			      ,double *uk_dc
-			      ,Particle *p
-			      ,CTime &time
-			      ,double **conc_k
-			      );
+void Force_restore_parameters(double **zeta, double *uk_dc, Particle *p, CTime &time, double **conc_k);
 
 /*!
   \brief Read particle data from udf restart file

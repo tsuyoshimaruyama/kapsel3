@@ -166,7 +166,7 @@ void jacobi(double **A_input, double **V, double *d, int &rot, const int &n){
   free_2d_double(A);
   free_1d_double(b);
   free_1d_double(z);
-  fprintf(stderr, "# Jacobi diagonalization did not converge\n");
+  fprintf_single(stderr, "# Jacobi diagonalization did not converge\n");
   exit_job(EXIT_FAILURE);
 
 }

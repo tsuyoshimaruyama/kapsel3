@@ -9,114 +9,97 @@
 
 #include "operate_omega.h"
 
+const int DIM2 = 2*DIM;
+
 void U2advection_k(double **u, double **advection){
-    double u1;
-    double u2;
-    double u3;
-    double k1 ;
-    double k2 ;
-    double k3 ;
-    double u2u3;
-    double u3u1;
-    double u1u2;
-    double u22_u32;
-    double u32_u12;
-    double u12_u22;
-    double k1k2;
-    double k2k3;
-    double k3k1;
+    double *u_advection[] = { u[0], u[1], u[2], advection[0], advection[1] };
+    double us[3][DIM];
+    double ks[3][DIM];
     int im;
-    
-    {
-#pragma omp parallel for private(u1, u2, u3, im)
-	for(int i=0; i<NX; i++){
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ; k++){
-		    im=(i*NY*NZ_)+(j*NZ_)+k;
-		    u1=u[0][im];
-		    u2=u[1][im];
-		    u3=u[2][im];
-		    
-		    u[0][im] = u2 * u3;
-		    u[1][im] = u3 * u1;
-		    u[2][im] = u1 * u2;
-		    advection[0][im] = (u2-u3) * (u2+u3);
-		    advection[1][im] = (u3-u1) * (u3+u1);
-		}
-	    }
-	}
-	
-	
-	{
-	    for(int d=0;d<DIM;d++){
-		A2a_k(u[d]);
-	    }
-	    A2a_k(advection[0]);
-	    A2a_k(advection[1]);
-	}
-	
-#pragma omp parallel for private(k1,k2,k3,u2u3,u3u1,u1u2,u22_u32,u32_u12,u12_u22,k1k2,k2k3,k3k1,im)
-	for(int i=0; i<NX; i++){
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ_; k++){
-		    im=(i*NY*NZ_)+(j*NZ_)+k;
-		    k1 =KX_int[im] * WAVE_X;
-		    k2 =KY_int[im] * WAVE_Y;
-		    k3 =KZ_int[im] * WAVE_Z;
-		    
-		    u2u3 = u[0][im];
-		    u3u1 = u[1][im];
-		    u1u2 = u[2][im];
-		    u22_u32 =advection[0][im];
-		    u32_u12 =advection[1][im];
-		    u12_u22 = -u32_u12 - u22_u32;
-		    
-		    k1k2 = k1*k2;
-		    k2k3 = k2*k3;
-		    k3k1 = k3*k1;
-		    
-		    u[0][im] = -(
-			k2k3 * u22_u32
-			+(k3-k2)*(k3+k2) *u2u3
-			+k3k1 * u1u2 - k1k2 * u3u1
-			);
-		    u[1][im] = -(
-			k3k1 * u32_u12
-			+(k1-k3)*(k1+k3) *u3u1
-			+ k1k2 * u2u3 - k2k3 * u1u2
-			);
-		    u[2][im] = -(
-			k1k2 * u12_u22
-			+(k2-k1)*(k2+k1) *u1u2
-			+ k2k3 * u3u1 - k3k1 * u2u3
-			);
-		}
-	    }
-	}
-	Omega_k2zeta_k(u, advection);
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, NZ_, u, advection) private(us, im)
+#endif
+    for (int i = 0; i < NPs[REAL][0]; i++) {
+        for (int j = 0; j < NPs[REAL][1]; j++) {
+            for (int k = 0; k < NPs[REAL][2]; k++) {
+                im = REALMODE_ARRAYINDEX(i, j, k);
+                us[0][0] = u[0][im];
+                us[0][1] = u[1][im];
+                us[0][2] = u[2][im];
+                u[0][im] = us[0][1] * us[0][2];
+                u[1][im] = us[0][2] * us[0][0];
+                u[2][im] = us[0][0] * us[0][1];
+                advection[0][im] = (us[0][1] - us[0][2]) * (us[0][1] + us[0][2]);
+                advection[1][im] = (us[0][2] - us[0][0]) * (us[0][2] + us[0][0]);
+            }
+        }
+    }
+    U2u_k (u_advection, (DIM + 2) );
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, KX_int, KY_int, KZ_int, WAVE_X, WAVE_Y, WAVE_Z, u, advection) private(ks, us, im)
+#endif
+    for (int i = 0; i < NPs[SPECTRUM][0]; i++) {
+        for (int j = 0; j < NPs[SPECTRUM][1]; j++) {
+            for (int k = 0; k < NPs[SPECTRUM][2]; k++) {
+                im = SPECTRUMMODE_ARRAYINDEX(i, j, k);
+                ks[0][0] = KX_int[im];
+                ks[0][1] = KY_int[im];
+                ks[0][2] = KZ_int[im];
+                ks[1][0] = ks[0][0] * WAVE_X;
+                ks[1][1] = ks[0][1] * WAVE_Y;
+                ks[1][2] = ks[0][2] * WAVE_Z;
+                us[1][0] = u[0][im];
+                us[1][1] = u[1][im];
+                us[1][2] = u[2][im];
+                us[2][0] = advection[0][im];
+                us[2][1] = advection[1][im];
+                us[2][2] = -us[2][1] - us[2][0];
+                ks[2][0] = ks[1][0] * ks[1][1];
+                ks[2][1] = ks[1][1] * ks[1][2];
+                ks[2][2] = ks[1][2] * ks[1][0];
+                u[0][im] = - (ks[2][1] * us[2][0] + (ks[1][2] - ks[1][1])
+                              * (ks[1][2] + ks[1][1]) * us[1][0] + ks[2][2]
+                              * us[1][2] - ks[2][0] * us[1][1]);
+                u[1][im] = - (ks[2][2] * us[2][1] + (ks[1][0] - ks[1][2])
+                              * (ks[1][0] + ks[1][2]) * us[1][1] + ks[2][0]
+                              * us[1][0] - ks[2][1] * us[1][2]);
+                u[2][im] = - (ks[2][0] * us[2][2] + (ks[1][1] - ks[1][0])
+                              * (ks[1][1] + ks[1][0]) * us[1][2] + ks[2][1]
+                              * us[1][1] - ks[2][2] * us[1][0]);
+                if (ks[0][0] != 0) {
+                    advection[0][im] = u[1][im];
+                    advection[1][im] = u[2][im];
+                } else if (ks[0][1] != 0) {
+                    advection[0][im] = u[2][im];
+                    advection[1][im] = u[0][im];
+                } else {
+                    advection[0][im] = u[0][im];
+                    advection[1][im] = u[1][im];
+                }
+            }
+        }
+    }
+    if (procid == 0) {
+        assert ( (advection[0][0] == 0.0) && (advection[1][0] == 0.0) );
     }
 }
 
 void Zeta_k2advection_k(double **zeta, double uk_dc[DIM], double **advection){
-    //Truncate_vector_two_third_rule(zeta, DIM-1);
-    //Zeta_k2u(zeta, uk_dc, u);
-    for(int d=0; d<(DIM-1); d++){
-	Truncate_two_third_rule(zeta[d]);
+    for (int d = 0; d < (DIM - 1); d++) {
+        Truncate_two_third_rule_ooura(zeta[d]);
     }
-    Zeta_k2u_k(zeta, uk_dc, u);
-    for(int d=0;d<DIM;d++){
-	A_k2a(u[d]);
-    }
-    U2advection_k(u, advection);
+    Zeta_k2u_k (zeta, uk_dc, u);
+    U_k2u (u);
+    U2advection_k (u, advection);
 }
 
 void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection){
     //Truncate_vector_two_third_rule(zeta, DIM-1);
     //Zeta_k2u(zeta, uk_dc, u);
     for(int d=0; d<(DIM-1); d++){
-	Truncate_two_third_rule(zeta[d]);
+        Truncate_two_third_rule_ooura(zeta[d]);
     }
-   
+
     Zeta_k2u_cpuky(zeta, uk_dc, u, work_v1);//contra
     Zeta_k2omega_OBL(zeta, work_v3);//contra
 
@@ -127,40 +110,45 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
     double w1;
     double w2;
     double w3;
-#pragma omp parallel for private(u1,u2,u3,w1,w2,w3,im)
-    for(int i = 0; i < NX; i++){
-	for(int j = 0; j < NY; j++){
-	    for(int k = 0; k < NZ; k++){
-		im=(i*NY*NZ_)+(j*NZ_)+k;
-		
-		u1 = u[0][im];
-		u2 = u[1][im];
-		u3 = u[2][im];
-		
-		w1 = work_v3[0][im];
-		w2 = work_v3[1][im];
-		w3 = work_v3[2][im];
-		
-		u[0][im] = u2*w3 - u3*w2;//co
-		u[1][im] = u3*w1 - u1*w3;//co
-		u[2][im] = u1*w2 - u2*w1;//co
-	    }
-	}
-    }
-    
-    for(int d=0;d<DIM;d++){
-	A2a_k(u[d]);
+
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, NZ_, u, work_v3) private(u1,u2,u3,w1,w2,w3,im)
+#endif
+    for (int i = 0; i < NPs[REAL][0]; i++) {
+        for (int j = 0; j < NPs[REAL][1]; j++) {
+            for (int k = 0; k < NPs[REAL][2]; k++) {
+                im = REALMODE_ARRAYINDEX(i, j, k);
+
+                u1 = u[0][im];
+                u2 = u[1][im];
+                u3 = u[2][im];
+
+                w1 = work_v3[0][im];
+                w2 = work_v3[1][im];
+                w3 = work_v3[2][im];
+
+                u[0][im] = u2*w3 - u3*w2;//co
+                u[1][im] = u3*w1 - u1*w3;//co
+                u[2][im] = u1*w2 - u2*w1;//co
+            }
+        }
     }
 
-#pragma omp parallel for private(im) 
-    for(int i = 0; i < NX; i++){
-      for(int j = 0; j < NY; j++){
-	for(int k = 0; k < NZ_; k++) {
-	  im=(i*NY*NZ_)+(j*NZ_)+k;
-	  u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
-	  u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
-	}
-      }
+    for(int d=0;d<DIM;d++){
+        A2a_k(u[d]);
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, NZ_, u, work_v1, Shear_rate_eff, degree_oblique) private(im)
+#endif
+    for (int i = 0; i < NPs[SPECTRUM][0]; i++) {
+        for (int j = 0; j < NPs[SPECTRUM][1]; j++) {
+            for (int k = 0; k < NPs[SPECTRUM][2]; k++) {
+                im = SPECTRUMMODE_ARRAYINDEX(i, j, k);
+                u[0][im] -= 2.*Shear_rate_eff*work_v1[im];//co
+                u[1][im] -= 2.*Shear_rate_eff*degree_oblique*work_v1[im];//co
+            }
+        }
     }
     
     U_k2rotation_k(u);//contra
@@ -168,96 +156,79 @@ void Zeta_k2advection_k_OBL(double **zeta, double uk_dc[DIM], double **advection
 }
 
 void Add_zeta_viscous_term(double ** zeta, double **f, const Index_range &ijk_range){
-  int im;
-#pragma omp parallel for private(im)
-    for(int i=ijk_range.istart; i<=ijk_range.iend; i++){
-      for(int j=ijk_range.jstart; j<=ijk_range.jend; j++){
-    	for(int k=ijk_range.kstart; k<=ijk_range.kend; k++){
-	  im=(i*NY*NZ_)+(j*NZ_)+k;
-	  f[0][im] += -(NU * K2[im]* zeta[0][im]);
-	  f[1][im] += -(NU * K2[im]* zeta[1][im]);
-	}
-      }
+    int im;
+    Index_range renge;
+
+    if (Range_check (&ijk_range, &renge) ) {
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (renge, NPs, f, NU, K2, zeta) private(im)
+#endif
+        for (int i = renge.istart; i <= renge.iend; i++) {
+            for (int j = renge.jstart; j <= renge.jend; j++) {
+                for (int k = renge.kstart; k <= renge.kend; k++) {
+                    im = SPECTRUMMODE_ARRAYINDEX(i, j, k);
+                    f[0][im] += - (NU * K2[im] * zeta[0][im]);
+                    f[1][im] += - (NU * K2[im] * zeta[1][im]);
+                }
+            }
+        }
     }
 }
 
 void Solenoidal_uk(double **u){
-    
-    double kx;
-    double ky;
-    double kz;
+    double ks[DIM];
     double dmy;
     int im;
-    
-#pragma omp parallel for private(kx,ky,kz,dmy,im) 
-    for(int i=0; i<NX; i++){
-	for(int j=0; j<NY; j++){
-	    for(int k=0; k<NZ_; k++){
-		
-		im=(i*NY*NZ_)+(j*NZ_)+k;
-		kx =KX_int[im] * WAVE_X;
-		ky =KY_int[im] * WAVE_Y;
-		kz =KZ_int[im] * WAVE_Z;
-		
-		dmy =
-		    IK2[im] 
-		    * (
-			u[0][im] * kx
-			+u[1][im] * ky
-			+u[2][im] * kz
-			);
-		
-		u[0][im] -= dmy * kx;
-		u[1][im] -= dmy * ky;
-		u[2][im] -= dmy * kz;
-		
-	    }
-	}
+
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, KX_int, KY_int, KZ_int, WAVE_X, WAVE_Y, WAVE_Z, IK2, u) private(ks, dmy, im)
+#endif
+    for (int i = 0; i < NPs[SPECTRUM][0]; i++) {
+        for (int j = 0; j < NPs[SPECTRUM][1]; j++) {
+            for (int k = 0; k < NPs[SPECTRUM][2]; k++) {
+                im = SPECTRUMMODE_ARRAYINDEX(i ,j, k);
+                ks[0] = KX_int[im] * WAVE_X;
+                ks[1] = KY_int[im] * WAVE_Y;
+                ks[2] = KZ_int[im] * WAVE_Z;
+                dmy = IK2[im] * (u[0][im] * ks[0] + u[1][im] * ks[1] + u[2][im] * ks[2]);
+                u[0][im] -= dmy * ks[0];
+                u[1][im] -= dmy * ks[1];
+                u[2][im] -= dmy * ks[2];
+            }
+        }
     }
 }
 
-
 void Solenoidal_uk_OBL(double **u){
+    double kx;
+    double ky;
+    double kz;
+    double kx_contra;
+    double ky_contra;
+    double dmy;
+    int im;
 
-double kx;
-double ky;
-double kz;
-double kx_contra;
-double ky_contra;
-double dmy;
-int im;
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, WAVE_X, WAVE_Y, WAVE_Z, KX_int, KY_int, KZ_int, IK2, u, degree_oblique) private(kx,ky,kz,kx_contra,ky_contra,dmy,im) 
+#endif
+    for (int i = 0; i < NPs[SPECTRUM][0]; i++) {
+        for (int j = 0; j < NPs[SPECTRUM][1]; j++) {
+            for (int k = 0; k < NPs[SPECTRUM][2]; k++) {
+                im = SPECTRUMMODE_ARRAYINDEX(i, j, k);
 
-#pragma omp parallel for private(kx,ky,kz,kx_contra,ky_contra,dmy,im) 
-  for(int i=0; i<NX; i++){
-    for(int j=0; j<NY; j++){
-      for(int k=0; k<NZ_; k++){
+                kx =KX_int[im] * WAVE_X;
+                ky =KY_int[im] * WAVE_Y;
+                kz =KZ_int[im] * WAVE_Z;
 
-	im=(i*NY*NZ_)+(j*NZ_)+k;
-	kx =KX_int[im] * WAVE_X;
-	ky =KY_int[im] * WAVE_Y;
-	kz =KZ_int[im] * WAVE_Z;
+                kx_contra = (1. + degree_oblique*degree_oblique)*KX_int[im]*WAVE_X - degree_oblique*KY_int[im]*WAVE_Y;
+                ky_contra = -degree_oblique*KX_int[im]*WAVE_X + KY_int[im]*WAVE_Y;
+                dmy = IK2[im] * (u[0][im] * kx + u[1][im] * ky + u[2][im] * kz);
 
-	kx_contra =
-	    (1. + degree_oblique*degree_oblique)*KX_int[im]*WAVE_X -
-	    degree_oblique*KY_int[im]*WAVE_Y;
-	ky_contra =
-	    -degree_oblique*KX_int[im]*WAVE_X +
-	    KY_int[im]*WAVE_Y;
-	
-	dmy =
-	  IK2[im] 
-	  * (
-	     u[0][im] * kx
-	     +u[1][im] * ky
-	     +u[2][im] * kz
-	     );
-
-	u[0][im] -= dmy * kx_contra;
-	u[1][im] -= dmy * ky_contra;
-	u[2][im] -= dmy * kz;
-	
-      }
+                u[0][im] -= dmy * kx_contra;
+                u[1][im] -= dmy * ky_contra;
+                u[2][im] -= dmy * kz;
+            }
+        }
     }
-  }
 }
 

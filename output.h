@@ -74,7 +74,7 @@ void Output_particle_data(Particle*p,
 void Output_udf(UDFManager *ufout,
 		  double **zeta,
 		  double *uk_dc,
-		  const Particle *p,
+		  /*const*/ Particle *p,
 		  const CTime &time);
 
 #endif

@@ -1,3 +1,7 @@
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 #include "output_writer.h"
 
 //fluid properties
@@ -31,9 +35,6 @@ const char* hdf5_writer::gid_part_name="./particle";
 const char* hdf5_writer::gid_pobs_name="./obstacle";
 
 const hid_t hdf5_writer::hid_null=static_cast<hid_t>(-1);
-
-template<hsize_t, hsize_t> hsize_t* alloc_1d(hsize_t n1);
-template<hsize_t> void free_1d(hsize_t* i);
 
 //hdf5 writer Constructor / Destroyer
 hdf5_writer::hdf5_writer(const int&    _NX,
@@ -104,27 +105,23 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       h5_check_err(status);
       
       int i, j, k;
-      hsize_t  im = 0;
-      hsize_t* coords = alloc_1d<hsize_t, size_t>(static_cast<hsize_t>(mem_dims_field[0]));
+      hsize_t im;
       for(int ii = 0; ii < crop_field.count[0]; ii++){
-	i = crop_field.start[0] + ii*crop_field.stride[0];
-	
-	for(int jj = 0; jj < crop_field.count[1]; jj++){
-	  j = crop_field.start[1] + jj*crop_field.stride[1];
-	  
-	  for(int kk = 0; kk < crop_field.count[2]; kk++){
-	    k = crop_field.start[2] + kk*crop_field.stride[2];
-	    
-	    coords[im++] = (i*NY*NZ_) + (j*NZ_) + k;
-	    //status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, 1, &im);
-	    //h5_check_err(status);
-	  }
-	}
+        i = crop_field.start[0] + ii*crop_field.stride[0];
+
+          for(int jj = 0; jj < crop_field.count[1]; jj++){
+            j = crop_field.start[1] + jj*crop_field.stride[1];
+
+            for(int kk = 0; kk < crop_field.count[2]; kk++){
+              k = crop_field.start[2] + kk*crop_field.stride[2];
+
+              im = (i*NY*NZ_) + (j*NZ_) + k;
+              status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, 1, &im);
+              h5_check_err(status);
+            }
+          }
+        }
       }
-      status = H5Sselect_elements(mem_dataspace_field, H5S_SELECT_APPEND, im, coords);
-      h5_check_err(status);
-      free_1d(coords);
-    }
 
     //Initialize Disk Dataspace
     {
@@ -157,10 +154,8 @@ hdf5_writer::hdf5_writer(const int&    _NX,
       h5_check_err(status);
 
       //dimensions of output field data
-      const long long dmy_dims[DIM] = {static_cast<long long>(out_dims_field[0]),
-				     static_cast<long long>(out_dims_field[1]),
-				     static_cast<long long>(out_dims_field[2])};
-      status = H5LTset_attribute_long_long(fid, "/", "nxnynz", dmy_dims, DIM);
+      int dmy_dims[DIM] = {out_dims_field[0], out_dims_field[1], out_dims_field[2]};
+      status = H5LTset_attribute_int(fid, "/", "nxnynz", dmy_dims, DIM);
       h5_check_err(status);
 
       //grid origin
@@ -177,13 +172,6 @@ hdf5_writer::hdf5_writer(const int&    _NX,
 
       //total number of particles in system
       status = H5LTset_attribute_int(fid, "/", "nump_total", &nump, 1);
-      h5_check_err(status);
-
-      //git veresion information
-      status = H5LTset_attribute_string(fid, "/", "git_version", GIT_VERSION);
-      h5_check_err(status);
-
-      status = H5LTset_attribute_string(fid, "/", "git_ref", GIT_REF);
       h5_check_err(status);
     }
 
@@ -303,49 +291,42 @@ void hdf5_writer::write_end(){
 }
 
 //writer for field data
-inline void hdf5_writer::write_field_scalar(const double* phi, const char* name,
-					    hid_t _loc=hid_null){
+inline void hdf5_writer::write_field_scalar(const double* phi, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_field : _loc);
   write_data(loc, phi, name, H5T_NATIVE_DOUBLE, mem_dataspace_field, H5T_NATIVE_FLOAT, out_dataspace_field);
 }
 
 //writer for particle data
-inline void hdf5_writer::write_particle_scalar(const int* data, const char* name,
-					       hid_t _loc=hid_null){
+inline void hdf5_writer::write_particle_scalar(const int* data, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[1] = {static_cast<hsize_t>(print_particle_num)};
+  hsize_t dmy_dims[1] = {print_particle_num};
   write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
 }
-inline void hdf5_writer::write_particle_vectorn(const double* data, const int& dim, const char* name,
-						hid_t _loc=hid_null){
+inline void hdf5_writer::write_particle_vectorn(const double* data, const int& dim, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[2] = {static_cast<hsize_t>(print_particle_num), DIM};
+  hsize_t dmy_dims[2] = {print_particle_num, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
 }
-inline void hdf5_writer::write_particle_matrix3(const double* data, const char* name,
-						hid_t _loc=hid_null){
+inline void hdf5_writer::write_particle_matrix3(const double* data, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_part : _loc);
-  hsize_t dmy_dims[3] = {static_cast<hsize_t>(print_particle_num), DIM, DIM};
+  hsize_t dmy_dims[3] = {print_particle_num, DIM, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
 }
 
 //writer for obstacle particle data
-inline void hdf5_writer::write_obstacle_scalar(const int* data, const char* name,
-					       hid_t _loc=hid_null){
+inline void hdf5_writer::write_obstacle_scalar(const int* data, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[1] = {static_cast<hsize_t>(print_obstacle_num)};
+  hsize_t dmy_dims[1] = {print_obstacle_num};
   write_data(loc, data, name, H5T_NATIVE_INT, H5T_NATIVE_INT, 1, dmy_dims);
 }
-inline void hdf5_writer::write_obstacle_vectorn(const double* data, const int& dim, const char* name,
-						hid_t _loc=hid_null){
+inline void hdf5_writer::write_obstacle_vectorn(const double* data, const int& dim, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[2] = {static_cast<hsize_t>(print_obstacle_num), DIM};
+  hsize_t dmy_dims[2] = {print_obstacle_num, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 2, dmy_dims);
 }
-inline void hdf5_writer::write_obstacle_matrix3(const double* data, const char* name,
-						hid_t _loc=hid_null){
+inline void hdf5_writer::write_obstacle_matrix3(const double* data, const char* name, hid_t _loc=hid_null){
   hid_t loc = (_loc == hid_null ? gid_pobs : _loc);
-  hsize_t dmy_dims[3] = {static_cast<hsize_t>(print_obstacle_num), DIM, DIM};
+  hsize_t dmy_dims[3] = {print_obstacle_num, DIM, DIM};
   write_data(loc, data, name, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, 3, dmy_dims);
 }
 
@@ -402,7 +383,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   double* pdata = alloc_1d_double(nump_print3*3); 
   
   int i, jj;
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -423,7 +404,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_pos_raw_name);
   this->write_particle_vectorn(&pdata[nump_print6], DIM, p_vel_name);
 
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -441,7 +422,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[0], DIM, p_force_h_name);
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_force_r_name);
 
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -463,7 +444,7 @@ void hdf5_writer::write_particle_data(Particle *p){
   this->write_particle_vectorn(&pdata[nump_print3], DIM, p_torque_h_name);
   this->write_particle_vectorn(&pdata[nump_print6], DIM, p_torque_r_name);
   
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 9*j;
@@ -498,7 +479,7 @@ void hdf5_writer::write_obstacle_data(Particle *p){
   double* pdata = alloc_1d_double(nump_print3*2);
 
   int i, jj;
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     jj = 3*j;
@@ -641,13 +622,13 @@ void hdf5_writer::write_field_info(){
     work_v3[d] = alloc_1d_double(NX*NY*NZ_);
 
   double ddx = static_cast<double>(DX);
-  for(int i = 0; i < NX; i++){
-    for(int j = 0; j < NY; j++){
-      for(int k = 0; k < NZ; k++){
-	int im = (i*NY*NZ_) + (j*NZ_) + k;
-	work_v3[0][im] = static_cast<double>(i)*ddx;
-	work_v3[1][im] = static_cast<double>(j)*ddx;
-	work_v3[2][im] = static_cast<double>(k)*ddx;
+  for (int i = 0; i < NPs[REAL][0]; i++) {
+    for (int j = 0; j < NPs[REAL][1]; j++) {
+      for (int k = 0; k < NPs[REAL][2]; k++) {
+        int im = REALMODE_ARRAYINDEX(i, j, k);
+        work_v3[0][im] = static_cast<double>(i)*ddx;
+        work_v3[1][im] = static_cast<double>(j)*ddx;
+        work_v3[2][im] = static_cast<double>(k)*ddx;
       }
     }
   }
@@ -675,7 +656,7 @@ void hdf5_writer::write_particle_info(Particle* p){
   int*    psp   = alloc_1d_int(nump_print);
   
   int i;
-#pragma omp parallel for private(i)
+//#pragma omp parallel for private(i)
   for(int j = 0; j < nump_print; j++){
     i  = plist[j];
     pid[j] = i;
@@ -708,7 +689,7 @@ void hdf5_writer::write_obstacle_info(Particle *p){
   double* pdata = alloc_1d_double(nump_print3);
 
   int i, jj;
-#pragma omp parallel for private(i, jj)
+//#pragma omp parallel for private(i, jj)
   for(int j = 0; j < nump_print; j++){
     jj = 3*j;
 

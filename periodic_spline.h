@@ -1,6 +1,9 @@
 #ifndef PERIODIC_SPLINE_H
 #define PERIODIC_SPLINE_H
 
+#ifdef _MPI
+#include <mpi.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -21,17 +24,6 @@
  */
 
 //f(x) = S_i(x) = a_i + b_i*(x-x_i) + c_i*(x-x_i)**2 + d_i*(x-x_i)**3
-typedef struct splineSystem{
-  int      n;
-  double   dx;
-  double*  a;
-  double*  b;
-  double*  c;
-  double*  d;
-  double*  Q;
-  double*  Aii;
-  double*  Ain;
-} splineSystem;
 
 /*!
   \brief Evaluate function at x using spline interpolation

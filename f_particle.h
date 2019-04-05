@@ -13,12 +13,16 @@
 #include "input.h"
 #include "make_phi.h"
 
-extern double **f_particle;
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /*!
   \brief Allocate f_particle working array
  */
-void Mem_alloc_f_particle(void);
+
+/* This function is integrated to memory_model.c, Mem_alloc_var() */
+/* void Mem_alloc_f_particle(void); */
 
 /*!
   \brief Compute the force density field which imposes the rigidity constraint on the total velocity field
@@ -34,64 +38,58 @@ void Mem_alloc_f_particle(void);
   \param[in] up particle velocity field
   \param[in] phi particle concentration field
  */
-inline void Make_f_particle_dt_nonsole(double **f
-				       ,double **u 
-				       ,double **up
-				       ,double *phi
-				       ){
+
+/* change: Loop is deconposited for MPI */
+inline void Make_f_particle_dt_nonsole(double **f, double **u , double **up, double *phi){
   // !! これを呼ぶ前に、 up, phi を計算しておくこと。
   //
   // f = up - phi *u
   //
-  int im;
-  {
-#pragma omp parallel for private(im)
-    for(int i=0; i<NX; i++){
-      for(int j=0; j<NY; j++){
-	for(int k=0; k<NZ; k++){
-	  im=(i*NY*NZ_)+(j*NZ_)+k;
-	  f[0][im] = up[0][im] - phi[im] * u[0][im];
-	  f[1][im] = up[1][im] - phi[im] * u[1][im];
-	  f[2][im] = up[2][im] - phi[im] * u[2][im];
-	}
-      }
-    }	
-  }
-}
+    int im;
 
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, NZ_, f, up, phi, u) private(im)
+#endif
+    for (int i = 0; i < NPs[REAL][0]; i++) {
+        for (int j = 0; j < NPs[REAL][1]; j++) {
+            for (int k = 0; k < NPs[REAL][2]; k++) {
+                im = REALMODE_ARRAYINDEX(i, j, k);
+                f[0][im] = up[0][im] - phi[im] * u[0][im];
+                f[1][im] = up[1][im] - phi[im] * u[1][im];
+                f[2][im] = up[2][im] - phi[im] * u[2][im];
+            }
+        }
+    }
+}
 
 /*!
   \brief Compute the (solenoidal) force density field which imposes the rigidity constraint on the total velocity field
   \see Make_f_particle_dt_nonsole
 */				
-inline void Make_f_particle_dt_sole(double **f
-				    ,double **u
-				    ,double **up
-				    ,double *phi
-				    ){
+inline void Make_f_particle_dt_sole(double **f, double **u, double **up, double *phi){
     // !! これを呼ぶ前に、 up, phi を計算しておくこと。
-    Make_f_particle_dt_nonsole(f, u, up, phi);
-  {
-    // f = up - phi *u
-     Solenoidal_u(f); // div f = 0
-  }
+    Make_f_particle_dt_nonsole(f, u, up, phi); // f = up - phi *u
+    Solenoidal_u(f); // div f = 0
 }
+
+/* change: Loop is deconposited for MPI */
 inline void Add_f_particle(double **u, double **f, const int dim=DIM){
     // !! これを呼ぶ前に、 f を計算しておくこと。
-int im;
-   // for(int d=0; d<dim; d++){
-#pragma omp parallel for private(im) 
-    	for(int i=0; i<NX; i++){
-	    for(int j=0; j<NY; j++){
-		for(int k=0; k<NZ; k++){
-		 im=(i*NY*NZ_)+(j*NZ_)+k;
-		 u[0][im] += f[0][im];
-		 u[1][im] += f[1][im];
-		 u[2][im] += f[2][im];
-		}
-	    }
-	    }	
-  //  }
+    int im;
+
+#ifdef _OPENMP
+#pragma omp parallel for default(none) shared (NPs, NZ_, f, u) private(im)
+#endif
+    for (int i = 0; i < NPs[REAL][0]; i++) {
+        for (int j = 0; j < NPs[REAL][1]; j++) {
+            for (int k = 0; k < NPs[REAL][2]; k++) {
+                im = REALMODE_ARRAYINDEX(i, j, k);
+                u[0][im] += f[0][im];
+                u[1][im] += f[1][im];
+                u[2][im] += f[2][im];
+            }
+        }
+	}
 }
 
 #endif
