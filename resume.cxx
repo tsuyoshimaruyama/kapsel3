@@ -12,7 +12,7 @@ void Save_Restart_udf(double **zeta,
                       const Particle *p,
                       const CTime &time,
                       double **conc_k){
-  ufres->put("resume.Calculation", "CONTINUE");
+  ufres->put("resume.Calculation", "CONTINUE_ORIGINAL");
   {//fluid data
     int im;
     for(int i=0; i<NX; i++){
@@ -21,7 +21,7 @@ void Save_Restart_udf(double **zeta,
           im = (i*NY*NZ_) + (j*NZ_) + k;
           char str[256];
           {
-            sprintf(str, "resume.CONTINUE.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
+            sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
             Location target(str);
             ufres->put(target.sub("zeta0"),zeta[0][im]);
             ufres->put(target.sub("zeta1"),zeta[1][im]);
@@ -29,7 +29,7 @@ void Save_Restart_udf(double **zeta,
 
           if(Electrolyte){
             for(int n=0;n<N_spec;n++){
-              sprintf(str, "resume.CONTINUE.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
+              sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
               Location target(str);
               ufres->put(target.sub("ck"),conc_k[n][im]);
             }
@@ -41,7 +41,7 @@ void Save_Restart_udf(double **zeta,
   }
   {//uk_dc
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.uk_dc");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.uk_dc");
     Location target(str);
     ufres->put(target.sub("x"), uk_dc[0]);
     ufres->put(target.sub("y"), uk_dc[1]);
@@ -63,7 +63,7 @@ void Save_Restart_udf(double **zeta,
   
   {//time
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.jikan");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.jikan");
     Location target(str);
     ufres->put(target.sub("ts"),time.ts);
     ufres->put(target.sub("time"),time.time);
@@ -71,10 +71,181 @@ void Save_Restart_udf(double **zeta,
 
   {//strain
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.oblique");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.oblique");
     Location target(str);
     ufres->put(target.sub("degree_oblique"),degree_oblique);
   }
+}
+
+void Save_Restart_udf_fdm(double **u, double **u_o, const Particle *p, const CTime &time) {
+	ufres->put("resume.Calculation", "CONTINUE_FDM");
+	{//fluid data
+		int im;
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM.Saved_Data.U[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("u0"), u[0][im]);
+						ufres->put(target.sub("u1"), u[1][im]);
+						ufres->put(target.sub("u2"), u[2][im]);
+					}
+				}//k
+			}//j
+		}//i
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM.Saved_Data.U_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("u_old_0"), u_o[0][im]);
+						ufres->put(target.sub("u_old_1"), u_o[1][im]);
+						ufres->put(target.sub("u_old_2"), u_o[2][im]);
+					}
+				}//k
+			}//j
+		}//i
+	}
+
+	//particle data
+	if (SW_PT != rigid) {
+		Save_Particle_udf(p, Particle_Number);
+	} else {
+		Particle *rigid_p = new Particle[Rigid_Number];
+		Get_Rigid_Particle_Data(rigid_p, p);
+
+		Save_Particle_udf(rigid_p, Rigid_Number);
+		Save_Rigid_Particle_udf();
+
+		delete[] rigid_p;
+	}
+
+	{//time
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.jikan");
+		Location target(str);
+		ufres->put(target.sub("ts"), time.ts);
+		ufres->put(target.sub("time"), time.time);
+	}
+
+	{//strain
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.oblique");
+		Location target(str);
+		ufres->put(target.sub("degree_oblique"), degree_oblique);
+	}
+}
+
+void Save_Restart_udf_fdm_phase_separation(double **u, double **u_o, double * psi, double * psi_o, double **stress_o, const Particle *p, const CTime &time) {
+	ufres->put("resume.Calculation", "CONTINUE_FDM_PHASE_SEPARATION");
+	{//fluid data
+		int im;
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.U[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("u0"), u[0][im]);
+						ufres->put(target.sub("u1"), u[1][im]);
+						ufres->put(target.sub("u2"), u[2][im]);
+					}
+				}//k
+			}//j
+		}//i
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.U_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("u_old_0"), u_o[0][im]);
+						ufres->put(target.sub("u_old_1"), u_o[1][im]);
+						ufres->put(target.sub("u_old_2"), u_o[2][im]);
+					}
+				}//k
+			}//j
+		}//i
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.PSI[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("psi"), psi[im]);
+					}
+				}//k
+			}//j
+		}//i
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.PSI_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("psi_old"), psi_o[im]);
+					}
+				}//k
+			}//j
+		}//i
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i * NY * NZ_) + (j * NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.STRESS_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufres->put(target.sub("stress_old_0"), stress_o[0][im]);
+						ufres->put(target.sub("stress_old_1"), stress_o[1][im]);
+						ufres->put(target.sub("stress_old_2"), stress_o[2][im]);
+					}
+				}//k
+			}//j
+		}//i
+	}
+
+	//particle data
+	if (SW_PT != rigid) {
+		Save_Particle_udf(p, Particle_Number);
+	} else {
+		Particle *rigid_p = new Particle[Rigid_Number];
+		Get_Rigid_Particle_Data(rigid_p, p);
+
+		Save_Particle_udf(rigid_p, Rigid_Number);
+		Save_Rigid_Particle_udf();
+
+		delete[] rigid_p;
+	}
+
+	{//time
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.jikan");
+		Location target(str);
+		ufres->put(target.sub("ts"), time.ts);
+		ufres->put(target.sub("time"), time.time);
+	}
+
+	{//strain
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.oblique");
+		Location target(str);
+		ufres->put(target.sub("degree_oblique"), degree_oblique);
+	}
 }
 
 void Get_Rigid_Particle_Data( Particle *rigid_p, const Particle *p){
@@ -157,7 +328,14 @@ void Save_Rigid_Particle_udf(){
   if(SW_PT == rigid){
     for(int j = 0; j < Particle_Number; j++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_body[%d]",j);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_body[%d]", j);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_body[%d]", j);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_body[%d]", j);
+	  }
+      
       Location target(str);
 
       ufres->put(target.sub("x"), GRvecs_body[j][0]);
@@ -166,14 +344,28 @@ void Save_Rigid_Particle_udf(){
     }
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_masses[%d]", rigidID);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_masses[%d]", rigidID);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_masses[%d]", rigidID);
+	  }
+      
       Location target(str);
 
       ufres->put(target, Rigid_Masses[rigidID]);
     }
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_moments_body[%d]", rigidID);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_moments_body[%d]", rigidID);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_moments_body[%d]", rigidID);
+	  }
+      
       Location target(str);
 
       string axis[DIM] = {"x", "y", "z"};
@@ -187,7 +379,13 @@ void Save_Particle_udf(const Particle *p, const int &n_out_particles){
   
   for(int j=0;j<n_out_particles;j++){
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.Particles[%d]",j);
+	if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.Particles[%d]", j);
+	} else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.Particles[%d]", j);
+	} else {
+		sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Particles[%d]", j);
+	}
     Location target(str);
 
     //positions
@@ -319,14 +517,14 @@ void Force_restore_parameters(double **zeta
           im = (i*NY*NZ_) + (j*NZ_) + k;
           char str[256];
           {
-            sprintf(str,"resume.CONTINUE.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
+            sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
             Location target(str);
             ufin->get(target.sub("zeta0"),zeta[0][im]);
             ufin->get(target.sub("zeta1"),zeta[1][im]);
           }
           if(Electrolyte ){
             for(int n=0;n<N_spec;n++){ // Two_fluid では N_spec =1
-              sprintf(str,"resume.CONTINUE.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
+              sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
               Location target(str);
               ufin->get(target.sub("ck"),conc_k[n][im]);
             }
@@ -339,7 +537,7 @@ void Force_restore_parameters(double **zeta
   {//uk_dc
     
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.uk_dc");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.uk_dc");
     Location target(str);
     
     ufin->get(target.sub("x"),uk_dc[0]);
@@ -360,19 +558,19 @@ void Force_restore_parameters(double **zeta
 
   {
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.jikan");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.jikan");
     Location target(str);
     ufin->get(target.sub("ts"),time.ts);
     ufin->get(target.sub("time"),time.time);
   }   
   {
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.oblique");
+    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.oblique");
     Location target(str);
     ufin->get(target.sub("degree_oblique"),degree_oblique);
   }
   
-  if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+  if(SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM){
     int im;
 #pragma omp parallel for private(im)
     for(int i = 0; i < NX; i++){
@@ -396,12 +594,189 @@ void Force_restore_parameters(double **zeta
   }
 
 }      
+void Force_restore_parameters_fdm(double **u, double **u_o, Particle *p, CTime &time) {
+	{//fluid data
+		int im;
+		for (int i = 0; i<NX; i++) {
+			for (int j = 0; j<NY; j++) {
+				for (int k = 0; k<NZ; k++) {
+					im = (i*NY*NZ_) + (j*NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM.Saved_Data.U[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("u0"), u[0][im]);
+						ufin->get(target.sub("u1"), u[1][im]);
+						ufin->get(target.sub("u2"), u[2][im]);
+					}
+					{
+						sprintf(str, "resume.CONTINUE_FDM.Saved_Data.U_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("u_old_0"), u_o[0][im]);
+						ufin->get(target.sub("u_old_1"), u_o[1][im]);
+						ufin->get(target.sub("u_old_2"), u_o[2][im]);
+					}
+				}
+			}
+		}
+	}
+
+
+	//particle_data
+	if (SW_PT != rigid) {
+		Read_Particle_udf(p, Particle_Number);
+	} else {
+		Particle *rigid_p = new Particle[Rigid_Number];
+		Read_Particle_udf(rigid_p, Rigid_Number);
+		Read_Rigid_Particle_udf(rigid_p);
+		Set_Rigid_Particle_Data(rigid_p, p);
+		delete[] rigid_p;
+	}
+
+	{
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.jikan");
+		Location target(str);
+		ufin->get(target.sub("ts"), time.ts);
+		ufin->get(target.sub("time"), time.time);
+	}
+	{
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.oblique");
+		Location target(str);
+		ufin->get(target.sub("degree_oblique"), degree_oblique);
+	}
+
+	if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		int im;
+#pragma omp parallel for private(im)
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i*NY*NZ_) + (j*NZ_) + k;
+
+					K2[im] =
+						SQ(WAVE_X*KX_int[im]) +
+						SQ(WAVE_Y*KY_int[im] -
+							WAVE_X*degree_oblique*KX_int[im]) +
+						SQ(WAVE_Z*KZ_int[im]);
+					if (K2[im] > 0.0) {
+						IK2[im] = 1.0 / K2[im];
+					} else {
+						IK2[im] = 0.0;
+					}
+				}
+			}
+		}
+	}
+}
+
+void Force_restore_parameters_fdm_phase_separation(double **u, double **u_o, double * psi, double * psi_o, double **stress_o, Particle *p,CTime &time) {
+	{//fluid data
+		int im;
+		for (int i = 0; i<NX; i++) {
+			for (int j = 0; j<NY; j++) {
+				for (int k = 0; k<NZ; k++) {
+					im = (i*NY*NZ_) + (j*NZ_) + k;
+					char str[256];
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.U[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("u0"), u[0][im]);
+						ufin->get(target.sub("u1"), u[1][im]);
+						ufin->get(target.sub("u2"), u[2][im]);
+					}
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.U_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("u_old_0"), u_o[0][im]);
+						ufin->get(target.sub("u_old_1"), u_o[1][im]);
+						ufin->get(target.sub("u_old_2"), u_o[2][im]);
+					}
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.PSI[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("psi"), psi[im]);
+					}
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.PSI_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("psi_old"), psi_o[im]);
+					}
+					{
+						sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.STRESS_OLD[%d][%d][%d]", i, j, k);
+						Location target(str);
+						ufin->get(target.sub("stress_old_0"), stress_o[0][im]);
+						ufin->get(target.sub("stress_old_1"), stress_o[1][im]);
+						ufin->get(target.sub("stress_old_2"), stress_o[2][im]);
+					}
+				}
+			}
+		}
+	}
+
+
+	//particle_data
+	if (SW_PT != rigid) {
+		Read_Particle_udf(p, Particle_Number);
+	} else {
+		Particle *rigid_p = new Particle[Rigid_Number];
+		Read_Particle_udf(rigid_p, Rigid_Number);
+		Read_Rigid_Particle_udf(rigid_p);
+		Set_Rigid_Particle_Data(rigid_p, p);
+		delete[] rigid_p;
+	}
+
+	{
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.jikan");
+		Location target(str);
+		ufin->get(target.sub("ts"), time.ts);
+		ufin->get(target.sub("time"), time.time);
+	}
+	{
+		char str[256];
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.oblique");
+		Location target(str);
+		ufin->get(target.sub("degree_oblique"), degree_oblique);
+	}
+
+	if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		int im;
+#pragma omp parallel for private(im)
+		for (int i = 0; i < NX; i++) {
+			for (int j = 0; j < NY; j++) {
+				for (int k = 0; k < NZ; k++) {
+					im = (i*NY*NZ_) + (j*NZ_) + k;
+
+					K2[im] =
+						SQ(WAVE_X*KX_int[im]) +
+						SQ(WAVE_Y*KY_int[im] -
+							WAVE_X*degree_oblique*KX_int[im]) +
+						SQ(WAVE_Z*KZ_int[im]);
+					if (K2[im] > 0.0) {
+						IK2[im] = 1.0 / K2[im];
+					} else {
+						IK2[im] = 0.0;
+					}
+				}
+			}
+		}
+	}
+}
 
 void Read_Particle_udf(Particle *p, const int &n_in_particles){
   
   for(int j=0;j<n_in_particles;j++){
     char str[256];
-    sprintf(str,"resume.CONTINUE.Saved_Data.Particles[%d]",j);
+	if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.Particles[%d]", j);
+	} else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.Particles[%d]", j);
+	} else {
+		sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Particles[%d]", j);
+	}
+    
     Location target(str);
 
     //positions
@@ -565,7 +940,14 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
   if(SW_PT == rigid){
     for(int j = 0; j < Particle_Number; j++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_body[%d]", j);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_body[%d]", j);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_body[%d]", j);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_body[%d]", j);
+	  }
+      
       Location target(str);
 
       ufin->get(target.sub("x"), GRvecs_body[j][0]);
@@ -574,7 +956,14 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
     }
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_masses[%d]", rigidID);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_masses[%d]", rigidID);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_masses[%d]", rigidID);
+	  }
+      
       Location target(str);
 
       ufin->get(target, Rigid_Masses[rigidID]);
@@ -582,7 +971,14 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
     }
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
       char str[256];
-      sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
+	  if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM_PHASE_SEPARATION.Saved_Data.GR_moments_body[%d]", rigidID);
+	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
+		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_moments_body[%d]", rigidID);
+	  } else {
+		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_moments_body[%d]", rigidID);
+	  }
+
       Location target(str);
 
       string axis[DIM] = {"x", "y", "z"};
@@ -654,7 +1050,7 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p){
 
     //periodic boundary conditions
     double delta_vx;
-    if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards){
+    if(SW_EQ != Shear_Navier_Stokes_Lees_Edwards && SW_EQ != Shear_Navier_Stokes_Lees_Edwards_FDM && SW_EQ != Shear_NS_LE_CH_FDM){
       PBC(p[n].x);
     }else{
       PBC_OBL(p[n].x, delta_vx);

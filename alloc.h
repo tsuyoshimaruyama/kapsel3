@@ -11,7 +11,13 @@
 
 #include <cstdlib>
 #include <cstdio>
+
+#ifdef __INTEL_COMPILER
+#include <malloc.h>
+#else
 #include <mm_malloc.h>
+#endif
+
 static const int MEMORY_ALIGNMENT = 128;
 #define alloc_error_check(p) {			\
     if ((p) == NULL) { \
@@ -29,6 +35,16 @@ template<typename T, typename Q>  T*  alloc_1d(Q n1){
   return p;
 }
 
+/*!
+\brief C Allocate memory for 1d array
+*/
+template <typename T, typename Q> T *calloc_1d(Q n1, const int ALIGNMENT) {
+	T *p = (T *)_mm_malloc(n1 * sizeof(T), ALIGNMENT);
+	alloc_error_check(p);
+	for (Q j = Q(0); j < n1; j++)
+		p[j] = T(0);
+	return p;
+}
 
 /*!
   \brief Free memory for 1d array
@@ -71,6 +87,20 @@ template<typename T, typename Q> T** alloc_2d(Q n1, Q n2){
   T** pp = allocview_2d<T>(n1, n2);
   initview_2d<T>(n1, n2, p, pp);
   return pp;
+}
+
+/*!
+\brief C Allocate memory for 2d array
+\details Allocates linear array of size n1*n2, position of element
+(I,J) is im = I*n2 + J
+*/
+template <typename T, typename Q> T **calloc_2d(Q n1, Q n2) {
+	T *p = (T *)alloc_1d<T>(n1 * n2);
+	alloc_error_check(p);
+	T **pp = allocview_2d<T>(n1, n2);
+	initview_2d<T>(n1, n2, p, pp);
+
+	return pp;
 }
 
 /*!
@@ -161,4 +191,9 @@ void       free_2d_double(double **dd);
 void       free_3d_double(double ***ddd);
 void       freeview_2d_double(double **dd);
 void       freeview_3d_double(double ***ddd);
+
+int *calloc_1d_int(int n1, const int alignment = MEMORY_ALIGNMENT);
+int **calloc_2d_int(int n1, int n2);
+double *calloc_1d_double(int n1, const int alignment = MEMORY_ALIGNMENT);
+double **calloc_2d_double(int n1, int n2);
 #endif

@@ -47,7 +47,13 @@ enum EQ {Navier_Stokes
 	 ,Shear_Navier_Stokes
 	 ,Shear_Navier_Stokes_Lees_Edwards
 	 ,Electrolyte
+	 ,Navier_Stokes_FDM
+	 ,Navier_Stokes_Cahn_Hilliard_FDM
+	 ,Shear_Navier_Stokes_Lees_Edwards_FDM
+	 ,Shear_NS_LE_CH_FDM
 };
+enum ST {explicit_scheme, implicit_scheme};
+enum PO {Landau, Flory_Huggins};
 enum PT {spherical_particle
 	 ,chain
 	 ,rigid
@@ -66,6 +72,45 @@ extern SW_time SW_TIME;
 //////  
 extern EQ SW_EQ;
 extern const char *EQ_name[];
+////// 
+extern ST SW_NSST;
+extern ST SW_CHST;
+extern PO SW_POTENTIAL;
+extern const char *NS_SOLVERTYPE_name[];
+extern const char *CH_SOLVERTYPE_name[];
+extern const char *POTENTIAL_name[];
+extern int PHASE_SEPARATION;
+extern int VISCOSITY_CHANGE;
+extern double eps_ns;
+extern int maxiter_ns;
+extern double eps_ch;
+extern int maxiter_ch;
+extern double XYaspect;
+extern double ETA_A;
+extern double ETA_B;
+
+struct gl_param {
+	double a;
+	double b;
+};
+struct fh_param {
+	double na;
+	double nb;
+	double chi;
+};
+struct ps_param {
+	double ratio;
+	double init_fluct;
+	double d;
+	double w;
+	double alpha;
+	double kappa;
+	double neutral;
+};
+extern gl_param  gl;
+extern fh_param  fh;
+extern ps_param  ps;
+
 //////  
 extern PT SW_PT;
 extern const char *PT_name[];

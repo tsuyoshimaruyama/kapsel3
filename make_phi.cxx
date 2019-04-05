@@ -577,7 +577,7 @@ void Make_phi_u_particle_OBL(double *phi
 void Make_phi_u_advection(double *phi, double **up, Particle *p){
   // map only V_p, excepting \Omega_p to the field up
   int *nlattice;
-  if(SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards){
+  if(SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM){
     nlattice = Ns_shear;
   }else {
     nlattice = Ns;
