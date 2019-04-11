@@ -195,6 +195,17 @@ inline double Lennard_Jones_f(const double &x, const double sigma){
       dmy = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
       answer = LJ_coeff1 / SQ(x) * ( 2.0 * SQ(dmy) - dmy );
     }
+	if (LJ_powers == 3) {//macroscopic vdw potential
+		static const double LJ_coeff_N = 1.01;//koko wo user ga shitei
+		static const double LJ_coeff_Nsigma = LJ_coeff_N * sigma;
+		if (x >= LJ_coeff_Nsigma) {// van der Waals Attraction
+			answer = -1.0*EPSILON*sigma / (24.0*x*SQ(x - sigma));
+		} else {
+			static const double LJ_coeff_I = EPSILON / (24.*SQ(sigma)*SQ(LJ_coeff_N - 1.0)*(LJ_coeff_N - 1.0));
+			static const double LJ_coeff_J = EPSILON / (24.*sigma*SQ(LJ_coeff_N - 1.0)*(LJ_coeff_N - 1.0));
+			answer = -LJ_coeff_I + LJ_coeff_J / x;
+		}
+	}
   }
   return answer;
 }

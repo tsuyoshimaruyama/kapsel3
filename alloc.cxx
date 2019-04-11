@@ -38,8 +38,10 @@ void       free_3d_double(double ***ddd){return free_3d<double>(ddd);}
 void       freeview_2d_double(double **dd){return freeview_2d<double>(dd);}
 void       freeview_3d_double(double ***ddd){return freeview_3d<double>(ddd);}
 
-
-
+int *calloc_1d_int(int n1, const int alignment) { return calloc_1d<int, int>(n1, alignment); }
+int **calloc_2d_int(int n1, int n2) { return calloc_2d<int, int>(n1, n2); }
+double *calloc_1d_double(int n1, const int alignment) { return calloc_1d<double, int>(n1, alignment); }
+double **calloc_2d_double(int n1, int n2) { return calloc_2d<double, int>(n1, n2); }
 
 
 

@@ -303,7 +303,7 @@ inline void Reset_phi_OBL(double *phi, double const* work_v1){
   \details Reset 1-> 0 (flag == 0), otherwise reset 0->1
  */
 inline void Reset_U_OBL(double **u, double const* const* ucp, const int &flg){
-  const double delta = (flg == 0 ? 1.0 : -1.0);
+  const double delta = (flg == 0 ? XYaspect : -XYaspect);
   int im, im_obl;
 
 #pragma omp parallel for private(im, im_obl)

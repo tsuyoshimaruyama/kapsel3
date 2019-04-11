@@ -72,4 +72,9 @@ void Read_Rigid_Particle_udf(Particle *rigid_p);
   \brief Recover rigid body configurations
  */
 void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p);
+
+void Save_Restart_udf_fdm(double **u, double **u_o, const Particle *p, const CTime &time);
+void Save_Restart_udf_fdm_phase_separation(double **u, double **u_o, double * psi, double * psi_o, double **stress_o, const Particle *p, const CTime &time);
+void Force_restore_parameters_fdm(double **u, double **u_o, Particle *p, CTime &time);
+void Force_restore_parameters_fdm_phase_separation(double **u, double **u_o, double * psi, double * psi_o, double **stress_o, Particle *p, CTime &time);
 #endif

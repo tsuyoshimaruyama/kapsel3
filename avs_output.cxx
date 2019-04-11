@@ -54,8 +54,9 @@ void Init_avs(const AVS_parameters &Avs_parameters){
   fprintf(fout,"dim2=%d\n", Avs_parameters.ny);
   fprintf(fout,"dim3=%d\n", Avs_parameters.nz);
   fprintf(fout,"nspace=%d\n", DIM);
-  if(SW_EQ == Navier_Stokes 
-     || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
+  if(SW_EQ == Navier_Stokes || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
+	  || SW_EQ == Navier_Stokes_FDM || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM
+	  || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM
      ){
     fprintf(fout,"veclen=%d\n", Veclen);
   }else if(SW_EQ==Electrolyte){
@@ -71,8 +72,9 @@ void Init_avs(const AVS_parameters &Avs_parameters){
     exit_job(EXIT_FAILURE);
   }
   fprintf(fout,"nstep=%d\n",Avs_parameters.nstep);
-  if(SW_EQ == Navier_Stokes 
-     || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
+  if(SW_EQ == Navier_Stokes || SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards
+	 || SW_EQ == Navier_Stokes_FDM || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM
+	 || SW_EQ == Shear_NS_LE_CH_FDM
      ){
     fprintf(fout,"label = %s\n", Label);
   }else if(SW_EQ==Electrolyte){

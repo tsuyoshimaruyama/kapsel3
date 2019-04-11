@@ -77,4 +77,5 @@ void Output_udf(UDFManager *ufout,
 		  const Particle *p,
 		  const CTime &time);
 
+void Output_udf_fdm_phase_separation(UDFManager *ufout, double *psi, const Particle *p, const CTime &time);
 #endif
