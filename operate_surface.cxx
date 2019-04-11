@@ -9,14 +9,6 @@
   \details \see \ref page_design_swimmer for a detailed description
  */
 
-/*! 
-  \file operate_surface.cxx
-  \author F. Fadda
-  \date 2018/06/11
-  \version 1.1
-  \brief More polar modes (\f$B_{3}\f$, \f$B_{4}\f$,...) and new azimuthal modes (\f$C_{1}\f$, \f$C_{2}\f$,...) for the squirmer added following the paper \f$\textit{O.S. Pak and E. Lauga J. Eng. Math. (2014) 88:1–28}\f$ https://link.springer.com/content/pdf/10.1007%2Fs10665-014-9690-9.pdf
- */
-
 void Make_particle_momentum_factor(double const* const* u, Particle *p){
   //////////////////////////////
   const double dx = DX;
@@ -32,7 +24,7 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 
   double dmy_xi, dmy_theta, dmy_tau;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
-  double slip_mode, slip_vel, B3, B4, B5, slip_magnitude, C1, beta, C3, C4, C5, slip_azimuthal;
+  double slip_mode, slip_vel, slip_magnitude, C1, C2, slip_azimuthal;
   double r_x_us[DIM], us[DIM];
 
   double M0, SM0; // mass
@@ -43,7 +35,7 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 #pragma omp parallel for \
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_sr, dmy_phi, dmy_phi_s, xp, \
 	  r, x, residue, u_fluid, dmy_xi, dmy_theta, dmy_tau, \
-	  n_r, n_theta, n_tau, slip_mode, slip_vel, B3, B4, B5, slip_magnitude, C1, beta, C3, C4, C5, slip_azimuthal, r_x_us, us, \
+	  n_r, n_theta, n_tau, slip_mode, slip_vel, slip_magnitude, C1, C2, slip_azimuthal, r_x_us, us, \
           M0, SM0, M1, SM1, M2, SM2, dv_s, dw_s)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
@@ -86,20 +78,14 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 
 	slip_vel = janus_slip_vel[pspec];  //B1
 	slip_mode = janus_slip_mode[pspec];//alpha/2
-	B3 = janus_slip_B3[pspec]; //B3
-	B4 = janus_slip_B4[pspec]; //B4
-	B5 = janus_slip_B5[pspec]; //B5
-	C1 = janus_azimuth_C1[pspec]; //C1
-	beta = janus_azimuth_mode[pspec]; //beta=C2/C1
-	C3 = janus_azimuth_C3[pspec]; //C3
-	C4 = janus_azimuth_C4[pspec]; //C4
-	C5 = janus_azimuth_C5[pspec]; //C5
+	C1 = janus_rotlet_C1[pspec]; //C1
+	C2 = janus_rotlet_dipole_C2[pspec]; //C2
         dmy_phi_s = (1.0 - dmy_phi) * DPhi_compact_sin_norm(dmy_r, radius);
 	
 	SM0 += dmy_phi_s;
 	Squirmer_coord(r, n_r, n_theta, n_tau, dmy_sr, dmy_theta, dmy_tau, p[n]);
-	slip_magnitude = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta))+B3*0.25*sin(dmy_theta)*(5.0*cos(dmy_theta)*cos(dmy_theta)-1.0)+B4*0.25*sin(dmy_theta)*(7*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-3.0*cos(dmy_theta))+B5*0.125*sin(dmy_theta)*(21.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-14.0*cos(dmy_theta)*cos(dmy_theta)+1.0);
-	slip_azimuthal = C1 * (sin(dmy_theta) + beta * 1.5 * sin(2.0*dmy_theta))+C3*1.5*sin(dmy_theta)*(5.0*cos(dmy_theta)*cos(dmy_theta)-1.0)+C4*2.5*sin(dmy_theta)*(7.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-3.0*cos(dmy_theta))+C5*(15/8)*sin(dmy_theta)*(21.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-14.0*cos(dmy_theta)*cos(dmy_theta)+1.0);
+	slip_magnitude = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta));
+	slip_azimuthal = C1 * sin(dmy_theta) + C2 * 1.5 * sin(2.0*dmy_theta);
         for(int d = 0; d < DIM; d++){
           us[d] = n_theta[d] * slip_magnitude + n_tau[d] * slip_azimuthal - u_fluid[d];
         }
@@ -200,7 +186,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   double r[DIM], x[DIM], residue[DIM], u_fluid[DIM];
   
   double dmy_xi, dmy_theta, dmy_tau;
-  double dmy_vslip, slip_mode, slip_vel, B3, B4, B5, dmy_vslip2, C1, beta, C3, C4, C5;
+  double dmy_vslip, slip_mode, slip_vel, dmy_vslip2, C1, C2;
   double n_r[DIM], n_theta[DIM], n_tau[DIM];
   double dmy_fv[DIM], force_s[DIM], torque_s[DIM], force_p[DIM], torque_p[DIM];
 
@@ -208,7 +194,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
   private(sw_in_cell, pspec, x_int, r_mesh, dmy_r, dmy_sr, dmy_phi, dmy_phi_s, xp, vp, omega_p, v_rot, \
 	  delta_v, delta_w, delta_v_rot, r, x, residue, u_fluid, \
 	  dmy_xi, dmy_theta, dmy_tau, dmy_vslip, dmy_vslip2, slip_mode, slip_vel, \
-	  B3, B4, B5, C1, beta, C3, C4, C5, n_r, n_theta, n_tau, dmy_fv, force_s, torque_s, force_p, torque_p)
+	  C1, C2, n_r, n_theta, n_tau, dmy_fv, force_s, torque_s, force_p, torque_p)
   for(int n = 0; n < Particle_Number; n++){
     pspec = p[n].spec;
 
@@ -221,14 +207,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
       
       slip_vel = janus_slip_vel[pspec];
       slip_mode = janus_slip_mode[pspec];
-      B3 = janus_slip_B3[pspec]; //B3
-      B4 = janus_slip_B4[pspec]; //B4
-      B5 = janus_slip_B5[pspec]; //B5
-      C1 = janus_azimuth_C1[pspec];
-      beta = janus_azimuth_mode[pspec];
-      C3 = janus_azimuth_C3[pspec]; //C3
-      C4 = janus_azimuth_C4[pspec]; //C4
-      C5 = janus_azimuth_C5[pspec]; //C5
+      C1 = janus_rotlet_C1[pspec];
+      C2 = janus_rotlet_dipole_C2[pspec];
       slip_droplet(vp, omega_p, delta_v, delta_w, p[n]);
       for(int d = 0; d < DIM; d++){
 	xp[d] = p[n].x[d];
@@ -271,8 +251,8 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
           //slip enforced wrt vp, omega_p
 	  Angular2v(omega_p, r, v_rot);
 	  Squirmer_coord(r, n_r, n_theta, n_tau, dmy_sr, dmy_theta, dmy_tau, p[n]);
-	  dmy_vslip =  slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta))+B3*0.25*sin(dmy_theta)*(5.0*cos(dmy_theta)*cos(dmy_theta)-1.0)+B4*0.25*sin(dmy_theta)*(7*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-3.0*cos(dmy_theta))+B5*0.125*sin(dmy_theta)*(21.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-14.0*cos(dmy_theta)*cos(dmy_theta)+1.0);
-	  dmy_vslip2 =  C1 * (sin(dmy_theta) + beta * 1.5 * sin(2.0*dmy_theta))+C3*1.5*sin(dmy_theta)*(5.0*cos(dmy_theta)*cos(dmy_theta)-1.0)+C4*2.5*sin(dmy_theta)*(7.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-3.0*cos(dmy_theta))+C5*(15/8)*sin(dmy_theta)*(21.0*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)*cos(dmy_theta)-14.0*cos(dmy_theta)*cos(dmy_theta)+1.0);
+	  dmy_vslip = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta));
+	  dmy_vslip2 = C1 * sin(dmy_theta) + C2 * 1.5 * sin(2.0*dmy_theta);
 
           for(int d = 0; d < DIM; d++){
             dmy_fv[d] = dmy_phi_s * (vp[d] + v_rot[d] + n_theta[d]*dmy_vslip +n_tau[d] * dmy_vslip2 - u_fluid[d]);

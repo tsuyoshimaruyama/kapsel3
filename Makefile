@@ -30,8 +30,8 @@
 #ARCH              = $(PF_ENGINEARCH)
 # OR
 # Define environment variables explicitly here
-GOURMET_HOME_PATH  = /usr/federico/Desktop/OCTA83/GOURMET
-ENGINE_HOME_PATH   = /usr/federico/Desktop/OCTA83/ENGINES
+GOURMET_HOME_PATH  = /usr/local/OCTA83/GOURMET
+ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
 #GOURMET_HOME_PATH  = /opt/OCTA/OCTA83_gcc
 #ENGINE_HOME_PATH   = /opt/OCTA/OCTA83_gcc/ENGINES
 ARCH               = linux_64
