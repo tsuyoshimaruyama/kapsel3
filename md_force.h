@@ -80,7 +80,7 @@ inline void Calc_f_Lennard_Jones(Particle *p) {
 inline void Calc_f_Lennard_Jones_OBL(Particle *p) {
   Calc_f_Lennard_Jones_shear_cap_primitive(p, Distance0_OBL, DBL_MAX);
 }
-inline double Calc_anharmonic_force_chain(
+inline void Calc_anharmonic_force_chain(
     Particle *p,
     void (*distance0_func)(const double *x1, const double *x2, double &r12, double *x12)) {
   double       anharmonic_spring_cst = 30.0 / SQ(SIGMA);

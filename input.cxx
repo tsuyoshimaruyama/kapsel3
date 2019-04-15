@@ -262,6 +262,7 @@ double *A_R_cutoff;
 double *LJ_dia;
 int *   LJ_truncate;
 int *   LJ_powers;
+int     LJ_TRUNCATE;
 //
 // double R_cutoff;
 double T_LJ;
@@ -2273,6 +2274,15 @@ void        Gourmet_file_io(const char *infile,
             LJ_truncate[pair_id] = LJ_truncate[pair_id2] = truncate_ij;
           }
         }
+      }
+
+      {
+        // default truncation
+        // LJ_TRUNCATE = -1 : no need to compte ANY interactions
+        // LJ_TRUNCATE = 0  : need to compute at least one pair of interactions
+        LJ_TRUNCATE = -1;
+        for (int pair_id = 0; pair_id < SQ(Component_Number); pair_id++)
+          LJ_TRUNCATE = MAX(LJ_TRUNCATE, MIN(LJ_truncate[pair_id], 0));
       }
     }
 

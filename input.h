@@ -149,6 +149,7 @@ extern double *A_R_cutoff;
 extern double *LJ_dia;
 extern int *   LJ_powers;
 extern int *   LJ_truncate;
+extern int     LJ_TRUNCATE;
 //
 // extern double R_cutoff ;
 extern double SIGMA;

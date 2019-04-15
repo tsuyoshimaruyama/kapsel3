@@ -89,23 +89,18 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan);
 
 inline void Force(Particle *p) {
-  if (LJ_truncate >= 0) {
-    Calc_f_Lennard_Jones(p);
-  }
+  if (LJ_TRUNCATE >= 0) Calc_f_Lennard_Jones(p);
 
-  if (G != 0.0) {
-    Add_f_gravity(p);
-  }
-  if (SW_PT == chain) {
-    Calc_anharmonic_force_chain(p, Distance0);
-  }
+  if (G != 0.0) Add_f_gravity(p);
+
+  if (SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0);
 }
 
 inline void Force_OBL(Particle *p) {
   dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
   rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
 
-  if (LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
+  if (LJ_TRUNCATE >= 0) Calc_f_Lennard_Jones_OBL(p);
 
   if (G != 0.0) Add_f_gravity(p);
 
