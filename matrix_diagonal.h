@@ -23,7 +23,7 @@
   \param[out] v elements of V matrix ( rows are eigenvectors of V)
   \param[out] d diagonal elements of matrix D (eigenvalues of A)
   \param[out] jrot number of jacobi rotations needed to achieve
-  diagonalization 
+  diagonalization
   \param[in] n dimension of square matrix A
  */
 void jacobi(double **A_input, double **V, double *d, int &rot, const int &n);

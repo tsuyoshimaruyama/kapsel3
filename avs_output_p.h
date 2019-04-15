@@ -11,10 +11,6 @@
 #include "avs_output.h"
 
 void Init_avs_p(const AVS_parameters &Avs_parameters);
-void Output_avs_p(AVS_parameters &Avs_parameters
-		  ,Particle *p
-		  ,const CTime &time
-		  );
-
+void Output_avs_p(AVS_parameters &Avs_parameters, Particle *p, const CTime &time);
 
 #endif
