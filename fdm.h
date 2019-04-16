@@ -389,7 +389,7 @@ inline void Make_phi_s(double *      phi,
                        double *      phi_sum,
                        Particle *    p,
                        const double &dx,
-                       const int &   np_domain,
+                       int *   np_domain,
                        int **        sekibun_cell,
                        const int     Nlattice[DIM],
                        CTime &       jikan,
@@ -415,7 +415,7 @@ inline void Make_phi_s(double *      phi,
     int    r_mesh[DIM];
     double dmy, dmy_phi;
     double r[DIM], x[DIM];
-    for (int mesh = 0; mesh < np_domain; mesh++) {
+    for (int mesh = 0; mesh < np_domain[p[n].spec]; mesh++) {
       Relative_coord(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
 
       for (int d = 0; d < DIM; d++) x[d] = r_mesh[d] * DX;
@@ -465,7 +465,7 @@ inline void Make_phi_s_OBL(double *      phi,
                            double *      phi_sum,
                            Particle *    p,
                            const double &dx,
-                           const int &   np_domain,
+                           int *   np_domain,
                            int **        sekibun_cell,
                            const int     Nlattice[DIM],
                            const double  gt,
@@ -494,7 +494,7 @@ inline void Make_phi_s_OBL(double *      phi,
     int    r_mesh[DIM];
     double dmy, dmy_phi;
     double r[DIM], x[DIM];
-    for (int mesh = 0; mesh < np_domain; mesh++) {
+    for (int mesh = 0; mesh < np_domain[p[n].spec]; mesh++) {
       sign = Relative_coord_check_stepover_Y(sekibun_cell[mesh], x_int, residue, sw_in_cell, Nlattice, dx, r_mesh, r);
 
       for (int d = 0; d < DIM; d++) x[d] = r_mesh[d] * dx;

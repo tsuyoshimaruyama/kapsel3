@@ -38,7 +38,7 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p);
   \f]
   where \f$\phi_i(\vec{r})\f$ is the profile field of the \f$i\f$-th particle
   \param[out] phi smooth particle position field
-  \param[in] p particel data
+  \param[in] p particle data
   \param[in] radius particle radius (domain over which profile field is non-zero)
  */
 void Make_phi_particle(double *phi, Particle *p);

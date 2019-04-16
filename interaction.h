@@ -190,7 +190,7 @@ inline double Distance_OBL(const double *x1, const double *x2) {
   \param[in] epsilon LJ well depth
   \param[in] LJ powers
  */
-inline double Lennard_Jones_f(const double &x, const double &sigma, const double &epsilon, int lj_powers) {
+inline double Lennard_Jones_f(const double &x, double &sigma, double &epsilon, int lj_powers) {
   double answer = 0.0;
   {
     if (lj_powers == 0) {  // 12:6

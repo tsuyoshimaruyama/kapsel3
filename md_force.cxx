@@ -95,14 +95,13 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
                     pair_id            = p[i].spec * Component_Number + p[j].spec;
                     double LJ_cutoff   = A_R_cutoff[pair_id] * LJ_dia[pair_id];
                     double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
-
+                    
                     if (r_ij < pair_cutoff) {
                       double dmy_r = 0.0;
 
-                      dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia[pair_id]));
-                    }
-
-                    {
+                      dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia[pair_id], EPSILON[pair_id], LJ_powers[pair_id])); //what is LJ_dia[], is that different from SIGMA[]?
+                      
+                      {
                       // spherical particle forces
                       double dmy_fi[DIM] = {0.0, 0.0, 0.0};
                       for (int d = 0; d < DIM; d++) {
@@ -138,6 +137,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
                         distance0_func(xGs[rigidID_i], xGs[rigidID_j], R_IJ, R_IJ_vec);
                         rigid_shear_stress[0] += (dmy_fi[0] * R_IJ_vec[1]);
                       }
+                        
                     }
                   }
                 }
@@ -145,20 +145,21 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
               }
               i = lscl[i];
             }
+            }
           }
         }
       }
     }
   }
-}
 
-dev_shear_stress_lj += shear_stress[0];
-dev_shear_stress_rot += shear_stress[1];
 
-if (SW_PT == rigid) {
-  double dmy_shear = 0.0;
-#pragma omp parallel for reduction(+ : dmy_shear)
-  for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+  dev_shear_stress_lj += shear_stress[0];
+  dev_shear_stress_rot += shear_stress[1];
+
+  if (SW_PT == rigid) {
+   double dmy_shear = 0.0;
+    #pragma omp parallel for reduction(+ : dmy_shear)
+    for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
     double IinvN[DIM] = {0.0, 0.0, 0.0};
     M_v_prod(IinvN, Rigid_IMoments[rigidID][0], torqueGrs[rigidID]);
     const double Jyy =
@@ -170,10 +171,10 @@ if (SW_PT == rigid) {
 
   rigid_dev_shear_stress_lj += rigid_shear_stress[0];
   rigid_dev_shear_stress_rot += rigid_shear_stress[1];
-}
+  }
 
-free_1d_int(lscl);
-free_1d_int(head);
+  free_1d_int(lscl);
+  free_1d_int(head);
 }
 
 void Calc_f_Lennard_Jones_shear_cap_primitive(
@@ -183,7 +184,8 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
   // Particle 変数の f に
   // !! +=
   //で足す. f の初期値 が正しいと仮定している!!
-  const double pair_cutoff = A_R_cutoff * LJ_dia;
+  int  pair_id;
+  const double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
 
   double ss0 = 0.0;
   double rs0 = 0.0;
@@ -214,7 +216,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
       double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
 
       if (r_ij < pair_cutoff && !rigid_chain(n, m) && !obstacle_chain((*p_n).spec, (*p_m).spec)) {
-        double dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia));
+        double dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia[pair_id], EPSILON[pair_id], LJ_powers[pair_id]));
 
         {
           // forces
@@ -238,7 +240,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
             int rigidID_m = Particle_RigidID[m];
 
             Min_rij = MIN(r_ij, Min_rij);
-          }
+          
           for (int d = 0; d < DIM; d++) {
             forceGrs[rigidID_m][d] -= dmy_fn[d];
           }
@@ -255,10 +257,11 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
           double R_IJ;
           distance0_func(xGs[rigidID_n], xGs[rigidID_m], R_IJ, R_IJ_vec);
           rs0 += (dmy_fn[0] * R_IJ_vec[1]);
+          }
         }
       }
     }
-  }
+  
 
   if (SW_PT == rigid) {
     forceGrs[rigidID_n][0] += sum_dmy_fn_0;
