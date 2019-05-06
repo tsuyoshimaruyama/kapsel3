@@ -75,6 +75,7 @@ inline void Make_rho_field_primitive(double *      phi,
   double dmy_phi;
 #pragma omp parallel for private(drho, xp, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi)
   for (int n = 0; n < Particle_Number; n++) {
+    const double radius = RADII[p[n].spec];
     drho = RHO_particle[p[n].spec] - RHO;
     for (int d = 0; d < DIM; d++) {
       xp[d] = p[n].x[d];
@@ -88,7 +89,7 @@ inline void Make_rho_field_primitive(double *      phi,
         x[d] = r_mesh[d] * dx;
       }
       dmy     = Distance(x, xp);
-      dmy_phi = Phi(dmy) * drho;
+      dmy_phi = Phi(dmy, radius) * drho;
 #pragma omp atomic
       phi[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_phi;
     }
@@ -151,13 +152,11 @@ inline void Make_phi_u_primitive(double *      phi,
   double dmy;
   double dmy_phi;
   double v_rot[DIM];
-  double radius;
   int    im;
 
-#pragma omp parallel for private( \
-    xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi, v_rot, im, radius)
+#pragma omp parallel for private(xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi, v_rot, im)
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     for (int d = 0; d < DIM; d++) {
       xp[d]      = p[n].x[d];
       vp[d]      = p[n].v[d];
@@ -220,10 +219,9 @@ inline void Make_phi_particle_sum_primitive(double *      phi,
                                             int *         np_domain,
                                             int **        sekibun_cell,
                                             const int     Nlattice[DIM]) {
-  double radius;
-#pragma omp parallel for private(radius)
+#pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     double xp[DIM];
     for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
 
@@ -269,10 +267,9 @@ inline void Make_phi_particle_sum_primitive_OBL(double *      phi,
                                                 int *         np_domain,
                                                 int **        sekibun_cell,
                                                 const int     Nlattice[DIM]) {
-  double radius;
-#pragma omp parallel for private(radius)
+#pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     double xp[DIM];
     for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
 
@@ -320,10 +317,9 @@ inline void Make_u_particle_sum_primitive(double **         up,
                                           int *             np_domain,
                                           int const *const *sekibun_cell,
                                           const int         Nlattice[DIM]) {
-  double radius;
-#pragma omp parallel for private(radius)
+#pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     double xp[DIM], vp[DIM], omega_p[DIM];
     for (int d = 0; d < DIM; d++) {
       xp[d]      = p[n].x[d];
@@ -364,10 +360,9 @@ inline void Make_u_particle_sum_primitive_OBL(double **         up,
                                               int *             np_domain,
                                               int const *const *sekibun_cell,
                                               const int         Nlattice[DIM]) {
-  double radius;
-#pragma omp parallel for private(radius)
+#pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     double xp[DIM], vp[DIM], omega_p[DIM];
     for (int d = 0; d < DIM; d++) {
       xp[d]      = p[n].x[d];
@@ -425,11 +420,10 @@ inline void Make_phi_u_primitive_OBL(double *      phi,
   double v_rot[DIM];
   int    sign;
   int    im;
-  double radius;
 #pragma omp parallel for private( \
-    xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi, v_rot, sign, im, radius)
+    xp, vp, omega_p, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi, v_rot, sign, im)
   for (int n = 0; n < Particle_Number; n++) {
-    radius = RADII[p[n].spec];
+    const double radius = RADII[p[n].spec];
     for (int d = 0; d < DIM; d++) {
       xp[d]      = p[n].x[d];
       vp[d]      = p[n].v[d];
@@ -559,6 +553,7 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p) {
   double dmy_phi;
 #pragma omp parallel for private(xp, vp, x_int, residue, sw_in_cell, r_mesh, r, x, dmy, dmy_phi)
   for (int n = 0; n < Particle_Number; n++) {
+    const double radius = RADII[p[n].spec];
     for (int d = 0; d < DIM; d++) {
       xp[d] = p[n].x[d];
       vp[d] = p[n].v[d];
@@ -576,7 +571,7 @@ void Make_phi_u_advection(double *phi, double **up, Particle *p) {
         x[d] = r_mesh[d] * DX;
       }
       dmy     = Distance(x, xp);
-      dmy_phi = Phi(dmy);
+      dmy_phi = Phi(dmy, radius);
       int im  = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 #pragma omp atomic
       phi[im] += dmy_phi;
@@ -604,6 +599,7 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle *p) {
     double dmy_com[DIM], residue[DIM], r[DIM], x[DIM];
     dmy_mass = dmy_com[0] = dmy_com[1] = dmy_com[2] = 0.0;
 
+    const double radius = RADII[p[Rigid_Particle_Cumul[rigidID]].spec];  // beads on same rigid body are identical
     for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
       double xp[DIM];
       for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
@@ -616,7 +612,7 @@ void Make_phi_rigid_mass(const double *phi_sum, Particle *p) {
         int im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 
         dmy     = Distance(x, xp);
-        dmy_phi = Phi(dmy) / MAX(phi_sum[im], 1.0);
+        dmy_phi = Phi(dmy, radius) / MAX(phi_sum[im], 1.0);
 
         dmy_mass += dmy_phi;
         for (int d = 0; d < DIM; d++) {
@@ -646,6 +642,7 @@ void Make_phi_rigid_mass_OBL(const double *phi_sum, Particle *p) {
     double dmy_com[DIM], residue[DIM], r[DIM], x[DIM];
     dmy_mass = dmy_com[0] = dmy_com[1] = dmy_com[2] = 0.0;
 
+    const double radius = RADII[p[Rigid_Particle_Cumul[rigidID]].spec];
     for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
       double xp[DIM];
       for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
@@ -662,7 +659,7 @@ void Make_phi_rigid_mass_OBL(const double *phi_sum, Particle *p) {
         im = (r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2];
 
         dmy     = Distance_OBL(x, xp);
-        dmy_phi = Phi(dmy) / MAX(phi_sum[im], 1.0);
+        dmy_phi = Phi(dmy, radius) / MAX(phi_sum[im], 1.0);
 
         dmy_mass += dmy_phi;
         for (int d = 0; d < DIM; d++) {
@@ -696,6 +693,7 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle *p) {
     dmy_inertia[1][0] = dmy_inertia[1][1] = dmy_inertia[1][2] = 0.0;
     dmy_inertia[2][0] = dmy_inertia[2][1] = dmy_inertia[2][2] = 0.0;
 
+    const double radius = RADII[p[Rigid_Particle_Cumul[rigidID]].spec];
     for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
       double xp[DIM];
       for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
@@ -712,7 +710,7 @@ void Make_phi_rigid_inertia(const double *phi_sum, Particle *p) {
         ri_z = GRvecs[n][2] + r[2];
 
         dmy     = Distance(x, xp);
-        dmy_phi = Phi(dmy) / MAX(phi_sum[im], 1.0);
+        dmy_phi = Phi(dmy, radius) / MAX(phi_sum[im], 1.0);
         dmy_inertia[0][0] += dmy_phi * (ri_y * ri_y + ri_z * ri_z);
         dmy_inertia[0][1] += dmy_phi * (-ri_x * ri_y);
         dmy_inertia[0][2] += dmy_phi * (-ri_x * ri_z);
@@ -755,6 +753,7 @@ void Make_phi_rigid_inertia_OBL(const double *phi_sum, Particle *p) {
     dmy_inertia[1][0] = dmy_inertia[1][1] = dmy_inertia[1][2] = 0.0;
     dmy_inertia[2][0] = dmy_inertia[2][1] = dmy_inertia[2][2] = 0.0;
 
+    const double radius = RADII[p[Rigid_Particle_Cumul[rigidID]].spec];
     for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
       double xp[DIM];
       for (int d = 0; d < DIM; d++) xp[d] = p[n].x[d];
@@ -775,7 +774,7 @@ void Make_phi_rigid_inertia_OBL(const double *phi_sum, Particle *p) {
         ri_z = GRvecs[n][2] + r[2];
 
         dmy     = Distance_OBL(x, xp);
-        dmy_phi = Phi(dmy) / MAX(phi_sum[im], 1.0);
+        dmy_phi = Phi(dmy, radius) / MAX(phi_sum[im], 1.0);
 
         dmy_inertia[0][0] += dmy_phi * (ri_y * ri_y + ri_z * ri_z);
         dmy_inertia[0][1] += dmy_phi * (-ri_x * ri_y);

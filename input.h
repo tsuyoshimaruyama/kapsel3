@@ -231,7 +231,6 @@ extern double  A_XI;
 extern double  XI;
 extern double  HXI;
 extern double  dmy_A;
-extern double  RADIUS;
 extern double *RADII;
 extern double *SIGMAS;
 //////

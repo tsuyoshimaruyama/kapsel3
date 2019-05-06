@@ -173,8 +173,9 @@ void Make_Coulomb_force_x_on_fluid(double ** force,
 void Make_phi_qq_particle(double *phi, double *surface, Particle *p) {
   double abs_total_surface_charge = 0.;
   for (int n = 0; n < Particle_Number; n++) {
-    double dmy_surface_charge = Surface_charge_e[p[n].spec];
-    double xp[DIM];
+    const double radius             = RADII[p[n].spec];
+    double       dmy_surface_charge = Surface_charge_e[p[n].spec];
+    double       xp[DIM];
     for (int d = 0; d < DIM; d++) {
       xp[d] = p[n].x[d];
       {
@@ -196,8 +197,8 @@ void Make_phi_qq_particle(double *phi, double *surface, Particle *p) {
         x[d] = r_mesh[d] * DX;
       }
       double dmy      = Distance(x, xp);
-      double dmy_phi  = Phi(dmy);
-      double dmy_Dphi = DPhi_compact_sin(dmy);
+      double dmy_phi  = Phi(dmy, radius);
+      double dmy_Dphi = DPhi_compact_sin(dmy, radius);
 
       phi[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_phi;
       surface[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_surface_charge * dmy_Dphi;
@@ -261,8 +262,8 @@ void Make_phi_qq_particle_norm(double *phi, double *surface, Particle *p) {
         x[d] = r_mesh[d] * DX;
       }
       double dmy      = Distance(x, xp);
-      double dmy_phi  = Phi(dmy);
-      double dmy_Dphi = DPhi_compact_sin(dmy);
+      double dmy_phi  = Phi(dmy, radius);
+      double dmy_Dphi = DPhi_compact_sin(dmy, radius);
 
       phi[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_phi;
       surface[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_surface_charge * dmy_Dphi;
@@ -299,8 +300,9 @@ void Make_phi_qq_particle_norm(double *phi, double *surface, Particle *p) {
 void Make_phi_qq_fixed_particle(double *phi, double *surface, Particle *p) {
   double abs_total_surface_charge = 0.;
   for (int n = 0; n < Particle_Number; n++) {
-    double dmy_surface_charge = Surface_charge_e[p[n].spec];
-    double xp[DIM];
+    const double radius             = RADII[p[n].spec];
+    double       dmy_surface_charge = Surface_charge_e[p[n].spec];
+    double       xp[DIM];
     for (int d = 0; d < DIM; d++) {
       xp[d] = p[n].x[d];
       {
@@ -322,8 +324,8 @@ void Make_phi_qq_fixed_particle(double *phi, double *surface, Particle *p) {
         x[d] = r_mesh[d] * DX;
       }
       double dmy      = Distance(x, xp);
-      double dmy_phi  = Phi(dmy);
-      double dmy_Dphi = DPhi_compact_sin(dmy);
+      double dmy_phi  = Phi(dmy, radius);
+      double dmy_Dphi = DPhi_compact_sin(dmy, radius);
 
       phi[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_phi;
       surface[(r_mesh[0] * NY * NZ_) + (r_mesh[1] * NZ_) + r_mesh[2]] += dmy_surface_charge * dmy_Dphi;

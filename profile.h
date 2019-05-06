@@ -44,7 +44,7 @@ inline double H(const double x) {
   \param[in] x radial distance from particle center
   \param[in] radius (optional) particle radius
  */
-inline double Phi(const double &x, const double radius = RADIUS) {
+inline double Phi(const double &x, const double radius) {
   double dmy = H(radius + HXI - x);
   return dmy / (dmy + H(x - radius + HXI));
 }
@@ -58,7 +58,7 @@ inline double Phi(const double &x, const double radius = RADIUS) {
   \param[in] x radial distance from particle center
   \param[in] radius (optional) particle radius
  */
-inline double Phi_exponential(const double &x, const double radius = RADIUS) {
+inline double Phi_exponential(const double &x, const double radius) {
   double dmy = ABS(x / radius);
   // dmy = SQ(dmy)*dmy;
   dmy = SQ(dmy);
@@ -74,13 +74,11 @@ inline double Phi_exponential(const double &x, const double radius = RADIUS) {
   \param[in] x radial distance from particle center
   \param[in] radius (optional) particle radius
  */
-inline double Phi_tanh(const double &x, const double radius = RADIUS) {
-  return 0.5 * (tanh(((radius - x) / XI)) + 1.0);
-}
+inline double Phi_tanh(const double &x, const double radius) { return 0.5 * (tanh(((radius - x) / XI)) + 1.0); }
 /*!
   \brief Derivative of the hyperbolic tangent smooth profile function \f$\phi_h\f$
  */
-inline double DPhi_tanh(const double &x, const double radius = RADIUS, const double xi = XI) {
+inline double DPhi_tanh(const double &x, const double radius, const double xi = XI) {
   double dmy = Phi_tanh(x, radius);
   return 2.0 / xi * dmy * (dmy - 1.0);
 }
@@ -98,7 +96,7 @@ inline double DPhi_tanh(const double &x, const double radius = RADIUS, const dou
   \left[h(\zeta/2 + (a-x)) + h(\zeta/2 - (a-x))\right]^{-2}
   \f}
  */
-inline double DPhi_compact(const double &x, const double radius = RADIUS, const double xi = XI) {
+inline double DPhi_compact(const double &x, const double radius, const double xi = XI) {
   static const double DX2   = SQ(DX);
   static const double DX2_2 = DX2 * 2.;
   const double        hxi   = xi * .5;
@@ -134,7 +132,7 @@ inline double DPhi_compact(const double &x, const double radius = RADIUS, const 
   \note The second derivative is discontinuous at the fluid/interface boundary
   (\f$x = a + \zeta/2)\f$
  */
-inline double Phi_compact_sin(const double &x, const double radius = RADIUS) {
+inline double Phi_compact_sin(const double &x, const double radius) {
   double dmy_x = radius - x;
   if (fabs(dmy_x) < HXI) {
     return 0.5 * sin(M_PI * dmy_x / XI) + 0.5;
@@ -161,7 +159,7 @@ inline double Phi_compact_sin(const double &x, const double radius = RADIUS) {
   \param[in] radius (optional) particle radius
   \param[in] xi (optional) interface thickness
  */
-inline double DPhi_compact_sin(const double &x, const double radius = RADIUS, const double xi = XI) {
+inline double DPhi_compact_sin(const double &x, const double radius, const double xi = XI) {
   const double hxi = xi * .5;
   const double ixi = 1. / xi;
 
@@ -172,7 +170,7 @@ inline double DPhi_compact_sin(const double &x, const double radius = RADIUS, co
     return 0.;
   }
 }
-inline double DPhi_compact_sin_norm(const double &x, const double radius = RADIUS, const double xi = XI) {
+inline double DPhi_compact_sin_norm(const double &x, const double radius, const double xi = XI) {
   const double hxi   = xi * 0.5;
   const double ixi   = 1.0 / xi;
   double       dmy_x = radius - x;

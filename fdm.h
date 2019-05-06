@@ -389,14 +389,14 @@ inline void Make_phi_s(double *      phi,
                        double *      phi_sum,
                        Particle *    p,
                        const double &dx,
-                       int *   np_domain,
+                       int *         np_domain,
                        int **        sekibun_cell,
                        const int     Nlattice[DIM],
-                       CTime &       jikan,
-                       const double  radius = RADIUS) {
+                       CTime &       jikan) {
 #pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    double xp[DIM];
+    const double radius = RADII[p[n].spec];
+    double       xp[DIM];
     for (int d = 0; d < DIM; d++) {
       if (jikan.ts == 0) {
         xp[d] = p[n].x[d];
@@ -465,17 +465,17 @@ inline void Make_phi_s_OBL(double *      phi,
                            double *      phi_sum,
                            Particle *    p,
                            const double &dx,
-                           int *   np_domain,
+                           int *         np_domain,
                            int **        sekibun_cell,
                            const int     Nlattice[DIM],
                            const double  gt,
                            const double  sreff,
-                           CTime &       jikan,
-                           const double  radius = RADIUS) {
+                           CTime &       jikan) {
 #pragma omp parallel for
   for (int n = 0; n < Particle_Number; n++) {
-    double xp[DIM];
-    double dmyy;
+    const double radius = RADII[p[n].spec];
+    double       xp[DIM];
+    double       dmyy;
     for (int d = 0; d < DIM; d++) {
       if (jikan.ts == 0) {
         xp[d] = p[n].x[d];
