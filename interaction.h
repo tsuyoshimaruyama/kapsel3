@@ -154,8 +154,7 @@ inline double LJ_truncation(const int &dmy_powers, const int &dmy_truncate) {
       exit_job(EXIT_FAILURE);
     }
   } else if (dmy_truncate == 0) {
-    const double max_cutoff = 2.5;
-    dmy_cutoff              = MIN(Nmin * DX * .5 / SIGMA, max_cutoff);
+    dmy_cutoff = 2.5;  // bounds check should be done on a case-by-case basis
   } else {
     dmy_cutoff = 0.;
   }

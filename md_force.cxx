@@ -93,9 +93,8 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
                   if (i > j && !rigid_chain(i, j) && !obstacle_chain(p[i].spec, p[j].spec)) {
                     distance0_func(p[i].x, p[j].x, r_ij, r_ij_vec);
                     pair_id            = p[i].spec * Component_Number + p[j].spec;
-                    double LJ_cutoff   = A_R_cutoff[pair_id] * LJ_dia[pair_id];
-                    double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
-                    
+                    double pair_cutoff = MIN(A_R_cutoff[pair_id] * LJ_dia[pair_id], Nmin * 0.5 * DX);
+
                     if (r_ij < pair_cutoff) {
                       double dmy_r = 0.0;
 
@@ -184,9 +183,6 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
   // Particle 変数の f に
   // !! +=
   //で足す. f の初期値 が正しいと仮定している!!
-  int  pair_id;
-  const double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
-
   double ss0 = 0.0;
   double rs0 = 0.0;
 
@@ -212,8 +208,8 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
       distance0_func((*p_n).x, p[m].x, r_ij, r_ij_vec);
       distance0_func((*p_n).x, (*p_m).x, r_ij, r_ij_vec);
       distance0_func((*p_n).x, p[m].x, r_ij, r_ij_vec);
-      pair_id            = p[n].spec * Component_Number + p[m].spec;
-      double pair_cutoff = A_R_cutoff[pair_id] * LJ_dia[pair_id];
+      int    pair_id     = p[n].spec * Component_Number + p[m].spec;
+      double pair_cutoff = MIN(A_R_cutoff[pair_id] * LJ_dia[pair_id], Nmin * 0.5 * DX);
 
       if (r_ij < pair_cutoff && !rigid_chain(n, m) && !obstacle_chain((*p_n).spec, (*p_m).spec)) {
         double dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia[pair_id], EPSILON[pair_id], LJ_powers[pair_id]));

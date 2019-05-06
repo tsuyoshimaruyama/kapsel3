@@ -83,14 +83,16 @@ inline void Calc_f_Lennard_Jones_OBL(Particle *p) {
 inline void Calc_anharmonic_force_chain(
     Particle *p,
     void (*distance0_func)(const double *x1, const double *x2, double &r12, double *x12)) {
-  double       anharmonic_spring_cst = 30.0 / SQ(SIGMA);
-  const double R0                    = 1.5 * SIGMA;
-  const double iR0                   = 1. / R0;
-  const double iR02                  = SQ(iR0);
-
   int    n_first_chain = 0;
   double shear_stress  = 0.0;
   for (int i = 0; i < Component_Number; i++) {
+    const double sigma                 = 2.0 * RADII[i];
+    const double anharmonic_spring_cst = 30.0 / SQ(sigma);
+    const double R0                    = 1.5 * sigma;
+    const double iR0                   = 1. / R0;
+    const double iR02                  = SQ(iR0);
+
+#pragma omp parallel for
     for (int j = 0; j < Chain_Numbers[i]; j++) {
       for (int k = 0; k < Beads_Numbers[i] - 1; k++) {
         int    n       = n_first_chain + k;

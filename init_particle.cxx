@@ -119,7 +119,8 @@ void Init_Particle(Particle* p) {
         int j;
         for (j = 0; j < i; j++) {
           int    pair_id        = p[i].spec * Component_Number + p[j].spec;
-          double overlap_length = SIGMA[pair_id] * 1.05 if (Distance(p[i].x, p[j].x) <= overlap_length) {  // if overlap
+          double overlap_length = SIGMA[pair_id] * 1.05;
+          if (Distance(p[i].x, p[j].x) <= overlap_length) {  // if overlap
             break;
           }
         }
@@ -246,10 +247,7 @@ void Init_Particle(Particle* p) {
           // assume truncated potential with same LJ powers
           A_R_cutoff[i] = LJ_truncation(LJ_powers[i], 1);
         }
-        if (LJ_powers == 3) {
-          A_R_cutoff = 1.0;
-          fprintf(stderr, "# A_R_cutoff %f\n", A_R_cutoff);
-        }
+
         double zmin = 0.;
         double zmax = l_particle[2];
         double ymin = 0.;
@@ -704,36 +702,6 @@ void Show_parameter(Particle* p) {
       fprintf(fp, "# shear rate = %g\n", Shear_rate);
     }
 
-    if (LJ_truncate >= 0) {
-      char line[1 << 10];
-      if (LJ_truncate > 0) {
-        sprintf(line, "# %s", "repulsive part of LJ");
-      } else if (LJ_truncate == 0) {
-        sprintf(line, "# attractive LJ (%g sigma)", A_R_cutoff);
-      }
-      if (LJ_powers == 0) {
-        sprintf(line, "%s %s", line, "LJ(12:6)");
-      } else if (LJ_powers == 1) {
-        sprintf(line, "%s %s", line, "LJ(24:12)");
-      } else if (LJ_powers == 2) {
-        sprintf(line, "%s %s", line, "LJ(36:18)");
-      } else if (LJ_powers == 3) {
-        sprintf(line, "%s %s", line, "macro_vdw");
-      } else {
-        fprintf(fp, "invalid LJ_powers\n");
-        exit_job(EXIT_FAILURE);
-      }
-      sprintf(line, "%s, EPSILON_LJ= %g", line, EPSILON);
-      if (SW_EQ == Shear_Navier_Stokes || SW_EQ == Shear_Navier_Stokes_Lees_Edwards ||
-          SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
-        if (Srate_depend_LJ_cap < DBL_MAX) {
-          sprintf(line, "%s, cap= %g", line, Srate_depend_LJ_cap);
-        }
-      }
-      fprintf(fp, "%s\n", line);
-    } else {
-      fprintf(fp, "# no Lennard-Jones force.\n");
-    }
     fprintf(fp, "#\n");
     if (SW_EQ == Navier_Stokes) {
       fprintf(fp, "#t_min=1/nu*k_max^2= %g\n", Tdump);
@@ -890,19 +858,25 @@ void Show_parameter(Particle* p) {
           fprintf(FLJ, "\n");
 
           double rij_max = (double)Nmin * DX * 0.5;
+          double sig_max = 0.0;
+          double sig_min = rij_max;
+          for (int i = 0; i < Component_Number; i++) {
+            for (int j = i; j < Component_Number; j++) {
+              int im  = i * Component_Number + j;
+              sig_max = MAX(sig_max, SIGMA[im]);
+              sig_min = MIN(sig_min, SIGMA[im]);
+            }
+          }
+          double rij_min    = sig_min * 0.99;
+          double drij       = sig_min * 0.0025;
+          int    max_points = (int)((MIN(rij_max, 2.5 * sig_max) - rij_min) / drij);
+
           for (int l = 0; l < max_points; l++) {
-            // fprintf(FLJ, "%9.5g\t", rij/SIGMA);
+            double rij = rij_min + (double)(l)*drij;
             for (int i = 0; i < Component_Number; i++) {
               for (int j = i; j < Component_Number; j++) {
                 int    im      = i * Component_Number + j;
-                double rij_min = SIGMA[im] * 0.99;
-                double drij    = SIGMA[im] * 0.0025;
-                double rij, fij;
-                int    max_points = (int)((MIN(rij_max, 2.5 * SIGMA[im]) - rij_min) / drij);
-
-                rij = rij_min + (double)(l)*drij;
-
-                fij = (rij < A_R_cutoff[im] * LJ_dia[im]
+                double fij = (rij < A_R_cutoff[im] * LJ_dia[im]
                            ? MIN(DBL_MAX / rij, Lennard_Jones_f(rij, LJ_dia[im], EPSILON[im], LJ_powers[im]))
                            : 0.0);
                 fprintf(FLJ, " %9.5g\t", fij * rij);
@@ -933,7 +907,6 @@ void Show_parameter(Particle* p) {
       }
       fprintf(fp, "#\n");
     }
-    fprintf(stderr, "#\n# With patchy particles: \n");
 
     for (int pairi = 0; pairi < Component_Number * Component_Number; pairi++) {
       int ii = pairi / Component_Number;
@@ -955,6 +928,8 @@ void Show_parameter(Particle* p) {
         }
       }
     }
+  }
+}
 
     void Init_Chain(Particle * p) {
       fprintf(stderr, "#init_particle: Chain distributed randomly ");

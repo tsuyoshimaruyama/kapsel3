@@ -152,7 +152,7 @@ extern int *   LJ_truncate;
 extern int     LJ_TRUNCATE;
 //
 // extern double R_cutoff ;
-extern double SIGMA;
+extern double *SIGMA;
 
 //
 extern double T_LJ;

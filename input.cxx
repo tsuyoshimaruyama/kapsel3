@@ -1428,12 +1428,7 @@ void        Gourmet_file_io(const char *infile,
           LJ_dia        = alloc_1d_double(num_pairs);
           LJ_truncate   = alloc_1d_int(num_pairs);
           LJ_powers     = alloc_1d_int(num_pairs);
-          SIGMA         = alloc_1d_double(num_paris);
-
-          PATCHY_POWER      = alloc_1d_int(num_pairs);
-          PATCHY_LAMBDA     = alloc_1d_double(num_pairs);
-          PATCHY_EPSILON    = alloc_1d_double(num_pairs);
-          PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
+          SIGMA         = alloc_1d_double(num_pairs);
 
           janus_axis       = (JAX *)malloc(sizeof(JAX) * Component_Number);
           janus_propulsion = (JP *)malloc(sizeof(JP) * Component_Number);
@@ -1473,11 +1468,6 @@ void        Gourmet_file_io(const char *infile,
         LJ_truncate   = alloc_1d_int(num_pairs);
         LJ_powers     = alloc_1d_int(num_pairs);
         SIGMA         = alloc_1d_double(num_pairs);
-
-        PATCHY_POWER      = alloc_1d_int(num_pairs);
-        PATCHY_LAMBDA     = alloc_1d_double(num_pairs);
-        PATCHY_EPSILON    = alloc_1d_double(num_pairs);
-        PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
 
         janus_axis       = (JAX *)malloc(sizeof(JAX) * Component_Number);
         janus_propulsion = (JP *)malloc(sizeof(JP) * Component_Number);
@@ -1521,11 +1511,6 @@ void        Gourmet_file_io(const char *infile,
         LJ_truncate   = alloc_1d_int(num_pairs);
         LJ_powers     = alloc_1d_int(num_pairs);
         SIGMA         = alloc_1d_double(num_pairs);
-
-        PATCHY_POWER      = alloc_1d_int(num_pairs);
-        PATCHY_LAMBDA     = alloc_1d_double(num_pairs);
-        PATCHY_EPSILON    = alloc_1d_double(num_pairs);
-        PATCHY_A_R_cutoff = alloc_1d_double(num_pairs);
 
         janus_axis       = (JAX *)malloc(sizeof(JAX) * Component_Number);
         janus_propulsion = (JP *)malloc(sizeof(JP) * Component_Number);
@@ -2070,22 +2055,16 @@ void        Gourmet_file_io(const char *infile,
 
     for (int i = 0; i < Component_Number; i++) {
       int im, im2;
-      im                 = i * Component_Number + i;
-      EPSILON[im]        = dmy_epsilon;
-      LJ_powers[im]      = dmy_powers;
-      SIGMA[im]          = 2.0 * RADII[i];
-      PATCHY_POWER[im]   = dmy_patchy_powers;
-      PATCHY_LAMBDA[im]  = dmy_patchy_lambda;
-      PATCHY_EPSILON[im] = dmy_patchy_epsilon;
+      im            = i * Component_Number + i;
+      EPSILON[im]   = dmy_epsilon;
+      LJ_powers[im] = dmy_powers;
+      SIGMA[im]     = 2.0 * RADII[i];
       for (int j = i + 1; j < Component_Number; j++) {
         im          = i * Component_Number + j;
         im2         = j * Component_Number + i;
         EPSILON[im] = EPSILON[im2] = dmy_epsilon;
         LJ_powers[im] = LJ_powers[im2] = dmy_powers;
         SIGMA[im] = SIGMA[im2] = (RADII[i] + RADII[j]);
-        PATCHY_POWER[im] = PATCHY_POWER[im2] = dmy_patchy_powers;
-        PATCHY_LAMBDA[im] = PATCHY_LAMBDA[im2] = dmy_patchy_lambda;
-        PATCHY_EPSILON[im] = PATCHY_EPSILON[im2] = dmy_patchy_epsilon;
       }
     }
   }
