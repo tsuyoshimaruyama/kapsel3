@@ -86,6 +86,8 @@ void Make_particle_momentum_factor(double const* const* u, Particle *p){
 	Squirmer_coord(r, n_r, n_theta, n_tau, dmy_sr, dmy_theta, dmy_tau, p[n]);
 	slip_magnitude = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta));
 	slip_azimuthal = C1 * sin(dmy_theta) + C2 * 1.5 * sin(2.0*dmy_theta);
+
+	
         for(int d = 0; d < DIM; d++){
           us[d] = n_theta[d] * slip_magnitude + n_tau[d] * slip_azimuthal - u_fluid[d];
         }
@@ -253,6 +255,7 @@ void Make_force_u_slip_particle(double **up, double const* const* u, Particle *p
 	  Squirmer_coord(r, n_r, n_theta, n_tau, dmy_sr, dmy_theta, dmy_tau, p[n]);
 	  dmy_vslip = slip_vel * (sin(dmy_theta) + slip_mode * sin(2.0*dmy_theta));
 	  dmy_vslip2 = C1 * sin(dmy_theta) + C2 * 1.5 * sin(2.0*dmy_theta);
+
 
           for(int d = 0; d < DIM; d++){
             dmy_fv[d] = dmy_phi_s * (vp[d] + v_rot[d] + n_theta[d]*dmy_vslip +n_tau[d] * dmy_vslip2 - u_fluid[d]);
