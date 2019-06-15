@@ -6,7 +6,7 @@
 ### FOR LINUX ##
 # ENV = GCC
 # ENV = ICC
- ENV = ICC_OMP
+# ENV = ICC_OMP
 ### FOR WINDOWS ###
 #ENV = CYGWIN
 #ENV = MINGW64
@@ -18,28 +18,25 @@
 #
 ### FFT LIB ###
 # FFT = FFTW
- FFT = IMKL
+# FFT = IMKL
 # FFT = OOURA
 ### HDF5 SUPPORT ###
- HDF5 = ON
-### LIS SUPPORT ###
-# LIS = ON
+#HDF5 = ON
+
 ## default options
 # Use OCTA environment variables
-GOURMET_HOME_PATH = $(PF_FILES)
-ENGINE_HOME_PATH  = $(PF_ENGINE)
-ARCH              = $(PF_ENGINEARCH)
+#GOURMET_HOME_PATH = $(PF_FILES)
+#ENGINE_HOME_PATH  = $(PF_ENGINE)
+#ARCH              = $(PF_ENGINEARCH)
 # OR
 # Define environment variables explicitly here
 GOURMET_HOME_PATH  = /usr/local/OCTA83/GOURMET
 ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
-#GOURMET_HOME_PATH  = /home/OCTA81/GOURMET
-#ENGINE_HOME_PATH   = /home/OCTA81/ENGINES
 #GOURMET_HOME_PATH  = /opt/OCTA/OCTA83_gcc
 #ENGINE_HOME_PATH   = /opt/OCTA/OCTA83_gcc/ENGINES
-#ARCH               = linux_64
-OSX_GCC            = gcc-7
-OSX_GCXX           = g++-7
+ARCH               = linux_64
+OSX_GCC            = gcc-8
+OSX_GCXX           = g++-8
 
 #
 AUX= ./Tools
@@ -103,7 +100,7 @@ ifeq ($(ENV), CYGWIN_OMP)
      LINKS  = -lm -lplatform 
      ifeq ($(FFT), FFTW)
 	CCOPT += -D_FFT_FFTW
-	LINKS += -lfftw3_threads -lfftw3
+	LINKS += -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -140,14 +137,14 @@ ifeq ($(ENV), GCC_MAC)
      CC	     = $(OSX_GCC)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline
-     LINKS  = -lm -lplatform_gcc-7
+     LINKS  = -lm -lplatform_gcc
      ifeq ($(HDF5), ON)
 	LINKS += -L/opt/hdf5/lib
 	CCOPT += -I/opt/hdf5/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3
      endif 
 endif
 
@@ -157,14 +154,14 @@ ifeq ($(ENV), GCC_MAC_OMP)
      CC	     = $(OSX_GCC)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline -fopenmp
-     LINKS  = -lm -lplatform_gcc-7
+     LINKS  = -lm -lplatform_gcc
      ifeq ($(HDF5), ON)
 	LINKS += -L/opt/hdf5/lib
 	CCOPT += -I/opt/hdf5/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3_threads -lfftw3
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -198,7 +195,7 @@ ifeq ($(ENV), GCC_OMP)
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/usr/local/include -D_FFT_FFTW
-	LINKS += -L/usr/local/lib -lfftw3_threads -lfftw3
+	LINKS += -L/usr/local/lib -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -211,12 +208,12 @@ ifeq ($(ENV), ICC)
 #     LINKS  = -lm -lplatform -lcxaguard -lstdc++
      LINKS  = -lm -lplatform -lstdc++ -static-intel
      ifeq ($(HDF5), ON)
-	CCOPT  += -I/opt/hdf5.1.8/include
 	LINKS  += -L/opt/hdf5.1.8/lib
+	CCOPT  += -I/opt/hdf5.1.8/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/opt/fftw/3.3.7/include -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7/lib -lfftw3
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3
      endif
      ifeq ($(FFT), IMKL)
 	CCOPT += -D_FFT_IMKL
@@ -229,19 +226,15 @@ ifeq ($(ENV), ICC_OMP)
      ARCH   = linux_64
      CC     = icc 
      CXX    = icpc 
-     CCOPT  = -std=c++11 -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
+     CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
      LINKS  = -lm -lplatform -lstdc++
-     ifeq ($(LIS), ON)
-	CCOPT  += -I/opt/lis-2.0.7/include -D_LIS_SOLVER
-	LINKS  += -L/opt/lis-2.0.7/lib -llis
-     endif
      ifeq ($(HDF5), ON)
 	LINKS  += -L/opt/hdf5.1.8/lib
 	CCOPT  += -I/opt/hdf5.1.8/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/opt/fftw/3.3.7 -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.7 -lfftw3_threads -lfftw3 
+	CCOPT += -I/opt/fftw/3.3.8 -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8 -lfftw3_omp -lfftw3 
      endif
      ifeq ($(FFT), IMKL)
 	CCOPT += -D_FFT_IMKL
@@ -250,9 +243,6 @@ ifeq ($(ENV), ICC_OMP)
 endif
 
 OBJS  	= mt19937ar.o\
-	fdm_phase_separation.o\
-	fdm_matrix_solver.o\
-	fdm.o\
 	operate_electrolyte.o\
 	fluct.o\
 	alloc.o\
@@ -283,7 +273,7 @@ OBJS  	= mt19937ar.o\
 
 ## options for HDF5 support
 ifeq ($(HDF5), ON)
-      LINKS  += -lhdf5 -lhdf5_hl -lhdf5_cpp
+      LINKS  += -lhdf5 -lhdf5_hl
       CCOPT  += -DWITH_EXTOUT
       OBJS   += output_writer.o
 endif
@@ -300,7 +290,7 @@ XYZ_OBJS= alloc.o\
 	rigid_body.o\
 	$(AUX)/udf2xyz.o
 
-TARGET 	= kapsel_u2m
+TARGET 	= kapsel
 XYZ	= udf2xyz
 
 ENGINE = $(TARGET)
