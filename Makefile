@@ -243,6 +243,9 @@ ifeq ($(ENV), ICC_OMP)
 endif
 
 OBJS  	= mt19937ar.o\
+	fdm_phase_separation.o\
+	fdm_matrix_solver.o\
+	fdm.o\
 	operate_electrolyte.o\
 	fluct.o\
 	alloc.o\
@@ -273,7 +276,7 @@ OBJS  	= mt19937ar.o\
 
 ## options for HDF5 support
 ifeq ($(HDF5), ON)
-      LINKS  += -lhdf5 -lhdf5_hl
+      LINKS  += -lhdf5 -lhdf5_hl -lhdf5_cpp
       CCOPT  += -DWITH_EXTOUT
       OBJS   += output_writer.o
 endif
@@ -325,7 +328,7 @@ $(XYZ): $(XYZ_OBJS)
 ## Compile
 
 .cxx.o: 
-	$(CXX) -c $< $(CFLAGS) $(GITFLAGS) -o $@
+	$(CXX) -c $< -std=c++11 $(CFLAGS) $(GITFLAGS) -o $@
 
 .c.o: 
 	$(CC) -c $< $(CFLAGS) $(GITFLAGS) -o $@
