@@ -21,8 +21,9 @@
 # FFT = IMKL
 # FFT = OOURA
 ### HDF5 SUPPORT ###
-#HDF5 = ON
-
+HDF5 = ON
+### LIS SUPPORT ###
+# LIS = ON
 ## default options
 # Use OCTA environment variables
 #GOURMET_HOME_PATH = $(PF_FILES)
@@ -35,8 +36,8 @@ ENGINE_HOME_PATH   = /usr/local/OCTA83/ENGINES
 #GOURMET_HOME_PATH  = /opt/OCTA/OCTA83_gcc
 #ENGINE_HOME_PATH   = /opt/OCTA/OCTA83_gcc/ENGINES
 ARCH               = linux_64
-OSX_GCC            = gcc-8
-OSX_GCXX           = g++-8
+OSX_GCC            = gcc-9
+OSX_GCXX           = g++-9
 
 #
 AUX= ./Tools
@@ -129,6 +130,22 @@ ifeq ($(ENV), CLANG)
      CXX     = clang++
      LINKS   = -L/usr/local/lib -lm -lplatform -stdlib=libc++
      CCOPT   = -I/usr/local/include -g -fcolor-diagnostics -stdlib=libc++ 
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
+     ifeq ($(HDF5), ON)
+#	LINKS += -L/opt/hdf5/1.10.5/lib
+#	CCOPT += -I/opt/hdf5/1.10.5/include
+	LINKS += -L/usr/local/lib
+	CCOPT += -I/usr/local/include
+     endif
+     ifeq ($(FFT), FFTW)
+	CCOPT += -D_FFT_FFTW
+	LINKS += -lfftw3
+#	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+#	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3
+     endif 
 endif
 
 ## options for GCC/MAC
@@ -138,9 +155,17 @@ ifeq ($(ENV), GCC_MAC)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline
      LINKS  = -lm -lplatform_gcc
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS += -L/opt/hdf5/lib
-	CCOPT += -I/opt/hdf5/include
+	LINKS += -L/opt/hdf5/1.10.5/lib
+	CCOPT += -I/opt/hdf5/1.10.5/include
+#	LINKS += -L/opt/hdf5/1.8.21/lib
+#	CCOPT += -I/opt/hdf5/1.8.21/include
+#	LINKS += -L/usr/local/lib
+#	CCOPT += -I/usr/local/include
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
@@ -155,9 +180,13 @@ ifeq ($(ENV), GCC_MAC_OMP)
      CXX     = $(OSX_GCXX)
      CCOPT  = -O3 -fno-inline -fopenmp
      LINKS  = -lm -lplatform_gcc
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS += -L/opt/hdf5/lib
-	CCOPT += -I/opt/hdf5/include
+	LINKS += -L/opt/hdf5/1.10.5/lib
+	CCOPT += -I/opt/hdf5/1.10.5/include
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
@@ -172,13 +201,17 @@ ifeq ($(ENV), GCC)
      CXX    = g++
      CCOPT  = -O3 
      LINKS  = -lm -lplatform -lstdc++ -static
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS  += -L/opt/hdf5.1.8/lib
-	CCOPT  += -I/opt/hdf5.1.8/include
+	LINKS  += -L/opt/hdf5/1.10.5/lib
+	CCOPT  += -I/opt/hdf5/1.10.5/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/usr/local/include -D_FFT_FFTW
-	LINKS += -L/usr/local/lib -lfftw3
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3
      endif 
 endif
 
@@ -189,13 +222,17 @@ ifeq ($(ENV), GCC_OMP)
      CXX    = g++
      CCOPT  = -O3 -fopenmp
      LINKS  = -lm -lplatform -lstdc++ -static
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS  += -L/opt/hdf5.1.8/lib
-	CCOPT  += -I/opt/hdf5.1.8/include
+	LINKS  += -L/opt/hdf5/1.10.5/lib
+	CCOPT  += -I/opt/hdf5/1.10.5/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/usr/local/include -D_FFT_FFTW
-	LINKS += -L/usr/local/lib -lfftw3_omp -lfftw3
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3_omp -lfftw3
      endif 
 endif
 
@@ -207,9 +244,13 @@ ifeq ($(ENV), ICC)
      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -w0
 #     LINKS  = -lm -lplatform -lcxaguard -lstdc++
      LINKS  = -lm -lplatform -lstdc++ -static-intel
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS  += -L/opt/hdf5.1.8/lib
-	CCOPT  += -I/opt/hdf5.1.8/include
+	LINKS  += -L/opt/hdf5/1.10.5/lib
+	CCOPT  += -I/opt/hdf5/1.10.5/include
      endif
      ifeq ($(FFT), FFTW)
 	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
@@ -228,13 +269,17 @@ ifeq ($(ENV), ICC_OMP)
      CXX    = icpc 
      CCOPT  = -O3 -xSSSE3 -axCOMMON-AVX512,CORE-AVX512,CORE-AVX2,CORE-AVX-I,AVX,SSE4.2,SSE4.1,SSSE3,SSE3,SSE2 -ip -qopenmp -parallel -w0
      LINKS  = -lm -lplatform -lstdc++
+     ifeq ($(LIS), ON)
+	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
+	LINKS  += -L/opt/lis/2.0.18/lib -llis
+     endif
      ifeq ($(HDF5), ON)
-	LINKS  += -L/opt/hdf5.1.8/lib
-	CCOPT  += -I/opt/hdf5.1.8/include
+	LINKS  += -L/opt/hdf5/1.10.5/lib
+	CCOPT  += -I/opt/hdf5/1.10.5/include
      endif
      ifeq ($(FFT), FFTW)
-	CCOPT += -I/opt/fftw/3.3.8 -D_FFT_FFTW
-	LINKS += -L/opt/fftw/3.3.8 -lfftw3_omp -lfftw3 
+	CCOPT += -I/opt/fftw/3.3.8/include -D_FFT_FFTW
+	LINKS += -L/opt/fftw/3.3.8/lib -lfftw3_omp -lfftw3 
      endif
      ifeq ($(FFT), IMKL)
 	CCOPT += -D_FFT_IMKL
