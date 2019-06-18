@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{    \PYGZdl{}} \PYG{n+nb}{cd} lis\PYGZhy{}\PYG{o}{(}\PYG{n+nv}{\PYGZdl{}VERSION}\PYG{o}{)}
+\PYG{g+gp}{    \PYGZdl{}} ./configure
+\PYG{g+gp}{    \PYGZdl{}} make
+\PYG{g+gp}{    \PYGZdl{}} make install
+\end{Verbatim}

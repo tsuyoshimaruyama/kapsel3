@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{    \PYGZdl{}} ./configure \PYG{n+nv}{CFLAGS}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}O3\PYGZdq{}} \PYG{n+nv}{FFLAGS}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}O3\PYGZdq{}} \PYGZhy{}\PYGZhy{}enable\PYGZhy{}openmp \PYGZhy{}\PYGZhy{}enable\PYGZhy{}threads \PYGZhy{}\PYGZhy{}enable\PYGZhy{}shared \PYGZhy{}\PYGZhy{}disable\PYGZhy{}fortran
+\PYG{g+gp}{    \PYGZdl{}} make
+\PYG{g+gp}{    \PYGZdl{}} make install
+\end{Verbatim}

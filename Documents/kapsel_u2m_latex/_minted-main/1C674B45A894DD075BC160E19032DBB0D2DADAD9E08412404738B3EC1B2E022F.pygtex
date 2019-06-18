@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{    \PYGZdl{}} \PYG{n+nb}{cd} sample
+\PYG{g+gp}{    \PYGZdl{}} ../kapsel\PYGZus{}u2m \PYGZhy{}Iinput.udf \PYGZhy{}Ooutput.udf \PYGZhy{}Ddefine.udf \PYGZhy{}Rrestart.udf
+\end{Verbatim}

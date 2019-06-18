@@ -1,0 +1,596 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.0 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{kapsel}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://www-tph.cheme.kyoto-u.ac.jp/kapsel/}}
+      \field{note}{Accessed: 2019-01-25}
+      \field{title}{{KAPSEL HomePage}}
+    \endentry
+    \entry{nakayama2005simulation}{article}{}
+      \name{author}{2}{}{%
+        {{hash=7991a6e296a2d07d51c8cfcdc5105c66}{%
+           family={Nakayama},
+           familyi={N\bibinitperiod},
+           given={Yasuya},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=c933dbd270fcc8c44d806ae1c613b6a7}{%
+           family={Yamamoto},
+           familyi={Y\bibinitperiod},
+           given={Ryoichi},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {APS}%
+      }
+      \strng{namehash}{bfd3f8899df29b880e0f73c3309fee09}
+      \strng{fullhash}{bfd3f8899df29b880e0f73c3309fee09}
+      \strng{bibnamehash}{bfd3f8899df29b880e0f73c3309fee09}
+      \strng{authorbibnamehash}{bfd3f8899df29b880e0f73c3309fee09}
+      \strng{authornamehash}{bfd3f8899df29b880e0f73c3309fee09}
+      \strng{authorfullhash}{bfd3f8899df29b880e0f73c3309fee09}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physical Review E}
+      \field{number}{3}
+      \field{title}{Simulation method to resolve hydrodynamic interactions in colloidal dispersions}
+      \field{volume}{71}
+      \field{year}{2005}
+      \field{pages}{036707}
+      \range{pages}{1}
+    \endentry
+    \entry{cygwin}{misc}{}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://cygwin.com/}}
+      \field{note}{Accessed: 2019-03-25}
+      \field{title}{{Cygwin}}
+    \endentry
+    \entry{kapsel_install}{misc}{}
+      \field{sortinit}{3}
+      \field{sortinithash}{a4b52e5432884761f50fb9571273b93e}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://www-tph.cheme.kyoto-u.ac.jp/kapsel/index.php?Install}}
+      \field{note}{Accessed: 2019-01-25}
+      \field{title}{{Step-by-step instructions to install \& run KAPSEL}}
+    \endentry
+    \entry{hdf5}{misc}{}
+      \field{sortinit}{4}
+      \field{sortinithash}{11cdaee3b18e01d77f3f428b13c1fc76}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.hdfgroup.org/solutions/hdf5/}}
+      \field{note}{Accessed: 2019-01-25}
+      \field{title}{{The HDF5${}^{®}$ Library \& File Format}}
+    \endentry
+    \entry{fftw}{misc}{}
+      \field{sortinit}{6}
+      \field{sortinithash}{57e57fb8451e7fcfa45d1e069f6d3136}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://www.fftw.org/}}
+      \field{note}{Accessed: 2019-01-25}
+      \field{title}{{FFTW}}
+    \endentry
+    \entry{fftw_download}{misc}{}
+      \field{sortinit}{7}
+      \field{sortinithash}{c818dd9105a2852444fc9f5e145c294e}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://www.fftw.org/download.html}}
+      \field{note}{Accessed: 2019-01-25}
+      \field{title}{{FFTW Download Page}}
+    \endentry
+    \entry{lis}{misc}{}
+      \field{sortinit}{8}
+      \field{sortinithash}{07edf88d4ea82509b9c4b4d13f41c452}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.ssisc.org/lis/index.ja.html}}
+      \field{note}{Accessed: 2019-01-28}
+      \field{title}{{Lis: Library of Iterative Solvers for Linear Systems}}
+    \endentry
+    \entry{lis_document}{misc}{}
+      \field{sortinit}{9}
+      \field{sortinithash}{1dd72ab054147731c9d824b49aba0534}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.ssisc.org/lis/lis-ug-ja.pdf}}
+      \field{note}{Accessed: 2019-01-28}
+      \field{title}{{Lis ユーザガイド}}
+    \endentry
+    \entry{ooura_fft}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{http://www.kurims.kyoto-u.ac.jp/~ooura/fft-j.html}}
+      \field{note}{Accessed: 2019-01-28}
+      \field{title}{{汎用 FFT(高速 フーリエ/コサイン/サイン 変換)パッケージ}}
+    \endentry
+    \entry{paraview}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.paraview.org/}}
+      \field{note}{Accessed: 2019-01-28}
+      \field{title}{{ParaView}}
+    \endentry
+    \entry{kobayashi2003cfd}{book}{}
+      \name{author}{1}{}{%
+        {{hash=493f614b43f5ac65cdb6cb6f2656dcca}{%
+           family={小林敏雄編},
+           familyi={小\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {丸善出版}%
+      }
+      \strng{namehash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \strng{fullhash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \strng{bibnamehash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \strng{authorbibnamehash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \strng{authornamehash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \strng{authorfullhash}{493f614b43f5ac65cdb6cb6f2656dcca}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{{数値流体力学ハンドブック}}
+      \field{year}{2003}
+    \endentry
+    \entry{jsces2017fem}{book}{}
+      \name{author}{1}{}{%
+        {{hash=2ecab12352fddbeda1a39a244f8edff2}{%
+           family={日本計算工学会編},
+           familyi={日\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {丸善出版}%
+      }
+      \strng{namehash}{2ecab12352fddbeda1a39a244f8edff2}
+      \strng{fullhash}{2ecab12352fddbeda1a39a244f8edff2}
+      \strng{bibnamehash}{2ecab12352fddbeda1a39a244f8edff2}
+      \strng{authorbibnamehash}{2ecab12352fddbeda1a39a244f8edff2}
+      \strng{authornamehash}{2ecab12352fddbeda1a39a244f8edff2}
+      \strng{authorfullhash}{2ecab12352fddbeda1a39a244f8edff2}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{{第3版 有限要素法による流れのシミュレーション}}
+      \field{year}{2017}
+    \endentry
+    \entry{iwashita2008numerical}{article}{}
+      \name{author}{3}{}{%
+        {{hash=b2c6d87d8aac67977eef419994a8a58f}{%
+           family={Iwashita},
+           familyi={I\bibinitperiod},
+           given={Takuya},
+           giveni={T\bibinitperiod}}}%
+        {{hash=7991a6e296a2d07d51c8cfcdc5105c66}{%
+           family={Nakayama},
+           familyi={N\bibinitperiod},
+           given={Yasuya},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=c933dbd270fcc8c44d806ae1c613b6a7}{%
+           family={Yamamoto},
+           familyi={Y\bibinitperiod},
+           given={Ryoichi},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {The Physical Society of Japan}%
+      }
+      \strng{namehash}{7dda0daa15cc2603b3e651324b69a86c}
+      \strng{fullhash}{8dea08bebc007d0bfe0eb5ed0e0ed97f}
+      \strng{bibnamehash}{8dea08bebc007d0bfe0eb5ed0e0ed97f}
+      \strng{authorbibnamehash}{8dea08bebc007d0bfe0eb5ed0e0ed97f}
+      \strng{authornamehash}{7dda0daa15cc2603b3e651324b69a86c}
+      \strng{authorfullhash}{8dea08bebc007d0bfe0eb5ed0e0ed97f}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of the Physical Society of Japan}
+      \field{number}{7}
+      \field{title}{A numerical model for Brownian particles fluctuating in incompressible fluids}
+      \field{volume}{77}
+      \field{year}{2008}
+      \field{pages}{074007}
+      \range{pages}{1}
+    \endentry
+    \entry{iwashita2009short}{article}{}
+      \name{author}{2}{}{%
+        {{hash=b2c6d87d8aac67977eef419994a8a58f}{%
+           family={Iwashita},
+           familyi={I\bibinitperiod},
+           given={Takuya},
+           giveni={T\bibinitperiod}}}%
+        {{hash=c933dbd270fcc8c44d806ae1c613b6a7}{%
+           family={Yamamoto},
+           familyi={Y\bibinitperiod},
+           given={Ryoichi},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {APS}%
+      }
+      \strng{namehash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \strng{fullhash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \strng{bibnamehash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \strng{authorbibnamehash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \strng{authornamehash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \strng{authorfullhash}{4d793306b80be5a853d5f7a3bf6f77f4}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physical Review E}
+      \field{number}{3}
+      \field{title}{Short-time motion of Brownian particles in a shear flow}
+      \field{volume}{79}
+      \field{year}{2009}
+      \field{pages}{031401}
+      \range{pages}{1}
+    \endentry
+    \entry{kobayashi2011implementation}{article}{}
+      \name{author}{2}{}{%
+        {{hash=be12bb1d06fb2a7ef1805f2929dcaf7e}{%
+           family={Kobayashi},
+           familyi={K\bibinitperiod},
+           given={Hideki},
+           giveni={H\bibinitperiod}}}%
+        {{hash=c933dbd270fcc8c44d806ae1c613b6a7}{%
+           family={Yamamoto},
+           familyi={Y\bibinitperiod},
+           given={Ryoichi},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {AIP}%
+      }
+      \strng{namehash}{e3d12c647efa1f74b77cd298edee57cb}
+      \strng{fullhash}{e3d12c647efa1f74b77cd298edee57cb}
+      \strng{bibnamehash}{e3d12c647efa1f74b77cd298edee57cb}
+      \strng{authorbibnamehash}{e3d12c647efa1f74b77cd298edee57cb}
+      \strng{authornamehash}{e3d12c647efa1f74b77cd298edee57cb}
+      \strng{authorfullhash}{e3d12c647efa1f74b77cd298edee57cb}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{The Journal of Chemical Physics}
+      \field{number}{6}
+      \field{title}{Implementation of Lees--Edwards periodic boundary conditions for direct numerical simulations of particle dispersions under shear flow}
+      \field{volume}{134}
+      \field{year}{2011}
+      \field{pages}{064110}
+      \range{pages}{1}
+    \endentry
+    \entry{molina2016rheological}{article}{}
+      \name{author}{6}{}{%
+        {{hash=41cb3860b93f57a75b4f3453cbb8b73a}{%
+           family={Molina},
+           familyi={M\bibinitperiod},
+           given={John\bibnamedelima J},
+           giveni={J\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=965ae8b2fca71128b2281de916d365f9}{%
+           family={Otomura},
+           familyi={O\bibinitperiod},
+           given={Kotaro},
+           giveni={K\bibinitperiod}}}%
+        {{hash=1c79c583daea9de27cfeebff9ebff09a}{%
+           family={Shiba},
+           familyi={S\bibinitperiod},
+           given={Hayato},
+           giveni={H\bibinitperiod}}}%
+        {{hash=be12bb1d06fb2a7ef1805f2929dcaf7e}{%
+           family={Kobayashi},
+           familyi={K\bibinitperiod},
+           given={Hideki},
+           giveni={H\bibinitperiod}}}%
+        {{hash=d979269887a6888983d5893d9d708b46}{%
+           family={Sano},
+           familyi={S\bibinitperiod},
+           given={Masaki},
+           giveni={M\bibinitperiod}}}%
+        {{hash=c933dbd270fcc8c44d806ae1c613b6a7}{%
+           family={Yamamoto},
+           familyi={Y\bibinitperiod},
+           given={Ryoichi},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge University Press}%
+      }
+      \strng{namehash}{413be0327746a13b571d9ba53f60759e}
+      \strng{fullhash}{730b9599ec2e1df7c82137e5897cc769}
+      \strng{bibnamehash}{730b9599ec2e1df7c82137e5897cc769}
+      \strng{authorbibnamehash}{730b9599ec2e1df7c82137e5897cc769}
+      \strng{authornamehash}{413be0327746a13b571d9ba53f60759e}
+      \strng{authorfullhash}{730b9599ec2e1df7c82137e5897cc769}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Fluid Mechanics}
+      \field{title}{Rheological evaluation of colloidal dispersions using the smoothed profile method: formulation and applications}
+      \field{volume}{792}
+      \field{year}{2016}
+      \field{pages}{590\bibrangedash 619}
+      \range{pages}{30}
+    \endentry
+    \entry{hohenberg1977theory}{article}{}
+      \name{author}{2}{}{%
+        {{hash=0c6d54ee15e7820c64218de54ce7e1b7}{%
+           family={Hohenberg},
+           familyi={H\bibinitperiod},
+           given={Pierre\bibnamedelima C},
+           giveni={P\bibinitperiod\bibinitdelim C\bibinitperiod}}}%
+        {{hash=9f6cfc536e75ad39b4d7f673ce874f0d}{%
+           family={Halperin},
+           familyi={H\bibinitperiod},
+           given={Bertrand\bibnamedelima I},
+           giveni={B\bibinitperiod\bibinitdelim I\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {APS}%
+      }
+      \strng{namehash}{e524e2d8e333085f77f9b7935045bcce}
+      \strng{fullhash}{e524e2d8e333085f77f9b7935045bcce}
+      \strng{bibnamehash}{e524e2d8e333085f77f9b7935045bcce}
+      \strng{authorbibnamehash}{e524e2d8e333085f77f9b7935045bcce}
+      \strng{authornamehash}{e524e2d8e333085f77f9b7935045bcce}
+      \strng{authorfullhash}{e524e2d8e333085f77f9b7935045bcce}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Reviews of Modern Physics}
+      \field{number}{3}
+      \field{title}{Theory of dynamic critical phenomena}
+      \field{volume}{49}
+      \field{year}{1977}
+      \field{pages}{435}
+      \range{pages}{1}
+    \endentry
+    \entry{harlow1965numerical}{article}{}
+      \name{author}{2}{}{%
+        {{hash=07c8ed043aabf7b0c3e5be65f9024601}{%
+           family={Harlow},
+           familyi={H\bibinitperiod},
+           given={Francis\bibnamedelima H},
+           giveni={F\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=14c36403aa21524af13c0cdf22c0be02}{%
+           family={Welch},
+           familyi={W\bibinitperiod},
+           given={J\bibnamedelima Eddie},
+           giveni={J\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {AIP}%
+      }
+      \strng{namehash}{8de29e45655d0ecdade019bcf8f61537}
+      \strng{fullhash}{8de29e45655d0ecdade019bcf8f61537}
+      \strng{bibnamehash}{8de29e45655d0ecdade019bcf8f61537}
+      \strng{authorbibnamehash}{8de29e45655d0ecdade019bcf8f61537}
+      \strng{authornamehash}{8de29e45655d0ecdade019bcf8f61537}
+      \strng{authorfullhash}{8de29e45655d0ecdade019bcf8f61537}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{The physics of fluids}
+      \field{number}{12}
+      \field{title}{Numerical calculation of time-dependent viscous incompressible flow of fluid with free surface}
+      \field{volume}{8}
+      \field{year}{1965}
+      \field{pages}{2182\bibrangedash 2189}
+      \range{pages}{8}
+    \endentry
+    \entry{arakawa1977computational}{article}{}
+      \name{author}{2}{}{%
+        {{hash=5447b315b787d4d729b2eafe15a6cf59}{%
+           family={Arakawa},
+           familyi={A\bibinitperiod},
+           given={Akio},
+           giveni={A\bibinitperiod}}}%
+        {{hash=9d785e0402781a8bcd869204d17df9c6}{%
+           family={Lamb},
+           familyi={L\bibinitperiod},
+           given={Vivian\bibnamedelima R},
+           giveni={V\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Methods in computational Physics}%
+      }
+      \strng{namehash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \strng{fullhash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \strng{bibnamehash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \strng{authorbibnamehash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \strng{authornamehash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \strng{authorfullhash}{19c65d8757ca69bfbb2a8a9fa649c42d}
+      \field{sortinit}{1}
+      \field{sortinithash}{2174f786c6195e7fe2ee1c229b416e29}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{General circulation models of the atmosphere}
+      \field{title}{Computational design of the basic dynamical processes of the UCLA general circulation model}
+      \field{volume}{17}
+      \field{year}{1977}
+      \field{pages}{173\bibrangedash 265}
+      \range{pages}{93}
+    \endentry
+    \entry{maruoka1998rheological}{article}{}
+      \name{author}{3}{}{%
+        {{hash=beb92954bd36b5e8c551a854fc5da2d9}{%
+           family={Maruoka},
+           familyi={M\bibinitperiod},
+           given={Akira},
+           giveni={A\bibinitperiod}}}%
+        {{hash=4668f29e374a7f1bee1151cfaf2f4fbb}{%
+           family={Matsumoto},
+           familyi={M\bibinitperiod},
+           given={Junichi},
+           giveni={J\bibinitperiod}}}%
+        {{hash=e4d28bba938a8277e719c6a350c7cba5}{%
+           family={Kawahara},
+           familyi={K\bibinitperiod},
+           given={Mutsuto},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {JSCE, Japan}%
+      }
+      \strng{namehash}{95b12f268e5cda46cd8c0b6cb228702b}
+      \strng{fullhash}{241bef80f40fe7093d670c0695a1e465}
+      \strng{bibnamehash}{241bef80f40fe7093d670c0695a1e465}
+      \strng{authorbibnamehash}{241bef80f40fe7093d670c0695a1e465}
+      \strng{authornamehash}{95b12f268e5cda46cd8c0b6cb228702b}
+      \strng{authorfullhash}{241bef80f40fe7093d670c0695a1e465}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Structural Engineering A}
+      \field{title}{A fractional step finite element method for incompressible Navier--Stokes Equations using quadrilateral scaled bubble function}
+      \field{volume}{44}
+      \field{year}{1998}
+      \field{pages}{383}
+      \range{pages}{1}
+    \endentry
+    \entry{he2007large}{article}{}
+      \name{author}{3}{}{%
+        {{hash=9aff6420ae39cc74f353756466d9d86a}{%
+           family={He},
+           familyi={H\bibinitperiod},
+           given={Yinnian},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=017911d05e0e354919b269b902234861}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Yunxian},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=eb406b96c3102dfd464301beba3a7293}{%
+           family={Tang},
+           familyi={T\bibinitperiod},
+           given={Tao},
+           giveni={T\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {North-Holland}%
+      }
+      \strng{namehash}{7a9ba9910f8850c14ee39325b8525974}
+      \strng{fullhash}{81ed4e913ecaad8700ab9db93556df6a}
+      \strng{bibnamehash}{81ed4e913ecaad8700ab9db93556df6a}
+      \strng{authorbibnamehash}{81ed4e913ecaad8700ab9db93556df6a}
+      \strng{authornamehash}{7a9ba9910f8850c14ee39325b8525974}
+      \strng{authorfullhash}{81ed4e913ecaad8700ab9db93556df6a}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Applied Numerical Mathematics}
+      \field{number}{5-7}
+      \field{title}{On large time-stepping methods for the {Cahn--Hilliard} equation}
+      \field{volume}{57}
+      \field{year}{2007}
+      \field{pages}{616\bibrangedash 628}
+      \range{pages}{13}
+    \endentry
+    \entry{islaelachvili1996intermolecular}{book}{}
+      \name{author}{1}{}{%
+        {{hash=8ba0545b4ffaab5ef0fe44e40ee6865f}{%
+           family={Israelachvili},
+           familyi={I\bibinitperiod},
+           given={J\bibnamedelima N},
+           giveni={J\bibinitperiod\bibinitdelim N\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {朝倉出版}%
+      }
+      \strng{namehash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \strng{fullhash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \strng{bibnamehash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \strng{authorbibnamehash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \strng{authornamehash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \strng{authorfullhash}{8ba0545b4ffaab5ef0fe44e40ee6865f}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{{分子間力と表面力 第2版}}
+      \field{year}{1996}
+    \endentry
+    \entry{hamaker1937london}{article}{}
+      \name{author}{1}{}{%
+        {{hash=720f305050765407c1a1735f1bf1146a}{%
+           family={Hamaker},
+           familyi={H\bibinitperiod},
+           given={H\bibnamedelima C},
+           giveni={H\bibinitperiod\bibinitdelim C\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Elsevier}%
+      }
+      \strng{namehash}{720f305050765407c1a1735f1bf1146a}
+      \strng{fullhash}{720f305050765407c1a1735f1bf1146a}
+      \strng{bibnamehash}{720f305050765407c1a1735f1bf1146a}
+      \strng{authorbibnamehash}{720f305050765407c1a1735f1bf1146a}
+      \strng{authornamehash}{720f305050765407c1a1735f1bf1146a}
+      \strng{authorfullhash}{720f305050765407c1a1735f1bf1146a}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{physica}
+      \field{number}{10}
+      \field{title}{The London--van der Waals attraction between spherical particles}
+      \field{volume}{4}
+      \field{year}{1937}
+      \field{pages}{1058\bibrangedash 1072}
+      \range{pages}{15}
+    \endentry
+    \entry{shinkagaku2017octa}{book}{}
+      \name{author}{1}{}{%
+        {{hash=16a513e4a87db15c508e58c1d91d3a22}{%
+           family={新化学技術推進協会編},
+           familyi={新\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {化学工業日報社}%
+      }
+      \strng{namehash}{16a513e4a87db15c508e58c1d91d3a22}
+      \strng{fullhash}{16a513e4a87db15c508e58c1d91d3a22}
+      \strng{bibnamehash}{16a513e4a87db15c508e58c1d91d3a22}
+      \strng{authorbibnamehash}{16a513e4a87db15c508e58c1d91d3a22}
+      \strng{authornamehash}{16a513e4a87db15c508e58c1d91d3a22}
+      \strng{authorfullhash}{16a513e4a87db15c508e58c1d91d3a22}
+      \field{sortinit}{2}
+      \field{sortinithash}{cbff857e587bcb4635511624d773949e}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{{増補版 高分子材料シミュレーション -- OCTA活用事例集--}}
+      \field{year}{2017}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

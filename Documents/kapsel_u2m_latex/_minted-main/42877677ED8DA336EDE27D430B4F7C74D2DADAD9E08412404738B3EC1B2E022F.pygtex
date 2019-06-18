@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{    \PYGZdl{}} \PYG{n+nb}{cd} /usr/local/OCTA8/GOURMET/src
+\PYG{g+gp}{    \PYGZdl{}} make clean
+\PYG{g+gp}{    \PYGZdl{}} ./configure
+\PYG{g+gp}{    \PYGZdl{}} make
+\PYG{g+gp}{    \PYGZdl{}} make install
+\end{Verbatim}
