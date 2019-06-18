@@ -200,7 +200,7 @@ ifeq ($(ENV), GCC)
      CC     = gcc
      CXX    = g++
      CCOPT  = -O3 
-     LINKS  = -lm -lplatform -lstdc++ -static
+     LINKS  = -lm -lplatform -lstdc++ #-static
      ifeq ($(LIS), ON)
 	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
 	LINKS  += -L/opt/lis/2.0.18/lib -llis
@@ -221,7 +221,7 @@ ifeq ($(ENV), GCC_OMP)
      CC     = gcc
      CXX    = g++
      CCOPT  = -O3 -fopenmp
-     LINKS  = -lm -lplatform -lstdc++ -static
+     LINKS  = -lm -lplatform -lstdc++ #-static
      ifeq ($(LIS), ON)
 	CCOPT  += -I/opt/lis/2.0.18/include -D_LIS_SOLVER
 	LINKS  += -L/opt/lis/2.0.18/lib -llis
