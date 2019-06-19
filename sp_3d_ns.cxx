@@ -789,16 +789,18 @@ int main(int argc, char *argv[]) {
 
 	static CTime jikan = { 0, 0.0, DT, DT*0.5, DT, DT*0.5 };
 
+    if (U2M) {
 #ifdef _LIS_SOLVER
-	Init_lis(argc, argv);
+		Init_lis(argc, argv);
 #else
-	if (SW_NSST == implicit_scheme) {
-		Init_ns();
-	}
-	if (SW_CHST == implicit_scheme) {
-		Init_ch();
-	}
+		if (SW_NSST == implicit_scheme) {
+			Init_ns();
+		}
+		if (SW_CHST == implicit_scheme) {
+			Init_ch();
+		}
 #endif
+	}
 
 	Particle *particles = new Particle[Particle_Number];
 	if (Particle_Number > 0) {
@@ -1052,7 +1054,7 @@ int main(int argc, char *argv[]) {
 	}
 	free(zeta);
 	delete[] particles;
-	if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) {
+	if (U2M) {
 #ifdef _LIS_SOLVER
 		Free_lis();
 		lis_finalize();
@@ -1061,6 +1063,6 @@ int main(int argc, char *argv[]) {
 #endif
 		Free_fdm();
 		free_1d_double(shear_rate_field);
-}
+	}
 	return EXIT_SUCCESS;
 }
