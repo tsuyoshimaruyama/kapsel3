@@ -2571,18 +2571,38 @@ void CH_solver_implicit_bdfab_OBL(double * psi, double * psi_o, double * phi, do
 }
 #ifdef _LIS_SOLVER
 void Mem_alloc_lis(void) {
+	int nnzval_ns, nnzval_ch;
+    int nval_ns = NX * NY * NZ * DIM;
+    int nval_ch = NX * NY * NZ;
 
-	int nnzval;
-	if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
-		nnzval = NX * NY * NZ * DIM * 7;
-	} else if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
-		nnzval = NX * NY * NZ * DIM * 12;
+    if (SW_EQ == Navier_Stokes_FDM) {
+        nnzval_ns = nval_ns * 7;
+    } else if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
+        if (VISCOSITY_CHANGE) {
+            nnzval_ns = nval_ns * 11;
+        } else {
+            nnzval_ns = nval_ns * 7;
+        }
+    } else if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM ||
+               SW_EQ == Shear_NS_LE_CH_FDM) {
+        if (VISCOSITY_CHANGE) {
+            nnzval_ns = nval_ns * 20;
+        } else {
+            nnzval_ns = nval_ns * 12;
+        }
+    }
+
+	if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
+		nnzval_ch = nval_ch * 25;
+	} else if (SW_EQ == Shear_NS_LE_CH_FDM) {
+		nnzval_ch = nval_ch * 45;
 	}
-	lis_matrix_malloc_csr(NX * NY * NZ * DIM, nnzval, &ptr_ns, &idx_ns_csr, &val_ns_csr);
+
+    lis_matrix_malloc_csr(NX * NY * NZ * DIM, nnzval_ns, &ptr_ns, &idx_ns_csr, &val_ns_csr);
 	lis_matrix_create(LIS_COMM_WORLD, &A_ns);
 	lis_matrix_set_size(A_ns, NX * NY * NZ * DIM, 0);
 
-	lis_matrix_malloc_csr(NX * NY * NZ, NX * NY * NZ * 25, &ptr_ch, &idx_ch_csr, &val_ch_csr);
+	lis_matrix_malloc_csr(NX * NY * NZ, nnzval_ch, &ptr_ch, &idx_ch_csr, &val_ch_csr);
 	lis_matrix_create(LIS_COMM_WORLD, &A_ch);
 	lis_matrix_set_size(A_ch, NX * NY * NZ, 0);
 }
@@ -2616,7 +2636,7 @@ void Init_lis(int argc, char *argv[]) {
 #else
 void Mem_alloc_matrix_solver(void) {
 	if (SW_NSST == implicit_scheme) {
-		double nval_ns = NX*NY*NZ*DIM;
+		int nval_ns = NX*NY*NZ*DIM;
 		int nnzval;
 		if (SW_EQ == Navier_Stokes_FDM) {
 			nnzval = nval_ns * 7;
@@ -2650,7 +2670,7 @@ void Mem_alloc_matrix_solver(void) {
 	}
 
 	if (SW_CHST == implicit_scheme) {
-		double nval_ch = NX*NY*NZ;
+		int nval_ch = NX*NY*NZ;
 		int nnzval;
 		if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
 			nnzval = nval_ch * 25;
