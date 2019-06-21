@@ -498,7 +498,7 @@ void Gourmet_file_io(const char *infile
 		ufin->get("resume.Calculation", str);
 		if (str == "NEW") {
 			RESUMED = 0;
-		} else if (str == "CONTINUE_ORIGINAL" || str == "CONTINUE_FDM" || str == "CONTINUE_FDM_PHASE_SEPARATION") {
+		} else if (str == "CONTINUE" || str == "CONTINUE_FDM" || str == "CONTINUE_FDM_PHASE_SEPARATION") {
 			RESUMED = 1;
 		} else {
 			fprintf(stderr, "invalid Calculation\n");

@@ -467,8 +467,8 @@ class CTime:{
 
 \begin{global_def}
 resume:{
-    Calculation: select {'NEW', 'CONTINUE_ORIGINAL', 'CONTINUE_FDM', 'CONTINUE_FDM_PHASE_SEPARATION'} "flg in order to specify resumed simulation or not"
-    CONTINUE_ORIGINAL:{
+    Calculation: select {'NEW', 'CONTINUE', 'CONTINUE_FDM', 'CONTINUE_FDM_PHASE_SEPARATION'} "flg in order to specify resumed simulation or not"
+    CONTINUE:{
       Saved_Data:{
          jikan: CTime
          Particles[] : sParticle

@@ -12,7 +12,7 @@ void Save_Restart_udf(double **zeta,
                       const Particle *p,
                       const CTime &time,
                       double **conc_k){
-  ufres->put("resume.Calculation", "CONTINUE_ORIGINAL");
+  ufres->put("resume.Calculation", "CONTINUE");
   {//fluid data
     int im;
     for(int i=0; i<NX; i++){
@@ -21,7 +21,7 @@ void Save_Restart_udf(double **zeta,
           im = (i*NY*NZ_) + (j*NZ_) + k;
           char str[256];
           {
-            sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
+            sprintf(str, "resume.CONTINUE.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
             Location target(str);
             ufres->put(target.sub("zeta0"),zeta[0][im]);
             ufres->put(target.sub("zeta1"),zeta[1][im]);
@@ -29,7 +29,7 @@ void Save_Restart_udf(double **zeta,
 
           if(Electrolyte){
             for(int n=0;n<N_spec;n++){
-              sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
+              sprintf(str, "resume.CONTINUE.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
               Location target(str);
               ufres->put(target.sub("ck"),conc_k[n][im]);
             }
@@ -41,7 +41,7 @@ void Save_Restart_udf(double **zeta,
   }
   {//uk_dc
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.uk_dc");
+    sprintf(str,"resume.CONTINUE.Saved_Data.uk_dc");
     Location target(str);
     ufres->put(target.sub("x"), uk_dc[0]);
     ufres->put(target.sub("y"), uk_dc[1]);
@@ -63,7 +63,7 @@ void Save_Restart_udf(double **zeta,
   
   {//time
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.jikan");
+    sprintf(str,"resume.CONTINUE.Saved_Data.jikan");
     Location target(str);
     ufres->put(target.sub("ts"),time.ts);
     ufres->put(target.sub("time"),time.time);
@@ -71,7 +71,7 @@ void Save_Restart_udf(double **zeta,
 
   {//strain
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.oblique");
+    sprintf(str,"resume.CONTINUE.Saved_Data.oblique");
     Location target(str);
     ufres->put(target.sub("degree_oblique"),degree_oblique);
   }
@@ -333,7 +333,7 @@ void Save_Rigid_Particle_udf(){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_body[%d]", j);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_body[%d]", j);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_body[%d]", j);
 	  }
       
       Location target(str);
@@ -349,7 +349,7 @@ void Save_Rigid_Particle_udf(){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_masses[%d]", rigidID);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_masses[%d]", rigidID);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
 	  }
       
       Location target(str);
@@ -363,7 +363,7 @@ void Save_Rigid_Particle_udf(){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_moments_body[%d]", rigidID);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_moments_body[%d]", rigidID);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
 	  }
       
       Location target(str);
@@ -384,7 +384,7 @@ void Save_Particle_udf(const Particle *p, const int &n_out_particles){
 	} else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.Particles[%d]", j);
 	} else {
-		sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Particles[%d]", j);
+		sprintf(str, "resume.CONTINUE.Saved_Data.Particles[%d]", j);
 	}
     Location target(str);
 
@@ -517,14 +517,14 @@ void Force_restore_parameters(double **zeta
           im = (i*NY*NZ_) + (j*NZ_) + k;
           char str[256];
           {
-            sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
+            sprintf(str,"resume.CONTINUE.Saved_Data.Zeta[%d][%d][%d]",i,j,k);
             Location target(str);
             ufin->get(target.sub("zeta0"),zeta[0][im]);
             ufin->get(target.sub("zeta1"),zeta[1][im]);
           }
           if(Electrolyte ){
             for(int n=0;n<N_spec;n++){ // Two_fluid では N_spec =1
-              sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
+              sprintf(str,"resume.CONTINUE.Saved_Data.Concentration[%d][%d][%d][%d]",n,i,j,k);
               Location target(str);
               ufin->get(target.sub("ck"),conc_k[n][im]);
             }
@@ -537,7 +537,7 @@ void Force_restore_parameters(double **zeta
   {//uk_dc
     
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.uk_dc");
+    sprintf(str,"resume.CONTINUE.Saved_Data.uk_dc");
     Location target(str);
     
     ufin->get(target.sub("x"),uk_dc[0]);
@@ -558,14 +558,14 @@ void Force_restore_parameters(double **zeta
 
   {
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.jikan");
+    sprintf(str,"resume.CONTINUE.Saved_Data.jikan");
     Location target(str);
     ufin->get(target.sub("ts"),time.ts);
     ufin->get(target.sub("time"),time.time);
   }   
   {
     char str[256];
-    sprintf(str,"resume.CONTINUE_ORIGINAL.Saved_Data.oblique");
+    sprintf(str,"resume.CONTINUE.Saved_Data.oblique");
     Location target(str);
     ufin->get(target.sub("degree_oblique"),degree_oblique);
   }
@@ -774,7 +774,7 @@ void Read_Particle_udf(Particle *p, const int &n_in_particles){
 	} else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		sprintf(str, "resume.CONTINUE_FDM.Saved_Data.Particles[%d]", j);
 	} else {
-		sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.Particles[%d]", j);
+		sprintf(str, "resume.CONTINUE.Saved_Data.Particles[%d]", j);
 	}
     
     Location target(str);
@@ -945,7 +945,7 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_body[%d]", j);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_body[%d]", j);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_body[%d]", j);
 	  }
       
       Location target(str);
@@ -961,7 +961,7 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_masses[%d]", rigidID);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_masses[%d]", rigidID);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_masses[%d]", rigidID);
 	  }
       
       Location target(str);
@@ -976,7 +976,7 @@ void Read_Rigid_Particle_udf(Particle* rigid_p){
 	  } else if (SW_EQ == Navier_Stokes_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM) {
 		  sprintf(str, "resume.CONTINUE_FDM.Saved_Data.GR_moments_body[%d]", rigidID);
 	  } else {
-		  sprintf(str, "resume.CONTINUE_ORIGINAL.Saved_Data.GR_moments_body[%d]", rigidID);
+		  sprintf(str, "resume.CONTINUE.Saved_Data.GR_moments_body[%d]", rigidID);
 	  }
 
       Location target(str);
