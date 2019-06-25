@@ -1,6 +1,6 @@
 showRigidCOM=0
 type=$constitutive_eq.type
-print type
+print (type)
 if type == "Navier_Stokes" :
 	dx=$constitutive_eq.Navier_Stokes.DX
 elif type == "Shear_Navier_Stokes" :
@@ -14,16 +14,16 @@ elif type == "Navier_Stokes_FDM" :
 elif type == "Navier_Stokes_Cahn_Hilliard_FDM" :
 	dx=$constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.DX
 	potential = $constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.Potential.type
-	if potential == "Ginzburg_Landau":
-		cval = $constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.Potential.Ginzburg_Landau.composition_ratio
+	if potential == "Landau":
+		cval = $constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.Potential.Landau.composition_ratio
 	elif potential == "Flory_Huggins":
 		cval = $constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.Potential.Flory_Huggins.composition_ratio
 elif type == "Shear_Navier_Stokes_Lees_Edwards_FDM" :
 	dx=$constitutive_eq.Shear_Navier_Stokes_Lees_Edwards_FDM.DX
 elif type == "Shear_NS_LE_CH_FDM" :
 	dx=$constitutive_eq.Shear_NS_LE_CH_FDM.DX
-	if potential == "Ginzburg_Landau":
-		cval = $constitutive_eq.Shear_NS_LE_CH_FDM.Potential.Ginzburg_Landau.composition_ratio
+	if potential == "Landau":
+		cval = $constitutive_eq.Shear_NS_LE_CH_FDM.Potential.Landau.composition_ratio
 	elif potential == "Flory_Huggins":
 		cval = $constitutive_eq.Shear_NS_LE_CH_FDM.Potential.Flory_Huggins.composition_ratio
 NX=2**$mesh.NPX
@@ -32,7 +32,7 @@ NZ=2**$mesh.NPZ
 LX=dx*NX
 LY=dx*NY
 LZ=dx*NZ
-print LX,LY,LZ
+print (LX,LY,LZ)
 objType=$object_type.type
 if objType=="spherical_particle":
 	Ns=getArray($object_type.spherical_particle.Particle_spec[])
@@ -43,7 +43,7 @@ elif objType == "rigid":
 size_Ns=len(Ns)
 RAD=($A*dx)*1.
 for i in range(size_Ns):
-	print Ns[i][0],
+	print (Ns[i][0])
 spat=[
 	[1.0, 1.0, 1.0, 1.0, RAD],
 	[1.0, 0.0, 0.0, 1.0, RAD],
