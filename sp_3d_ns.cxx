@@ -960,10 +960,7 @@ int main(int argc, char *argv[]) {
 			}
 
 		}
-		if (SW_EQ == Navier_Stokes_FDM ||
-			SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM ||
-			SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM ||
-			SW_EQ == Shear_NS_LE_CH_FDM) {
+		if (U2M) {
 			Time_evolution_fdm(u, Pressure, f_particle, particles, jikan);
 		} else {
 			Time_evolution(zeta, uk_dc, f_particle, particles, jikan);
