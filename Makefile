@@ -83,7 +83,7 @@ ifeq ($(ENV), CYGWIN)
      ARCH   = cygwin
      CC     = gcc 
      CXX    = g++ 
-     CCOPT  = -O3 -fno-inline
+     CCOPT  = -U__STRICT_ANSI__ -O3 -fno-inline
      LINKS  = -lm -lplatform 
      ifeq ($(FFT), FFTW)
 	CCOPT += -D_FFT_FFTW
@@ -97,7 +97,7 @@ ifeq ($(ENV), CYGWIN_OMP)
      ARCH   = cygwin
      CC     = gcc 
      CXX    = g++ 
-     CCOPT  = -O3 -fno-inline -fopenmp
+     CCOPT  = -U__STRICT_ANSI__ -O3 -fno-inline -fopenmp
      LINKS  = -lm -lplatform 
      ifeq ($(FFT), FFTW)
 	CCOPT += -D_FFT_FFTW
