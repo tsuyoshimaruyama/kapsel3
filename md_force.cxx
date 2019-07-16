@@ -6,7 +6,7 @@
   \version 1.1
  */
 
-#include "md_force.h"
+#include "md_force.h"                                                                                                  
 
 double *Hydro_force;
 double *Hydro_force_new;
@@ -693,3 +693,51 @@ void Calc_f_hydro_correct_precision_OBL(Particle *p, double const* phi_sum, doub
 		}
 	}//Particle_Number
 }
+
+
+// 20190628
+// S.Imamura
+// compute torque to fix one axis of body frame on the plane (which has normal unit vector \vec{n})
+void Calc_harmonic_torque_quincke(Particle *p)
+{
+	double e_omega_space[DIM]; // basis vector of the body frame written by space frame
+	double R_space2body[DIM][DIM]; // Rotation matrix:space to body
+	double harmonic_torque[DIM];
+	double n[DIM] = { 0.0, 0.0, 1.0 }; // the unit normal vector perpendicullar to XY plane (parallel to external E for quincke roller)
+	double e_omega[DIM] = {1.0, 0.0, 0.0}; // basis vector of body frame paralled constant angular velocity vector
+	double K = 2.0 * M_PI * 5.0; // amplitude of potential which is decided from stokes resistance for rotating
+	double n_dot_e;
+
+	for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+        
+		// get Rotation matrix
+		rqtn_rm(R_space2body, p[Rigid_Particle_Cumul[rigidID]].q);
+        
+		// initilaze e_omega_space
+		for (int d = 0; d < DIM; d++) {
+			e_omega_space[d] = 0.0;
+		}
+
+		// get e_space_fix from basis vector of body frame
+		for (int d1 = 0; d1 < DIM; d1++) {
+			for (int d2 = 0; d2 < DIM; d2++) {
+				e_omega_space[d1] += R_space2body[d1][d2] * e_omega[d2];
+			}
+		}
+
+		n_dot_e = 0.0;
+		for (int d = 0; d < DIM; d++) {
+			n_dot_e += n[d] * e_omega_space[d];
+		}
+
+		harmonic_torque[0] = K * n_dot_e * ( n[1] * e_omega_space[2] - n[2] * e_omega_space[1] );
+		harmonic_torque[1] = K * n_dot_e * ( n[2] * e_omega_space[0] - n[0] * e_omega_space[2] );
+		harmonic_torque[2] = K * n_dot_e * ( n[0] * e_omega_space[1] - n[1] * e_omega_space[0] );
+
+		//fprintf(stderr, "#### harmonic_torque = (%2.6f, %2.6f, %2.6f)\n", harmonic_torque[0], harmonic_torque[1], harmonic_torque[2]);
+
+		for (int d = 0; d < DIM; d++) {
+			torqueGrs[rigidID][d] += harmonic_torque[d];
+		}
+    }
+}

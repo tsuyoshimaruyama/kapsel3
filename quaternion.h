@@ -635,4 +635,27 @@ inline void rm_rqtn(quaternion &q, const double R[DIM*DIM]){
   qtn_init(q, qq);
 }
 
+// 20190619
+// S.Imamura
+// Quincke roller simulation
+// get quaternion q(cos(x/2); 0, 0, sin(x/2))
+// x : [0, 2PI]
+inline void get_quaternion_xy_random_Quincke(quaternion &q)
+{
+    double x;
+    
+    x = 0.0;
+    //x = M_PI / 2.0;
+    //x = M_PI / 4.0;
+
+    //x = RAx(PI2);
+
+    //fprintf(stderr, "$$$rand_angular: %f\n", x);
+
+    q.s = cos(x/2.0);
+    q.v[0] = 0.0;
+    q.v[1] = 0.0;
+    q.v[2] = sin(x/2.0);
+}
+
 #endif

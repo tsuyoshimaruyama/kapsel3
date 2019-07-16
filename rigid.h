@@ -567,4 +567,39 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
     }
   }
 }
+
+
+// 20190619
+// S.Imamura
+// Quincke roller simulation
+//
+inline void init_Rigid_Coordinates_Quincke(Particle *p){
+#pragma omp parallel for
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+        quaternion dmy_q;
+        
+        fprintf(stderr, "#------->check xy random quincke\n");
+        get_quaternion_xy_random_Quincke(dmy_q);
+        //double psi = M_PI / 4.;
+        //dmy_q.s = cos(psi/2.);
+        //dmy_q.v[0] = 0.0;
+        //dmy_q.v[1] = sin(psi/2.);
+        //dmy_q.v[2] = 0.0;
+
+        for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+            qtn_init(p[n].q, dmy_q);
+            qtn_isnormal(p[n].q);
+        }
+        //Rigid_Moments_body gives inertia tensor in body-frame
+        //By construction it should be diagonal
+        rigid_body_matrix_rotation(Rigid_Moments_body[rigidID][0], Rigid_Moments[rigidID][0], dmy_q, SPACE2BODY);
+    }
+    
+    //GRvecs_body gives position of all beads in body-frame
+#pragma omp parallel for
+    for(int n = 0; n < Particle_Number; n++){
+        rigid_body_rotation(GRvecs_body[n], GRvecs[n], p[n].q, SPACE2BODY);
+    }
+}
 #endif
+

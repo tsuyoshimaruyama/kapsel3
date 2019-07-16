@@ -154,4 +154,10 @@ inline void rigid_chain_debug(Particle *p, const double &time,
             );
   }
 }
+
+// 20190628
+// S.Imamura
+//
+void Calc_harmonic_torque_quincke(Particle *p);
+
 #endif

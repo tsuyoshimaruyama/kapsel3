@@ -91,6 +91,8 @@ void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan);
 
 inline void Force(Particle *p){
     
+    //fprintf(stderr, "##### force : launched\n");
+
     if(LJ_truncate >= 0){
 	Calc_f_Lennard_Jones(p);
     }
@@ -100,6 +102,11 @@ inline void Force(Particle *p){
     }
     if(SW_PT == chain){
       Calc_anharmonic_force_chain(p, Distance0);
+    }
+
+    if(SW_PT == rigid) {
+      //fprintf(stderr, "##### Calc_harmonic_torque_quincke\n");
+      Calc_harmonic_torque_quincke(p);
     }
 }
 
