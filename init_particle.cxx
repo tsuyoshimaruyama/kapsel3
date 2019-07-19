@@ -459,7 +459,9 @@ void Init_Particle(Particle *p) {
 
 			Make_phi_rigid_inertia_OBL(phi_sum, p);
 		}
-		init_Rigid_Coordinates(p);
+		//fprintf(stderr, "#------->check init_rigid_coordinates_quincke\n");
+		init_Rigid_Coordinates_Quincke(p);
+		//fprintf(stderr, "## p.q = (%1.4f, %1.4f, %1.4f, %1.4f)\n", p[0].q.s, p[0].q.v[0], p[0].q.v[1], p[0].q.v[2]);
 		init_set_vGs(p);
 
 		double phi_vf = 0.0;
