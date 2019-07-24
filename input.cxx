@@ -2423,6 +2423,10 @@ void        Gourmet_file_io(const char *infile,
           exit_job(EXIT_FAILURE);
         }
       }
+      if (SW_WALL != NO_WALL && SW_EQ != Navier_Stokes) {
+        fprintf(stderr, "# Error: walls only enabled for Navier_Stokes simulations so far\n");
+        exit(-1);
+      }
     }
   }
 

@@ -65,7 +65,11 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
       }
     }
     Reset_phi(phi);
-    Reset_phi(phi_sum);
+    if (SW_WALL != NO_WALL) {
+      Copy_v1(phi_sum, phi_wall);
+    } else {
+      Reset_phi(phi_sum);
+    }
     Make_phi_particle_sum(phi, phi_sum, p);
 
     if (SW_EQ == Electrolyte) {
