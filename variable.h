@@ -77,9 +77,12 @@ typedef struct Particle {
 } Particle;
 
 typedef struct FlatWall {
-  int    axis;  // axis (0=x, 1=y, 2=z)
-  double lo;    // lowest surface
-  double hi;    // highest surface
+  int    axis;       // axis (0=x, 1=y, 2=z)
+  int    dh;         // wall thickness
+  double lo;         // lowest surface
+  double hi;         // highest surface
+  double lo_mirror;  //
+  double hi_mirror;  //
 } FlatWall;
 
 typedef struct Index_range {

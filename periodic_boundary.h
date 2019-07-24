@@ -6,6 +6,11 @@
   \brief Enforce pbc on position
   \param[in,out] x position
  */
+inline void PBC0(double &x, const double &l) {
+  x = fmod(x + l, l);
+  assert(x >= 0);
+  assert(x < l);
+}
 inline void PBC(double *x) {
   for (int d = 0; d < DIM; d++) {
     x[d] = fmod(x[d] + L_particle[d], L_particle[d]);
