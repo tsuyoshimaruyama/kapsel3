@@ -141,6 +141,13 @@ switch:{
  {
    "linear"
  }
+ {
+   "FLAT",
+   { // "Flat wall"
+      "Z",
+      4
+   }
+ }
 }
 output:{10,
 	100,

@@ -222,6 +222,13 @@ switch: {
    ns_solver:{
       OBL_INT: select {'linear', 'spline'} "interpolation scheme for Oblique/Rectangular transform"
    }
+   wall:{
+      type: select{"NONE", "FLAT"}
+      FLAT:{
+         axis: select{"X", "Y", "Z"}   "perpendicular axis to flat parallel walls"
+         DH: int             "wall thickness in number of grid points"
+      }
+   }
 }
 
 output: {

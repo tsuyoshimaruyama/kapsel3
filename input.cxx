@@ -51,6 +51,9 @@ const char *PT_name[] = {"spherical_particle", "chain", "rigid"};
 //////
 OBL_INT     SW_OBL_INT;
 const char *OBL_INT_name[] = {"linear", "spline"};
+//////
+WALL        SW_WALL;
+const char *WALL_name[] = {"NONE", "FLAT"};
 
 OUTFORMAT       SW_OUTFORMAT;
 EXTFORMAT       SW_EXTFORMAT;
@@ -181,6 +184,9 @@ double * janus_slip_vel;
 double * janus_slip_mode;
 double * janus_rotlet_C1;
 double * janus_rotlet_dipole_C2;
+
+//// Wall
+FlatWall wall;
 
 ////
 int       Rigid_Number;
@@ -2358,6 +2364,65 @@ void        Gourmet_file_io(const char *infile,
         }
       }
     }
+
+    {
+      Location target("switch.wall");
+      string   str;
+      SW_WALL = NO_WALL;
+
+      if (ufin->get(target.sub("type"), str)) {
+        ufout->put(target.sub("type"), str);
+        ufres->put(target.sub("type"), str);
+        if (str == WALL_name[NO_WALL]) {
+          SW_WALL = NO_WALL;
+        } else if (str == WALL_name[FLAT_WALL]) {
+          SW_WALL = FLAT_WALL;
+          target.down("FLAT");
+          {
+            {
+              string axis;
+              ufin->get(target.sub("axis"), axis);
+              ufout->put(target.sub("axis"), axis);
+              ufres->put(target.sub("axis"), axis);
+              if (axis == "X") {
+                wall.axis = 0;
+              } else if (axis == "Y") {
+                wall.axis = 1;
+              } else if (axis == "Z") {
+                wall.axis = 2;
+              } else {
+                fprintf(stderr, "Unspecified Flat Wall axis\n");
+                exit(-1);
+              }
+            }
+            {
+              int thickness;
+              ufin->get(target.sub("DH"), thickness);
+              ufout->put(target.sub("DH"), thickness);
+              ufres->put(target.sub("DH"), thickness);
+              assert(thickness >= 2 && thickness < Ns[wall.axis] - 2 * (A + A_XI));
+              double l = Ns[wall.axis] * DX;  // system size has yet to be determined, only grid dimensions are known
+              double dh     = static_cast<double>(thickness) * DX;
+              double height = l - dh;
+              wall.lo       = (l - height) / 2.0;
+              wall.hi       = (l + height) / 2.0;
+            }
+          }
+          const char axis[DIM] = {'X', 'Y', 'Z'};
+          fprintf(stderr, "#\n");
+          fprintf(stderr, "# Flat Wall Enabled \n");
+          fprintf(stderr, "# Axis         : %c\n", axis[wall.axis]);
+          fprintf(stderr, "# Lower Surface: %5.2f\n", wall.lo);
+          fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
+          fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
+          fprintf(stderr, "# Thickness    : %5.2f\n#", (Ns[wall.axis] * DX) - (wall.hi - wall.lo));
+          fprintf(stderr, "#\n");
+          target.up();
+        } else {
+          exit_job(EXIT_FAILURE);
+        }
+      }
+    }
   }
 
   {  // output;
@@ -2615,17 +2680,17 @@ void        Gourmet_file_io(const char *infile,
 
     // debug output
     /*
-for(int n=0; n<Particle_Number; n++){
-fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
-}
-for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
-}
-for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d (%d -> %d)\n",
+  for(int n=0; n<Particle_Number; n++){
+  fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
+  }
+  for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+  fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
+  }
+  for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+  fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d (%d -> %d)\n",
                                     rigidID, Rigid_Particle_Numbers[rigidID],
                                     Rigid_Particle_Cumul[rigidID], Rigid_Particle_Cumul[rigidID+1] - 1);
-}
+  }
     */
 
     // initialize velocityGs and omegaGs and

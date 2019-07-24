@@ -615,6 +615,7 @@ inline void Mem_alloc_var(double **zeta) {
 
   phi             = alloc_1d_double(NX * NY * NZ_);
   phi_sum         = alloc_1d_double(NX * NY * NZ_);
+  phi_wall        = alloc_1d_double(NX * NY * NZ_);
   rhop            = alloc_1d_double(NX * NY * NZ_);
   work_v1         = alloc_1d_double(NX * NY * NZ_);
   Hydro_force     = alloc_1d_double(NX * NY * NZ_);
@@ -794,6 +795,7 @@ int main(int argc, char *argv[]) {
       Init_Rigid(particles);
     }
   }
+  Init_Wall(phi_wall);
   Init_output(particles);
 
   Init_zeta_k(zeta, uk_dc);
