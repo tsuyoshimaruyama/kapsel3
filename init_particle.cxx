@@ -14,7 +14,7 @@ void Init_Wall(double *phi_wall) {
     char              dmy[128];
     static const char axis[] = {'x', 'y', 'z'};
     sprintf(dmy,
-            "phi_flatwall_%dx%dx%d_h%c%d_.dat",
+            "phi_flatwall_%dx%dx%d_h%c%d.dat",
             Ns[0],
             Ns[1],
             Ns[2],
