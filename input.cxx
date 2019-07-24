@@ -448,8 +448,9 @@ inline void Set_global_parameters(void) {
     double radius_dmy = dummy_pow * LJ_dia * .5;
     Ivolume           = 1. / (LX * LY * LZ);
     double dmy        = (double)Particle_Number * 4. / 3. * M_PI * Ivolume;
-    VF                = dmy * POW3(RADIUS);
-    VF_LJ             = dmy * POW3(radius_dmy);
+    if (SW_WALL == FLAT_WALL) dmy *= L[wall.axis] / (wall.hi - wall.lo);
+    VF    = dmy * POW3(RADIUS);
+    VF_LJ = dmy * POW3(radius_dmy);
   }
   //
 
