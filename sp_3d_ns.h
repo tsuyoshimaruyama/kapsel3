@@ -19,6 +19,7 @@
 #include <cstring>
 #include "aux_field.h"
 #include "f_particle.h"
+#include "fdm.h"
 #include "fluid_solver.h"
 #include "init_fluid.h"
 #include "init_particle.h"
@@ -33,8 +34,7 @@
 #include "particle_solver.h"
 #include "resume.h"
 #include "variable.h"
-
-#include "fdm.h"
+#include "wall.h"
 
 #ifdef _FFT_IMKL
 #include <mkl.h>

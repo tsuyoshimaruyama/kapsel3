@@ -7,7 +7,6 @@
  */
 
 #include "input.h"
-#include "periodic_boundary.h"
 /////////////////////
 /////////////////////
 int Fixed_particle = 0;
@@ -305,31 +304,29 @@ double alpha_o;
 double degree_oblique;
 
 //////
-inline void Set_wall_parameters(void) {
+inline void Set_wall_parameters(const double MaxRadius) {
   if (SW_WALL == FLAT_WALL) {
-    double l       = L[wall.axis];
-    double height  = l - wall.dh;
-    wall.lo        = (l - height) / 2.0;
-    wall.hi        = (l + height) / 2.0;
-    wall.lo_mirror = wall.lo - (RADIUS + HXI);
-    wall.hi_mirror = wall.hi + (RADIUS + HXI);
-    PBC0(wall.lo_mirror, l);
-    PBC0(wall.hi_mirror, l);
-  }
-  assert(wall.dh >= 2 * XI && wall.dh < L[wall.axis] - 2 * (RADIUS + HXI));
-  {
-    const char axis[DIM] = {'X', 'Y', 'Z'};
-    fprintf(stderr, "#\n");
-    fprintf(stderr, "# Flat Wall Enabled \n");
-    fprintf(stderr, "# Axis         : %c\n", axis[wall.axis]);
-    fprintf(stderr, "# Lower Surface: %5.2f\n", wall.lo);
-    fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
-    fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
-    fprintf(stderr, "# Thickness    : %5.2f\n", (L[wall.axis] - (wall.hi - wall.lo)));
-    fprintf(stderr, "# Mirror Particles: %5.2f %5.2f\n", wall.lo_mirror, wall.hi_mirror);
-    fprintf(stderr, "#\n");
+    // wall axis and wall thickness (dh) should have been initialized beforehand
+    double l      = L[wall.axis];
+    double height = l - wall.dh;
+    wall.volume   = (L[0] * L[1] * L[2]) * (height / l);
+    wall.lo       = (l - height) / 2.0;
+    wall.hi       = (l + height) / 2.0;
+    assert(wall.dh > XI && wall.dh < l - 2 * MaxRadius);
+    {
+      const char axis[DIM] = {'X', 'Y', 'Z'};
+      fprintf(stderr, "#\n");
+      fprintf(stderr, "# Flat Wall Enabled \n");
+      fprintf(stderr, "# Axis         : %c\n", axis[wall.axis]);
+      fprintf(stderr, "# Lower Surface: %5.2f\n", wall.lo);
+      fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
+      fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
+      fprintf(stderr, "# Thickness    : %5.2f\n", (l - (wall.hi - wall.lo)));
+      fprintf(stderr, "#\n");
+    }
   }
 }
+//////
 inline void Set_global_parameters(void) {
   Particle_Number = 0;
   for (int i = 0; i < Component_Number; i++) {
@@ -369,6 +366,8 @@ inline void Set_global_parameters(void) {
       HL_particle[d] = L[d] * .5;
     }
   }
+  Set_wall_parameters(RADIUS + HXI);
+
   WAVE_X = PI2 / LX;
   WAVE_Y = PI2 / LY;
   WAVE_Z = PI2 / LZ;
@@ -472,8 +471,9 @@ inline void Set_global_parameters(void) {
   {
     double radius_dmy = dummy_pow * LJ_dia * .5;
     Ivolume           = 1. / (LX * LY * LZ);
-    double dmy        = (double)Particle_Number * 4. / 3. * M_PI * Ivolume;
-    if (SW_WALL == FLAT_WALL) dmy *= L[wall.axis] / (L[wall.axis] - wall.dh);
+    if (SW_WALL == FLAT_WALL) Ivolume = 1.0 / wall.volume;
+    double dmy = (double)Particle_Number * 4. / 3. * M_PI * Ivolume;
+
     VF    = dmy * POW3(RADIUS);
     VF_LJ = dmy * POW3(radius_dmy);
   }
@@ -501,7 +501,6 @@ inline void Set_global_parameters(void) {
       exit_job(EXIT_FAILURE);
     }
   }
-  Set_wall_parameters();
 }
 
 UDFManager *ufin;

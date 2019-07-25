@@ -19,7 +19,6 @@
 #include "rigid.h"
 #include "variable.h"
 
-void Init_Wall(double *phi);
 void Init_Particle(Particle *p);
 void Init_Chain(Particle *p);
 void Init_Rigid(Particle *p);
