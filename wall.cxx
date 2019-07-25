@@ -1,7 +1,7 @@
 #include "wall.h"
 
 void Init_Wall(double* phi_wall) {
-  {  // print wall params
+  if (SW_WALL == FLAT_WALL) {  // print wall params
     char              dmy[128];
     static const char axis[] = {'x', 'y', 'z'};
     sprintf(dmy,
@@ -42,6 +42,23 @@ void Init_Wall(double* phi_wall) {
           phi_wall[im] = (r < hl ? Phi(r, wall.lo) : 1.0 - Phi(r, wall.hi));
         }
       }
+    }
+  }
+}
+void Add_f_wall(Particle* p) {
+  double cutoff = wall.A_R_cutoff * LJ_dia;
+  if (SW_WALL == FLAT_WALL) {
+    double lh = wall.hi - wall.lo + LJ_dia;  // effective wall height
+#pragma omp parallel for
+    for (int n = 0; n < Particle_Number; n++) {
+      double f_h = 0.0;
+      double h   = p[n].x[wall.axis] - wall.lo + LJ_dia * 0.5;  // distance to lower mirror particle
+      if (h <= cutoff) f_h += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+
+      h = lh - h;  // distance to upper mirror particle
+      if (h <= cutoff) f_h -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+
+      p[n].fr[wall.axis] += f_h;
     }
   }
 }

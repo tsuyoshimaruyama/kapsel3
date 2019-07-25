@@ -17,6 +17,7 @@
 #include "rigid.h"
 #include "rigid_body.h"
 #include "variable.h"
+#include "wall.h"
 
 enum ITER { start_iter, new_iter, reset_iter, end_iter };
 
@@ -98,6 +99,9 @@ inline void Force(Particle *p) {
   }
   if (SW_PT == chain) {
     Calc_anharmonic_force_chain(p, Distance0);
+  }
+  if (SW_WALL != NO_WALL) {
+    Add_f_wall(p);
   }
 }
 

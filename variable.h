@@ -82,9 +82,10 @@ typedef struct FlatWall {
   int dh;    // wall thickness
 
   // derived parameters
-  double lo;      // lowest surface
-  double hi;      // highest surface
-  double volume;  // free volume
+  double lo;          // lowest surface
+  double hi;          // highest surface
+  double volume;      // free volume
+  double A_R_cutoff;  // cutoff distance from surface (normalized by particle diameter)
 } FlatWall;
 
 typedef struct Index_range {

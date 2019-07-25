@@ -313,6 +313,21 @@ inline void Set_wall_parameters(const double MaxRadius) {
     wall.lo       = (l - height) / 2.0;
     wall.hi       = (l + height) / 2.0;
     assert(wall.dh > XI && wall.dh < l - 2 * MaxRadius);
+
+    double cutoff = 0.0;
+    if (LJ_powers == 0) {
+      cutoff = pow(2., 1. / 6.);
+    } else if (LJ_powers == 1) {
+      cutoff = pow(2., 1. / 12.);
+    } else if (LJ_powers == 2) {
+      cutoff = pow(2., 1. / 18.);
+    } else if (LJ_powers == 3) {
+      cutoff = 1.0;
+    } else {
+      fprintf(stderr, "Uknown LJ_powers for wall-particle interactions\n");
+      exit(-1);
+    }
+    wall.A_R_cutoff = cutoff;  // Cutoff distance for mirror wall particles
     {
       const char axis[DIM] = {'X', 'Y', 'Z'};
       fprintf(stderr, "#\n");
@@ -322,6 +337,7 @@ inline void Set_wall_parameters(const double MaxRadius) {
       fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
       fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
       fprintf(stderr, "# Thickness    : %5.2f\n", (l - (wall.hi - wall.lo)));
+      fprintf(stderr, "# Cutoff       : %5.2f %5.2f\n", wall.A_R_cutoff * LJ_dia, wall.A_R_cutoff);
       fprintf(stderr, "#\n");
     }
   }
