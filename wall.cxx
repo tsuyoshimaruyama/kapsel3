@@ -13,7 +13,7 @@ void Init_Wall(double* phi_wall) {
             static_cast<int>((wall.hi - wall.lo) / DX));
 
     FILE*  fwall = filecheckopen(dmy, "w");
-    double dr    = DX / 3.0;
+    double dr    = DX;
     double l     = L[wall.axis];
     double hl    = l / 2.0;
     double r     = 0.0;
@@ -47,17 +47,17 @@ void Init_Wall(double* phi_wall) {
 }
 void Add_f_wall(Particle* p) {
   double cutoff = wall.A_R_cutoff * LJ_dia;
+  double offset = 0.5 * LJ_dia;
   if (SW_WALL == FLAT_WALL) {
-    double lh = wall.hi - wall.lo + LJ_dia;  // effective wall height
 #pragma omp parallel for
     for (int n = 0; n < Particle_Number; n++) {
+      double x   = p[n].x[wall.axis];
       double f_h = 0.0;
-      double h   = p[n].x[wall.axis] - wall.lo + LJ_dia * 0.5;  // distance to lower mirror particle
+      double h   = x - wall.lo + offset;  // distance to lower mirror particle
       if (h <= cutoff) f_h += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
 
-      h = lh - h;  // distance to upper mirror particle
+      h = wall.hi - x + offset;
       if (h <= cutoff) f_h -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
-
       p[n].fr[wall.axis] += f_h;
     }
   }
