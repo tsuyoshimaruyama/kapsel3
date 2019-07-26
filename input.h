@@ -31,14 +31,14 @@ enum Particle_IC { None, uniform_random, random_walk, FCC, BCC, user_specify };
 enum Particle_IO { random_dir, space_dir, user_dir };
 enum SW_time { AUTO, MANUAL };
 enum EQ {
-  Navier_Stokes,
-  Shear_Navier_Stokes,
-  Shear_Navier_Stokes_Lees_Edwards,
-  Electrolyte,
-  Navier_Stokes_FDM,
-  Navier_Stokes_Cahn_Hilliard_FDM,
-  Shear_Navier_Stokes_Lees_Edwards_FDM,
-  Shear_NS_LE_CH_FDM
+    Navier_Stokes,
+    Shear_Navier_Stokes,
+    Shear_Navier_Stokes_Lees_Edwards,
+    Electrolyte,
+    Navier_Stokes_FDM,
+    Navier_Stokes_Cahn_Hilliard_FDM,
+    Shear_Navier_Stokes_Lees_Edwards_FDM,
+    Shear_NS_LE_CH_FDM
 };
 enum ST { explicit_scheme, implicit_scheme };
 enum PO { Landau, Flory_Huggins };
@@ -76,22 +76,22 @@ extern double      ETA_A;
 extern double      ETA_B;
 
 struct gl_param {
-  double a;
-  double b;
+    double a;
+    double b;
 };
 struct fh_param {
-  double na;
-  double nb;
-  double chi;
+    double na;
+    double nb;
+    double chi;
 };
 struct ps_param {
-  double ratio;
-  double init_fluct;
-  double d;
-  double w;
-  double alpha;
-  double kappa;
-  double neutral;
+    double ratio;
+    double init_fluct;
+    double d;
+    double w;
+    double alpha;
+    double kappa;
+    double neutral;
 };
 extern gl_param gl;
 extern fh_param fh;

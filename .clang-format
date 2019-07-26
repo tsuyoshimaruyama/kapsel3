@@ -4,6 +4,7 @@ AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignOperands: true
+IndentWidth: 4
 ColumnLimit: 120
 BinPackArguments: false
 BinPackParameters: false
