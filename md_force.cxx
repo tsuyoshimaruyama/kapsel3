@@ -425,7 +425,7 @@ void Calc_f_hydro_correct_precision(Particle *p, double const *phi_sum, double c
       forceg[d] = torqueg[d] = 0.0;
     }
 
-    sw_in_cell = Particle_cell(xp, DX, x_int, residue);  // {1,0} $B$,JV$C$F$/$k(B
+    sw_in_cell = Particle_cell(xp, DX, x_int, residue);  // {1,0} が返ってくる
     sw_in_cell = 1;
     for (int mesh = 0; mesh < NP_domain; mesh++) {
       Relative_coord(Sekibun_cell[mesh], x_int, residue, sw_in_cell, nlattice, DX, r_mesh, r);

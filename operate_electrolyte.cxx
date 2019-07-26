@@ -564,7 +564,7 @@ inline void Set_Poisson_Boltzmann_ion_charge_density_salt(double **Concentration
   double Rho_inf_positive_ion = Rho_inf / (Valency[0] * (Valency[0] - Valency[1]));
   double Rho_inf_negative_ion = -Rho_inf / (Valency[1] * (Valency[0] - Valency[1]));
   //仕込みのイオン濃度(バルクでカウンターイオン, 共イオンは濃度Rho_inf_positive_ion,
-  //Rho_inf_negative_ionで平衡であると仮定)
+  // Rho_inf_negative_ionで平衡であると仮定)
   fprintf(stderr, "# bulk density of positive and negative ions  %g %g\n", Rho_inf_positive_ion, Rho_inf_negative_ion);
 
   int    STEP = 100000;

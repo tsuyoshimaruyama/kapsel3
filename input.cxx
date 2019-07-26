@@ -2379,12 +2379,12 @@ void        Gourmet_file_io(const char *infile,
       SW_EXTFORMAT = EXT_OUT_HDF5;
 
       // default field print flags
-      print_field.none   = false;
-      print_field.vel    = true;     // print velocity field
-      print_field.phi    = true;     // print phi field
-      print_field.charge = true;     // print rho field      (if electrolyte)
+      print_field.none     = false;
+      print_field.vel      = true;   // print velocity field
+      print_field.phi      = true;   // print phi field
+      print_field.charge   = true;   // print rho field      (if electrolyte)
       print_field.pressure = false;  // print pressure field (not implemented yet)
-      print_field.tau = true;        // print stress field
+      print_field.tau      = true;   // print stress field
 
       for (int d = 0; d < DIM; d++) {
         print_field_crop.start[d]  = 0;
