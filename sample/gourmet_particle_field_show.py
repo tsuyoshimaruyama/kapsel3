@@ -22,6 +22,7 @@ elif type == "Shear_Navier_Stokes_Lees_Edwards_FDM" :
 	dx=$constitutive_eq.Shear_Navier_Stokes_Lees_Edwards_FDM.DX
 elif type == "Shear_NS_LE_CH_FDM" :
 	dx=$constitutive_eq.Shear_NS_LE_CH_FDM.DX
+	potential = $constitutive_eq.Shear_NS_LE_CH_FDM.Potential.type
 	if potential == "Landau":
 		cval = $constitutive_eq.Shear_NS_LE_CH_FDM.Potential.Landau.composition_ratio
 	elif potential == "Flory_Huggins":
