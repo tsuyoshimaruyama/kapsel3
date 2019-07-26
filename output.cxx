@@ -168,7 +168,11 @@ void Output_field_data(double **zeta, double *uk_dc, Particle *p, const CTime &t
   }  // print pressure?
 
   if (print_field.phi) {
+    if (SW_WALL != NO_WALL) {
+      Copy_v1(phi, phi_wall);
+    } else {
     Reset_phi(phi);
+    }
     if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
       Make_phi_particle_OBL(phi, p);
     } else {

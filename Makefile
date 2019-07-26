@@ -317,6 +317,7 @@ OBJS  	= mt19937ar.o\
 	operate_surface.o\
 	matrix_diagonal.o\
 	periodic_spline.o\
+     wall.o\
 	sp_3d_ns.o
 
 ## options for HDF5 support

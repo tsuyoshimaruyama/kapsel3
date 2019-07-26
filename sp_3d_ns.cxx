@@ -65,7 +65,11 @@ void Time_evolution_hydro(double **zeta, double uk_dc[DIM], double **f, Particle
       }
     }
     Reset_phi(phi);
+    if (SW_WALL != NO_WALL) {
+      Copy_v1(phi_sum, phi_wall);
+    } else {
     Reset_phi(phi_sum);
+    }
     Make_phi_particle_sum(phi, phi_sum, p);
 
     if (SW_EQ == Electrolyte) {
@@ -615,6 +619,7 @@ inline void Mem_alloc_var(double **zeta) {
 
   phi             = alloc_1d_double(NX * NY * NZ_);
   phi_sum         = alloc_1d_double(NX * NY * NZ_);
+  phi_wall        = alloc_1d_double(NX * NY * NZ_);
   rhop            = alloc_1d_double(NX * NY * NZ_);
   work_v1         = alloc_1d_double(NX * NY * NZ_);
   Hydro_force     = alloc_1d_double(NX * NY * NZ_);
@@ -794,6 +799,7 @@ int main(int argc, char *argv[]) {
       Init_Rigid(particles);
     }
   }
+  Init_Wall(phi_wall);
   Init_output(particles);
 
   Init_zeta_k(zeta, uk_dc);

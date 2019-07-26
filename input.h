@@ -45,6 +45,7 @@ enum PO { Landau, Flory_Huggins };
 enum PT { spherical_particle, chain, rigid };
 enum JAX { x_axis, y_axis, z_axis, no_axis };
 enum JP { motor, slip, obstacle, no_propulsion };
+enum WALL { NO_WALL, FLAT_WALL };
 
 enum OBL_INT { linear_int, spline_int };
 enum OBL_TRANSFORM { oblique2cartesian, cartesian2oblique };
@@ -103,6 +104,11 @@ extern const char *PT_name[];
 //////
 extern OBL_INT     SW_OBL_INT;
 extern const char *OBL_INT_name[];
+
+//////
+extern WALL        SW_WALL;
+extern const char *WALL_name[];
+
 //////
 extern OUTFORMAT    SW_OUTFORMAT;
 extern EXTFORMAT    SW_EXTFORMAT;
@@ -164,6 +170,9 @@ extern double * janus_slip_vel;
 extern double * janus_slip_mode;
 extern double * janus_rotlet_C1;
 extern double * janus_rotlet_dipole_C2;
+
+//////
+extern FlatWall wall;
 
 extern char Out_dir[];
 extern char Out_name[];
