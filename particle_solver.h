@@ -90,51 +90,51 @@ void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan);
 
 inline void Force(Particle *p) {
-  if (LJ_truncate >= 0) {
-    Calc_f_Lennard_Jones(p);
-  }
+    if (LJ_truncate >= 0) {
+        Calc_f_Lennard_Jones(p);
+    }
 
-  if (G != 0.0) {
-    Add_f_gravity(p);
-  }
-  if (SW_PT == chain) {
-    Calc_anharmonic_force_chain(p, Distance0);
-  }
-  if (SW_WALL != NO_WALL) {
-    Add_f_wall(p);
-  }
+    if (G != 0.0) {
+        Add_f_gravity(p);
+    }
+    if (SW_PT == chain) {
+        Calc_anharmonic_force_chain(p, Distance0);
+    }
+    if (SW_WALL != NO_WALL) {
+        Add_f_wall(p);
+    }
 }
 
 inline void Force_OBL(Particle *p) {
-  dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
-  rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
+    dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
+    rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
 
-  if (LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
+    if (LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
 
-  if (G != 0.0) Add_f_gravity(p);
+    if (G != 0.0) Add_f_gravity(p);
 
-  if (SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0_OBL);
+    if (SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0_OBL);
 
-  dev_shear_stress_lj *= Ivolume;
-  dev_shear_stress_rot *= Ivolume;
+    dev_shear_stress_lj *= Ivolume;
+    dev_shear_stress_rot *= Ivolume;
 
-  rigid_dev_shear_stress_lj *= Ivolume;
-  rigid_dev_shear_stress_rot *= Ivolume;
+    rigid_dev_shear_stress_lj *= Ivolume;
+    rigid_dev_shear_stress_rot *= Ivolume;
 }
 
 inline void Pinning(Particle *p) {
-  if (SW_PT != rigid) {
+    if (SW_PT != rigid) {
 #pragma omp parallel for
-    for (int i = 0; i < N_PIN; i++) {
-      for (int d = 0; d < DIM; d++) {
-        p[Pinning_Numbers[i]].v[d] = 0.0;
-      }
+        for (int i = 0; i < N_PIN; i++) {
+            for (int d = 0; d < DIM; d++) {
+                p[Pinning_Numbers[i]].v[d] = 0.0;
+            }
+        }
+        for (int i = 0; i < N_PIN_ROT; i++) {
+            for (int d = 0; d < DIM; d++) {
+                p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
+            }
+        }
     }
-    for (int i = 0; i < N_PIN_ROT; i++) {
-      for (int d = 0; d < DIM; d++) {
-        p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
-      }
-    }
-  }
 }
 #endif

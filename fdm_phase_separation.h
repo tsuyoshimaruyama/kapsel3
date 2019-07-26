@@ -24,13 +24,13 @@ extern double **stress;
 extern double **stress_o;
 
 inline double potential_deriv(double x) {
-  double retval;
-  if (SW_POTENTIAL == Landau) {
-    retval = gl.a * (x * x * x) - gl.b * x;
-  } else if (SW_POTENTIAL == Flory_Huggins) {
-    retval = (1. / fh.na) - (1. / fh.nb) + (log(x) / fh.na) - (log(1. - x) / fh.nb) + fh.chi * (1. - 2. * x);
-  }
-  return retval;
+    double retval;
+    if (SW_POTENTIAL == Landau) {
+        retval = gl.a * (x * x * x) - gl.b * x;
+    } else if (SW_POTENTIAL == Flory_Huggins) {
+        retval = (1. / fh.na) - (1. / fh.nb) + (log(x) / fh.na) - (log(1. - x) / fh.nb) + fh.chi * (1. - 2. * x);
+    }
+    return retval;
 }
 
 void Calc_cp(double *phi, double *psi, double *cp);

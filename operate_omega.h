@@ -79,9 +79,9 @@ void Solenoidal_uk_OBL(double **u);
   \param[in,out] u vector field to transform
  */
 inline void U2u_k(double **u) {
-  A2a_k(u[0]);
-  A2a_k(u[1]);
-  A2a_k(u[2]);
+    A2a_k(u[0]);
+    A2a_k(u[1]);
+    A2a_k(u[2]);
 }
 
 /*!
@@ -90,9 +90,9 @@ inline void U2u_k(double **u) {
   \param[in,out] u Fourier transform of vector field to inverse transform
  */
 inline void U_k2u(double **u) {
-  A_k2a(u[0]);
-  A_k2a(u[1]);
-  A_k2a(u[2]);
+    A_k2a(u[0]);
+    A_k2a(u[1]);
+    A_k2a(u[2]);
 }
 
 /*!
@@ -103,12 +103,12 @@ inline void U_k2u(double **u) {
   \param[in,out] u vector field (real space) to transform
  */
 inline void Solenoidal_u(double **u) {
-  U2u_k(u);
-  for (int d = 0; d < DIM; d++) {
-    Truncate_two_third_rule(u[d]);
-  }
-  Solenoidal_uk(u);
-  U_k2u(u);
+    U2u_k(u);
+    for (int d = 0; d < DIM; d++) {
+        Truncate_two_third_rule(u[d]);
+    }
+    Solenoidal_uk(u);
+    U_k2u(u);
 }
 
 /*!
@@ -117,9 +117,9 @@ inline void Solenoidal_u(double **u) {
   \param[in] dim dimension of vectors
  */
 inline void Truncate_vector_two_third_rule(double **vector, const int &dim) {
-  for (int d = 0; d < dim; d++) {
-    Truncate_two_third_rule(vector[d]);
-  }
+    for (int d = 0; d < dim; d++) {
+        Truncate_two_third_rule(vector[d]);
+    }
 }
 
 /*!
@@ -132,8 +132,8 @@ inline void Truncate_vector_two_third_rule(double **vector, const int &dim) {
   \param[out] u velocity field (real space) corresponding to zeta
  */
 inline void Zeta_k2u(double **zeta, double uk_dc[DIM], double **u) {
-  Zeta_k2u_k(zeta, uk_dc, u);
-  U_k2u(u);
+    Zeta_k2u_k(zeta, uk_dc, u);
+    U_k2u(u);
 }
 
 /*!
@@ -151,10 +151,10 @@ inline void Zeta_k2u(double **zeta, double uk_dc[DIM], double **u) {
   \param[out] uk_cp contravariant y-velocity field (reciprocal space)
  */
 inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double *uk_cp) {
-  Zeta_k2u_k_OBL(zeta, uk_dc, u);  // contra
+    Zeta_k2u_k_OBL(zeta, uk_dc, u);  // contra
 
-  Copy_v1_k(uk_cp, u[1]);
-  U_k2u(u);
+    Copy_v1_k(uk_cp, u[1]);
+    U_k2u(u);
 }
 
 /*!
@@ -172,10 +172,10 @@ inline void Zeta_k2u_cpuky(double **zeta, double uk_dc[DIM], double **u, double 
   \param[out] uk_cp contravariant (x,y) velocity field (reciprocal space)
  */
 inline void Zeta_k2u_cpukxy(double **zeta, double uk_dc[DIM], double **u, double **uk_cp) {
-  Zeta_k2u_k_OBL(zeta, uk_dc, u);  // contra
+    Zeta_k2u_k_OBL(zeta, uk_dc, u);  // contra
 
-  Copy_v2_k(uk_cp, u);
-  U_k2u(u);
+    Copy_v2_k(uk_cp, u);
+    U_k2u(u);
 }
 
 /*!
@@ -189,11 +189,11 @@ inline void Zeta_k2u_cpukxy(double **zeta, double uk_dc[DIM], double **u, double
   \param[out] omega contravariant vorticity field (real space)
  */
 inline void Zeta_k2omega_OBL(double **zeta, double **omega) {
-  Zeta_k2omega_k_OBL(zeta, omega);
+    Zeta_k2omega_k_OBL(zeta, omega);
 
-  for (int d = 0; d < DIM; d++) {
-    A_k2a(omega[d]);
-  }
+    for (int d = 0; d < DIM; d++) {
+        A_k2a(omega[d]);
+    }
 }
 
 /*!
@@ -206,7 +206,7 @@ inline void Zeta_k2omega_OBL(double **zeta, double **omega) {
   \param[in] uk_dc zero wavenumber Fourier transform of velocity field u
  */
 inline void U2zeta_k(double **zeta, double uk_dc[DIM], double **u) {
-  U2u_k(u);
-  U_k2zeta_k(u, zeta, uk_dc);
+    U2u_k(u);
+    U_k2zeta_k(u, zeta, uk_dc);
 }
 #endif

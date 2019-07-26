@@ -128,12 +128,12 @@ inline void Count_solute_each(double *  n_solute,
                               ,
                               double *dmy_value  // working memory
 ) {
-  Reset_phi(phi);
-  Make_phi_particle(phi, p);
+    Reset_phi(phi);
+    Make_phi_particle(phi, p);
 
-  for (int n = 0; n < N_spec; n++) {
-    A_k2a_out(conc_k[n], dmy_value);
-    n_solute[n] = Count_single_solute(dmy_value, phi);
-  }
+    for (int n = 0; n < N_spec; n++) {
+        A_k2a_out(conc_k[n], dmy_value);
+        n_solute[n] = Count_single_solute(dmy_value, phi);
+    }
 }
 #endif

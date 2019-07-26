@@ -19,22 +19,22 @@
 #endif
 
 static const int MEMORY_ALIGNMENT = 128;
-#define alloc_error_check(p)                    \
-  {                                             \
-    if ((p) == NULL) {                          \
-      fprintf(stderr, "Allocation Failure!\n"); \
-      exit(1);                                  \
-    }                                           \
-  }
+#define alloc_error_check(p)                          \
+    {                                                 \
+        if ((p) == NULL) {                            \
+            fprintf(stderr, "Allocation Failure!\n"); \
+            exit(1);                                  \
+        }                                             \
+    }
 
 /*!
   \brief Allocate memory for 1d array
  */
 template <typename T, typename Q>
 T *alloc_1d(Q n1) {
-  T *p = (T *)_mm_malloc(n1 * sizeof(T), MEMORY_ALIGNMENT);
-  alloc_error_check(p);
-  return p;
+    T *p = (T *)_mm_malloc(n1 * sizeof(T), MEMORY_ALIGNMENT);
+    alloc_error_check(p);
+    return p;
 }
 
 /*!
@@ -42,10 +42,10 @@ T *alloc_1d(Q n1) {
 */
 template <typename T, typename Q>
 T *calloc_1d(Q n1, const int ALIGNMENT) {
-  T *p = (T *)_mm_malloc(n1 * sizeof(T), ALIGNMENT);
-  alloc_error_check(p);
-  for (Q j = Q(0); j < n1; j++) p[j] = T(0);
-  return p;
+    T *p = (T *)_mm_malloc(n1 * sizeof(T), ALIGNMENT);
+    alloc_error_check(p);
+    for (Q j = Q(0); j < n1; j++) p[j] = T(0);
+    return p;
 }
 
 /*!
@@ -53,7 +53,7 @@ T *calloc_1d(Q n1, const int ALIGNMENT) {
  */
 template <typename T>
 void free_1d(T *p) {
-  _mm_free(p);
+    _mm_free(p);
 }
 
 /*!
@@ -63,14 +63,14 @@ void free_1d(T *p) {
  */
 template <typename T, typename Q>
 void initview_2d(Q n1, Q n2, T *const p, T **const &pp) {
-  pp[0] = p;
-  for (Q j = Q(1); j < n1; j++) pp[j] = pp[j - 1] + n2;
+    pp[0] = p;
+    for (Q j = Q(1); j < n1; j++) pp[j] = pp[j - 1] + n2;
 }
 template <typename T, typename Q>
 T **allocview_2d(Q n1, Q n2) {
-  T **pp = (T **)alloc_1d<T *>(n1);
-  alloc_error_check(pp);
-  return pp;
+    T **pp = (T **)alloc_1d<T *>(n1);
+    alloc_error_check(pp);
+    return pp;
 }
 
 /*!
@@ -78,7 +78,7 @@ T **allocview_2d(Q n1, Q n2) {
  */
 template <typename T>
 void freeview_2d(T **pp) {
-  free_1d<T *>(pp);
+    free_1d<T *>(pp);
 }
 
 /*!
@@ -88,11 +88,11 @@ void freeview_2d(T **pp) {
  */
 template <typename T, typename Q>
 T **alloc_2d(Q n1, Q n2) {
-  T *p = (T *)alloc_1d<T>(n1 * n2);
-  alloc_error_check(p);
-  T **pp = allocview_2d<T>(n1, n2);
-  initview_2d<T>(n1, n2, p, pp);
-  return pp;
+    T *p = (T *)alloc_1d<T>(n1 * n2);
+    alloc_error_check(p);
+    T **pp = allocview_2d<T>(n1, n2);
+    initview_2d<T>(n1, n2, p, pp);
+    return pp;
 }
 
 /*!
@@ -102,12 +102,12 @@ T **alloc_2d(Q n1, Q n2) {
 */
 template <typename T, typename Q>
 T **calloc_2d(Q n1, Q n2) {
-  T *p = (T *)alloc_1d<T>(n1 * n2);
-  alloc_error_check(p);
-  T **pp = allocview_2d<T>(n1, n2);
-  initview_2d<T>(n1, n2, p, pp);
+    T *p = (T *)alloc_1d<T>(n1 * n2);
+    alloc_error_check(p);
+    T **pp = allocview_2d<T>(n1, n2);
+    initview_2d<T>(n1, n2, p, pp);
 
-  return pp;
+    return pp;
 }
 
 /*!
@@ -115,8 +115,8 @@ T **calloc_2d(Q n1, Q n2) {
  */
 template <typename T>
 void free_2d(T **pp) {
-  free_1d<T>(pp[0]);
-  freeview_2d<T>(pp);
+    free_1d<T>(pp[0]);
+    freeview_2d<T>(pp);
 }
 
 /*!
@@ -126,20 +126,20 @@ void free_2d(T **pp) {
  */
 template <typename T, typename Q>
 void initview_3d(Q n1, Q n2, Q n3, T *const p, T ***const &ppp) {
-  T **pp = ppp[0];
-  pp[0]  = p;
-  for (Q j = Q(1); j < n1 * n2; j++) pp[j] = pp[j - 1] + n3;
+    T **pp = ppp[0];
+    pp[0]  = p;
+    for (Q j = Q(1); j < n1 * n2; j++) pp[j] = pp[j - 1] + n3;
 }
 template <typename T, typename Q>
 T ***allocview_3d(Q n1, Q n2, Q n3) {
-  T ***ppp = (T ***)alloc_1d<T **>(n1);
-  alloc_error_check(ppp);
-  T **pp = (T **)alloc_1d<T *>(n1 * n2);
-  alloc_error_check(pp);
+    T ***ppp = (T ***)alloc_1d<T **>(n1);
+    alloc_error_check(ppp);
+    T **pp = (T **)alloc_1d<T *>(n1 * n2);
+    alloc_error_check(pp);
 
-  ppp[0] = pp;
-  for (Q j = Q(1); j < n1; j++) ppp[j] = ppp[j - 1] + n2;
-  return ppp;
+    ppp[0] = pp;
+    for (Q j = Q(1); j < n1; j++) ppp[j] = ppp[j - 1] + n2;
+    return ppp;
 }
 
 /*!
@@ -147,8 +147,8 @@ T ***allocview_3d(Q n1, Q n2, Q n3) {
  */
 template <typename T>
 void freeview_3d(T ***ppp) {
-  free_1d<T *>(ppp[0]);
-  free_1d<T **>(ppp);
+    free_1d<T *>(ppp[0]);
+    free_1d<T **>(ppp);
 }
 
 /*!
@@ -158,11 +158,11 @@ void freeview_3d(T ***ppp) {
  */
 template <typename T, typename Q>
 T ***alloc_3d(Q n1, Q n2, Q n3) {
-  T *p = (T *)alloc_1d<T>(n1 * n2 * n3);
-  alloc_error_check(p);
-  T ***ppp = allocview_3d<T>(n1, n2, n3);
-  initview_3d<T>(n1, n2, n3, p, ppp);
-  return ppp;
+    T *p = (T *)alloc_1d<T>(n1 * n2 * n3);
+    alloc_error_check(p);
+    T ***ppp = allocview_3d<T>(n1, n2, n3);
+    initview_3d<T>(n1, n2, n3, p, ppp);
+    return ppp;
 }
 
 /*!
@@ -170,8 +170,8 @@ T ***alloc_3d(Q n1, Q n2, Q n3) {
  */
 template <typename T>
 void free_3d(T ***ppp) {
-  free_1d<T>(ppp[0][0]);
-  freeview_3d<T>(ppp);
+    free_1d<T>(ppp[0][0]);
+    freeview_3d<T>(ppp);
 }
 
 int *  alloc_1d_int(int n1);

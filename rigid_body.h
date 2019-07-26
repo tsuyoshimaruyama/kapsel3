@@ -19,45 +19,45 @@ enum COORD_TRANS { BODY2SPACE, SPACE2BODY };
   \brief Compute random rotation matrix
  */
 inline void random_rotation(double QR[DIM][DIM]) {
-  quaternion dmy_q;
-  random_rqtn(dmy_q);
-  rqtn_rm(QR, dmy_q);
-  M_isValidRotation(QR);
+    quaternion dmy_q;
+    random_rqtn(dmy_q);
+    rqtn_rm(QR, dmy_q);
+    M_isValidRotation(QR);
 }
 
 /*!
   \brief Get Skew antisymmetric matrix for given vector
  */
 inline void skew(double ws[DIM][DIM], const double w[DIM]) {
-  assert(DIM == 3);
-  ws[0][0] = 0.0;
-  ws[0][1] = -w[2];
-  ws[0][2] = w[1];
+    assert(DIM == 3);
+    ws[0][0] = 0.0;
+    ws[0][1] = -w[2];
+    ws[0][2] = w[1];
 
-  ws[1][0] = w[2];
-  ws[1][1] = 0.0;
-  ws[1][2] = -w[0];
+    ws[1][0] = w[2];
+    ws[1][1] = 0.0;
+    ws[1][2] = -w[0];
 
-  ws[2][0] = -w[1];
-  ws[2][1] = w[0];
-  ws[2][2] = 0.0;
+    ws[2][0] = -w[1];
+    ws[2][1] = w[0];
+    ws[2][2] = 0.0;
 }
 /*!
   \brief Get Skew antysymmetric matrix (as 1d array) for given vector
  */
 inline void skew(double ws[DIM * DIM], const double w[DIM]) {
-  assert(DIM == 3);
-  ws[0] = 0.0;
-  ws[1] = -w[2];
-  ws[2] = w[1];
+    assert(DIM == 3);
+    ws[0] = 0.0;
+    ws[1] = -w[2];
+    ws[2] = w[1];
 
-  ws[3] = w[2];
-  ws[4] = 0.0;
-  ws[5] = -w[0];
+    ws[3] = w[2];
+    ws[4] = 0.0;
+    ws[5] = -w[0];
 
-  ws[6] = -w[1];
-  ws[7] = w[0];
-  ws[8] = 0.0;
+    ws[6] = -w[1];
+    ws[7] = w[0];
+    ws[8] = 0.0;
 }
 
 //////////////////////////////////////////////////
@@ -79,9 +79,9 @@ void rigid_body_rotation(double             rotated[DIM],
   current orientation QUATERNION (in place)
  */
 inline void rigid_body_rotation(double rotated[DIM], const quaternion &q, const COORD_TRANS &transform) {
-  double original[DIM];
-  v_copy(original, rotated);
-  rigid_body_rotation(rotated, original, q, transform);
+    double original[DIM];
+    v_copy(original, rotated);
+    rigid_body_rotation(rotated, original, q, transform);
 }
 
 /*!
@@ -101,11 +101,11 @@ inline void rigid_body_matrix_rotation(double             rotated[DIM][DIM],
                                        const double       original[DIM][DIM],
                                        const quaternion & q,
                                        const COORD_TRANS &transform) {
-  double rotated_c[DIM * DIM];
-  double original_c[DIM * DIM];
-  M_copy(original_c, original);
-  rigid_body_matrix_rotation(rotated_c, original_c, q, transform);
-  M_copy(rotated, rotated_c);
+    double rotated_c[DIM * DIM];
+    double original_c[DIM * DIM];
+    M_copy(original_c, original);
+    rigid_body_matrix_rotation(rotated_c, original_c, q, transform);
+    M_copy(rotated, rotated_c);
 }
 
 /*!
@@ -113,20 +113,20 @@ inline void rigid_body_matrix_rotation(double             rotated[DIM][DIM],
   space/body frames  given the current QUATERNION (in place)
  */
 inline void rigid_body_matrix_rotation(double rotated[DIM * DIM], const quaternion &q, const COORD_TRANS &transform) {
-  double original[DIM * DIM];
-  M_copy(original, rotated);
-  rigid_body_matrix_rotation(rotated, original, q, transform);
+    double original[DIM * DIM];
+    M_copy(original, rotated);
+    rigid_body_matrix_rotation(rotated, original, q, transform);
 }
 /*!
   \brief Transform second order tensor between body/space and
   space/body frames given the current QUATERNION (in place)
  */
 inline void rigid_body_matrix_rotation(double rotated[DIM][DIM], const quaternion &q, const COORD_TRANS &transform) {
-  double rotated_c[DIM * DIM];
-  double original_c[DIM * DIM];
-  M_copy(original_c, rotated);
-  rigid_body_matrix_rotation(rotated_c, original_c, q, transform);
-  M_copy(rotated, rotated_c);
+    double rotated_c[DIM * DIM];
+    double original_c[DIM * DIM];
+    M_copy(original_c, rotated);
+    rigid_body_matrix_rotation(rotated_c, original_c, q, transform);
+    M_copy(rotated, rotated_c);
 }
 
 /*!
@@ -139,16 +139,16 @@ inline void rigid_body_matrix5_rotation(double             rotated[DIM * DIM],
                                         const double       original[QDIM],
                                         const quaternion & q,
                                         const COORD_TRANS &transform) {
-  double original_c[DIM * DIM] = {original[0],
-                                  original[1],
-                                  original[2],
-                                  original[1],
-                                  original[3],
-                                  original[4],
-                                  original[2],
-                                  original[4],
-                                  -(original[0] + original[3])};
-  rigid_body_matrix_rotation(rotated, original_c, q, transform);
+    double original_c[DIM * DIM] = {original[0],
+                                    original[1],
+                                    original[2],
+                                    original[1],
+                                    original[3],
+                                    original[4],
+                                    original[2],
+                                    original[4],
+                                    -(original[0] + original[3])};
+    rigid_body_matrix_rotation(rotated, original_c, q, transform);
 }
 
 /*!
@@ -164,9 +164,9 @@ void rigid_body_rotation(double             rotated[DIM],
   current orientation MATRIX (in place)
  */
 inline void rigid_body_rotation(double rotated[DIM], const double QR[DIM][DIM], const COORD_TRANS &transform) {
-  double original[DIM];
-  v_copy(original, rotated);
-  rigid_body_rotation(rotated, original, QR, transform);
+    double original[DIM];
+    v_copy(original, rotated);
+    rigid_body_rotation(rotated, original, QR, transform);
 }
 
 void rigid_body_rotation(double             rotated[DIM],
@@ -175,9 +175,9 @@ void rigid_body_rotation(double             rotated[DIM],
                          const COORD_TRANS &transform);
 
 inline void rigid_body_rotation(double rotated[DIM], const double QR[DIM * DIM], const COORD_TRANS &transform) {
-  double original[DIM];
-  v_copy(original, rotated);
-  rigid_body_rotation(rotated, original, QR, transform);
+    double original[DIM];
+    v_copy(original, rotated);
+    rigid_body_rotation(rotated, original, QR, transform);
 }
 
 void rigid_body_matrix_rotation(double             rotated[DIM][DIM],
@@ -192,40 +192,40 @@ void rigid_body_matrix_rotation(double             rotated[DIM * DIM],
 inline void rigid_body_matrix_rotation(double             rotated[DIM][DIM],
                                        const double       QR[DIM][DIM],
                                        const COORD_TRANS &transform) {
-  double original[DIM][DIM];
-  M_copy(original, rotated);
-  rigid_body_matrix_rotation(rotated, original, QR, transform);
+    double original[DIM][DIM];
+    M_copy(original, rotated);
+    rigid_body_matrix_rotation(rotated, original, QR, transform);
 }
 inline void rigid_body_matrix_rotation(double             rotated[DIM * DIM],
                                        const double       QR[DIM * DIM],
                                        const COORD_TRANS &transform) {
-  double original[DIM * DIM];
-  M_copy(original, rotated);
-  rigid_body_matrix_rotation(rotated, original, QR, transform);
+    double original[DIM * DIM];
+    M_copy(original, rotated);
+    rigid_body_matrix_rotation(rotated, original, QR, transform);
 }
 inline void rigid_body_matrix5_rotation(double             rotated[DIM][DIM],
                                         const double       original[QDIM],
                                         const double       QR[DIM][DIM],
                                         const COORD_TRANS &transform) {
-  double original_c[DIM][DIM] = {{original[0], original[1], original[2]},
-                                 {original[1], original[3], original[4]},
-                                 {original[2], original[4], -(original[0] + original[3])}};
-  rigid_body_matrix_rotation(rotated, original_c, QR, transform);
+    double original_c[DIM][DIM] = {{original[0], original[1], original[2]},
+                                   {original[1], original[3], original[4]},
+                                   {original[2], original[4], -(original[0] + original[3])}};
+    rigid_body_matrix_rotation(rotated, original_c, QR, transform);
 }
 inline void rigid_body_matrix5_rotation(double             rotated[DIM * DIM],
                                         const double       original[QDIM],
                                         const double       QR[DIM * DIM],
                                         const COORD_TRANS &transform) {
-  double original_c[DIM * DIM] = {original[0],
-                                  original[1],
-                                  original[2],
-                                  original[1],
-                                  original[3],
-                                  original[4],
-                                  original[2],
-                                  original[4],
-                                  -(original[0] + original[3])};
-  rigid_body_matrix_rotation(rotated, original_c, QR, transform);
+    double original_c[DIM * DIM] = {original[0],
+                                    original[1],
+                                    original[2],
+                                    original[1],
+                                    original[3],
+                                    original[4],
+                                    original[2],
+                                    original[4],
+                                    -(original[0] + original[3])};
+    rigid_body_matrix_rotation(rotated, original_c, QR, transform);
 }
 
 //////////////////////////////////////////////////
@@ -246,9 +246,9 @@ void qdot(quaternion &dqdt, const quaternion &q, const double omega[DIM], const 
   \brief Compute time derivative of orientation quaternion (in place)
  */
 inline void qdot(quaternion &dqdt, const double omega[DIM], const COORD_SYSTEM &coord) {
-  quaternion q;
-  qtn_init(q, dqdt);
-  qdot(dqdt, q, omega, coord);
+    quaternion q;
+    qtn_init(q, dqdt);
+    qdot(dqdt, q, omega, coord);
 }
 
 /*!
@@ -263,9 +263,9 @@ void Qdot(double dQRdt[DIM][DIM], const double QR[DIM][DIM], const double omega[
   \brief Compute time derivative of orientation matrix (in place)
  */
 inline void Qdot(double dQRdt[DIM][DIM], const double omega[DIM], const COORD_SYSTEM &coord) {
-  double QR[DIM][DIM];
-  M_copy(QR, dQRdt);
-  Qdot(dQRdt, QR, omega, coord);
+    double QR[DIM][DIM];
+    M_copy(QR, dQRdt);
+    Qdot(dQRdt, QR, omega, coord);
 }
 
 /*!

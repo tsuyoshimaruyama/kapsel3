@@ -25,10 +25,16 @@ void Init_Rigid(Particle *p);
 void Show_parameter(Particle *p);
 
 inline void Show_particle(Particle *p) {
-  for (int n = 0; n < Particle_Number; n++) {
-    fprintf(
-        stderr, "%g %g %g %g %g %g\n", p[n].v[0], p[n].v[1], p[n].v[2], p[n].omega[0], p[n].omega[1], p[n].omega[2]);
-  }
-  fprintf(stderr, "\n\n");
+    for (int n = 0; n < Particle_Number; n++) {
+        fprintf(stderr,
+                "%g %g %g %g %g %g\n",
+                p[n].v[0],
+                p[n].v[1],
+                p[n].v[2],
+                p[n].omega[0],
+                p[n].omega[1],
+                p[n].omega[2]);
+    }
+    fprintf(stderr, "\n\n");
 }
 #endif

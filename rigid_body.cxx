@@ -11,185 +11,185 @@ void rigid_body_rotation(double             rotated[DIM],
                          const double       original[DIM],
                          const quaternion & q,
                          const COORD_TRANS &transform) {
-  if (transform == BODY2SPACE) {
-    qtn_qvq_prod(rotated, q, original);
-  } else if (transform == SPACE2BODY) {
-    quaternion qconj;
-    qtn_conj(qconj, q);
-    qtn_qvq_prod(rotated, qconj, original);
-  } else {
-    fprintf(stderr, "Error: unknown rigid body transformation\n");
-    exit_job(EXIT_FAILURE);
-  }
+    if (transform == BODY2SPACE) {
+        qtn_qvq_prod(rotated, q, original);
+    } else if (transform == SPACE2BODY) {
+        quaternion qconj;
+        qtn_conj(qconj, q);
+        qtn_qvq_prod(rotated, qconj, original);
+    } else {
+        fprintf(stderr, "Error: unknown rigid body transformation\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 
 void rigid_body_matrix_rotation(double             rotated[DIM * DIM],
                                 const double       original[DIM * DIM],
                                 const quaternion & q,
                                 const COORD_TRANS &transform) {
-  quaternion dmy_q;
-  if (transform == BODY2SPACE) {
-    qtn_init(dmy_q, q);
-  } else if (transform == SPACE2BODY) {
-    qtn_conj(dmy_q, q);
-  } else {
-    fprintf(stderr, "Error: unknown rigid body transformation\n");
-    exit_job(EXIT_FAILURE);
-  }
-  double A0[DIM] = {original[0], original[3], original[6]};
-  double A1[DIM] = {original[1], original[4], original[7]};
-  double A2[DIM] = {original[2], original[5], original[8]};
-  qtn_qvq_prod(A0, dmy_q);
-  qtn_qvq_prod(A1, dmy_q);
-  qtn_qvq_prod(A2, dmy_q);
+    quaternion dmy_q;
+    if (transform == BODY2SPACE) {
+        qtn_init(dmy_q, q);
+    } else if (transform == SPACE2BODY) {
+        qtn_conj(dmy_q, q);
+    } else {
+        fprintf(stderr, "Error: unknown rigid body transformation\n");
+        exit_job(EXIT_FAILURE);
+    }
+    double A0[DIM] = {original[0], original[3], original[6]};
+    double A1[DIM] = {original[1], original[4], original[7]};
+    double A2[DIM] = {original[2], original[5], original[8]};
+    qtn_qvq_prod(A0, dmy_q);
+    qtn_qvq_prod(A1, dmy_q);
+    qtn_qvq_prod(A2, dmy_q);
 
-  rotated[0] = A0[0];
-  rotated[1] = A1[0];
-  rotated[2] = A2[0];
-  rotated[3] = A0[1];
-  rotated[4] = A1[1];
-  rotated[5] = A2[1];
-  rotated[6] = A0[2];
-  rotated[7] = A1[2];
-  rotated[8] = A2[2];
+    rotated[0] = A0[0];
+    rotated[1] = A1[0];
+    rotated[2] = A2[0];
+    rotated[3] = A0[1];
+    rotated[4] = A1[1];
+    rotated[5] = A2[1];
+    rotated[6] = A0[2];
+    rotated[7] = A1[2];
+    rotated[8] = A2[2];
 
-  qtn_qvq_prod(&rotated[0], dmy_q);
-  qtn_qvq_prod(&rotated[3], dmy_q);
-  qtn_qvq_prod(&rotated[6], dmy_q);
+    qtn_qvq_prod(&rotated[0], dmy_q);
+    qtn_qvq_prod(&rotated[3], dmy_q);
+    qtn_qvq_prod(&rotated[6], dmy_q);
 }
 
 void rigid_body_rotation(double             rotated[DIM],
                          const double       original[DIM],
                          const double       QR[DIM][DIM],
                          const COORD_TRANS &transform) {
-  if (transform == BODY2SPACE) {
-    M_v_prod(rotated, QR, original);
-  } else if (transform == SPACE2BODY) {
-    v_M_prod(rotated, original, QR);
-  } else {
-    fprintf(stderr, "Error: unknown rigid body transformation\n");
-    exit_job(EXIT_FAILURE);
-  }
+    if (transform == BODY2SPACE) {
+        M_v_prod(rotated, QR, original);
+    } else if (transform == SPACE2BODY) {
+        v_M_prod(rotated, original, QR);
+    } else {
+        fprintf(stderr, "Error: unknown rigid body transformation\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 void rigid_body_rotation(double             rotated[DIM],
                          const double       original[DIM],
                          const double       QR[DIM * DIM],
                          const COORD_TRANS &transform) {
-  if (transform == BODY2SPACE) {
-    M_v_prod(rotated, QR, original);
-  } else if (transform == SPACE2BODY) {
-    v_M_prod(rotated, original, QR);
-  } else {
-    fprintf(stderr, "Error: unknown rigid body transformation\n");
-    exit_job(EXIT_FAILURE);
-  }
+    if (transform == BODY2SPACE) {
+        M_v_prod(rotated, QR, original);
+    } else if (transform == SPACE2BODY) {
+        v_M_prod(rotated, original, QR);
+    } else {
+        fprintf(stderr, "Error: unknown rigid body transformation\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 
 void rigid_body_matrix_rotation(double             rotated[DIM * DIM],
                                 const double       original[DIM * DIM],
                                 const double       R0[DIM * DIM],
                                 const COORD_TRANS &transform) {
-  if (transform == BODY2SPACE) {
-    for (int i = 0; i < DIM; i++) {
-      for (int j = 0; j < DIM; j++) {
-        double dmy_k = 0.0;
-        for (int k = 0; k < DIM; k++) {
-          double dmy_l = 0.0;
-          for (int l = 0; l < DIM; l++) {
-            dmy_l += original[k * DIM + l] * R0[j * DIM + l];
-          }
-          dmy_k += R0[i * DIM + k] * dmy_l;
+    if (transform == BODY2SPACE) {
+        for (int i = 0; i < DIM; i++) {
+            for (int j = 0; j < DIM; j++) {
+                double dmy_k = 0.0;
+                for (int k = 0; k < DIM; k++) {
+                    double dmy_l = 0.0;
+                    for (int l = 0; l < DIM; l++) {
+                        dmy_l += original[k * DIM + l] * R0[j * DIM + l];
+                    }
+                    dmy_k += R0[i * DIM + k] * dmy_l;
+                }
+                rotated[i * DIM + j] = dmy_k;
+            }
         }
-        rotated[i * DIM + j] = dmy_k;
-      }
-    }
-  } else if (transform == SPACE2BODY) {
-    for (int i = 0; i < DIM; i++) {
-      for (int j = 0; j < DIM; j++) {
-        double dmy_k = 0.0;
-        for (int k = 0; k < DIM; k++) {
-          double dmy_l = 0.0;
-          for (int l = 0; l < DIM; l++) {
-            dmy_l += original[k * DIM + l] * R0[l * DIM + j];
-          }
-          dmy_k += R0[k * DIM + i] * dmy_l;
+    } else if (transform == SPACE2BODY) {
+        for (int i = 0; i < DIM; i++) {
+            for (int j = 0; j < DIM; j++) {
+                double dmy_k = 0.0;
+                for (int k = 0; k < DIM; k++) {
+                    double dmy_l = 0.0;
+                    for (int l = 0; l < DIM; l++) {
+                        dmy_l += original[k * DIM + l] * R0[l * DIM + j];
+                    }
+                    dmy_k += R0[k * DIM + i] * dmy_l;
+                }
+                rotated[i * DIM + j] = dmy_k;
+            }
         }
-        rotated[i * DIM + j] = dmy_k;
-      }
     }
-  }
 }
 void rigid_body_matrix_rotation(double             rotated[DIM][DIM],
                                 const double       original[DIM][DIM],
                                 const double       R0[DIM][DIM],
                                 const COORD_TRANS &transform) {
-  if (transform == BODY2SPACE) {
-    for (int i = 0; i < DIM; i++) {
-      for (int j = 0; j < DIM; j++) {
-        double dmy_k = 0.0;
-        for (int k = 0; k < DIM; k++) {
-          double dmy_l = 0.0;
-          for (int l = 0; l < DIM; l++) {
-            dmy_l += original[k][l] * R0[j][l];
-          }
-          dmy_k += R0[i][k] * dmy_l;
+    if (transform == BODY2SPACE) {
+        for (int i = 0; i < DIM; i++) {
+            for (int j = 0; j < DIM; j++) {
+                double dmy_k = 0.0;
+                for (int k = 0; k < DIM; k++) {
+                    double dmy_l = 0.0;
+                    for (int l = 0; l < DIM; l++) {
+                        dmy_l += original[k][l] * R0[j][l];
+                    }
+                    dmy_k += R0[i][k] * dmy_l;
+                }
+                rotated[i][j] = dmy_k;
+            }
         }
-        rotated[i][j] = dmy_k;
-      }
-    }
-  } else if (transform == SPACE2BODY) {
-    for (int i = 0; i < DIM; i++) {
-      for (int j = 0; j < DIM; j++) {
-        double dmy_k = 0.0;
-        for (int k = 0; k < DIM; k++) {
-          double dmy_l = 0.0;
-          for (int l = 0; l < DIM; l++) {
-            dmy_l += original[k][l] * R0[l][j];
-          }
-          dmy_k += R0[k][i] * dmy_l;
+    } else if (transform == SPACE2BODY) {
+        for (int i = 0; i < DIM; i++) {
+            for (int j = 0; j < DIM; j++) {
+                double dmy_k = 0.0;
+                for (int k = 0; k < DIM; k++) {
+                    double dmy_l = 0.0;
+                    for (int l = 0; l < DIM; l++) {
+                        dmy_l += original[k][l] * R0[l][j];
+                    }
+                    dmy_k += R0[k][i] * dmy_l;
+                }
+                rotated[i][j] = dmy_k;
+            }
         }
-        rotated[i][j] = dmy_k;
-      }
     }
-  }
 }
 
 void qdot(quaternion &dqdt, const quaternion &q, const double omega[DIM], const COORD_SYSTEM &coord) {
-  quaternion qw;
-  qtn_init(qw, 0.0, omega);  // omega in body or space coord
-  if (coord == SPACE_FRAME) {
-    qtn_prod(dqdt, qw, q, 0.5);
-  } else if (coord == BODY_FRAME) {
-    qtn_prod(dqdt, q, qw, 0.5);
-  } else {
-    fprintf(stderr, "Error: unknown coordinate system\n");
-    exit_job(EXIT_FAILURE);
-  }
+    quaternion qw;
+    qtn_init(qw, 0.0, omega);  // omega in body or space coord
+    if (coord == SPACE_FRAME) {
+        qtn_prod(dqdt, qw, q, 0.5);
+    } else if (coord == BODY_FRAME) {
+        qtn_prod(dqdt, q, qw, 0.5);
+    } else {
+        fprintf(stderr, "Error: unknown coordinate system\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 
 void Qdot(double dQRdt[DIM][DIM], const double QR[DIM][DIM], const double omega[DIM], const COORD_SYSTEM &coord) {
-  double omega_skew[DIM][DIM];
-  skew(omega_skew, omega);  // omega in body or space coord
-  if (coord == SPACE_FRAME) {
-    M_prod(dQRdt, omega_skew, QR);
-  } else if (coord == BODY_FRAME) {
-    M_prod(dQRdt, QR, omega_skew);
-  } else {
-    fprintf(stderr, "Error: unknown coordinate system\n");
-    exit_job(EXIT_FAILURE);
-  }
+    double omega_skew[DIM][DIM];
+    skew(omega_skew, omega);  // omega in body or space coord
+    if (coord == SPACE_FRAME) {
+        M_prod(dQRdt, omega_skew, QR);
+    } else if (coord == BODY_FRAME) {
+        M_prod(dQRdt, QR, omega_skew);
+    } else {
+        fprintf(stderr, "Error: unknown coordinate system\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 void Qdot(double dQRdt[DIM * DIM], const double QR[DIM * DIM], const double omega[DIM], const COORD_SYSTEM &coord) {
-  double omega_skew[DIM * DIM];
-  skew(omega_skew, omega);
-  if (coord == SPACE_FRAME) {
-    M_prod(dQRdt, omega_skew, QR);
-  } else if (coord == BODY_FRAME) {
-    M_prod(dQRdt, QR, omega_skew);
-  } else {
-    fprintf(stderr, "Error: unknown coordinate system\n");
-    exit_job(EXIT_FAILURE);
-  }
+    double omega_skew[DIM * DIM];
+    skew(omega_skew, omega);
+    if (coord == SPACE_FRAME) {
+        M_prod(dQRdt, omega_skew, QR);
+    } else if (coord == BODY_FRAME) {
+        M_prod(dQRdt, QR, omega_skew);
+    } else {
+        fprintf(stderr, "Error: unknown coordinate system\n");
+        exit_job(EXIT_FAILURE);
+    }
 }
 
 // time derivative of angular velocity

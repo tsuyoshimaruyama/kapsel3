@@ -25,16 +25,16 @@ extern LIS_SOLVER  lis_solver_ch;
 extern LIS_INT     is_ch, ie_ch;
 #else
 struct work_bicgstab {
-  double  eps;
-  int     maxiter;
-  double *p;
-  double *r;
-  double *t;
-  double *Ap;
-  double *At;
-  double *r0s;
-  double *x;
-  double *Ax;
+    double  eps;
+    int     maxiter;
+    double *p;
+    double *r;
+    double *t;
+    double *Ap;
+    double *At;
+    double *r0s;
+    double *x;
+    double *Ax;
 };
 
 extern work_bicgstab wm_ns;
@@ -50,13 +50,13 @@ void                 Init_ns(void);
 void                 Init_ch(void);
 inline void          Calc_Ax(double *x, int *idx, double *val, int *row_ptr, double *ans, int iend) {
 #pragma omp parallel for
-  for (int i = 0; i < iend; i++) {
-    double sum = 0.;
-    for (int ii = row_ptr[i]; ii < row_ptr[i + 1]; ii++) {
-      sum += val[ii] * x[idx[ii]];
+    for (int i = 0; i < iend; i++) {
+        double sum = 0.;
+        for (int ii = row_ptr[i]; ii < row_ptr[i + 1]; ii++) {
+            sum += val[ii] * x[idx[ii]];
+        }
+        ans[i] = sum;
     }
-    ans[i] = sum;
-  }
 }
 void Mem_alloc_matrix_solver(void);
 void Free_matrix_solver(void);
