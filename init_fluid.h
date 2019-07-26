@@ -8,10 +8,10 @@
 #ifndef INIT_FLUID_H_
 #define INIT_FLUID_H_
 
-#include "variable.h"
+#include "input.h"
 #include "macro.h"
 #include "operate_omega.h"
-#include "input.h"
+#include "variable.h"
 
 /*!
   \brief Initializes velocity field for fluid at rest

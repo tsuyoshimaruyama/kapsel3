@@ -1,3 +1,5 @@
 Documents/memo
 Doxygen/html
 Doxygen/latex
+*.o
+kapsel
