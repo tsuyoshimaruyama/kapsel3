@@ -179,12 +179,12 @@ void Set_poisson_rhs_viscosity_OBL(double **u, double **u_s, double ** adv, doub
 					switch (d) {
 					case 0:
 						vt = (2. * g11 * eta_x + g21 * eta_y) * u_xx + g11 * eta_y * u_yx + g11 * eta_z * u_zx
-							+ (2. * g12 * eta_x + g22 * eta_y) * u_xy + g12 * eta_y * u_yy + g12 * eta_z * u_zy;
+							+ (2. * g12 * eta_x + g22 * eta_y) * u_xy + g12 * eta_y * u_yy + g12 * eta_z * u_zy
 						+ g33 * eta_z * u_xz;
 						break;
 					case 1:
 						vt = g21 * eta_x * u_xx + (g11 * eta_x + 2. * g21 * eta_y) * u_yx + g21 * eta_z * u_zx
-							+ g22 * eta_x * u_xy + (g12 * eta_x + 2. * g22 * eta_y) * u_yy + g22 * eta_z * u_zy;
+							+ g22 * eta_x * u_xy + (g12 * eta_x + 2. * g22 * eta_y) * u_yy + g22 * eta_z * u_zy
 						+ g33 * eta_z * u_yz;
 						break;
 					case 2:
