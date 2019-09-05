@@ -55,6 +55,9 @@ const char *PT_name[] = { "spherical_particle"
 //////
 OBL_INT SW_OBL_INT;
 const char *OBL_INT_name[] = { "linear", "spline" };
+//////
+WALL        SW_WALL;
+const char *WALL_name[] = {"NONE", "FLAT"};
 
 OUTFORMAT SW_OUTFORMAT;
 EXTFORMAT SW_EXTFORMAT;
@@ -186,6 +189,9 @@ double *janus_slip_mode;
 double *janus_rotlet_C1;
 double *janus_rotlet_dipole_C2;
 
+//// Wall
+FlatWall wall;
+
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
@@ -303,6 +309,45 @@ double alpha_o;
 double degree_oblique;
 
 //////
+inline void Set_wall_parameters(const double MaxRadius) {
+    if (SW_WALL == FLAT_WALL) {
+        // wall axis and wall thickness (dh) should have been initialized beforehand
+        double l      = L[wall.axis];
+        double height = l - wall.dh;
+        wall.volume   = (L[0] * L[1] * L[2]) * (height / l);
+        wall.lo       = (l - height) / 2.0;
+        wall.hi       = (l + height) / 2.0;
+        assert(wall.dh > XI && wall.dh < l - 2 * MaxRadius);
+
+        double cutoff = 0.0;
+        if (LJ_powers == 0) {
+            cutoff = pow(2., 1. / 6.);
+        } else if (LJ_powers == 1) {
+            cutoff = pow(2., 1. / 12.);
+        } else if (LJ_powers == 2) {
+            cutoff = pow(2., 1. / 18.);
+        } else if (LJ_powers == 3) {
+            cutoff = 1.0;
+        } else {
+            fprintf(stderr, "Uknown LJ_powers for wall-particle interactions\n");
+            exit(-1);
+        }
+        wall.A_R_cutoff = cutoff;  // Cutoff distance for mirror wall particles
+        {
+            const char axis[DIM] = {'X', 'Y', 'Z'};
+            fprintf(stderr, "#\n");
+            fprintf(stderr, "# Flat Wall Enabled \n");
+            fprintf(stderr, "# Axis         : %c\n", axis[wall.axis]);
+            fprintf(stderr, "# Lower Surface: %5.2f\n", wall.lo);
+            fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
+            fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
+            fprintf(stderr, "# Thickness    : %5.2f\n", (l - (wall.hi - wall.lo)));
+            fprintf(stderr, "# Cutoff       : %5.2f %5.2f\n", wall.A_R_cutoff * LJ_dia, wall.A_R_cutoff);
+            fprintf(stderr, "#\n");
+        }
+    }
+}
+//////
 inline void Set_global_parameters(void) {
 	Particle_Number = 0;
 	for (int i = 0; i < Component_Number; i++) {
@@ -342,6 +387,9 @@ inline void Set_global_parameters(void) {
 			HL_particle[d] = L[d] * .5;
 		}
 	}
+	
+	Set_wall_parameters(RADIUS + HXI);
+
 	WAVE_X = PI2 / LX;
 	WAVE_Y = PI2 / LY;
 	WAVE_Z = PI2 / LZ;
@@ -450,7 +498,9 @@ inline void Set_global_parameters(void) {
 	{
 		double radius_dmy = dummy_pow*LJ_dia*.5;
 		Ivolume = 1. / (LX * LY * LZ);
+		if (SW_WALL == FLAT_WALL) Ivolume = 1.0 / wall.volume;
 		double dmy = (double)Particle_Number * 4. / 3.*M_PI * Ivolume;
+
 		VF = dmy * POW3(RADIUS);
 		VF_LJ = dmy * POW3(radius_dmy);
 	}
@@ -2345,7 +2395,55 @@ void Gourmet_file_io(const char *infile
 			}
 		}
 	}
+	
+	{
+        Location target("switch.wall");
+        string   str;
+        SW_WALL = NO_WALL;
 
+        if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == WALL_name[NO_WALL]) {
+                SW_WALL = NO_WALL;
+            } else if (str == WALL_name[FLAT_WALL]) {
+                SW_WALL = FLAT_WALL;
+                target.down("FLAT");
+            	{
+        			{
+            			string axis;
+                     	ufin->get(target.sub("axis"), axis);
+                        ufout->put(target.sub("axis"), axis);
+                        ufres->put(target.sub("axis"), axis);
+                        if (axis == "X") {
+                            wall.axis = 0;
+                        } else if (axis == "Y") {
+                            wall.axis = 1;
+                        } else if (axis == "Z") {
+                            wall.axis = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified Flat Wall axis\n");
+                            exit(-1);
+                        }
+                    }
+                    {
+                        ufin->get(target.sub("DH"), wall.dh);
+                        ufout->put(target.sub("DH"), wall.dh);
+                        ufres->put(target.sub("DH"), wall.dh);
+                        wall.dh *= DX;
+                    }
+                }
+                target.up();
+            } else {
+                exit_job(EXIT_FAILURE);
+            }
+        }
+        if (SW_WALL != NO_WALL && SW_EQ != Navier_Stokes) {
+            fprintf(stderr, "# Error: walls only enabled for Navier_Stokes simulations so far\n");
+            exit(-1);
+        }
+    }
+	
 	{ // output;
 		string str;
 		Location target("output");

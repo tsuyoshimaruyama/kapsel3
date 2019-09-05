@@ -175,10 +175,14 @@ void Output_field_data(double** zeta,
   }//print pressure?
 
   if(print_field.phi){
-    Reset_phi(phi);
+    if (SW_WALL != NO_WALL) {
+      Copy_v1(phi, phi_wall);
+    } else {
+      Reset_phi(phi);
+    }
     if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards) {
       Make_phi_particle_OBL(phi, p);
-    }else {
+    } else {
       Make_phi_particle(phi, p);
     }
   }//print phi?
@@ -303,6 +307,7 @@ void Output_udf(UDFManager *ufout
     ufout->put(target.sub("v.x"), p[j].v[0]);
     ufout->put(target.sub("v.y"), p[j].v[1]);
     ufout->put(target.sub("v.z"), p[j].v[2]);
+    //fprintf(stderr, "p[%d].v[2] = %.8f\n", j, p[j].v[2]);
 
     qtn_isnormal(p[j].q);
     ufout->put(target.sub("q.q0"), qtn_q0(p[j].q));
@@ -354,6 +359,7 @@ void Output_udf(UDFManager *ufout
       ufout->put(target.sub("v.x"), velocityGs[rigidID][0]);
       ufout->put(target.sub("v.y"), velocityGs[rigidID][1]);
       ufout->put(target.sub("v.z"), velocityGs[rigidID][2]);
+      //fprintf(stderr, "velocityGs[%d][2] = %.8f\n", rigidID, velocityGs[rigidID][2]);
 
       ufout->put(target.sub("q.q0"), qtn_q0(qGs));
       ufout->put(target.sub("q.q1"), qtn_q1(qGs));

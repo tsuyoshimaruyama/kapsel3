@@ -17,6 +17,7 @@
 #include "particle_rotation_solver.h"
 #include "rigid.h"
 #include "periodic_boundary.h"
+#include "wall.h"
 
 enum ITER {start_iter, new_iter, reset_iter, end_iter};
 
@@ -94,14 +95,19 @@ inline void Force(Particle *p){
     //fprintf(stderr, "##### force : launched\n");
 
     if(LJ_truncate >= 0){
-	Calc_f_Lennard_Jones(p);
+      Calc_f_Lennard_Jones(p);
     }
     
     if(G != 0.0){
-	Add_f_gravity(p);
+      Add_f_gravity(p);
     }
     if(SW_PT == chain){
       Calc_anharmonic_force_chain(p, Distance0);
+    }
+    
+    if (SW_WALL != NO_WALL) {
+      //fprintf(stderr, "##### Add_f_wall: launched\n");
+      Add_f_wall(p);
     }
 
     if(SW_PT == rigid) {

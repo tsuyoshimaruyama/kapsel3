@@ -50,6 +50,9 @@ inline void init_set_GRvecs(Particle *p){
     int rigidID = Particle_RigidID[n];
     for(int d=0; d<DIM; d++) {
       GRvecs[n][d] = p[n].x_nopbc[d] - xGs_nopbc[rigidID][d];
+      //fprintf(stderr, "p[%d].x_nopbc[%d] = %.8f\n", n, d, p[n].x_nopbc[d]);
+      //fprintf(stderr, "xGs_nopbc[%d][%d] = %.8f\n", rigidID, d, xGs_nopbc[rigidID][d]);
+      //fprintf(stderr, "GRvecs[%d][%d] = %.8f\n", n, d, GRvecs[n][d]);
     }
   }
 }
@@ -478,6 +481,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
   for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
     //set olds
     for(int d=0; d<DIM; d++){
+      //fprintf(stderr, "### before : velocityGs[%d][%d] = %.8f\n", rigidID, d, velocityGs[rigidID][d]);
       velocityGs_old[rigidID][d] = velocityGs[rigidID][d];
       omegaGs_old[rigidID][d] = omegaGs[rigidID][d];
     }
@@ -564,6 +568,8 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 
       torqueGs[rigidID][d] = 0.0;
       torqueGrs[rigidID][d] = 0.0;
+
+      //fprintf(stderr, "### after : velocityGs[%d][%d] = %.8f\n", rigidID, d, velocityGs[rigidID][d]);
     }
   }
 }
@@ -578,7 +584,7 @@ inline void init_Rigid_Coordinates_Quincke(Particle *p){
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
         quaternion dmy_q;
         
-        fprintf(stderr, "#------->check xy random quincke\n");
+        //fprintf(stderr, "#------->check xy random quincke\n");
         get_quaternion_xy_random_Quincke(dmy_q);
         //double psi = M_PI / 4.;
         //dmy_q.s = cos(psi/2.);

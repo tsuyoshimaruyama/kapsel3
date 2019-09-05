@@ -25,6 +25,16 @@ void Init_Particle(Particle *p) {
 		}
 	}
 
+	// redefine available box size in case of walls
+	double l_particle[DIM];
+	double WALL_EXCLUSION = 0.0;
+	for (int d = 0; d < DIM; d++) l_particle[d] = L_particle[d];
+	if (SW_WALL == FLAT_WALL) {
+		WALL_EXCLUSION        = RADIUS + HXI;
+		l_particle[wall.axis] = (wall.hi - wall.lo) - 2.0 * WALL_EXCLUSION;  // free length in perpendicular direction
+	}
+
+
 	if (ROTATION) {
 		Angular2v = Angular2v_rot_on;
 	} else {
@@ -59,7 +69,7 @@ void Init_Particle(Particle *p) {
 			int overlap = 1;
 			do {
 				for (int d = 0; d < DIM; d++) {
-					p[i].x[d] = RAx(L_particle[d]);
+					p[i].x[d] = RAx(l_particle[d]);
 				}
 				int j;
 				for (j = 0; j < i; j++) {
@@ -81,12 +91,6 @@ void Init_Particle(Particle *p) {
 		}
 
 		{
-			double l_particle[DIM];
-			{
-				for (int d = 0; d < DIM; d++) {
-					l_particle[d] = L_particle[d];
-				}
-			}
 
 			double lratio[DIM];
 			{
@@ -328,9 +332,9 @@ void Init_Particle(Particle *p) {
 		fprintf(stderr, "(VF, VF_LJ) = %g %g\n", VF, VF_LJ);
 		double dmy = pow((double)Particle_Number / 2., 1. / DIM);
 		int nn = (int)ceil(dmy);
-		double ax = L_particle[0] / (double)nn;
-		double ay = L_particle[1] / (double)nn;
-		double az = L_particle[2] / (double)nn;
+		double ax = l_particle[0] / (double)nn;
+		double ay = l_particle[1] / (double)nn;
+		double az = l_particle[2] / (double)nn;
 
 		for (int i = 0; i < Particle_Number; i++) {
 			int ix = i%nn;
@@ -377,6 +381,37 @@ void Init_Particle(Particle *p) {
 			qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
 			qtn_isnormal(p[i].q);
 			qtn_init(p[i].q_old, p[i].q);
+		}
+	}
+
+	// correct positions in presence of walls
+	if (SW_WALL != NO_WALL) {
+		if (DISTRIBUTION == uniform_random || DISTRIBUTION == FCC || DISTRIBUTION == BCC || DISTRIBUTION == random_walk) {
+			fprintf(stderr,
+            "# Initial particle positions computed with modified system size : %6.2f %6.2f %6.2f\n",
+            l_particle[0],
+            l_particle[1],
+            l_particle[2]);
+			if (SW_PT == rigid) {
+				for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) p[Rigid_Particle_Cumul[rigidID]].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
+			} else {
+				for (int n = 0; n < Particle_Number; n++) p[n].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
+			}
+    	}
+    	double overlap_distance = RADIUS - HXI;
+
+		if (SW_PT == rigid) {
+			for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+				double x = p[Rigid_Particle_Cumul[rigidID]].x[wall.axis];
+				if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+					fprintf(stderr, "# INIT WARNING: rigidID %d overlaps with wall\n", rigidID);
+			}
+		} else {
+			for (int n = 0; n < Particle_Number; n++) {
+				double x = p[n].x[wall.axis];
+				if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+					fprintf(stderr, "# INIT WARNING: particle %d overlaps with wall\n", n);
+			}
 		}
 	}
 

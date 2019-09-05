@@ -644,11 +644,11 @@ inline void get_quaternion_xy_random_Quincke(quaternion &q)
 {
     double x;
     
-    x = 0.0;
+    //x = 0.0;
     //x = M_PI / 2.0;
     //x = M_PI / 4.0;
 
-    //x = RAx(PI2);
+    x = RAx(PI2);
 
     //fprintf(stderr, "$$$rand_angular: %f\n", x);
 

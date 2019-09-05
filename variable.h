@@ -76,6 +76,18 @@ typedef struct Particle {
   double surface_dw[DIM];        //ang. momentum change due to slip
 } Particle;
 
+typedef struct FlatWall {
+    // input parameters
+    int axis;  // axis (0=x, 1=y, 2=z)
+    int dh;    // wall thickness
+
+    // derived parameters
+    double lo;          // lowest surface
+    double hi;          // highest surface
+    double volume;      // free volume
+    double A_R_cutoff;  // cutoff distance from surface (normalized by particle diameter)
+} FlatWall;
+
 typedef struct Index_range {
   int istart;
   int iend;
