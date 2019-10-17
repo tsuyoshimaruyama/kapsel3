@@ -1772,7 +1772,8 @@ void        Gourmet_file_io(const char *infile,
                 fprintf(stderr, "#\n");
                 fprintf(stderr, "# Spherical Particles selected.\n");
             }  // components
-            if (SW_EQ != Navier_Stokes && (SW_JANUS_MOTOR == 1 || SW_JANUS_SLIP == 1)) {
+            if ((SW_EQ != Navier_Stokes && SW_EQ != Shear_Navier_Stokes) &&
+                (SW_JANUS_MOTOR == 1 || SW_JANUS_SLIP == 1)) {
                 fprintf(stderr, "# Janus particles only implemented for Navier-Stokes solver...\n");
                 exit_job(EXIT_FAILURE);
             }
