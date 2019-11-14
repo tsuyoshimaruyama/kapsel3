@@ -813,8 +813,7 @@ int main(int argc, char *argv[]) {
 		if ((SW_PT == chain) && !(DISTRIBUTION == user_specify)) {
 			Init_Chain(particles);
 		} else if ((SW_PT == rigid) && !(DISTRIBUTION == user_specify)) {
-			//Init_Rigid(particles);
-            //Init_Rigid_Quincke(particles);
+			if (SW_QUINCKE == OFF) Init_Rigid(particles);
 		}
 	}
 	Init_Wall(phi_wall);

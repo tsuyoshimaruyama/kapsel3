@@ -703,11 +703,17 @@ void Calc_harmonic_torque_quincke(Particle *p)
 	double e_omega_space[DIM]; // basis vector of the body frame written by space frame
 	double R_space2body[DIM][DIM]; // Rotation matrix:space to body
 	double harmonic_torque[DIM];
-	double n[DIM] = { 0.0, 0.0, 1.0 }; // the unit normal vector perpendicullar to XY plane (parallel to external E for quincke roller)
-	double e_omega[DIM] = {1.0, 0.0, 0.0}; // basis vector of body frame paralled constant angular velocity vector
-	double K = 2.0 * M_PI * 5.0; // amplitude of potential which is decided from stokes resistance for rotating
+	double n[DIM] = { 0.0, 0.0, 0.0 }; // the unit vector parallel to external electric field E
+	double e_omega[DIM] = {0.0, 0.0, 0.0}; // basis vector of body frame paralled constant angular velocity vector
+	double K = quincke.torque_amp; // amplitude of potential which is decided from stokes resistance for rotating
 	double n_dot_e;
 
+	//fprintf(stderr, "#------->check Calc_harmonic_torque_quincke start\n");
+
+	n[quincke.e_dir] = 1.0;
+	e_omega[quincke.w_dir] = 1.0;
+
+#pragma omp parallel for
 	for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
         
 		// get Rotation matrix
@@ -740,4 +746,6 @@ void Calc_harmonic_torque_quincke(Particle *p)
 			torqueGrs[rigidID][d] += harmonic_torque[d];
 		}
     }
-}
+
+	//fprintf(stderr, "#------->check Calc_harmonic_torque_quincke end\n");
+}

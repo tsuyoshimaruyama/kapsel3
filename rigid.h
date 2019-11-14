@@ -580,21 +580,29 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE){
 // Quincke roller simulation
 //
 inline void init_Rigid_Coordinates_Quincke(Particle *p){
-#pragma omp parallel for
+  quaternion dmy_q;
+
+#pragma omp parallel
     for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
-        quaternion dmy_q;
-        
-        //fprintf(stderr, "#------->check xy random quincke\n");
-        get_quaternion_xy_random_Quincke(dmy_q);
-        //double psi = M_PI / 4.;
-        //dmy_q.s = cos(psi/2.);
-        //dmy_q.v[0] = 0.0;
-        //dmy_q.v[1] = sin(psi/2.);
-        //dmy_q.v[2] = 0.0;
 
         for(int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID+1]; n++){
+          if (DISTRIBUTION == uniform_random) {
+            //fprintf(stderr, "#------->check xy random quincke\n");
+            get_quaternion_xy_random_Quincke(dmy_q, quincke.e_dir);
             qtn_init(p[n].q, dmy_q);
             qtn_isnormal(p[n].q);
+          }
+          else if (DISTRIBUTION == user_specify) {
+            //fprintf(stderr, "#------->check user_specify quincke start\n");
+            //fprintf(stderr, "#before qtn_isnormal\n");
+            //fprintf(stderr, "#p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", n, p[n].q.s, p[n].q.v[0], p[n].q.v[1], p[n].q.v[2]);
+            qtn_isnormal(p[n].q);
+            dmy_q = p[n].q;
+            //fprintf(stderr, "#after qtn_isnormal\n");
+            //fprintf(stderr, "#p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", n, p[n].q.s, p[n].q.v[0], p[n].q.v[1], p[n].q.v[2]);
+            //fprintf(stderr, "#dmy_q: %5.2f, %5.2f, %5.2f, %5.2f\n", n, dmy_q.s, dmy_q.v[0], dmy_q.v[1], dmy_q.v[2]);
+            //fprintf(stderr, "#------->check user_specify quincke end\n");
+          }
         }
         //Rigid_Moments_body gives inertia tensor in body-frame
         //By construction it should be diagonal

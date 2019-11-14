@@ -59,6 +59,10 @@ const char *OBL_INT_name[] = { "linear", "spline" };
 WALL        SW_WALL;
 const char *WALL_name[] = {"NONE", "FLAT"};
 
+//////
+QUINCKE		SW_QUINCKE;
+const char *QUINCKE_name[] = {"ON", "OFF"};
+
 OUTFORMAT SW_OUTFORMAT;
 EXTFORMAT SW_EXTFORMAT;
 Field_crop      print_field_crop;
@@ -191,6 +195,9 @@ double *janus_rotlet_dipole_C2;
 
 //// Wall
 FlatWall wall;
+
+//// Quincke
+QuinckeEffect quincke;
 
 ////
 int Rigid_Number;
@@ -348,6 +355,22 @@ inline void Set_wall_parameters(const double MaxRadius) {
     }
 }
 //////
+inline void Set_quincke_parameters()
+{
+	if (SW_QUINCKE == ON) {
+		{
+            const char axis[DIM] = {'X', 'Y', 'Z'};
+            fprintf(stderr, "#\n");
+            fprintf(stderr, "# Quincke Effect Enabled \n");
+            fprintf(stderr, "# Electric Field           : %c\n", axis[quincke.e_dir]);
+			fprintf(stderr, "# Constant angular velocity: %c\n", axis[quincke.w_dir]);
+            fprintf(stderr, "# Amp. of constraint torque: %5.2f\n", quincke.torque_amp);
+            fprintf(stderr, "#\n");
+        }
+	}
+}
+
+//////
 inline void Set_global_parameters(void) {
 	Particle_Number = 0;
 	for (int i = 0; i < Component_Number; i++) {
@@ -389,6 +412,8 @@ inline void Set_global_parameters(void) {
 	}
 	
 	Set_wall_parameters(RADIUS + HXI);
+
+	Set_quincke_parameters();
 
 	WAVE_X = PI2 / LX;
 	WAVE_Y = PI2 / LY;
@@ -2443,6 +2468,66 @@ void Gourmet_file_io(const char *infile
             exit(-1);
         }
     }
+
+	{
+		Location target("switch.quincke");
+		string   str;
+		SW_QUINCKE = OFF;
+		if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == QUINCKE_name[OFF]) {
+                SW_QUINCKE = OFF;
+            } else if (str == QUINCKE_name[ON]) {
+                SW_QUINCKE = ON;
+                target.down("ON");
+            	{
+        			{
+            			string axis;
+                     	ufin->get(target.sub("e_dir"), axis);
+                        ufout->put(target.sub("e_dir"), axis);
+                        ufres->put(target.sub("e_dir"), axis);
+                        if (axis == "X") {
+                            quincke.e_dir = 0;
+                        } else if (axis == "Y") {
+                            quincke.e_dir = 1;
+                        } else if (axis == "Z") {
+                            quincke.e_dir = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified electric field axis\n");
+                            exit(-1);
+                        }
+
+						ufin->get(target.sub("w_dir"), axis);
+                        ufout->put(target.sub("w_dir"), axis);
+                        ufres->put(target.sub("w_dir"), axis);
+                        if (axis == "X") {
+                            quincke.w_dir = 0;
+                        } else if (axis == "Y") {
+                            quincke.w_dir = 1;
+                        } else if (axis == "Z") {
+                            quincke.w_dir = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified constant angular velocity vector axis\n");
+                            exit(-1);
+                        }
+                    }
+                    {
+                        ufin->get(target.sub("torque_amp"), quincke.torque_amp);
+                        ufout->put(target.sub("torque_amp"), quincke.torque_amp);
+                        ufres->put(target.sub("torque_amp"), quincke.torque_amp);
+                    }
+                }
+                target.up();
+            } else {
+                exit_job(EXIT_FAILURE);
+            }
+        }
+        if (SW_QUINCKE != OFF && SW_EQ != Navier_Stokes) {
+            fprintf(stderr, "# Error: quincke effect only enabled for Navier_Stokes simulations so far\n");
+            exit(-1);
+        }
+	}
 	
 	{ // output;
 		string str;

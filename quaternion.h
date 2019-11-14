@@ -640,14 +640,11 @@ inline void rm_rqtn(quaternion &q, const double R[DIM*DIM]){
 // Quincke roller simulation
 // get quaternion q(cos(x/2); 0, 0, sin(x/2))
 // x : [0, 2PI]
-inline void get_quaternion_xy_random_Quincke(quaternion &q)
+inline void get_quaternion_xy_random_Quincke(quaternion &q, int e_dir)
 {
     double x;
-    
-    //x = 0.0;
-    //x = M_PI / 2.0;
-    //x = M_PI / 4.0;
 
+    
     x = RAx(PI2);
 
     //fprintf(stderr, "$$$rand_angular: %f\n", x);
@@ -655,7 +652,8 @@ inline void get_quaternion_xy_random_Quincke(quaternion &q)
     q.s = cos(x/2.0);
     q.v[0] = 0.0;
     q.v[1] = 0.0;
-    q.v[2] = sin(x/2.0);
+    q.v[2] = 0.0;
+    q.v[e_dir] = sin(x/2.0);
 }
 
 #endif

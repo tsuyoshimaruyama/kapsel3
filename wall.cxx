@@ -49,7 +49,7 @@ void Add_f_wall(Particle* p) {
     double cutoff = wall.A_R_cutoff * LJ_dia;
     double offset = 0.5 * LJ_dia;
     if (SW_WALL == FLAT_WALL) {
-#pragma omp parallel for
+#pragma omp parallel
         if(SW_PT == rigid) {
             for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
                 double x   = p[Rigid_Particle_Cumul[rigidID]].x[wall.axis];

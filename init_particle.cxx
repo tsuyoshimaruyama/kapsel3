@@ -363,13 +363,22 @@ void Init_Particle(Particle *p) {
 			}
 		} else if (ORIENTATION == space_dir ||
 			(ORIENTATION == user_dir && DISTRIBUTION != user_specify)) {
+			//fprintf(stderr, "#--------------->check ORIENTATION == space_dir || (ORIENTATION == user_dir && DISTRIBUTION != user_specify)\n");
 			for (int i = 0; i < Particle_Number; i++) {
+				//fprintf(stderr, "#before qtn_init\n");
+				//fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1], p[i].q.v[2]);
 				qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
 				qtn_isnormal(p[i].q);
 				qtn_init(p[i].q_old, p[i].q);
+				//fprintf(stderr, "#after qtn_init\n");
+				//fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1], p[i].q.v[2]);
 			}
 		} else if (ORIENTATION == user_dir && DISTRIBUTION == user_specify) {
 			// do nothing orientation already read
+			//fprintf(stderr, "#--------------->check ORIENTATION == user_dir && DISTRIBUTION == user_specify");
+			//for (int i = 0; i < Particle_Number; i++) {
+				//fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1], p[i].q.v[2]);
+			//}
 		} else {
 			fprintf(stderr, "Error: wrong ORIENTATION\n");
 			fprintf(stderr, "%d %d %d\n", ORIENTATION, space_dir, user_dir);
@@ -494,9 +503,12 @@ void Init_Particle(Particle *p) {
 
 			Make_phi_rigid_inertia_OBL(phi_sum, p);
 		}
-		//fprintf(stderr, "#------->check init_rigid_coordinates_quincke\n");
-		init_Rigid_Coordinates_Quincke(p);
-		//fprintf(stderr, "## p.q = (%1.4f, %1.4f, %1.4f, %1.4f)\n", p[0].q.s, p[0].q.v[0], p[0].q.v[1], p[0].q.v[2]);
+		
+		if (SW_QUINCKE == ON) {
+			//fprintf(stderr, "#------->check init_rigid_coordinates_quincke\n");
+			init_Rigid_Coordinates_Quincke(p);
+		}
+
 		init_set_vGs(p);
 
 		double phi_vf = 0.0;
