@@ -817,10 +817,10 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	Init_Wall(phi_wall);
+	init_ewald_sum(NX,NY,NZ,Rigid_Number, false, true);//charge//dipole//wakiwaki
+    
 	Init_output(particles);
-
 	Init_zeta_k(zeta, uk_dc);
-
 	{
 		Reset_phi_u(phi, up);
 		Reset_phi(phi_sum);
@@ -1021,7 +1021,10 @@ int main(int argc, char *argv[]) {
 				xdmf_output(jikan);
 			}
 		}
+
 	}
+    free_ewald_sum();//wakiwaki
+    delete ewald_sum;//wakiwaki
 
 	if (SW_UDF) {
 		ufout->write();

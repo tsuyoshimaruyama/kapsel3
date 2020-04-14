@@ -20,7 +20,7 @@
 #include "udfmanager.h"
 #include "parameter_define.h"
 #include "variable.h"
-
+#include "ewald_wrapper.h"
 /////////////////////
 /////////////////////
 extern int Fixed_particle;
@@ -62,7 +62,7 @@ enum JAX {x_axis, y_axis, z_axis, no_axis};
 enum JP  {motor,slip,obstacle,no_propulsion};
 enum WALL { NO_WALL, FLAT_WALL };
 enum QUINCKE {ON, OFF};
-
+enum EWALD {DIPOLE, NONE};//wakiwaki
 enum OBL_INT {linear_int, spline_int};
 enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
 
@@ -128,6 +128,10 @@ extern const char *WALL_name[];
 //////
 extern QUINCKE     SW_QUINCKE;
 extern const char *QUINCKE_name[];
+
+////////wakiwaki
+extern EWALD       SW_EWALD;
+extern const char *EWALD_name[];
 
 //////
 extern OUTFORMAT SW_OUTFORMAT;
@@ -195,7 +199,9 @@ extern double *janus_rotlet_dipole_C2;
 extern FlatWall wall;
 //////
 extern QuinckeEffect quincke;
-
+////////wakiwaki
+extern EwaldEffect ewald;
+//////
 extern char Out_dir[];
 extern char Out_name[];
 //////

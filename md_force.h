@@ -14,6 +14,7 @@
 #include "interaction.h"
 #include "make_phi.h"
 #include "particle_rotation_solver.h"
+#include "ewald_wrapper.h"
 
 extern double *Hydro_force;
 extern double *Hydro_force_new;
@@ -159,5 +160,6 @@ inline void rigid_chain_debug(Particle *p, const double &time,
 // S.Imamura
 //
 void Calc_harmonic_torque_quincke(Particle *p);
+void Cal_dipole_interaction_force_torque(Particle *p,const bool &DIPOLE);//wakiwaki
 
 #endif

@@ -18,6 +18,7 @@
 #include "rigid.h"
 #include "periodic_boundary.h"
 #include "wall.h"
+#include "ewald_wrapper.h"
 
 enum ITER {start_iter, new_iter, reset_iter, end_iter};
 
@@ -112,6 +113,7 @@ inline void Force(Particle *p){
 
     if(SW_PT == rigid) {
       //fprintf(stderr, "##### Calc_harmonic_torque_quincke\n");
+      Cal_dipole_interaction_force_torque(p,true);
       Calc_harmonic_torque_quincke(p);
     }
 }

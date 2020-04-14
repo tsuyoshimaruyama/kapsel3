@@ -62,7 +62,10 @@ const char *WALL_name[] = {"NONE", "FLAT"};
 //////
 QUINCKE		SW_QUINCKE;
 const char *QUINCKE_name[] = {"ON", "OFF"};
-
+////////wakiwaki
+EWALD       SW_EWALD;
+const char *EWALD_name[] = {"DIPOLE", "NONE"};
+//////
 OUTFORMAT SW_OUTFORMAT;
 EXTFORMAT SW_EXTFORMAT;
 Field_crop      print_field_crop;
@@ -198,7 +201,8 @@ FlatWall wall;
 
 //// Quincke
 QuinckeEffect quincke;
-
+//// Ewald dipole //wakiwaki
+EwaldEffect ewald;
 ////
 int Rigid_Number;
 int **Rigid_Motions_vel;   // 0 (fix) or 1 (free)
@@ -370,6 +374,18 @@ inline void Set_quincke_parameters()
 	}
 }
 
+inline void Set_ewald_parameter()//wakiwaki
+{
+	if (SW_EWALD == DIPOLE) {
+		{
+			fprintf(stderr, "#\n");
+			fprintf(stderr, "# Ewald Effect Enabled \n");
+            fprintf(stderr, "# Dipole Strength           : %c\n", ewald.dipole_strength);//wakiwaki
+			fprintf(stderr, "#\n");
+		}
+	}
+}
+
 //////
 inline void Set_global_parameters(void) {
 	Particle_Number = 0;
@@ -414,6 +430,7 @@ inline void Set_global_parameters(void) {
 	Set_wall_parameters(RADIUS + HXI);
 
 	Set_quincke_parameters();
+	Set_ewald_parameter();//wakiwaki
 
 	WAVE_X = PI2 / LX;
 	WAVE_Y = PI2 / LY;
@@ -2526,6 +2543,31 @@ void Gourmet_file_io(const char *infile
         if (SW_QUINCKE != OFF && SW_EQ != Navier_Stokes) {
             fprintf(stderr, "# Error: quincke effect only enabled for Navier_Stokes simulations so far\n");
             exit(-1);
+        }
+	}
+	{ //wakiwaki
+		Location target("switch.ewald");
+		string   str;
+		SW_EWALD = NONE;
+		if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == EWALD_name[NONE]) {
+                SW_EWALD = NONE;
+            } else if (str == EWALD_name[DIPOLE]) {
+                SW_EWALD = DIPOLE;
+                target.down("DIPOLE");
+            	{
+                    {
+                        ufin->get(target.sub("dipole_strength"), ewald.dipole_strength);
+                        ufout->put(target.sub("dipole_strength"), ewald.dipole_strength);
+                        ufres->put(target.sub("dipole_strength"), ewald.dipole_strength);
+                    }
+                }
+                target.up();
+            } else {
+                exit_job(EXIT_FAILURE);
+            }
         }
 	}
 	

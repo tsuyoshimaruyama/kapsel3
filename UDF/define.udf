@@ -6,8 +6,8 @@
   \end{def}
   \begin{data}
     EngineType:"Kapsel"
-    EngineVersion:"v3.4"
-    Comment:"2018/04/01"
+    EngineVersion:"v3.3"
+    Comment:"2018/02/13"
   \end{data}
 \end{header}
 
@@ -125,8 +125,6 @@ object_type: {
 	 janus_torque: Vector3d "self-propulsion torque"
 	 janus_slip_vel: float "Slip velocity coeff B1"
 	 janus_slip_mode: float "Blake squirmer mode B2/B1"
-	 janus_rotlet_C1: float "rotlet coefficient C1"
-	 janus_rotlet_dipole_C2: float  "rotlet dipole C2"
       }
    }//end spherical_particle
 
@@ -222,6 +220,23 @@ switch: {
    ns_solver:{
       OBL_INT: select {'linear', 'spline'} "interpolation scheme for Oblique/Rectangular transform"
    }
+   wall:{
+      type: select{'NONE', 'FLAT'}
+      FLAT: {axis: select{'X', 'Y', 'Z'}"perpendicular axis to flat parallel walls"
+      DH: int "wall thickness in number of grid points"}
+   }
+   quincke:{
+      type: select{'ON','OFF'}
+      ON: { e_dir: select{'X', 'Y', 'Z'}"constraint axis(the direction of external electric field E)"
+            w_dir: select{'X', 'Y', 'Z'}"the direction of constant angular velocity vector(body frame)"
+            torque_amp: double "the amplitude of constraint torque"
+      }
+   }
+   //wakiwaki
+   ewald:{
+      type: select{'DIPOLE','NONE'}
+      DIPOLE: {dipole_strength: double "the dipole strength"}
+    }
 }
 
 output: {

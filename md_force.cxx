@@ -740,12 +740,48 @@ void Calc_harmonic_torque_quincke(Particle *p)
 		harmonic_torque[1] = K * n_dot_e * ( n[2] * e_omega_space[0] - n[0] * e_omega_space[2] );
 		harmonic_torque[2] = K * n_dot_e * ( n[0] * e_omega_space[1] - n[1] * e_omega_space[0] );
 
-		//fprintf(stderr, "#### harmonic_torque = (%2.6f, %2.6f, %2.6f)\n", harmonic_torque[0], harmonic_torque[1], harmonic_torque[2]);
+		// fprintf(stderr, "#### harmonic_torque = (%2.6f, %2.6f, %2.6f)\n", harmonic_torque[0], harmonic_torque[1], harmonic_torque[2]);
 
 		for (int d = 0; d < DIM; d++) {
-			torqueGrs[rigidID][d] += harmonic_torque[d];
+        	torqueGrs[rigidID][d] += harmonic_torque[d];//wakiwaki
 		}
     }
 
 	//fprintf(stderr, "#------->check Calc_harmonic_torque_quincke end\n");
+}
+void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE) //wakiwaki
+{
+    double dmy_f_ewald;
+	double mu_mag = ewald.dipole_strength;//dipole strength
+	double prefactor;
+	double distance;
+
+#pragma omp parallel for
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+    	for(int d = 0; d < DIM; d++){
+    		ewald_mem.r[rigidID][d] = p[rigidID].x[d];
+            if(d==0){ewald_mem.mu[rigidID][d] = -2.0*(p[rigidID].q.s*p[rigidID].q.v[2]+p[rigidID].q.v[0]*p[rigidID].q.v[1]);}
+            else if(d==1){ewald_mem.mu[rigidID][d] = 1.0-2.0*p[rigidID].q.v[1]*p[rigidID].q.v[1]-2.0*p[rigidID].q.v[2]*p[rigidID].q.v[2];}
+            else if(d==2){ewald_mem.mu[rigidID][d] = 0.0;}
+        }
+		prefactor = mu_mag/sqrt(ewald_mem.mu[rigidID][0]*ewald_mem.mu[rigidID][0]+ewald_mem.mu[rigidID][1]*ewald_mem.mu[rigidID][1]);
+		for(int d=0;d<DIM-1;d++){
+			ewald_mem.mu[rigidID][d] *= prefactor;
+		}
+		 //fprintf(stderr, "#### mu = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.mu[rigidID][0],ewald_mem.mu[rigidID][1],ewald_mem.mu[rigidID][2]);
+		// fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[rigidID].q.s,p[rigidID].q.v[0],p[rigidID].q.v[1],p[rigidID].q.v[2]);
+    }
+    compute_ewald_sum();
+	// distance = p[0].x[1]-p[1].x[1];
+// 	fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[1].q.s, p[1].q.v[0], p[1].q.v[1], p[1].q.v[2]);
+	// fprintf(stderr, "#### mu = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.mu[0][0],ewald_mem.mu[0][1],ewald_mem.mu[0][2]);
+	// fprintf(stderr, "#### ewald_force = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]);
+	// fprintf(stderr, "#### %2.6f, %2.6f, %2.6f, %2.6f)\n", distance, ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]);
+	// fprintf(stderr, "#### ewald_torque = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.torque[1][0],ewald_mem.torque[1][1],ewald_mem.torque[1][2]);
+    for(int rigidID = 0; rigidID < Rigid_Number; rigidID++){
+        for(int d = 0; d < DIM; d++){
+            forceGrs[rigidID][d]  += ewald_mem.force[rigidID][d];
+            torqueGrs[rigidID][d] += ewald_mem.torque[rigidID][d];
+        }
+    }
 }

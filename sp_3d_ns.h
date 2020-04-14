@@ -35,6 +35,7 @@
 #include "operate_electrolyte.h"
 #include "operate_surface.h"
 #include "wall.h"
+#include "ewald_wrapper.h"
 
 #include "fdm.h"
 

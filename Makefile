@@ -317,7 +317,10 @@ OBJS  	= mt19937ar.o\
 	operate_surface.o\
 	matrix_diagonal.o\
 	periodic_spline.o\
-	sp_3d_ns.o
+	sp_3d_ns.o\
+	ewald.o\
+	ewald_wrapper.o\
+	wall.o
 
 ## options for HDF5 support
 ifeq ($(HDF5), ON)

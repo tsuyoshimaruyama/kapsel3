@@ -95,6 +95,11 @@ typedef struct QuinckeEffect {
     double torque_amp;
 } QuinckeEffect;
 
+typedef struct EwaldEffect {
+    // input parameters
+    double dipole_strength;
+} EwaldEffect;
+
 typedef struct Index_range {
   int istart;
   int iend;
