@@ -743,13 +743,13 @@ void Calc_harmonic_torque_quincke(Particle *p)
 		// fprintf(stderr, "#### harmonic_torque = (%2.6f, %2.6f, %2.6f)\n", harmonic_torque[0], harmonic_torque[1], harmonic_torque[2]);
 
 		for (int d = 0; d < DIM; d++) {
-        	torqueGrs[rigidID][d] += harmonic_torque[d];//wakiwaki
+        	torqueGrs[rigidID][d] += harmonic_torque[d];
 		}
     }
 
 	//fprintf(stderr, "#------->check Calc_harmonic_torque_quincke end\n");
 }
-void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE) //wakiwaki
+void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE)
 {
     double dmy_f_ewald;
 	double mu_mag = ewald.dipole_strength;//dipole strength
@@ -772,8 +772,8 @@ void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE) //waki
 		// fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[rigidID].q.s,p[rigidID].q.v[0],p[rigidID].q.v[1],p[rigidID].q.v[2]);
     }
     compute_ewald_sum();
-	// distance = p[0].x[1]-p[1].x[1];
-// 	fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[1].q.s, p[1].q.v[0], p[1].q.v[1], p[1].q.v[2]);
+
+	// fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[1].q.s, p[1].q.v[0], p[1].q.v[1], p[1].q.v[2]);
 	// fprintf(stderr, "#### mu = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.mu[0][0],ewald_mem.mu[0][1],ewald_mem.mu[0][2]);
 	// fprintf(stderr, "#### ewald_force = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]);
 	// fprintf(stderr, "#### %2.6f, %2.6f, %2.6f, %2.6f)\n", distance, ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]);

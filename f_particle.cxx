@@ -9,11 +9,9 @@
 
 double **f_particle;
 
-void Mem_alloc_f_particle(void){
-  f_particle = (double **) malloc(sizeof(double *) * DIM);
-  for(int d=0;d<DIM;d++){
-    f_particle[d] = alloc_1d_double(NX*NY*NZ_);
-  }
+void Mem_alloc_f_particle(void) {
+    f_particle = (double **)malloc(sizeof(double *) * DIM);
+    for (int d = 0; d < DIM; d++) {
+        f_particle[d] = alloc_1d_double(NX * NY * NZ_);
+    }
 }
-
- 

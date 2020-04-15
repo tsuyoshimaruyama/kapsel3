@@ -12,68 +12,68 @@
 #include "quaternion.h"
 
 // omega,ux,uy,phi, phi_up など場の変数を格納する
-typedef double ** *Value;
-typedef int ** *Value_int;
+typedef double ***Value;
+typedef int ***   Value_int;
 
 typedef struct CTime {
-  int ts; // time step
-  double time; // time
-  double dt_fluid;  // time increment
-  double hdt_fluid; // 1/2 * dt
-  double dt_md;  // time increment
-  double hdt_md; // 1/2 * dt
+    int    ts;         // time step
+    double time;       // time
+    double dt_fluid;   // time increment
+    double hdt_fluid;  // 1/2 * dt
+    double dt_md;      // time increment
+    double hdt_md;     // 1/2 * dt
 } CTime;
 
 typedef struct Particle {
-  int spec;
-  double x[DIM];
-  double x_previous[DIM];
-  double x_nopbc[DIM];
+    int    spec;
+    double x[DIM];
+    double x_previous[DIM];
+    double x_nopbc[DIM];
 
-  double v[DIM];
-  double v_old[DIM];
-  double v_slip[DIM];
+    double v[DIM];
+    double v_old[DIM];
+    double v_slip[DIM];
 
-  double f_hydro[DIM];
-  double f_hydro_previous[DIM];
-  double f_hydro1[DIM];
-  double f_slip[DIM];
-  double f_slip_previous[DIM];
+    double f_hydro[DIM];
+    double f_hydro_previous[DIM];
+    double f_hydro1[DIM];
+    double f_slip[DIM];
+    double f_slip_previous[DIM];
 
-  double fr[DIM];
-  double fr_previous[DIM];
-  double torque_r[DIM];
-  double torque_r_previous[DIM];
+    double fr[DIM];
+    double fr_previous[DIM];
+    double torque_r[DIM];
+    double torque_r_previous[DIM];
 
-  double omega[DIM];
-  double omega_old[DIM];
-  double omega_slip[DIM];
+    double omega[DIM];
+    double omega_old[DIM];
+    double omega_slip[DIM];
 
-  double torque_hydro[DIM];
-  double torque_hydro_previous[DIM];
-  double torque_hydro1[DIM];
-  double torque_slip[DIM];
-  double torque_slip_previous[DIM];
+    double torque_hydro[DIM];
+    double torque_hydro_previous[DIM];
+    double torque_hydro1[DIM];
+    double torque_slip[DIM];
+    double torque_slip_previous[DIM];
 
-  double momentum_depend_fr[DIM];
+    double momentum_depend_fr[DIM];
 
-  double QR[DIM][DIM];
-  double QR_old[DIM][DIM];
+    double QR[DIM][DIM];
+    double QR_old[DIM][DIM];
 
-  quaternion q;
-  quaternion q_old;
+    quaternion q;
+    quaternion q_old;
 
-  //working memory for iterative slip implementation
-  double mass;                       //fluid particle mass
-  double mass_center[DIM];           //center of mass of fluid particle
-  double inertia[DIM][DIM];          //moment of inertia of fluid particle
+    // working memory for iterative slip implementation
+    double mass;               // fluid particle mass
+    double mass_center[DIM];   // center of mass of fluid particle
+    double inertia[DIM][DIM];  // moment of inertia of fluid particle
 
-  double surface_mass;               //surface fluid mass
-  double surface_mass_center[DIM];   //surface fluid center of mass
-  double surface_inertia[DIM][DIM];  //surface fluid moment of inertia
+    double surface_mass;               // surface fluid mass
+    double surface_mass_center[DIM];   // surface fluid center of mass
+    double surface_inertia[DIM][DIM];  // surface fluid moment of inertia
 
-  double surface_dv[DIM];            //momentum change due to slip
-  double surface_dw[DIM];        //ang. momentum change due to slip
+    double surface_dv[DIM];  // momentum change due to slip
+    double surface_dw[DIM];  // ang. momentum change due to slip
 } Particle;
 
 typedef struct FlatWall {
@@ -90,8 +90,9 @@ typedef struct FlatWall {
 
 typedef struct QuinckeEffect {
     // input parameters
-    int e_dir; // the direction of external electric field E (0=x, 1=y, 2=z)
-    int w_dir; // the direction of constant angular velocity vector caused by quincke effect (body frame) (0=x, 1=y, 2=z)
+    int e_dir;  // the direction of external electric field E (0=x, 1=y, 2=z)
+    int w_dir;  // the direction of constant angular velocity vector caused by quincke effect (body frame) (0=x, 1=y,
+                // 2=z)
     double torque_amp;
 } QuinckeEffect;
 
@@ -101,34 +102,34 @@ typedef struct EwaldEffect {
 } EwaldEffect;
 
 typedef struct Index_range {
-  int istart;
-  int iend;
-  int jstart;
-  int jend;
-  int kstart;
-  int kend;
+    int istart;
+    int iend;
+    int jstart;
+    int jend;
+    int kstart;
+    int kend;
 } Index_range;
 
-typedef struct Field_crop{
-  int start[DIM];
-  int count[DIM];
-  int stride[DIM];
+typedef struct Field_crop {
+    int start[DIM];
+    int count[DIM];
+    int stride[DIM];
 } Field_crop;
 
-typedef struct Field_output{
-  bool none;
-  bool vel;
-  bool phi;
-  bool charge;
-  bool pressure;
-  bool tau;
+typedef struct Field_output {
+    bool none;
+    bool vel;
+    bool phi;
+    bool charge;
+    bool pressure;
+    bool tau;
 } Field_output;
 
-typedef struct Particle_output{
-  bool none;
-  int start;
-  int count;
-  int stride;
+typedef struct Particle_output {
+    bool none;
+    int  start;
+    int  count;
+    int  stride;
 } Particle_output;
 
 #endif

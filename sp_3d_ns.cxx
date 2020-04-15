@@ -817,7 +817,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	Init_Wall(phi_wall);
-	init_ewald_sum(NX,NY,NZ,Rigid_Number, false, true);//charge//dipole//wakiwaki
+	init_ewald_sum(NX,NY,NZ,Rigid_Number, false, true);//charge//dipole//
     
 	Init_output(particles);
 	Init_zeta_k(zeta, uk_dc);
@@ -1023,8 +1023,8 @@ int main(int argc, char *argv[]) {
 		}
 
 	}
-    free_ewald_sum();//wakiwaki
-    delete ewald_sum;//wakiwaki
+    free_ewald_sum();
+    delete ewald_sum;
 
 	if (SW_UDF) {
 		ufout->write();

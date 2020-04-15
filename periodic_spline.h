@@ -1,12 +1,13 @@
 #ifndef PERIODIC_SPLINE_H
 #define PERIODIC_SPLINE_H
 
+#include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include <string>
+
 #include <cstring>
+#include <string>
 
 #include "alloc.h"
 #include "macro.h"
@@ -20,17 +21,17 @@
   spaced sample points
  */
 
-//f(x) = S_i(x) = a_i + b_i*(x-x_i) + c_i*(x-x_i)**2 + d_i*(x-x_i)**3
-typedef struct splineSystem{
-  int      n;
-  double   dx;
-  double*  a;
-  double*  b;
-  double*  c;
-  double*  d;
-  double*  Q;
-  double*  Aii;
-  double*  Ain;
+// f(x) = S_i(x) = a_i + b_i*(x-x_i) + c_i*(x-x_i)**2 + d_i*(x-x_i)**3
+typedef struct splineSystem {
+    int     n;
+    double  dx;
+    double* a;
+    double* b;
+    double* c;
+    double* d;
+    double* Q;
+    double* Aii;
+    double* Ain;
 } splineSystem;
 
 /*!
@@ -38,13 +39,12 @@ typedef struct splineSystem{
   \param[in] *spl splineSystem object with interpolation data
   \param[in] x interpolation position
  */
-inline double splineFx(const splineSystem* spl, const double &x){
-  assert(x >= 0.0 && x < (spl->n) * (spl->dx));
-  int i = x / (spl->dx);
-  double delta = (x - (double)i*spl->dx);
-  double delta2= delta*delta;
-  return (spl->a[i]) + (spl->b[i])*delta + 
-    (spl->c[i])*delta2 + (spl->d[i])*delta2*delta;
+inline double splineFx(const splineSystem* spl, const double& x) {
+    assert(x >= 0.0 && x < (spl->n) * (spl->dx));
+    int    i      = x / (spl->dx);
+    double delta  = (x - (double)i * spl->dx);
+    double delta2 = delta * delta;
+    return (spl->a[i]) + (spl->b[i]) * delta + (spl->c[i]) * delta2 + (spl->d[i]) * delta2 * delta;
 }
 
 /*!
@@ -53,13 +53,13 @@ inline double splineFx(const splineSystem* spl, const double &x){
   \param[in] n number of grid points for interpolation
   \param[in] dx grid spacing
  */
-void splineInit(splineSystem* &spl, const int &n, const double &dx);
+void splineInit(splineSystem*& spl, const int& n, const double& dx);
 
 /*!
   \brief Free working memory
   \param[in] *spl splineSysbem object to free
  */
-void splineFree(splineSystem* &spl);
+void splineFree(splineSystem*& spl);
 
 /*!
   \brief Compute periodic spline interpolation
@@ -67,6 +67,5 @@ void splineFree(splineSystem* &spl);
   \param[in] *fx interpolation function values over periodic grid
  */
 void splineCompute(splineSystem* spl, const double* fx);
-
 
 #endif

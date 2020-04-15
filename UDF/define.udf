@@ -232,7 +232,6 @@ switch: {
             torque_amp: double "the amplitude of constraint torque"
       }
    }
-   //wakiwaki
    ewald:{
       type: select{'DIPOLE','NONE'}
       DIPOLE: {dipole_strength: double "the dipole strength"}

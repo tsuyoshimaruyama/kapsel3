@@ -50,7 +50,7 @@ void Add_f_wall(Particle* p) {
     double offset = 0.5 * LJ_dia;
     if (SW_WALL == FLAT_WALL) {
 #pragma omp parallel
-        if(SW_PT == rigid) {
+        if (SW_PT == rigid) {
             for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
                 double x   = p[Rigid_Particle_Cumul[rigidID]].x[wall.axis];
                 double f_h = 0.0;
@@ -73,6 +73,5 @@ void Add_f_wall(Particle* p) {
                 p[n].fr[wall.axis] += f_h;
             }
         }
-        
     }
 }

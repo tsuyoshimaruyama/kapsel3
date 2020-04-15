@@ -1,8 +1,8 @@
 #ifndef EWALD_H
 #define EWALD_H
 
-#include <iostream>//wakiwaki
-using namespace std;//wakiwaki
+#include <iostream>
+using namespace std;
 
 #include <assert.h>
 #include <math.h>
@@ -185,7 +185,7 @@ class ewald {
                                      const double efield_x,
                                      const double efield_y,
                                      const double efield_z
-                                     ) const;//wakiwaki
+                                     ) const;
 
   void compute_upol(double& energy, 
                     double const* polarizability,

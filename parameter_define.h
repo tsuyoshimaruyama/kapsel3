@@ -9,7 +9,7 @@
 #define PARAMETER_DEFINE_H_
 
 #define DIM 3
-#define QDIM ((DIM*(DIM+1))/2-1)
+#define QDIM ((DIM * (DIM + 1)) / 2 - 1)
 /////// for SW_FFT
 #define Ooura 0
 #define RFFTW 1

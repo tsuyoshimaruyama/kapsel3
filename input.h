@@ -62,7 +62,7 @@ enum JAX {x_axis, y_axis, z_axis, no_axis};
 enum JP  {motor,slip,obstacle,no_propulsion};
 enum WALL { NO_WALL, FLAT_WALL };
 enum QUINCKE {ON, OFF};
-enum EWALD {DIPOLE, NONE};//wakiwaki
+enum EWALD {DIPOLE, NONE};
 enum OBL_INT {linear_int, spline_int};
 enum OBL_TRANSFORM {oblique2cartesian, cartesian2oblique};
 
@@ -129,7 +129,7 @@ extern const char *WALL_name[];
 extern QUINCKE     SW_QUINCKE;
 extern const char *QUINCKE_name[];
 
-////////wakiwaki
+//////
 extern EWALD       SW_EWALD;
 extern const char *EWALD_name[];
 
@@ -199,7 +199,7 @@ extern double *janus_rotlet_dipole_C2;
 extern FlatWall wall;
 //////
 extern QuinckeEffect quincke;
-////////wakiwaki
+//////
 extern EwaldEffect ewald;
 //////
 extern char Out_dir[];
