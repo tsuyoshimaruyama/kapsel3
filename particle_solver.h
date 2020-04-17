@@ -10,17 +10,18 @@
 #define PARTICLE_SOLVER_H
 
 #include <math.h>
-#include "variable.h"
+
+#include "ewald_wrapper.h"
 #include "input.h"
 #include "md_force.h"
-#include "rigid_body.h"
 #include "particle_rotation_solver.h"
-#include "rigid.h"
 #include "periodic_boundary.h"
+#include "rigid.h"
+#include "rigid_body.h"
+#include "variable.h"
 #include "wall.h"
-#include "ewald_wrapper.h"
 
-enum ITER {start_iter, new_iter, reset_iter, end_iter};
+enum ITER { start_iter, new_iter, reset_iter, end_iter };
 
 /*!
   \brief Update particle positions and orientations using the Euler
@@ -68,14 +69,13 @@ void MD_solver_velocity_Euler(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro(Particle *p, const CTime &jikan);
 
 /*!
-  \brief Update particle velocities for swimming particles 
+  \brief Update particle velocities for swimming particles
   \details Automatically chooses appropriate Euler/Adams-Bashforth
   scheme depending on the jikan step. Part of iterative solution for
   particle velocities. Only slip force changes, other quantities
   should only be computed at the first iteration.
  */
 void MD_solver_velocity_slip_iter(Particle *p, const CTime &jikan, const ITER &iter_flag);
-
 
 // Oblique coordinates
 /*!
@@ -91,64 +91,62 @@ void MD_solver_position_AB2_OBL(Particle *p, const CTime &jikan);
 void MD_solver_velocity_Euler_OBL(Particle *p, const CTime &jikan);
 void MD_solver_velocity_AB2_hydro_OBL(Particle *p, const CTime &jikan);
 
-inline void Force(Particle *p){
-    
-    //fprintf(stderr, "##### force : launched\n");
+inline void Force(Particle *p) {
+    // fprintf(stderr, "##### force : launched\n");
 
-    if(LJ_truncate >= 0){
-      Calc_f_Lennard_Jones(p);
+    if (LJ_truncate >= 0) {
+        Calc_f_Lennard_Jones(p);
     }
-    
-    if(G != 0.0){
-      Add_f_gravity(p);
+
+    if (G != 0.0) {
+        Add_f_gravity(p);
     }
-    if(SW_PT == chain){
-      Calc_anharmonic_force_chain(p, Distance0);
+    if (SW_PT == chain) {
+        Calc_anharmonic_force_chain(p, Distance0);
     }
-    
+
     if (SW_WALL != NO_WALL) {
-      //fprintf(stderr, "##### Add_f_wall: launched\n");
-      Add_f_wall(p);
+        // fprintf(stderr, "##### Add_f_wall: launched\n");
+        Add_f_wall(p);
     }
 
-    if(SW_PT == rigid) {
-      //fprintf(stderr, "##### Calc_harmonic_torque_quincke\n");
-      Cal_dipole_interaction_force_torque(p,true);
-      Calc_harmonic_torque_quincke(p);
+    if (SW_PT == rigid) {
+        // fprintf(stderr, "##### Calc_harmonic_torque_quincke\n");
+        Cal_dipole_interaction_force_torque(p, true);
+        Calc_harmonic_torque_quincke(p);
     }
 }
 
-inline void Force_OBL(Particle *p){
-    
-  dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
-  rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
-  
-  if(LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
-  
-  if(G != 0.0) Add_f_gravity(p);
+inline void Force_OBL(Particle *p) {
+    dev_shear_stress_lj = dev_shear_stress_rot = 0.0;
+    rigid_dev_shear_stress_lj = rigid_dev_shear_stress_rot = 0.0;
 
-  if(SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0_OBL);
+    if (LJ_truncate >= 0) Calc_f_Lennard_Jones_OBL(p);
 
-  dev_shear_stress_lj  *= Ivolume;
-  dev_shear_stress_rot *= Ivolume;
+    if (G != 0.0) Add_f_gravity(p);
 
-  rigid_dev_shear_stress_lj  *= Ivolume;
-  rigid_dev_shear_stress_rot *= Ivolume;
+    if (SW_PT == chain) Calc_anharmonic_force_chain(p, Distance0_OBL);
+
+    dev_shear_stress_lj *= Ivolume;
+    dev_shear_stress_rot *= Ivolume;
+
+    rigid_dev_shear_stress_lj *= Ivolume;
+    rigid_dev_shear_stress_rot *= Ivolume;
 }
 
-inline void Pinning(Particle *p){
-  if(SW_PT != rigid){
+inline void Pinning(Particle *p) {
+    if (SW_PT != rigid) {
 #pragma omp parallel for
-    for(int i = 0; i < N_PIN; i++){
-      for(int d = 0; d < DIM; d++){
-        p[Pinning_Numbers[i]].v[d] = 0.0;
-      }
+        for (int i = 0; i < N_PIN; i++) {
+            for (int d = 0; d < DIM; d++) {
+                p[Pinning_Numbers[i]].v[d] = 0.0;
+            }
+        }
+        for (int i = 0; i < N_PIN_ROT; i++) {
+            for (int d = 0; d < DIM; d++) {
+                p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
+            }
+        }
     }
-    for(int i = 0; i < N_PIN_ROT; i++){
-      for(int d = 0; d < DIM; d++){
-        p[Pinning_ROT_Numbers[i]].omega[d] = 0.0;
-      }
-    }
-  }
 }
 #endif

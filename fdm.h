@@ -645,7 +645,7 @@ inline void Spline_A_oblique_transform(double *a, const OBL_TRANSFORM &flag) {
 
             // setup interpolation grid
             for (int i = 0; i < NX; i++) {  // original coord
-                im = (i * NY * NZ_) + (j * NZ_) + k;
+                im    = (i * NY * NZ_) + (j * NZ_) + k;
                 dmy_x = fmod(i * DX - sign * degree_oblique * delta_y + 4.0 * LX, LX);  // transformed coord
 
                 // velocity components in transformed basis defined over

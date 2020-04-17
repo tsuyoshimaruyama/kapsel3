@@ -375,7 +375,7 @@ void ewald::compute_self(double&       energy,
                          double const* r,
                          double const* q,
                          double const* mu) const {
-    const double eta_factor = eta * iRoot_PI;
+    const double eta_factor  = eta * iRoot_PI;
     const double eta3_factor = 4.0 / 3.0 * eta2 * eta_factor;
     const double eta5_factor = 2.0 / 5.0 * eta2 * eta3_factor;
 
