@@ -159,26 +159,44 @@ inline double Calc_instantaneous_shear_rate(double **zeta, double uk_dc[DIM], do
     return (srate_eff * hivolume);
 }
 
+inline double Calc_local_gradient_y_OBL(const double *field, int im) {
+	const double INV_2DX = 1. / (2. * DX);
+    int          i, j, k;
+	im2ijk(im, &i, &j, &k);
+	// periodic boundary condition
+	int ip1, jp1;
+	int im1, jm1;
+	ip1 = adj(1, i, NX);
+	jp1 = adj(1, j, NY);
+	im1 = adj(-1, i, NX);
+	jm1 = adj(-1, j, NY);
+	// set adjacent meshes
+	int im_ip1_jp1 = ijk2im(ip1, jp1, k);
+	int im_im1_jp1 = ijk2im(im1, jp1, k);
+	int im_ip1_jm1 = ijk2im(ip1, jm1, k);
+	int im_im1_jm1 = ijk2im(im1, jm1, k);
+	// interior division
+	double field_p1 = 0.5 * ((1 - degree_oblique) * field[im_ip1_jp1] + (1 + degree_oblique) * field[im_im1_jp1]);
+	double field_m1 = 0.5 * ((1 - degree_oblique) * field[im_im1_jm1] + (1 + degree_oblique) * field[im_ip1_jm1]);
+	double local_dfield_dy = (field_p1 - field_m1) * INV_2DX;
+	return local_dfield_dy;
+}
+
 inline void Calc_shear_rate_eff() {
+    int                 im;
     static const double ivolume    = Ivolume * POW3(DX);
-    double              s_rate_eff = 0.0;
-
-    {
+    double              s_rate_eff = 0.;
 #pragma omp parallel for reduction(+ : s_rate_eff)
-
-        for (int i = 0; i < NX; i++) {
-            for (int j = 0; j < NY - 1; j++) {
-                for (int k = 0; k < NZ; k++) {
-                    s_rate_eff +=
-                        (ucp[0][(i * NY * NZ_) + ((j + 1) * NZ_) + k] - ucp[0][(i * NY * NZ_) + (j * NZ_) + k]) / DX;
-                }
-            }
-        }
-    }
-
-    s_rate_eff *= ivolume * NY / (NY - 1);
-
-    Shear_rate_eff = s_rate_eff;
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                im = i * NY * NZ_ + j * NZ_ + k;
+				s_rate_eff += Calc_local_gradient_y_OBL(u[0], im);
+			}
+		}
+	}
+	s_rate_eff *= ivolume;
+	Shear_rate_eff += s_rate_eff;
 }
 
 inline double Update_strain(double &     shear_strain_realized,
