@@ -210,6 +210,44 @@ inline double Update_strain(double &     shear_strain_realized,
     return srate_eff;
 }
 
+inline void Calc_fluid_stress(double **u, double *eta, double &fluid_stress) {
+    int                 im;
+    double              dux_dx           = 0.;
+    double              dux_dy           = 0.;
+    double              shear_rate_local = 0.;
+    static const double ivolume          = Ivolume * POW3(DX);
+#pragma omp parallel for reduction(+ : fluid_stress)
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                im               = i * NY * NZ_ + j * NZ_ + k;
+                shear_rate_local = Shear_rate_eff + Calc_local_gradient_y_OBL(u[0], im);
+                fluid_stress += shear_rate_local * eta[im];
+            }
+        }
+    }
+    fluid_stress *= ivolume;
+}
+
+inline void Calc_interfacial_stress(double *psi, double &interfacial_stress) {
+    int                 im;
+    double              dpsi_dx = 0.;
+    double              dpsi_dy = 0.;
+    static const double ivolume = Ivolume * POW3(DX);
+#pragma omp parallel for reduction(+ : interfacial_stress)
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                im      = i * NY * NZ_ + j * NZ_ + k;
+				dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
+          		dpsi_dy = Calc_local_gradient_y_OBL(psi, im);
+          		interfacial_stress += dpsi_dx * dpsi_dy;
+           	}
+	    }	
+    }
+    interfacial_stress *= -ivolume * ps.alpha;
+}
+
 inline void Mean_shear_stress(const Count_SW &OPERATION,
                               FILE *          fout,
                               Particle *      p,
@@ -233,6 +271,9 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
                                       "shear_stress_temporal_old",
                                       "shear_stress_temporal_new",
                                       "reynolds_stress",
+                                      "fluid_stress",
+                                      "interfacial_stress",
+                                      "apparent_stress",
                                       "viscosity"};
 
     static char line_label[1 << 10];
@@ -260,8 +301,10 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
         double stress[DIM][DIM]           = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
         double hydro_stress[DIM][DIM]     = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
         double hydro_stress_new[DIM][DIM] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
-
-        double strain_output = Shear_strain_realized;
+        double fluid_stress               = 0.;
+        double interfacial_stress         = 0.;
+        double apparent_stress            = 0.;
+        double strain_output              = Shear_strain_realized;
         if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM ||
             SW_EQ == Shear_NS_LE_CH_FDM) {
             Calc_hydro_stress(jikan, p, phi, Hydro_force, hydro_stress);
@@ -269,6 +312,8 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
             double dev_stress     = (SW_PT == rigid ? rigid_dev_shear_stress_lj : dev_shear_stress_lj);
             double dev_stress_rot = (SW_PT == rigid ? rigid_dev_shear_stress_rot : dev_shear_stress_rot);
             double ETA_EFF        = ETA;
+            fluid_stress          = ETA_EFF * srate_eff;
+			if (PHASE_SEPARATION) Calc_interfacial_stress(psi, interfacial_stress);
             if (VISCOSITY_CHANGE) {
                 // volume-averaged eta
                 double dmy;
@@ -278,9 +323,12 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
                     dmy = ps.ratio;
                 }
                 ETA_EFF = (ETA_A - ETA_B) * dmy + ETA_B;
+
+				if (ETA_A != ETA_B) Calc_fluid_stress(u, eta_s, fluid_stress);
             }
+            apparent_stress = hydro_stress_new[1][0] + Inertia_stress + dev_stress + fluid_stress + interfacial_stress;
             fprintf(fout,
-                    "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n",
+                    "%16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g %16.8g\n",
                     jikan.time,
                     srate_eff,
                     degree_oblique,
@@ -289,7 +337,10 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
                     hydro_stress[1][0],
                     hydro_stress_new[1][0],
                     Inertia_stress,
-                    (hydro_stress_new[1][0] + Inertia_stress + dev_stress) / srate_eff + ETA_EFF);
+                    fluid_stress,
+                    interfacial_stress,
+                    apparent_stress,
+                    apparent_stress / srate_eff);
         } else if (SW_EQ == Shear_Navier_Stokes) {
             if (!Shear_AC) {
                 Calc_shear_stress(jikan, p, phi, Shear_force, stress);
