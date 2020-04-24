@@ -726,58 +726,29 @@ void Calc_f_hydro_correct_precision_OBL(Particle *           p,
     }  // Particle_Number
 }
 
-// 20190628
-// S.Imamura
-// compute torque to fix one axis of body frame on the plane (which has normal unit vector \vec{n})
 void Calc_harmonic_torque_quincke(Particle *p) {
-    double e_omega_space[DIM];      // basis vector of the body frame written by space frame
-    double R_space2body[DIM][DIM];  // Rotation matrix:space to body
-    double harmonic_torque[DIM];
-    double n[DIM]       = {0.0, 0.0, 0.0};  // the unit vector parallel to external electric field E
-    double e_omega[DIM] = {0.0, 0.0, 0.0};  // basis vector of body frame paralled constant angular velocity vector
-    double K = quincke.torque_amp;  // amplitude of potential which is decided from stokes resistance for rotating
-    double n_dot_e;
-
-    // fprintf(stderr, "#------->check Calc_harmonic_torque_quincke start\n");
+    double K      = quincke.torque_amp;  // amplitude of potential which is decided from stokes resistance for rotating
+    double n[DIM] = {0.0, 0.0, 0.0};     // the unit vector parallel to external electric field E
+    double e_omega[DIM] = {0.0, 0.0, 0.0};  // body basis vector parallel to the constant angular velocity vector
 
     n[quincke.e_dir]       = 1.0;
     e_omega[quincke.w_dir] = 1.0;
 
 #pragma omp parallel for
     for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
-        // get Rotation matrix
-        rqtn_rm(R_space2body, p[Rigid_Particle_Cumul[rigidID]].q);
-
-        // initilaze e_omega_space
-        for (int d = 0; d < DIM; d++) {
-            e_omega_space[d] = 0.0;
-        }
+        double e_omega_space[DIM] = {0.0, 0.0, 0.0};  // basis vector of the body frame written by space frame
+        double harmonic_torque[DIM];
 
         // get e_space_fix from basis vector of body frame
-        for (int d1 = 0; d1 < DIM; d1++) {
-            for (int d2 = 0; d2 < DIM; d2++) {
-                e_omega_space[d1] += R_space2body[d1][d2] * e_omega[d2];
-            }
-        }
-
-        n_dot_e = 0.0;
-        for (int d = 0; d < DIM; d++) {
-            n_dot_e += n[d] * e_omega_space[d];
-        }
+        rigid_body_rotation(e_omega_space, e_omega, p[Rigid_Particle_Cumul[rigidID]].q, BODY2SPACE);
+        double n_dot_e = n[0] * e_omega_space[0] + n[1] * e_omega_space[1] + n[2] * e_omega_space[2];
 
         harmonic_torque[0] = K * n_dot_e * (n[1] * e_omega_space[2] - n[2] * e_omega_space[1]);
         harmonic_torque[1] = K * n_dot_e * (n[2] * e_omega_space[0] - n[0] * e_omega_space[2]);
         harmonic_torque[2] = K * n_dot_e * (n[0] * e_omega_space[1] - n[1] * e_omega_space[0]);
 
-        // fprintf(stderr, "#### harmonic_torque = (%2.6f, %2.6f, %2.6f)\n", harmonic_torque[0], harmonic_torque[1],
-        // harmonic_torque[2]);
-
-        for (int d = 0; d < DIM; d++) {
-            torqueGrs[rigidID][d] += harmonic_torque[d];
-        }
+        for (int d = 0; d < DIM; d++) torqueGrs[rigidID][d] += harmonic_torque[d];
     }
-
-    // fprintf(stderr, "#------->check Calc_harmonic_torque_quincke end\n");
 }
 void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE) {
     double dmy_f_ewald;

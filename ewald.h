@@ -212,14 +212,14 @@ class ewald {
       \details Given the ewald convergence parameters, defines the appropriate cutoff
       for the wave-vectors
       \f[
-      k^2 \lessim -4 \eta^2 \delta \ln{\epsilon}
+      k^2 \lesssim -4 \eta^2 \delta \ln{\epsilon}
       \f]
       and creates a Sekibun list with all the wave-vectors whose magnitude is less than this cutoff.
       The k vectors are defined as
       \f[
       \vec{k} = 2\pi \left(\bm{h}^{-1}\right)^{\text{t}} \vec{n}
       \f]
-      \note For symmetry reasons, we only need to consider half the wave-vectors. We choose the \f$\k_x > 0\f$
+      \note For symmetry reasons, we only need to consider half the wave-vectors. We choose the \f$k_x > 0\f$
       half (for \f$k_x = 0\f$ we take the \f$k_y > 0\f$ part and for \f$k_x=k_y= 0\f$ the \f$k_z > 0\f$ part).
      */
     void init_domain_k(const double& ewald_delta, const double& ewald_conv);

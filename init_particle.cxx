@@ -497,7 +497,6 @@ void Init_Particle(Particle *p) {
         }
 
         if (SW_QUINCKE == ON) {
-            // fprintf(stderr, "#------->check init_rigid_coordinates_quincke\n");
             init_Rigid_Coordinates_Quincke(p);
         }
 

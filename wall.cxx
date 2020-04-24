@@ -45,31 +45,40 @@ void Init_Wall(double* phi_wall) {
         }
     }
 }
+
+/*!
+    \brief Accumulate forces coming from flat walls on one particle
+    \warning fx is not reset to zero ! (usefull for accumulating forces on rigid bodies)
+*/
+inline double Update_f_wall_single(double& fx, const double& x, const double& cutoff, const double& offset) {
+    double h = x - wall.lo + offset;  // distance to lower mirror particle
+    if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+
+    h = wall.hi - x + offset;
+    if (h <= cutoff) fx -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+}
+
+/*!
+    \brief  Add forces coming from the flat walls to all particles
+*/
 void Add_f_wall(Particle* p) {
     double cutoff = wall.A_R_cutoff * LJ_dia;
     double offset = 0.5 * LJ_dia;
     if (SW_WALL == FLAT_WALL) {
-#pragma omp parallel
         if (SW_PT == rigid) {
+#pragma omp parallel for
             for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
-                double x   = p[Rigid_Particle_Cumul[rigidID]].x[wall.axis];
                 double f_h = 0.0;
-                double h   = x - wall.lo + offset;  // distance to lower mirror particle
-                if (h <= cutoff) f_h += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++)
+                    Update_f_wall_single(f_h, p[n].x[wall.axis], cutoff, offset);
 
-                h = wall.hi - x + offset;
-                if (h <= cutoff) f_h -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
                 forceGrs[rigidID][wall.axis] += f_h;
             }
         } else {
+#pragma omp parallel for
             for (int n = 0; n < Particle_Number; n++) {
-                double x   = p[n].x[wall.axis];
                 double f_h = 0.0;
-                double h   = x - wall.lo + offset;  // distance to lower mirror particle
-                if (h <= cutoff) f_h += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
-
-                h = wall.hi - x + offset;
-                if (h <= cutoff) f_h -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+                Update_f_wall_single(f_h, p[n].x[wall.axis], cutoff, offset);
                 p[n].fr[wall.axis] += f_h;
             }
         }

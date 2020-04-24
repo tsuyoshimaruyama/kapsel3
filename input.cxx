@@ -374,7 +374,7 @@ inline void Set_ewald_parameter() {
         {
             fprintf(stderr, "#\n");
             fprintf(stderr, "# Ewald Effect Enabled \n");
-            fprintf(stderr, "# Dipole Strength           : %c\n", ewald.dipole_strength);
+            fprintf(stderr, "# Dipole Strength           : %f\n", ewald.dipole_strength);
             fprintf(stderr, "#\n");
         }
     }

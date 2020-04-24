@@ -111,7 +111,6 @@ inline void Force(Particle *p) {
     }
 
     if (SW_PT == rigid) {
-        // fprintf(stderr, "##### Calc_harmonic_torque_quincke\n");
         Cal_dipole_interaction_force_torque(p, true);
         Calc_harmonic_torque_quincke(p);
     }

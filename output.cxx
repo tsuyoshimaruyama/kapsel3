@@ -290,7 +290,6 @@ void Output_udf(UDFManager *ufout, double **zeta, double *uk_dc, const Particle 
         ufout->put(target.sub("v.x"), p[j].v[0]);
         ufout->put(target.sub("v.y"), p[j].v[1]);
         ufout->put(target.sub("v.z"), p[j].v[2]);
-        // fprintf(stderr, "p[%d].v[2] = %.8f\n", j, p[j].v[2]);
 
         qtn_isnormal(p[j].q);
         ufout->put(target.sub("q.q0"), qtn_q0(p[j].q));
