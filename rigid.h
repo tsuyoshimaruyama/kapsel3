@@ -111,34 +111,41 @@ inline void init_set_PBC_OBL(Particle *p) {
 
 /*!
   \brief Diagonalize intertia tensor to determine rigid body frame
+  \note In case of Quincke rollers, nbeads=1, so there is no need to diagonalize anything
  */
 inline void init_Rigid_Coordinates(Particle *p) {
+    if (SW_QUINCKE == OFF) {
+#pragma omp parallel for
+        for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+            double **  eigen_vector;
+            double     eigen_value[DIM];
+            double     dmy_R[DIM][DIM];
+            quaternion dmy_q;
+            int        iter;
+
+            eigen_vector = alloc_2d_double(DIM, DIM);
+            jacobi(Rigid_Moments[rigidID], eigen_vector, eigen_value, iter, DIM);
+            M_coordinate_frame(eigen_vector[2], eigen_vector[0], eigen_vector[1]);
+            for (int i = 0; i < DIM; i++) {
+                for (int j = 0; j < DIM; j++) {
+                    dmy_R[j][i] = eigen_vector[i][j];
+                }
+            }
+            rm_rqtn(dmy_q, dmy_R);
+
+            for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                qtn_init(p[n].q, dmy_q);
+            }
+            free_2d_double(eigen_vector);
+        }
+    }
+
+    // Rigid_Moments_body gives inertia tensor in body-frame
+    // By construction it should be diagonal
 #pragma omp parallel for
     for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
-        double **  eigen_vector;
-        double     eigen_value[DIM];
-        double     dmy_R[DIM][DIM];
-        quaternion dmy_q;
-        int        iter;
-
-        eigen_vector = alloc_2d_double(DIM, DIM);
-        jacobi(Rigid_Moments[rigidID], eigen_vector, eigen_value, iter, DIM);
-        M_coordinate_frame(eigen_vector[2], eigen_vector[0], eigen_vector[1]);
-        for (int i = 0; i < DIM; i++) {
-            for (int j = 0; j < DIM; j++) {
-                dmy_R[j][i] = eigen_vector[i][j];
-            }
-        }
-        rm_rqtn(dmy_q, dmy_R);
-
-        for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
-            qtn_init(p[n].q, dmy_q);
-        }
-        free_2d_double(eigen_vector);
-
-        // Rigid_Moments_body gives inertia tensor in body-frame
-        // By construction it should be diagonal
-        rigid_body_matrix_rotation(Rigid_Moments_body[rigidID][0], Rigid_Moments[rigidID][0], dmy_q, SPACE2BODY);
+        const int n = Rigid_Particle_Cumul[rigidID];
+        rigid_body_matrix_rotation(Rigid_Moments_body[rigidID][0], Rigid_Moments[rigidID][0], p[n].q, SPACE2BODY);
     }
 
     // GRvecs_body gives position of all beads in body-frame

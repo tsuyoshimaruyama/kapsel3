@@ -50,7 +50,7 @@ void Init_Wall(double* phi_wall) {
     \brief Accumulate forces coming from flat walls on one particle
     \warning fx is not reset to zero ! (usefull for accumulating forces on rigid bodies)
 */
-inline double Update_f_wall_single(double& fx, const double& x, const double& cutoff, const double& offset) {
+inline void Update_f_wall_single(double& fx, const double& x, const double& cutoff, const double& offset) {
     double h = x - wall.lo + offset;  // distance to lower mirror particle
     if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
 

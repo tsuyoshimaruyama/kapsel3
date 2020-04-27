@@ -2513,6 +2513,10 @@ void        Gourmet_file_io(const char *infile,
             if (str == QUINCKE_name[OFF]) {
                 SW_QUINCKE = OFF;
             } else if (str == QUINCKE_name[ON]) {
+                if (!(SW_PT == rigid && Particle_Number == Rigid_Number)) {
+                    fprintf(stderr, "Quincke mode only enabled for Rigid bodyes with nbeads = 1!\n");
+                    exit(-1);
+                }
                 SW_QUINCKE = ON;
                 target.down("ON");
                 {
@@ -2557,7 +2561,7 @@ void        Gourmet_file_io(const char *infile,
                 exit_job(EXIT_FAILURE);
             }
         }
-        if (SW_QUINCKE != OFF && SW_EQ != Navier_Stokes) {
+        if (SW_QUINCKE != OFF && (SW_EQ != Navier_Stokes)) {
             fprintf(stderr, "# Error: quincke effect only enabled for Navier_Stokes simulations so far\n");
             exit(-1);
         }

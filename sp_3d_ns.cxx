@@ -796,11 +796,10 @@ int main(int argc, char *argv[]) {
     Particle *particles = new Particle[Particle_Number];
     if (Particle_Number > 0) {
         Init_Particle(particles);
-        // if(SW_PT == chain){
         if ((SW_PT == chain) && !(DISTRIBUTION == user_specify)) {
             Init_Chain(particles);
-        } else if ((SW_PT == rigid) && !(DISTRIBUTION == user_specify)) {
-            if (SW_QUINCKE == OFF) Init_Rigid(particles);
+        } else if ((SW_PT == rigid && SW_QUINCKE == OFF) && !(DISTRIBUTION == user_specify)) {
+            Init_Rigid(particles);
         }
     }
     Init_Wall(phi_wall);

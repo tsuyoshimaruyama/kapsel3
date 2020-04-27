@@ -106,11 +106,10 @@ inline void Force(Particle *p) {
     }
 
     if (SW_WALL != NO_WALL) {
-        // fprintf(stderr, "##### Add_f_wall: launched\n");
         Add_f_wall(p);
     }
 
-    if (SW_PT == rigid) {
+    if (SW_QUINCKE == ON) {
         Cal_dipole_interaction_force_torque(p, true);
         Calc_harmonic_torque_quincke(p);
     }

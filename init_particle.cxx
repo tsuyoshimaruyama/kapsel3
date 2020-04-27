@@ -342,32 +342,24 @@ void Init_Particle(Particle *p) {
     // set orientation
     if (ROTATION) {
         if (ORIENTATION == random_dir) {
+            if (SW_QUINCKE == OFF) {
+                for (int i = 0; i < Particle_Number; i++) random_rqtn(p[i].q);
+            } else {
+                for (int i = 0; i < Particle_Number; i++) get_quaternion_xy_random_Quincke(p[i].q, quincke.e_dir);
+            }
             for (int i = 0; i < Particle_Number; i++) {
-                random_rqtn(p[i].q);
                 qtn_isnormal(p[i].q);
                 qtn_init(p[i].q_old, p[i].q);
             }
         } else if (ORIENTATION == space_dir || (ORIENTATION == user_dir && DISTRIBUTION != user_specify)) {
-            // fprintf(stderr, "#--------------->check ORIENTATION == space_dir || (ORIENTATION == user_dir &&
-            // DISTRIBUTION != user_specify)\n");
             for (int i = 0; i < Particle_Number; i++) {
-                // fprintf(stderr, "#before qtn_init\n");
-                // fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1],
-                // p[i].q.v[2]);
                 qtn_init(p[i].q, 1.0, 0.0, 0.0, 0.0);
                 qtn_isnormal(p[i].q);
                 qtn_init(p[i].q_old, p[i].q);
-                // fprintf(stderr, "#after qtn_init\n");
-                // fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1],
-                // p[i].q.v[2]);
             }
         } else if (ORIENTATION == user_dir && DISTRIBUTION == user_specify) {
             // do nothing orientation already read
-            // fprintf(stderr, "#--------------->check ORIENTATION == user_dir && DISTRIBUTION == user_specify");
-            // for (int i = 0; i < Particle_Number; i++) {
-            // fprintf(stderr, "p[%d].q: %5.2f, %5.2f, %5.2f, %5.2f\n", i, p[i].q.s, p[i].q.v[0], p[i].q.v[1],
-            // p[i].q.v[2]);
-            //}
+
         } else {
             fprintf(stderr, "Error: wrong ORIENTATION\n");
             fprintf(stderr, "%d %d %d\n", ORIENTATION, space_dir, user_dir);
@@ -391,12 +383,7 @@ void Init_Particle(Particle *p) {
                     l_particle[0],
                     l_particle[1],
                     l_particle[2]);
-            if (SW_PT == rigid) {
-                for (int rigidID = 0; rigidID < Rigid_Number; rigidID++)
-                    p[Rigid_Particle_Cumul[rigidID]].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
-            } else {
-                for (int n = 0; n < Particle_Number; n++) p[n].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
-            }
+            for (int n = 0; n < Particle_Number; n++) p[n].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
         }
         double overlap_distance = RADIUS - HXI;
 
@@ -496,9 +483,7 @@ void Init_Particle(Particle *p) {
             Make_phi_rigid_inertia_OBL(phi_sum, p);
         }
 
-        if (SW_QUINCKE == ON) {
-            init_Rigid_Coordinates_Quincke(p);
-        }
+        init_Rigid_Coordinates(p);
 
         init_set_vGs(p);
 
