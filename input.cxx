@@ -57,7 +57,7 @@ const char *WALL_name[] = {"NONE", "FLAT"};
 
 //////
 QUINCKE     SW_QUINCKE;
-const char *QUINCKE_name[] = {"ON", "OFF"};
+const char *QUINCKE_name[] = {"OFF", "ON"};
 //////
 MULTIPOLE SW_MULTIPOLE;
 
@@ -363,9 +363,19 @@ inline void Set_quincke_parameters() {
             const char axis[DIM] = {'X', 'Y', 'Z'};
             fprintf(stderr, "#\n");
             fprintf(stderr, "# Quincke Effect Enabled \n");
-            fprintf(stderr, "# Electric Field           : %c\n", axis[quincke.e_dir]);
-            fprintf(stderr, "# Constant angular velocity: %c\n", axis[quincke.w_dir]);
-            fprintf(stderr, "# Amp. of constraint torque: %5.2f\n", quincke.torque_amp);
+            fprintf(stderr,
+                    "# Electric Field           : %c (%2.1f, %2.1f, %2.1f)\n",
+                    axis[quincke.e_dir],
+                    quincke.n[0],
+                    quincke.n[1],
+                    quincke.n[2]);
+            fprintf(stderr,
+                    "# Constant angular velocity: %c (%2.1f, %2.1f, %2.1f)\n",
+                    axis[quincke.w_dir],
+                    quincke.e_omega[0],
+                    quincke.e_omega[1],
+                    quincke.e_omega[2]);
+            fprintf(stderr, "# Amp. of constraint torque: %5.2f\n", quincke.K);
             fprintf(stderr, "#\n");
         }
     }
@@ -2565,6 +2575,8 @@ void        Gourmet_file_io(const char *infile,
                             fprintf(stderr, "Unspecified electric field axis\n");
                             exit(-1);
                         }
+                        for (int d = 0; d < DIM; d++) quincke.n[d] = 0.0;
+                        quincke.n[quincke.e_dir] = 1.0;
 
                         ufin->get(target.sub("w_dir"), axis);
                         ufout->put(target.sub("w_dir"), axis);
@@ -2579,11 +2591,13 @@ void        Gourmet_file_io(const char *infile,
                             fprintf(stderr, "Unspecified constant angular velocity vector axis\n");
                             exit(-1);
                         }
+                        for (int d = 0; d < DIM; d++) quincke.e_omega[d] = 0.0;
+                        quincke.e_omega[quincke.w_dir] = 1.0;
                     }
                     {
-                        ufin->get(target.sub("torque_amp"), quincke.torque_amp);
-                        ufout->put(target.sub("torque_amp"), quincke.torque_amp);
-                        ufres->put(target.sub("torque_amp"), quincke.torque_amp);
+                        ufin->get(target.sub("torque_amp"), quincke.K);
+                        ufout->put(target.sub("torque_amp"), quincke.K);
+                        ufres->put(target.sub("torque_amp"), quincke.K);
                     }
                 }
                 target.up();
@@ -2642,6 +2656,14 @@ void        Gourmet_file_io(const char *infile,
                                 fprintf(stderr, "Unspecified dipolar axis\n");
                                 exit(-1);
                             }
+
+                            // override dipole axis in case of quincke rollers
+                            // Hack: save magnitude in x component
+                            if (SW_QUINCKE == QUINCKE_ON) {
+                                mu_vec[0] = magnitude;
+                                mu_vec[1] = mu_vec[2] = 0.0;
+                            }
+
                             // In the future this could be specified on a per/species basis...
                             for (int i = 0; i < Component_Number; i++)
                                 for (int d = 0; d < DIM; d++) multipole_mu[i][d] = mu_vec[d];

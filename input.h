@@ -48,8 +48,8 @@ enum PT { spherical_particle, chain, rigid };
 enum JAX { x_axis, y_axis, z_axis, no_axis };
 enum JP { motor, slip, obstacle, no_propulsion };
 enum WALL { NO_WALL, FLAT_WALL };
-enum QUINCKE { QUINCKE_ON, QUINCKE_OFF };
-enum MULTIPOLE { MULTIPOLE_ON, MULTIPOLE_OFF };
+enum QUINCKE { QUINCKE_OFF, QUINCKE_ON };
+enum MULTIPOLE { MULTIPOLE_OFF, MULTIPOLE_ON };
 enum OBL_INT { linear_int, spline_int };
 enum OBL_TRANSFORM { oblique2cartesian, cartesian2oblique };
 
@@ -117,8 +117,7 @@ extern QUINCKE     SW_QUINCKE;
 extern const char *QUINCKE_name[];
 
 //////
-extern MULTIPOLE   SW_MULTIPOLE;
-extern const char *MULTIPOLE_name[];
+extern MULTIPOLE SW_MULTIPOLE;
 
 //////
 extern OUTFORMAT    SW_OUTFORMAT;

@@ -13,6 +13,8 @@ double *Hydro_force_new;
 
 #define Cell_length 16
 
+void (*compute_particle_dipole)(double *mu_space, double *mu_body, quaternion &q);
+
 void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
     Particle *p,
     void (*distance0_func)(const double *x1, const double *x2, double &r12, double *x12),
@@ -726,72 +728,70 @@ void Calc_f_hydro_correct_precision_OBL(Particle *           p,
     }  // Particle_Number
 }
 
-void Calc_harmonic_torque_quincke(Particle *p) {
-    double K      = quincke.torque_amp;  // amplitude of potential which is decided from stokes resistance for rotating
-    double n[DIM] = {0.0, 0.0, 0.0};     // the unit vector parallel to external electric field E
-    double e_omega[DIM] = {0.0, 0.0, 0.0};  // body basis vector parallel to the constant angular velocity vector
-
-    n[quincke.e_dir]       = 1.0;
-    e_omega[quincke.w_dir] = 1.0;
-
+void        Calc_harmonic_torque_quincke(Particle *p) {
 #pragma omp parallel for
     for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
         double e_omega_space[DIM] = {0.0, 0.0, 0.0};  // basis vector of the body frame written by space frame
         double harmonic_torque[DIM];
 
         // get e_space_fix from basis vector of body frame
-        rigid_body_rotation(e_omega_space, e_omega, p[Rigid_Particle_Cumul[rigidID]].q, BODY2SPACE);
-        double n_dot_e = n[0] * e_omega_space[0] + n[1] * e_omega_space[1] + n[2] * e_omega_space[2];
+        rigid_body_rotation(e_omega_space, quincke.e_omega, p[Rigid_Particle_Cumul[rigidID]].q, BODY2SPACE);
+        double K_n_dot_e = quincke.K * (quincke.n[0] * e_omega_space[0] + quincke.n[1] * e_omega_space[1] +
+                                        quincke.n[2] * e_omega_space[2]);
 
-        harmonic_torque[0] = K * n_dot_e * (n[1] * e_omega_space[2] - n[2] * e_omega_space[1]);
-        harmonic_torque[1] = K * n_dot_e * (n[2] * e_omega_space[0] - n[0] * e_omega_space[2]);
-        harmonic_torque[2] = K * n_dot_e * (n[0] * e_omega_space[1] - n[1] * e_omega_space[0]);
+        harmonic_torque[0] = K_n_dot_e * (quincke.n[1] * e_omega_space[2] - quincke.n[2] * e_omega_space[1]);
+        harmonic_torque[1] = K_n_dot_e * (quincke.n[2] * e_omega_space[0] - quincke.n[0] * e_omega_space[2]);
+        harmonic_torque[2] = K_n_dot_e * (quincke.n[0] * e_omega_space[1] - quincke.n[1] * e_omega_space[0]);
 
         for (int d = 0; d < DIM; d++) torqueGrs[rigidID][d] += harmonic_torque[d];
     }
 }
-    double dmy_f_ewald;
-    double mu_mag = ewald.dipole_strength;  // dipole strength
-    double prefactor;
-    double distance;
 
 void Calc_multipole_interaction_force_torque(Particle *p) {
+    {  // Call ewald routines
+        if (ewald_param.dipole) {
+            for (int specID = 0; specID < Component_Number; specID++) {
+                const int nump    = Particle_Numbers[specID];
+                double *  mu_body = multipole_mu[specID];
+                int       offset  = 0;
 #pragma omp parallel for
-    for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
-        for (int d = 0; d < DIM; d++) {
-            ewald_mem.r[rigidID][d] = p[rigidID].x[d];
-            if (d == 0) {
-                ewald_mem.mu[rigidID][d] =
-                    -2.0 * (p[rigidID].q.s * p[rigidID].q.v[2] + p[rigidID].q.v[0] * p[rigidID].q.v[1]);
-            } else if (d == 1) {
-                ewald_mem.mu[rigidID][d] =
-                    1.0 - 2.0 * p[rigidID].q.v[1] * p[rigidID].q.v[1] - 2.0 * p[rigidID].q.v[2] * p[rigidID].q.v[2];
-            } else if (d == 2) {
-                ewald_mem.mu[rigidID][d] = 0.0;
+                for (int i0 = 0; i0 < nump; i0++) {
+                    int i = offset + i0;
+                    compute_particle_dipole(ewald_mem.mu[i], mu_body, p[i].q);
+                }
+                offset += Particle_Numbers[specID];
             }
         }
-        prefactor = mu_mag / sqrt(ewald_mem.mu[rigidID][0] * ewald_mem.mu[rigidID][0] +
-                                  ewald_mem.mu[rigidID][1] * ewald_mem.mu[rigidID][1]);
-        for (int d = 0; d < DIM - 1; d++) {
-            ewald_mem.mu[rigidID][d] *= prefactor;
-        }
-        // fprintf(stderr, "#### mu = (%2.6f, %2.6f, %2.6f)\n",
-        // ewald_mem.mu[rigidID][0],ewald_mem.mu[rigidID][1],ewald_mem.mu[rigidID][2]);
-        // fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n",
-        // p[rigidID].q.s,p[rigidID].q.v[0],p[rigidID].q.v[1],p[rigidID].q.v[2]);
+        compute_ewald_sum();
     }
-    compute_ewald_sum();
 
-    // fprintf(stderr, "#### q = (%2.6f, %2.6f, %2.6f, %2.6f)\n", p[1].q.s, p[1].q.v[0], p[1].q.v[1], p[1].q.v[2]);
-    // fprintf(stderr, "#### mu = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.mu[0][0],ewald_mem.mu[0][1],ewald_mem.mu[0][2]);
-    // fprintf(stderr, "#### ewald_force = (%2.6f, %2.6f, %2.6f)\n",
-    // ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]); fprintf(stderr, "#### %2.6f, %2.6f, %2.6f,
-    // %2.6f)\n", distance, ewald_mem.force[1][0],ewald_mem.force[1][1],ewald_mem.force[1][2]); fprintf(stderr, "####
-    // ewald_torque = (%2.6f, %2.6f, %2.6f)\n", ewald_mem.torque[1][0],ewald_mem.torque[1][1],ewald_mem.torque[1][2]);
-    for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
-        for (int d = 0; d < DIM; d++) {
-            forceGrs[rigidID][d] += ewald_mem.force[rigidID][d];
-            torqueGrs[rigidID][d] += ewald_mem.torque[rigidID][d];
+    {  // Update particle forces & torques
+#pragma omp parallel for
+        for (int i = 0; i < Particle_Number; i++) {
+            Particle &pi = p[i];
+            for (int d = 0; d < DIM; d++) {
+                pi.fr[d] += ewald_mem.force[i][d];
+                pi.torque_r[d] += ewald_mem.torque[i][d];
+            }
+        }
+    }
+
+    if (SW_PT == rigid) {  // Update rigid forces & torques
+#pragma omp parallel for
+        for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+            for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                const double *frc = ewald_mem.force[n];
+                const double *tau = ewald_mem.torque[n];
+                for (int d = 0; d < DIM; d++) {
+                    forceGrs[rigidID][d] += frc[d];
+                    torqueGrs[rigidID][d] += tau[d];
+                }
+                {
+                    torqueGrs[rigidID][0] += (GRvecs[n][1] * frc[2] - GRvecs[n][2] * frc[1]);
+                    torqueGrs[rigidID][1] += (GRvecs[n][2] * frc[0] - GRvecs[n][0] * frc[2]);
+                    torqueGrs[rigidID][2] += (GRvecs[n][0] * frc[1] - GRvecs[n][1] * frc[0]);
+                }
+            }
         }
     }
 }
