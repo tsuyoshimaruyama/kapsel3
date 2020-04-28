@@ -802,9 +802,9 @@ int main(int argc, char *argv[]) {
             Init_Rigid(particles);
         }
     }
-    Init_Wall(phi_wall);
-    init_ewald_sum(NX, NY, NZ, Rigid_Number, false, true);  // charge//dipole//
+    init_ewald_sum(LX, LY, LZ, Particle_Number);
 
+    Init_Wall(phi_wall);
     Init_output(particles);
     Init_zeta_k(zeta, uk_dc);
     {

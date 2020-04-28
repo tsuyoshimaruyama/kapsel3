@@ -1,3 +1,11 @@
+/*!
+  \file gen_shell.cxx
+  \author John J. Molina
+  \date 2014/08/18
+  \version 1.0
+  \brief Auxiliary routines to compute concentric shells of periodic images. Used for direct calculation of long-rage
+  electrostatic forces/fields to compare with Ewald sums.
+ */
 #include "gen_shell.h"
 
 bool rcompare(vector<int> a, vector<int> b) {

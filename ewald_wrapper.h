@@ -1,3 +1,11 @@
+/*!
+  \file ewald_wrapper.h
+  \author John J. Molina
+  \date 2014/08/18
+  \version 1.0
+  \brief Wrapper to compute ewald forces, fields, field gradients, etc.
+ */
+
 #ifndef EWALD_WRAPPER_H
 #define EWALD_WRAPPER_H
 
@@ -9,49 +17,56 @@
 typedef struct EwaldParams {
     // input parameters
     double alpha   = 8.0;
-    double delta   = 1.0e-16;
-    double conf    = 0.51;
-    double epsilon = -0.01;
-    void   init(double _alpha, double _delta, double _conf, double _eps) {
+    double delta   = EPSILON_MP;
+    double conv    = 0.51;
+    double epsilon = -1.0;  // tinfoil if < 0
+    bool   charge  = false;
+    bool   dipole  = false;
+    bool   enabled = false;
+    void   init(double _alpha, double _delta, double _conv, double _eps, bool _charge, bool _dipole) {
         alpha   = _alpha;
         delta   = _delta;
-        conf    = _conf;
+        conv    = _conv;
         epsilon = _eps;
+        charge  = _charge;
+        dipole  = _dipole;
+        enabled = _charge || _dipole;
     }
 } EwaldParams;
-typedef struct EwaldMem {
-    int     num;
-    int *   group_id;
-    double *dval;
+extern EwaldParams ewald_param;
 
-    double **r;
-    double * q;
-    double **mu;
+typedef struct EwaldMem {
+    int  num      = 0;
+    int *group_id = nullptr;
+
+    double **r  = nullptr;
+    double * q  = nullptr;
+    double **mu = nullptr;
 
     double ** force;
     double ** torque;
     double ** efield;
     double ***efield_grad;
     double    energy[5];
-    bool      charge;
-    bool      dipole;
-    void      init(const int &_num, const bool &_charge, const bool &_dipole) {
+
+    /*!
+    \brief Initialize auxiliary Ewald arrays
+    \warning ewald_param should be initilized before calling this function!!!
+    */
+    void init(const int &_num) {
         num      = _num;
-        charge   = _charge;
-        dipole   = _dipole;
         group_id = (int *)alloc_1d_int(num);
         r        = (double **)alloc_2d_double(num, DIM);
-        dval     = (double *)alloc_1d_double(num);
-        q        = (charge ? (double *)alloc_1d_double(num) : NULL);
-        mu       = (dipole ? (double **)alloc_2d_double(num, DIM) : NULL);
+        q        = (ewald_param.charge ? (double *)alloc_1d_double(num) : nullptr);
+        mu       = (ewald_param.dipole ? (double **)alloc_2d_double(num, DIM) : nullptr);
         {
             for (int i = 0; i < num; i++) group_id[i] = -(i + 1);
-            if (charge) {
+            if (ewald_param.charge) {
                 for (int i = 0; i < num; i++) q[i] = 0.0;
             }
             double *rr = r[0];
             for (int i = 0; i < num * DIM; i++) rr[i] = 0.0;
-            if (dipole) {
+            if (ewald_param.dipole) {
                 double *pp = mu[0];
                 for (int i = 0; i < num * DIM; i++) pp[i] = 0.0;
             }
@@ -65,10 +80,10 @@ typedef struct EwaldMem {
     void free() {
         free_1d_int(group_id);
 
-        if (charge) free_1d_double(q);
+        if (ewald_param.charge) free_1d_double(q);
 
         free_2d_double(r);
-        if (dipole) free_2d_double(mu);
+        if (ewald_param.dipole) free_2d_double(mu);
 
         free_2d_double(force);
         free_2d_double(torque);
@@ -76,20 +91,14 @@ typedef struct EwaldMem {
         free_3d_double(efield_grad);
     }
 } EwaldMem;
+extern EwaldMem ewald_mem;
 
-extern EwaldParams     ewald_param;
-extern EwaldMem        ewald_mem;
 extern parallelepiped *ewald_cell;
 extern ewald *         ewald_sum;
 
 void free_ewald_sum();
 
-void init_ewald_sum(const double &lx,
-                    const double &ly,
-                    const double &lz,
-                    const int &   num,
-                    const bool &  charge,
-                    const bool &  dipole);
+void init_ewald_sum(const double &lx, const double &ly, const double &lz, const int &num);
 void compute_ewald_sum();
 
 #endif

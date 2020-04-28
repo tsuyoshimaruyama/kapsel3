@@ -1,3 +1,10 @@
+/*!
+  \file ewald.cxx
+  \author John J. Molina
+  \date 2014/08/18
+  \version 1.0
+  \brief Functions to compute ewald forces, fields, field gradients, etc.
+ */
 #include "ewald.h"
 
 parallelepiped::parallelepiped(const double a[DIM], const double b[DIM], const double c[DIM]) {
@@ -294,12 +301,12 @@ ewald::ewald(parallelepiped* _cell,
              const bool&     with_charge,
              const bool&     with_dipole) {
     TINFOIL = CHARGE = DIPOLE = false;
-    ewald_cell                = NULL;
-    ewald_k                   = NULL;
-    coskr_l = coskr_m = coskr_n = NULL;
-    sinkr_l = sinkr_m = sinkr_n = NULL;
-    coskr_lm = sinkr_lm = NULL;
-    coskr = sinkr = NULL;
+    ewald_cell                = nullptr;
+    ewald_k                   = nullptr;
+    coskr_l = coskr_m = coskr_n = nullptr;
+    sinkr_l = sinkr_m = sinkr_n = nullptr;
+    coskr_lm = sinkr_lm = nullptr;
+    coskr = sinkr = nullptr;
 
     cell = _cell;
 
@@ -377,7 +384,7 @@ void ewald::compute_self(double&       energy,
                          double const* mu) const {
     const double eta_factor  = eta * iRoot_PI;
     const double eta3_factor = 4.0 / 3.0 * eta2 * eta_factor;
-    const double eta5_factor = 2.0 / 5.0 * eta2 * eta3_factor;
+    // const double eta5_factor = 2.0 / 5.0 * eta2 * eta3_factor;
 
     if (CHARGE) {
         double dmy_energy = 0.0;
@@ -450,10 +457,10 @@ void ewald::compute_surface(double&       energy,
         dmy_factor *= (-2.0);
 #pragma omp parallel for schedule(static)
         for (int i = 0; i < nump; i++) {
-            const int     ii  = i * DIM;
-            const int     iii = ii * DIM;
-            const double  qi  = (CHARGE ? q[i] : 0.0);
-            const double* mui = (DIPOLE ? &mu[ii] : mu_zero);
+            const int ii = i * DIM;
+            // const int     iii = ii * DIM;
+            const double qi = (CHARGE ? q[i] : 0.0);
+            // const double* mui = (DIPOLE ? &mu[ii] : mu_zero);
 
             efield[ii] += dmy_factor * sum_qr_mu0;
             efield[ii + 1] += dmy_factor * sum_qr_mu1;
@@ -974,7 +981,7 @@ void ewald::save_results_cp2k(double const* E_ewald,
     // assuming lenght units are in angstroms
     const double e_au = 0.5291772114258002;  // E_h
     const double f_au = 0.2800285208247281;  // E_h / a0
-    const double r_au = 1.889726124565062;   // a0
+    // const double r_au = 1.889726124565062;   // a0
 
     char cp2k_buffer[256];
     sprintf(cp2k_buffer, "cp2k_%s", save_buffer);
@@ -1029,7 +1036,7 @@ void ewald::compute(double*       E_ewald,
     /*
     //save data
     this -> save_results(E_ewald[0], force, torque, efield, efield_grad, r, q, mu, save_buffer);
-    if(TINFOIL and q != NULL){
+    if(TINFOIL and q != nullptr){
     this -> save_results_cp2k(E_ewald, force, torque, efield, efield_grad, r, q, mu, save_buffer);
     }
     */

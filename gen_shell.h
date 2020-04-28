@@ -1,3 +1,11 @@
+/*!
+  \file gen_shell.h
+  \author John J. Molina
+  \date 2014/08/18
+  \version 1.0
+  \brief Auxiliary routines to compute concentric shells of periodic images. Used for direct calculation of long-rage
+  electrostatic forces/fields to compare with Ewald sums.
+ */
 #ifndef GEN_SHELL_H
 #define GEN_SHELL_H
 #include <assert.h>

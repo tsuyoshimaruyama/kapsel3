@@ -1,3 +1,10 @@
+/*!
+  \file ewald.h
+  \author John J. Molina
+  \date 2014/08/18
+  \version 1.0
+  \brief Functions to compute ewald forces, fields, field gradients, etc.
+ */
 #ifndef EWALD_H
 #define EWALD_H
 
@@ -68,6 +75,27 @@ class ewald {
    public:
     /*!
       \brief ewald constructor
+      \param[in] _cell pointer to parallelepiped object.
+
+      \param[in] ewald_alpha screening parameter. Units are 1/L, where L is the smallest perpendicular distance between
+      faces of the parallelepiped (smallest length for renctangular boxes).
+
+      \param[in] ewald_epsilon dielectric permittivity at boundary, 1 for vacuum and infinity for tinfoil (if < 0 it is
+      set to tinfoil)
+
+      \param[in] ewald_delta tolerance parameter. Determines largest vector \f$k_{\textrm{max}}\f$ such
+      that
+      \f{align*}{
+      \delta &= \exp\left[{-\frac{k_{\textrm{max}}^2}{4.0\alpha^2}}\right]
+      \f}
+      Rule of thumb is to use machine precision (~1.0e-16)
+
+      \param[in] ewald_conv convergence parameter (0,1]. Fraction of k vectors within sphere of radius
+      \f$k_{\textrm{max}}\f$ to consider (should be ~0.5)
+
+      \param[in] num_particles number of particles or charge centers
+      \param[in] with_charge whether to include point charges true/false
+      \param[in] with_dipole whether to include point dipoles true/false
      */
     ewald(parallelepiped* _cell,
           const double&   ewald_alpha,
@@ -104,6 +132,8 @@ class ewald {
 
     /*!
       \brief Compute all particle quantities using multipolar ewald
+      \warning Total charge of the system should be zero, all quadrupole tensors should be symmetric (though not
+      necessarily traceless)
      */
     void compute(double*       E_ewald,
                  double*       force,
