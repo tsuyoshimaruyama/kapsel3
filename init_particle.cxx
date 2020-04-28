@@ -342,7 +342,7 @@ void Init_Particle(Particle *p) {
     // set orientation
     if (ROTATION) {
         if (ORIENTATION == random_dir) {
-            if (SW_QUINCKE == OFF) {
+            if (SW_QUINCKE == QUINCKE_OFF) {
                 for (int i = 0; i < Particle_Number; i++) random_rqtn(p[i].q);
             } else {
                 for (int i = 0; i < Particle_Number; i++) get_quaternion_xy_random_Quincke(p[i].q, quincke.e_dir);

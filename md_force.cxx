@@ -750,12 +750,12 @@ void Calc_harmonic_torque_quincke(Particle *p) {
         for (int d = 0; d < DIM; d++) torqueGrs[rigidID][d] += harmonic_torque[d];
     }
 }
-void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE) {
     double dmy_f_ewald;
     double mu_mag = ewald.dipole_strength;  // dipole strength
     double prefactor;
     double distance;
 
+void Calc_multipole_interaction_force_torque(Particle *p) {
 #pragma omp parallel for
     for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
         for (int d = 0; d < DIM; d++) {

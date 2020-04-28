@@ -178,6 +178,6 @@ inline void rigid_chain_debug(Particle *p, const double &time, const int &rigidI
 */
 void Calc_harmonic_torque_quincke(Particle *p);
 
-void Cal_dipole_interaction_force_torque(Particle *p, const bool &DIPOLE);
+void Calc_multipole_interaction_force_torque(Particle *p);
 
 #endif

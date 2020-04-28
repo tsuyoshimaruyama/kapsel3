@@ -114,7 +114,7 @@ inline void init_set_PBC_OBL(Particle *p) {
   \note In case of Quincke rollers, nbeads=1, so there is no need to diagonalize anything
  */
 inline void init_Rigid_Coordinates(Particle *p) {
-    if (SW_QUINCKE == OFF) {
+    if (SW_QUINCKE == QUINCKE_OFF) {
 #pragma omp parallel for
         for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
             double **  eigen_vector;

@@ -109,9 +109,12 @@ inline void Force(Particle *p) {
         Add_f_wall(p);
     }
 
-    if (SW_QUINCKE == ON) {
-        Cal_dipole_interaction_force_torque(p, true);
+    if (SW_QUINCKE == QUINCKE_ON) {
         Calc_harmonic_torque_quincke(p);
+    }
+
+    if (SW_MULTIPOLE == MULTIPOLE_ON) {
+        Calc_multipole_interaction_force_torque(p);
     }
 }
 

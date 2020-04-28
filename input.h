@@ -48,8 +48,8 @@ enum PT { spherical_particle, chain, rigid };
 enum JAX { x_axis, y_axis, z_axis, no_axis };
 enum JP { motor, slip, obstacle, no_propulsion };
 enum WALL { NO_WALL, FLAT_WALL };
-enum QUINCKE { ON, OFF };
-enum EWALD { DIPOLE, NONE };
+enum QUINCKE { QUINCKE_ON, QUINCKE_OFF };
+enum MULTIPOLE { MULTIPOLE_ON, MULTIPOLE_OFF };
 enum OBL_INT { linear_int, spline_int };
 enum OBL_TRANSFORM { oblique2cartesian, cartesian2oblique };
 
@@ -117,8 +117,8 @@ extern QUINCKE     SW_QUINCKE;
 extern const char *QUINCKE_name[];
 
 //////
-extern EWALD       SW_EWALD;
-extern const char *EWALD_name[];
+extern MULTIPOLE   SW_MULTIPOLE;
+extern const char *MULTIPOLE_name[];
 
 //////
 extern OUTFORMAT    SW_OUTFORMAT;
@@ -187,7 +187,9 @@ extern FlatWall wall;
 //////
 extern QuinckeEffect quincke;
 //////
-extern EwaldEffect ewald;
+extern double * multipole_q;   // per species charge
+extern double **multipole_mu;  // per species dipole (in body frame)
+
 //////
 extern char Out_dir[];
 extern char Out_name[];

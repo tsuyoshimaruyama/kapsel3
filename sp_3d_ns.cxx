@@ -798,7 +798,7 @@ int main(int argc, char *argv[]) {
         Init_Particle(particles);
         if ((SW_PT == chain) && !(DISTRIBUTION == user_specify)) {
             Init_Chain(particles);
-        } else if ((SW_PT == rigid && SW_QUINCKE == OFF) && !(DISTRIBUTION == user_specify)) {
+        } else if ((SW_PT == rigid && SW_QUINCKE == QUINCKE_OFF) && !(DISTRIBUTION == user_specify)) {
             Init_Rigid(particles);
         }
     }
