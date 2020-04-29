@@ -2553,8 +2553,14 @@ void        Gourmet_file_io(const char *infile,
             if (str == QUINCKE_name[QUINCKE_OFF]) {
                 SW_QUINCKE = QUINCKE_OFF;
             } else if (str == QUINCKE_name[QUINCKE_ON]) {
-                if (!(SW_PT == rigid && Particle_Number == Rigid_Number)) {
-                    fprintf(stderr, "Quincke mode only enabled for Rigid bodyes with nbeads = 1!\n");
+                int Bead_Number = 0;
+                for (int rigid_i = 0; rigid_i < Component_Number; rigid_i++) Bead_Number += Particle_Numbers[rigid_i];
+
+                if (!(SW_PT == rigid && Bead_Number == Rigid_Number)) {
+                    fprintf(stderr,
+                            "Quincke mode only enabled for Rigid bodies with nbeads = 1 (%d, %d)!\n",
+                            Rigid_Number,
+                            Bead_Number);
                     exit(-1);
                 }
                 SW_QUINCKE = QUINCKE_ON;
