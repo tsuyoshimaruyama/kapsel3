@@ -748,7 +748,13 @@ void        Calc_harmonic_torque_quincke(Particle *p) {
 }
 
 void Calc_multipole_interaction_force_torque(Particle *p) {
-    {  // Call ewald routines
+    {  // Mem copy
+#pragma omp parallel for
+        for (int i = 0; i < Particle_Number; i++) {
+            double *ri = ewald_mem.r[i];
+            double *xi = p[i].x;
+            for (int d = 0; d < DIM; d++) ri[d] = xi[d];
+        }
         if (ewald_param.dipole) {
             for (int specID = 0; specID < Component_Number; specID++) {
                 const int nump    = Particle_Numbers[specID];
