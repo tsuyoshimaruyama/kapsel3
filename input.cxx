@@ -2624,86 +2624,92 @@ void        Gourmet_file_io(const char *infile,
             } else if (str == "ON") {
                 SW_MULTIPOLE = MULTIPOLE_ON;
                 string str_multi;
+                target.down("ON");
                 {
-                    target.down("Dipole");
-                    if (ufin->get(target.sub("type"), str_multi)) {
-                        ufout->put(target.sub("type"), str_multi);
-                        ufres->put(target.sub("type"), str_multi);
+                    {
+                        target.down("Dipole");
+                        if (ufin->get(target.sub("type"), str_multi)) {
+                            ufout->put(target.sub("type"), str_multi);
+                            ufres->put(target.sub("type"), str_multi);
 
-                        double magnitude = 0.0;
-                        if (str_multi == "ON") {
-                            dipole = true;
+                            double magnitude = 0.0;
+                            if (str_multi == "ON") {
+                                dipole = true;
 
-                            // dipole magnitude
-                            ufin->get(target.sub("magnitude"), magnitude);
-                            ufout->put(target.sub("magnitude"), magnitude);
-                            ufres->put(target.sub("magnitude"), magnitude);
+                                // dipole magnitude
+                                ufin->get(target.sub("magnitude"), magnitude);
+                                ufout->put(target.sub("magnitude"), magnitude);
+                                ufres->put(target.sub("magnitude"), magnitude);
 
-                            // dipole direction
-                            string axis;
-                            ufin->get(target.sub("dir"), axis);
-                            ufout->put(target.sub("dir"), axis);
-                            ufres->put(target.sub("dir"), axis);
+                                // dipole direction
+                                string axis;
+                                ufin->get(target.sub("dir"), axis);
+                                ufout->put(target.sub("dir"), axis);
+                                ufres->put(target.sub("dir"), axis);
 
-                            double mu_vec[DIM] = {0.0, 0.0, 0.0};
-                            if (axis == "X") {
-                                mu_vec[0] = magnitude;
-                            } else if (axis == "Y") {
-                                mu_vec[1] = magnitude;
-                            } else if (axis == "Z") {
-                                mu_vec[2] = magnitude;
-                            } else {
-                                fprintf(stderr, "Unspecified dipolar axis\n");
-                                exit(-1);
+                                double mu_vec[DIM] = {0.0, 0.0, 0.0};
+                                if (axis == "X") {
+                                    mu_vec[0] = magnitude;
+                                } else if (axis == "Y") {
+                                    mu_vec[1] = magnitude;
+                                } else if (axis == "Z") {
+                                    mu_vec[2] = magnitude;
+                                } else {
+                                    fprintf(stderr, "Unspecified dipolar axis\n");
+                                    exit(-1);
+                                }
+
+                                // override dipole axis in case of quincke rollers
+                                // Hack: save magnitude in x component
+                                if (SW_QUINCKE == QUINCKE_ON) {
+                                    mu_vec[0] = magnitude;
+                                    mu_vec[1] = mu_vec[2] = 0.0;
+                                }
+
+                                // In the future this could be specified on a per/species basis...
+                                for (int i = 0; i < Component_Number; i++)
+                                    for (int d = 0; d < DIM; d++) multipole_mu[i][d] = mu_vec[d];
                             }
-
-                            // override dipole axis in case of quincke rollers
-                            // Hack: save magnitude in x component
-                            if (SW_QUINCKE == QUINCKE_ON) {
-                                mu_vec[0] = magnitude;
-                                mu_vec[1] = mu_vec[2] = 0.0;
-                            }
-
-                            // In the future this could be specified on a per/species basis...
-                            for (int i = 0; i < Component_Number; i++)
-                                for (int d = 0; d < DIM; d++) multipole_mu[i][d] = mu_vec[d];
                         }
+                        target.up();  // Dipole
+                    }
+                    if (!(charge || dipole)) {
+                        fprintf(stderr, "Multipole Error: No charge | dipole enabled !\n");
+                        exit(-1);
                     }
 
-                    target.up();
+                    {  // Ewald parameters
+                        double alpha, delta, conv, epsilon;
+
+                        {
+                            target.down("EwaldParams");
+
+                            ufin->get(target.sub("alpha"), alpha);
+                            ufout->put(target.sub("alpha"), alpha);
+                            ufres->put(target.sub("alpha"), alpha);
+
+                            ufin->get(target.sub("delta"), delta);
+                            ufout->put(target.sub("delta"), delta);
+                            ufres->put(target.sub("delta"), delta);
+
+                            ufin->get(target.sub("converge"), conv);
+                            ufout->put(target.sub("converge"), conv);
+                            ufres->put(target.sub("converge"), conv);
+
+                            ufin->get(target.sub("epsilon"), epsilon);
+                            ufout->put(target.sub("epsilon"), epsilon);
+                            ufres->put(target.sub("epsilon"), epsilon);
+
+                            target.up();
+                        }
+
+                        ewald_param.init(alpha, delta, conv, epsilon, charge, dipole);
+                    }
                 }
-                if (charge == false && dipole == false) SW_MULTIPOLE = MULTIPOLE_OFF;
+                target.up();  // Multipole ON
             } else {
                 exit_job(EXIT_FAILURE);
             }
-        }
-
-        if (SW_MULTIPOLE == MULTIPOLE_ON) {
-            double alpha, delta, conv, epsilon;
-
-            {
-                target.down("EwaldParams");
-
-                ufin->get(target.sub("alpha"), alpha);
-                ufout->put(target.sub("alpha"), alpha);
-                ufres->put(target.sub("alpha"), alpha);
-
-                ufin->get(target.sub("delta"), delta);
-                ufout->put(target.sub("delta"), delta);
-                ufres->put(target.sub("delta"), delta);
-
-                ufin->get(target.sub("converge"), conv);
-                ufout->put(target.sub("converge"), conv);
-                ufres->put(target.sub("converge"), conv);
-
-                ufin->get(target.sub("epsilon"), epsilon);
-                ufout->put(target.sub("epsilon"), epsilon);
-                ufres->put(target.sub("epsilon"), epsilon);
-
-                target.up();
-            }
-
-            ewald_param.init(alpha, delta, conv, epsilon, charge, dipole);
         }
     }
 
