@@ -395,15 +395,21 @@ inline void Set_multipole_parameters() {
             if (ewald_param.dipole) {
                 fprintf(stderr, "# Dipoles Enabled\n");
                 fprintf(stderr, "# \n");
-                for (int i = 0; i < Component_Number; i++) {
-                    double *dmu = multipole_mu[i];
-                    fprintf(stderr,
-                            "# \tSpecies = %2d, |mu| = %5.2f, mu = %5.2f %5.2f %5.2f\n",
-                            i,
-                            sqrt(SQ(dmu[0]) + SQ(dmu[1]) + SQ(dmu[2])),
-                            dmu[0],
-                            dmu[1],
-                            dmu[2]);
+                if (SW_QUINCKE == QUINCKE_OFF) {
+                    for (int i = 0; i < Component_Number; i++) {
+                        double *dmu = multipole_mu[i];
+                        fprintf(stderr,
+                                "# \tSpecies = %2d, |p| = %5.2f, p (body) = %5.2f %5.2f %5.2f\n",
+                                i,
+                                sqrt(SQ(dmu[0]) + SQ(dmu[1]) + SQ(dmu[2])),
+                                dmu[0],
+                                dmu[1],
+                                dmu[2]);
+                    }
+                } else {
+                    fprintf(stderr, "# With Quincke Dipole Mode : p = p_0 e_omega x n\n");
+                    for (int i = 0; i < Component_Number; i++)
+                        fprintf(stderr, "# \tSpecies = %2d, p_0 = %5.2f\n", i, multipole_mu[i][0]);  // Quincke Hack
                 }
             }
             fprintf(stderr, "#\n");
