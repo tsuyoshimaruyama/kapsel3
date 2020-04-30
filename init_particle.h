@@ -50,10 +50,10 @@ extern void compute_particle_dipole_standard(double *mu_space, const double *mu_
    \f$\vec{e}_{\omega}\f$ and the electric field direction \f$\vec{n}\f$
 
    \f{align*}{
-     \vec{p} &=   p_0 \vec{e}_{\omega}\times\vec{n}
+     \vec{p} &=   p_0 \vec{n}\times\vec{e}_{\omega}
    \f}
 
-   with \f$p_0\f$ the magnitude. It is thus anti-parallel to the quincke torque \f$\tau_{\textrm{Quincke}}\f$.
+   with \f$p_0\f$ the magnitude. It is thus parallel to the quincke torque \f$\tau_{\textrm{Quincke}}\f$.
 
     \warning We are assuming that the magnitude of the dipole is passed in the first component of mu_body
     \param[out] mu_space particle dipole in the lab frame
