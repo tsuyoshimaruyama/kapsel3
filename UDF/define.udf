@@ -236,9 +236,14 @@ switch: {
       type: select{'ON', 'OFF'}
       ON:{
          Dipole:{
-            type     : select{'ON', 'OFF'}
-            magnitude: double "the dipole strength"
-            dir      : select{'X', 'Y', 'Z'} "direction of dipolar axis"
+            type : select{'ON', 'OFF'}
+            ON:{
+               magnitude: double "the dipole strength"
+               type     : select{'FIXED', 'QUINCKE'} "type of dipole"            
+               FIXED:{
+                  dir   : select{'X', 'Y', 'Z'} "direction of dipolar axis"
+               }
+            }
          }
          EwaldParams:{
             alpha   : double "Ewald screening parameter"

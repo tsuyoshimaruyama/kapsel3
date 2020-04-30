@@ -395,7 +395,8 @@ inline void Set_multipole_parameters() {
             if (ewald_param.dipole) {
                 fprintf(stderr, "# Dipoles Enabled\n");
                 fprintf(stderr, "# \n");
-                if (SW_QUINCKE == QUINCKE_OFF) {
+                if (compute_particle_dipole == compute_particle_dipole_standard) {
+                    fprintf(stderr, "# Type : Fixed Dipole\n");
                     for (int i = 0; i < Component_Number; i++) {
                         double *dmu = multipole_mu[i];
                         fprintf(stderr,
@@ -406,12 +407,13 @@ inline void Set_multipole_parameters() {
                                 dmu[1],
                                 dmu[2]);
                     }
-                } else {
-                    fprintf(stderr, "# With Quincke Dipole Mode : p = p_0 e_omega x n\n");
+                } else if (compute_particle_dipole == compute_particle_dipole_quincke) {
+                    fprintf(stderr, "# Type : Quincke Dipole  p = p_0 e_omega x n\n");
                     for (int i = 0; i < Component_Number; i++)
                         fprintf(stderr, "# \tSpecies = %2d, p_0 = %5.2f\n", i, multipole_mu[i][0]);  // Quincke Hack
                 }
             }
+            fprintf(stderr, "#\n");
         }
     }
 }
@@ -2634,8 +2636,9 @@ void        Gourmet_file_io(const char *infile,
                 SW_MULTIPOLE = MULTIPOLE_OFF;
             } else if (str == "ON") {
                 SW_MULTIPOLE = MULTIPOLE_ON;
+
                 string str_multi;
-                target.down("ON");
+                target.down("ON");  // Multipole ON
                 {
                     {
                         target.down("Dipole");
@@ -2645,6 +2648,7 @@ void        Gourmet_file_io(const char *infile,
 
                             double magnitude = 0.0;
                             if (str_multi == "ON") {
+                                target.down("ON");  // Dipole ON
                                 dipole = true;
 
                                 // dipole magnitude
@@ -2652,34 +2656,53 @@ void        Gourmet_file_io(const char *infile,
                                 ufout->put(target.sub("magnitude"), magnitude);
                                 ufres->put(target.sub("magnitude"), magnitude);
 
-                                // dipole direction
-                                string axis;
-                                ufin->get(target.sub("dir"), axis);
-                                ufout->put(target.sub("dir"), axis);
-                                ufres->put(target.sub("dir"), axis);
+                                // dipole type
+                                string dipole_type;
+                                ufin->get(target.sub("type"), dipole_type);
+                                ufout->put(target.sub("type"), dipole_type);
+                                ufres->put(target.sub("type"), dipole_type);
 
                                 double mu_vec[DIM] = {0.0, 0.0, 0.0};
-                                if (axis == "X") {
-                                    mu_vec[0] = magnitude;
-                                } else if (axis == "Y") {
-                                    mu_vec[1] = magnitude;
-                                } else if (axis == "Z") {
-                                    mu_vec[2] = magnitude;
-                                } else {
-                                    fprintf(stderr, "Unspecified dipolar axis\n");
-                                    exit(-1);
-                                }
+                                if (dipole_type == "FIXED") {
+                                    target.down("FIXED");
+                                    // dipole direction
+                                    string axis;
+                                    ufin->get(target.sub("dir"), axis);
+                                    ufout->put(target.sub("dir"), axis);
+                                    ufres->put(target.sub("dir"), axis);
 
-                                // override dipole axis in case of quincke rollers
-                                // Hack: save magnitude in x component
-                                if (SW_QUINCKE == QUINCKE_ON) {
-                                    mu_vec[0] = magnitude;
-                                    mu_vec[1] = mu_vec[2] = 0.0;
+                                    if (axis == "X") {
+                                        mu_vec[0] = magnitude;
+                                    } else if (axis == "Y") {
+                                        mu_vec[1] = magnitude;
+                                    } else if (axis == "Z") {
+                                        mu_vec[2] = magnitude;
+                                    } else {
+                                        fprintf(stderr, "Unspecified dipolar axis\n");
+                                        exit(-1);
+                                    }
+                                    compute_particle_dipole = compute_particle_dipole_standard;
+                                    target.up();  // FIXED
+                                } else if (dipole_type == "QUINCKE") {
+                                    mu_vec[0] = magnitude;  // hack the dipole array to store the magnitude
+                                    compute_particle_dipole =
+                                        compute_particle_dipole_quincke;  // use quincke dipole definition
+                                    if (SW_QUINCKE == QUINCKE_OFF) {
+                                        fprintf(stderr,
+                                                "# Error : Quincke dipole specified but Quincke particles not "
+                                                "enabled...\n");
+                                        exit(-1);
+                                    }
+                                } else {
+                                    fprintf(stderr, "Error : unknown dipole type\n");
+                                    exit(-1);
                                 }
 
                                 // In the future this could be specified on a per/species basis...
                                 for (int i = 0; i < Component_Number; i++)
                                     for (int d = 0; d < DIM; d++) multipole_mu[i][d] = mu_vec[d];
+
+                                target.up();  // Dipole ON
                             }
                         }
                         target.up();  // Dipole

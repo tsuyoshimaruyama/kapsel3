@@ -188,6 +188,33 @@ extern QuinckeEffect quincke;
 //////
 extern double * multipole_q;   // per species charge
 extern double **multipole_mu;  // per species dipole (in body frame)
+/*!
+    \brief Compute particle dipole in space frame
+*/
+extern void compute_particle_dipole_standard(double *mu_space, const double *mu_body, quaternion &q);
+
+/*!
+    \brief Compute particle dipole in space frame for the special case of a Quincke roller
+    \details Assume that the particle dipole is always perpendicular to the plane formed by the anqular velocity vector
+   \f$\vec{e}_{\omega}\f$ and the electric field direction \f$\vec{n}\f$
+
+   \f{align*}{
+     \vec{p} &=   p_0 \vec{n}\times\vec{e}_{\omega}
+   \f}
+
+   with \f$p_0\f$ the magnitude. It is thus parallel to the quincke torque \f$\tau_{\textrm{Quincke}}\f$.
+
+    \warning We are assuming that the magnitude of the dipole is passed in the first component of mu_body
+    \param[out] mu_space particle dipole in the lab frame
+    \param[in]  mu_body the magnitude of the dipole (p_0, 0, 0)
+    \param[in]  q orientation quaternion
+*/
+extern void compute_particle_dipole_quincke(double *mu_space, const double *mu_body, quaternion &q);
+
+/*!
+    \brief Generic funtion pointer used to compute particle dipole
+*/
+extern void (*compute_particle_dipole)(double *mu_space, const double *mu_body, quaternion &q);
 
 //////
 extern char Out_dir[];
