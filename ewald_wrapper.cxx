@@ -56,3 +56,20 @@ void compute_ewald_sum() {
                        dmy_mu,
                        ewald_mem.num);
 }
+
+void print_ewald_info(FILE *stream) {
+    fprintf(stderr, "#\n");
+    fprintf(stderr, "# Boundary Permittivity = ");
+    if (ewald_param.epsilon < 0) {
+        fprintf(stderr, "TINFOIL (infinity)\n");
+    } else {
+        fprintf(stderr, "%8.3e\n", ewald_param.epsilon);
+    }
+    fprintf(stderr, "# Ewald Params\n");
+    fprintf(stderr, "# alpha = %8.3e\n", ewald_param.alpha);
+    fprintf(stderr, "# delta = %8.3e\n", ewald_param.delta);
+    fprintf(stderr, "# convergence = %8.3e\n", ewald_param.conv);
+    fprintf(stderr, "#\n");
+    ewald_sum->info(stderr);
+    fprintf(stderr, "#\n");
+}

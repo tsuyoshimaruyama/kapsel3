@@ -205,6 +205,11 @@ class ewald {
 
     void compute_mu_induced(double* mu, double const* polarizability, double const* efield) const;
 
+    /*!
+      \brief Printout summary of parameters to stream
+    */
+    void info(FILE* stream) const;
+
    private:
     static const double mu_zero[DIM];
 

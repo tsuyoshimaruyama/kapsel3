@@ -100,5 +100,6 @@ void free_ewald_sum();
 
 void init_ewald_sum(const double &lx, const double &ly, const double &lz, const int &num);
 void compute_ewald_sum();
+void print_ewald_info(FILE *stream);
 
 #endif

@@ -412,19 +412,8 @@ inline void Set_multipole_parameters() {
                         fprintf(stderr, "# \tSpecies = %2d, p_0 = %5.2f\n", i, multipole_mu[i][0]);  // Quincke Hack
                 }
             }
-            fprintf(stderr, "#\n");
-            fprintf(stderr, "# Boundary Permittivity = ");
-            if (ewald_param.epsilon < 0) {
-                fprintf(stderr, "TINFOIL (infinity)\n");
-            } else {
-                fprintf(stderr, "%8.3e\n", ewald_param.epsilon);
-            }
-            fprintf(stderr, "# Ewald Params\n");
-            fprintf(stderr, "# alpha = %8.3e\n", ewald_param.alpha);
-            fprintf(stderr, "# delta = %8.3e\n", ewald_param.delta);
-            fprintf(stderr, "# convergence = %8.3e\n", ewald_param.conv);
-            fprintf(stderr, "#\n");
         }
+        print_ewald_info(stderr);
     }
 }
 

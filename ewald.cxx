@@ -132,6 +132,14 @@ void parallelepiped::distance_MI(const double r1[DIM], const double r2[DIM], dou
 
 const double ewald::mu_zero[DIM] = {0.0, 0.0, 0.0};
 
+void ewald::info(FILE* stream) const {
+    fprintf(stream, "# Ewald Sum Params  : \n");
+    fprintf(stream, "# Number of k-points: %d\n", ewald_domain);
+    fprintf(stream, "# k2_max            : %g\n", k2max);
+    fprintf(stream, "# k cut (kx, ky, kz): %d %d %d\n", kmax_l, kmax_m, kmax_n);
+    fprintf(stream, "# rcut (r2max)      : %g (%g)\n", rcut, r2max);
+}
+
 void ewald::copy_cell(const int& domain, int** old_cell, int**& new_cell) {
     new_cell = alloc_2d_int(domain, DIM);
     for (int n = 0; n < domain; n++) {
