@@ -133,11 +133,14 @@ void parallelepiped::distance_MI(const double r1[DIM], const double r2[DIM], dou
 const double ewald::mu_zero[DIM] = {0.0, 0.0, 0.0};
 
 void ewald::info(FILE* stream) const {
-    fprintf(stream, "# Ewald Sum Params  : \n");
+    fprintf(stream, "# \n");
+    fprintf(stream, "### Ewald Sum Params  : \n");
     fprintf(stream, "# Number of k-points: %d\n", ewald_domain);
-    fprintf(stream, "# k2_max            : %g\n", k2max);
+    fprintf(stream, "# k2_max            : %8g\n", k2max);
     fprintf(stream, "# k cut (kx, ky, kz): %d %d %d\n", kmax_l, kmax_m, kmax_n);
-    fprintf(stream, "# rcut (r2max)      : %g (%g)\n", rcut, r2max);
+    fprintf(stream, "# rcut (r2max)      : %8g (%8g)\n", rcut, r2max);
+    fprintf(stream, "# eta (eta * L)     : %8g (%8g) \n", eta, eta * rcut * 2);
+    fprintf(stream, "#\n");
 }
 
 void ewald::copy_cell(const int& domain, int** old_cell, int**& new_cell) {
@@ -699,6 +702,7 @@ void ewald::compute_r(double&       energy,
 
 void ewald::compute_torque(double* torque, const double* efield, const double* efield_grad, const double* mu) const {
     if (DIPOLE) {
+#pragma omp parallel for
         for (int i = 0; i < nump; i++) {
             const int     ii      = i * DIM;
             const double* mui     = &mu[ii];
@@ -717,6 +721,7 @@ void ewald::compute_force_externalfield_q(double*       force,
                                           const double  efield_y,
                                           const double  efield_z) const {
     if (CHARGE) {
+#pragma omp parallel for
         for (int i = 0; i < nump; i++) {
             const int     ii = i * DIM;
             const double* qi = &q[ii];

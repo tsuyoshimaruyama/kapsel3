@@ -35,6 +35,7 @@ void init_ewald_sum(const double &lx, const double &ly, const double &lz, const 
     for (int i = 0; i < ewald_mem.num; i++) {
         ewald_mem.efield[i][0] = ewald_mem.efield[i][1] = ewald_mem.efield[i][2] = 0.0;
     }
+    print_ewald_info(stderr);
 }
 
 // Before running : make sure r <- positions
@@ -58,18 +59,18 @@ void compute_ewald_sum() {
 }
 
 void print_ewald_info(FILE *stream) {
-    fprintf(stderr, "#\n");
-    fprintf(stderr, "# Boundary Permittivity = ");
+    fprintf(stream, "#\n");
+    fprintf(stream, "# Boundary Permittivity = ");
     if (ewald_param.epsilon < 0) {
-        fprintf(stderr, "TINFOIL (infinity)\n");
+        fprintf(stream, "TINFOIL (infinity)\n");
     } else {
-        fprintf(stderr, "%8.3e\n", ewald_param.epsilon);
+        fprintf(stream, "%8g\n", ewald_param.epsilon);
     }
-    fprintf(stderr, "# Ewald Params\n");
-    fprintf(stderr, "# alpha = %8.3e\n", ewald_param.alpha);
-    fprintf(stderr, "# delta = %8.3e\n", ewald_param.delta);
-    fprintf(stderr, "# convergence = %8.3e\n", ewald_param.conv);
-    fprintf(stderr, "#\n");
-    ewald_sum->info(stderr);
-    fprintf(stderr, "#\n");
+    fprintf(stream, "# Ewald Params\n");
+    fprintf(stream, "# alpha = %8g\n", ewald_param.alpha);
+    fprintf(stream, "# delta = %8g\n", ewald_param.delta);
+    fprintf(stream, "# convergence = %8g\n", ewald_param.conv);
+    fprintf(stream, "#\n");
+    ewald_sum->info(stream);
+    fprintf(stream, "#\n");
 }

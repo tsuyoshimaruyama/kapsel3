@@ -413,7 +413,6 @@ inline void Set_multipole_parameters() {
                 }
             }
         }
-        print_ewald_info(stderr);
     }
 }
 
