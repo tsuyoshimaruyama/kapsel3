@@ -14,14 +14,13 @@ double *Hydro_force_new;
 #define Cell_length 16
 
 void compute_particle_dipole_quincke(double *mu_space, const double *mu_body, quaternion &q) {
-    const double magnitude          = mu_body[0];
-    double       e_omega_space[DIM] = {0.0, 0.0, 0.0};
-
+    double e_omega_space[DIM] = {0.0, 0.0, 0.0};
     rigid_body_rotation(e_omega_space, quincke.e_omega, q, BODY2SPACE);
 
-    mu_space[0] = magnitude * (quincke.n[1] * e_omega_space[2] - quincke.n[2] * e_omega_space[1]);
-    mu_space[1] = magnitude * (quincke.n[2] * e_omega_space[0] - quincke.n[0] * e_omega_space[2]);
-    mu_space[2] = magnitude * (quincke.n[0] * e_omega_space[1] - quincke.n[1] * e_omega_space[0]);
+    const double magnitude = mu_body[0] / sqrt(SQ(e_omega_space[0]) + SQ(e_omega_space[1]) + SQ(e_omega_space[2]));
+    mu_space[0]            = magnitude * (quincke.n[1] * e_omega_space[2] - quincke.n[2] * e_omega_space[1]);
+    mu_space[1]            = magnitude * (quincke.n[2] * e_omega_space[0] - quincke.n[0] * e_omega_space[2]);
+    mu_space[2]            = magnitude * (quincke.n[0] * e_omega_space[1] - quincke.n[1] * e_omega_space[0]);
 }
 void compute_particle_dipole_standard(double *mu_space, const double *mu_body, quaternion &q) {
     rigid_body_rotation(mu_space, mu_body, q, BODY2SPACE);
