@@ -13,14 +13,14 @@
 #include <assert.h>
 #include <math.h>
 
+#include <complex>
+
 #include "alloc.h"
 #include "aux_field.h"
 #include "input.h"
 #include "macro.h"
 #include "periodic_spline.h"
 #include "variable.h"
-
-#include <complex>
 
 #ifdef _OPENMP
 #include <omp.h>

@@ -6,7 +6,9 @@
 #include <hdf5_hl.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <vector>
+
 #include "alloc.h"
 #include "macro.h"
 #include "output_writer_base.h"

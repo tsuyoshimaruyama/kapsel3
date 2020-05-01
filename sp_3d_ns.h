@@ -16,7 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
 #include <cstring>
+
 #include "aux_field.h"
 #include "fdm.h"
 #include "fluid_solver.h"

@@ -11,6 +11,7 @@
 
 #include <math.h>
 #include <stdio.h>
+
 #include "input.h"
 #include "make_phi.h"
 #include "operate_omega.h"

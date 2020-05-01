@@ -1,18 +1,19 @@
 #ifndef FDM_PHASE_SEPARATION_H
 #define FDM_PHASE_SEPARATION_H
 
-#include "fdm.h"
-#include "fft_wrapper.h"
-#include "input.h"
-
 #include <hdf5.h>
 #include <hdf5_hl.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <sstream>
+
 #include "H5Cpp.h"
+#include "fdm.h"
+#include "fft_wrapper.h"
+#include "input.h"
 
 extern double * cp;
 extern double * psi;

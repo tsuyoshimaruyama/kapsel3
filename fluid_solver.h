@@ -9,6 +9,7 @@
 #define FLUID_SOLVER_H
 
 #include <math.h>
+
 #include "f_particle.h"
 #include "fluct.h"
 #include "input.h"
