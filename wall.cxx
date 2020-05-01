@@ -50,12 +50,14 @@ void Init_Wall(double* phi_wall) {
     \brief Accumulate forces coming from flat walls on one particle
     \warning fx is not reset to zero ! (usefull for accumulating forces on rigid bodies)
 */
-inline void Update_f_wall_single(double& fx, const double& x, const double& cutoff, const double& offset) {
-    double h = x - wall.lo + offset;  // distance to lower mirror particle
+inline double Compute_f_wall_single(const double& x, const double& cutoff, const double& offset) {
+    double fx = 0.0;
+    double h  = x - wall.lo + offset;  // distance to lower mirror particle
     if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
 
     h = wall.hi - x + offset;
     if (h <= cutoff) fx -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+    return fx;
 }
 
 /*!
@@ -69,18 +71,23 @@ void Add_f_wall(Particle* p) {
 #pragma omp parallel for
             for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
                 double f_h = 0.0;
-                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++)
-                    Update_f_wall_single(f_h, p[n].x[wall.axis], cutoff, offset);
+                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                    double fi = Compute_f_wall_single(p[n].x[wall.axis], cutoff, offset);
+                    f_h += fi;
+                    p[n].fr[wall.axis] += fi;
+                }
+                double Fh[DIM] = {0.0, 0.0, 0.0};
+                Fh[wall.axis]  = f_h;
 
                 forceGrs[rigidID][wall.axis] += f_h;
+                torqueGrs[rigidID][0] = GRvecs[rigidID][1] * Fh[2] - GRvecs[rigidID][2] * Fh[1];
+                torqueGrs[rigidID][1] = GRvecs[rigidID][2] * Fh[0] - GRvecs[rigidID][0] * Fh[2];
+                torqueGrs[rigidID][2] = GRvecs[rigidID][0] * Fh[1] - GRvecs[rigidID][1] * Fh[0];
             }
         } else {
 #pragma omp parallel for
-            for (int n = 0; n < Particle_Number; n++) {
-                double f_h = 0.0;
-                Update_f_wall_single(f_h, p[n].x[wall.axis], cutoff, offset);
-                p[n].fr[wall.axis] += f_h;
-            }
+            for (int n = 0; n < Particle_Number; n++)
+                p[n].fr[wall.axis] += Compute_f_wall_single(p[n].x[wall.axis], cutoff, offset);
         }
     }
 }
