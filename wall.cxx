@@ -47,8 +47,7 @@ void Init_Wall(double* phi_wall) {
 }
 
 /*!
-    \brief Accumulate forces coming from flat walls on one particle
-    \warning fx is not reset to zero ! (usefull for accumulating forces on rigid bodies)
+    \brief Compute force coming from flat walls on one particle
 */
 inline double Compute_f_wall_single(const double& x, const double& cutoff, const double& offset) {
     double fx = 0.0;
