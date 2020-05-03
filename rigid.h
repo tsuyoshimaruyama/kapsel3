@@ -571,7 +571,7 @@ inline void calc_Rigid_VOGs(Particle *p, const CTime &jikan, string CASE) {
 // S.Imamura
 // Quincke roller simulation
 //
-inline void init_Rigid_Coordinates_Quincke(Particle *p) {
+/*inline void init_Rigid_Coordinates_Quincke(Particle *p) {
     quaternion dmy_q;
 
 #pragma omp parallel
@@ -605,5 +605,5 @@ inline void init_Rigid_Coordinates_Quincke(Particle *p) {
     for (int n = 0; n < Particle_Number; n++) {
         rigid_body_rotation(GRvecs_body[n], GRvecs[n], p[n].q, SPACE2BODY);
     }
-}
+}*/
 #endif
