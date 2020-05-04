@@ -362,7 +362,7 @@ void Time_evolution_hydro_OBL(double **zeta, double uk_dc[DIM], double **f, Part
             Reset_U_OBL(ucp, u, flag);
             Swap_mem(u, ucp);
             degree_oblique -= XYaspect;
-        } else if (degree_oblique < -XYaspect) {
+        } else if (degree_oblique <= -XYaspect) {
             int flag = 1;
             Reset_U_OBL(ucp, u, flag);
             Swap_mem(u, ucp);
@@ -472,7 +472,7 @@ void Time_evolution_hydro_OBL_fdm(double **&u, double *Pressure, double **f, Par
             }
 
             degree_oblique -= XYaspect;
-        } else if (degree_oblique < -XYaspect) {
+        } else if (degree_oblique <= -XYaspect) {
             int flag = 1;
             Reset_U_OBL(ucp, u, flag);
             Swap_mem(u, ucp);

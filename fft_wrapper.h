@@ -262,12 +262,8 @@ void U_k2rotation_k(double **u);
 
 inline void orth2obl(const int &j, const int &i, int &i_oblique, int &i_oblique_plus, double &alpha, double &beta) {
     int    delta_j = j - NY / 2;
-    double sign;
-    if (degree_oblique >= 0.) {
-        sign = (double)delta_j;
-    } else if (degree_oblique < 0.) {
-        sign = -(double)delta_j;
-    }
+    double sign    = (degree_oblique >= 0.0 ? (double)delta_j : -(double)delta_j);
+
     if (!(delta_j == 0)) sign = sign / fabs(sign);
 
     i_oblique = (int)(sign * degree_oblique * delta_j) * sign;
@@ -279,12 +275,8 @@ inline void orth2obl(const int &j, const int &i, int &i_oblique, int &i_oblique_
 }
 inline void obl2orth(const int &j, const int &i, int &i_plus, int &i_oblique, double &alpha, double &beta) {
     int    delta_j = j - NY / 2;
-    double sign;
-    if (degree_oblique >= 0.) {
-        sign = (double)delta_j;
-    } else if (degree_oblique < 0.) {
-        sign = -(double)delta_j;
-    }
+    double sign    = (degree_oblique >= 0.0 ? (double)delta_j : -(double)delta_j);
+
     if (!(delta_j == 0)) sign = sign / fabs(sign);
 
     i_oblique = (int)(sign * degree_oblique * delta_j) * sign + sign;

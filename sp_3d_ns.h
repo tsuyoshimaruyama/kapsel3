@@ -187,14 +187,13 @@ inline double Calc_local_gradient_y_OBL(const double *field, int im) {
 }
 
 inline void Calc_shear_rate_eff() {
-    int                 im;
     static const double ivolume    = Ivolume * POW3(DX);
     double              s_rate_eff = 0.;
 #pragma omp parallel for reduction(+ : s_rate_eff)
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                im = i * NY * NZ_ + j * NZ_ + k;
+                int im = i * NY * NZ_ + j * NZ_ + k;
                 s_rate_eff += Calc_local_gradient_y_OBL(u[0], im);
             }
         }
@@ -215,17 +214,13 @@ inline double Update_strain(double &     shear_strain_realized,
 }
 
 inline void Calc_fluid_stress(double **u, double *eta, double &fluid_stress) {
-    int                 im;
-    double              dux_dx           = 0.;
-    double              dux_dy           = 0.;
-    double              shear_rate_local = 0.;
-    static const double ivolume          = Ivolume * POW3(DX);
+    static const double ivolume = Ivolume * POW3(DX);
 #pragma omp parallel for reduction(+ : fluid_stress)
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                im               = i * NY * NZ_ + j * NZ_ + k;
-                shear_rate_local = Shear_rate_eff + Calc_local_gradient_y_OBL(u[0], im);
+                int    im               = i * NY * NZ_ + j * NZ_ + k;
+                double shear_rate_local = Shear_rate_eff + Calc_local_gradient_y_OBL(u[0], im);
                 fluid_stress += shear_rate_local * eta[im];
             }
         }
@@ -234,17 +229,14 @@ inline void Calc_fluid_stress(double **u, double *eta, double &fluid_stress) {
 }
 
 inline void Calc_interfacial_stress(double *psi, double &interfacial_stress) {
-    int                 im;
-    double              dpsi_dx = 0.;
-    double              dpsi_dy = 0.;
     static const double ivolume = Ivolume * POW3(DX);
 #pragma omp parallel for reduction(+ : interfacial_stress)
     for (int i = 0; i < NX; i++) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
-                im      = i * NY * NZ_ + j * NZ_ + k;
-                dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
-                dpsi_dy = Calc_local_gradient_y_OBL(psi, im);
+                int    im      = i * NY * NZ_ + j * NZ_ + k;
+                double dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
+                double dpsi_dy = Calc_local_gradient_y_OBL(psi, im);
                 interfacial_stress += dpsi_dx * dpsi_dy;
             }
         }
