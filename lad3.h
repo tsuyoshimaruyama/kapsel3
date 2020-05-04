@@ -1,8 +1,11 @@
 #ifndef LAD3_H
 #define LAD3_H
+#include <assert.h>
+#include <math.h>
 
 #include "macro.h"
 #include "parameter_define.h"
+
 /*!
   \file lad3.h
   \brief Basic Matrix / Vector Euclidean 3D routines (not very optimized)

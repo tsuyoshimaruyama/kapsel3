@@ -166,7 +166,6 @@ class UDFReader:
             print( "# UDFReader : v3.02")
             print( "# UDF       :",str(self.uobj.getEngineVersion()))
             print( "#######################################")
-            print( 
 
         ###
         # constitutive equation
