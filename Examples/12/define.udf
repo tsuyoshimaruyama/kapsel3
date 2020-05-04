@@ -232,6 +232,27 @@ switch: {
             torque_amp: double "the amplitude of constraint torque"
       }
    }
+   multipole:{
+      type: select{'ON', 'OFF'}
+      ON:{
+         Dipole:{
+            type : select{'ON', 'OFF'}
+            ON:{
+               magnitude: double "the dipole strength"
+               type     : select{'FIXED', 'QUINCKE'} "type of dipole"            
+               FIXED:{
+                  dir   : select{'X', 'Y', 'Z'} "direction of dipolar axis"
+               }
+            }
+         }
+         EwaldParams:{
+            alpha   : double "Ewald screening parameter"
+            delta   : double "Tolerance parameter, used to determine k_max"
+            converge: double "Convergence parameter (fraction of k vectors to consider)"
+            epsilon : double "Permittivity at boundary ( if  negative, set to tinfoil)"
+         }
+      }
+    }
 }
 
 output: {
