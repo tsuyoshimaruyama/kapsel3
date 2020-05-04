@@ -164,26 +164,26 @@ inline double Calc_instantaneous_shear_rate(double **zeta, double uk_dc[DIM], do
 }
 
 inline double Calc_local_gradient_y_OBL(const double *field, int im) {
-	const double INV_2DX = 1. / (2. * DX);
+    const double INV_2DX = 1. / (2. * DX);
     int          i, j, k;
-	im2ijk(im, &i, &j, &k);
-	// periodic boundary condition
-	int ip1, jp1;
-	int im1, jm1;
-	ip1 = adj(1, i, NX);
-	jp1 = adj(1, j, NY);
-	im1 = adj(-1, i, NX);
-	jm1 = adj(-1, j, NY);
-	// set adjacent meshes
-	int im_ip1_jp1 = ijk2im(ip1, jp1, k);
-	int im_im1_jp1 = ijk2im(im1, jp1, k);
-	int im_ip1_jm1 = ijk2im(ip1, jm1, k);
-	int im_im1_jm1 = ijk2im(im1, jm1, k);
-	// interior division
-	double field_p1 = 0.5 * ((1 - degree_oblique) * field[im_ip1_jp1] + (1 + degree_oblique) * field[im_im1_jp1]);
-	double field_m1 = 0.5 * ((1 - degree_oblique) * field[im_im1_jm1] + (1 + degree_oblique) * field[im_ip1_jm1]);
-	double local_dfield_dy = (field_p1 - field_m1) * INV_2DX;
-	return local_dfield_dy;
+    im2ijk(im, &i, &j, &k);
+    // periodic boundary condition
+    int ip1, jp1;
+    int im1, jm1;
+    ip1 = adj(1, i, NX);
+    jp1 = adj(1, j, NY);
+    im1 = adj(-1, i, NX);
+    jm1 = adj(-1, j, NY);
+    // set adjacent meshes
+    int im_ip1_jp1 = ijk2im(ip1, jp1, k);
+    int im_im1_jp1 = ijk2im(im1, jp1, k);
+    int im_ip1_jm1 = ijk2im(ip1, jm1, k);
+    int im_im1_jm1 = ijk2im(im1, jm1, k);
+    // interior division
+    double field_p1 = 0.5 * ((1 - degree_oblique) * field[im_ip1_jp1] + (1 + degree_oblique) * field[im_im1_jp1]);
+    double field_m1 = 0.5 * ((1 - degree_oblique) * field[im_im1_jm1] + (1 + degree_oblique) * field[im_ip1_jm1]);
+    double local_dfield_dy = (field_p1 - field_m1) * INV_2DX;
+    return local_dfield_dy;
 }
 
 inline void Calc_shear_rate_eff() {
@@ -195,12 +195,12 @@ inline void Calc_shear_rate_eff() {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 im = i * NY * NZ_ + j * NZ_ + k;
-				s_rate_eff += Calc_local_gradient_y_OBL(u[0], im);
-			}
-		}
-	}
-	s_rate_eff *= ivolume;
-	Shear_rate_eff += s_rate_eff;
+                s_rate_eff += Calc_local_gradient_y_OBL(u[0], im);
+            }
+        }
+    }
+    s_rate_eff *= ivolume;
+    Shear_rate_eff += s_rate_eff;
 }
 
 inline double Update_strain(double &     shear_strain_realized,
@@ -243,11 +243,11 @@ inline void Calc_interfacial_stress(double *psi, double &interfacial_stress) {
         for (int j = 0; j < NY; j++) {
             for (int k = 0; k < NZ; k++) {
                 im      = i * NY * NZ_ + j * NZ_ + k;
-				dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
-          		dpsi_dy = Calc_local_gradient_y_OBL(psi, im);
-          		interfacial_stress += dpsi_dx * dpsi_dy;
-           	}
-	    }	
+                dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
+                dpsi_dy = Calc_local_gradient_y_OBL(psi, im);
+                interfacial_stress += dpsi_dx * dpsi_dy;
+            }
+        }
     }
     interfacial_stress *= -ivolume * ps.alpha;
 }
@@ -317,7 +317,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
             double dev_stress_rot = (SW_PT == rigid ? rigid_dev_shear_stress_rot : dev_shear_stress_rot);
             double ETA_EFF        = ETA;
             fluid_stress          = ETA_EFF * srate_eff;
-			if (PHASE_SEPARATION) Calc_interfacial_stress(psi, interfacial_stress);
+            if (PHASE_SEPARATION) Calc_interfacial_stress(psi, interfacial_stress);
             if (VISCOSITY_CHANGE) {
                 // volume-averaged eta
                 double dmy;
@@ -328,7 +328,7 @@ inline void Mean_shear_stress(const Count_SW &OPERATION,
                 }
                 ETA_EFF = (ETA_A - ETA_B) * dmy + ETA_B;
 
-				if (ETA_A != ETA_B) Calc_fluid_stress(u, eta_s, fluid_stress);
+                if (ETA_A != ETA_B) Calc_fluid_stress(u, eta_s, fluid_stress);
             }
             apparent_stress = hydro_stress_new[1][0] + Inertia_stress + dev_stress + fluid_stress + interfacial_stress;
             fprintf(fout,
