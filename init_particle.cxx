@@ -386,10 +386,20 @@ void Init_Particle(Particle *p) {
             for (int n = 0; n < Particle_Number; n++) p[n].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
         }
         double overlap_distance = RADIUS - HXI;
-        for (int n = 0; n < Particle_Number; n++) {
-            double x = p[n].x[wall.axis];
-            if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
-                fprintf(stderr, "# INIT WARNING: particle %d overlaps with wall\n", n);
+        if (SW_PT == rigid) {
+            for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                    double x = p[n].x[wall.axis];
+                    if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+                        fprintf(stderr, "# INIT WARNING: rigid particle %d (bead %d) overlaps with wall\n", rigidID, n);
+                }
+            }
+        } else {
+            for (int n = 0; n < Particle_Number; n++) {
+                double x = p[n].x[wall.axis];
+                if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+                    fprintf(stderr, "# INIT WARNING: particle %d overlaps with wall\n", n);
+            }
         }
     }
 
