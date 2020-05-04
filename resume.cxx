@@ -992,6 +992,8 @@ void Set_Rigid_Particle_Data(Particle *rigid_p, Particle *p) {
             // velocities
             velocityGs[rigidID][d]     = rigid_p[rigidID].v[d];
             velocityGs_old[rigidID][d] = rigid_p[rigidID].v_old[d];
+            // fprintf(stderr, "resume\n");
+            // fprintf(stderr, "vGs[%d][%d] = %f\n", rigidID, d, velocityGs[rigidID][d] );
 
             // angular velocities
             omegaGs[rigidID][d]     = rigid_p[rigidID].omega[d];

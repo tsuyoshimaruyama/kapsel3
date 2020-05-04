@@ -10,6 +10,7 @@
 #ifndef MACRO_H_
 #define MACRO_H_
 
+#include <assert.h>
 #include <dirent.h>
 #include <float.h>
 #include <limits.h>

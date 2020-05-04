@@ -88,6 +88,17 @@ typedef struct FlatWall {
     double A_R_cutoff;  // cutoff distance from surface (normalized by particle diameter)
 } FlatWall;
 
+typedef struct QuinckeEffect {
+    // input parameters
+    int e_dir;  // the direction of external electric field E (0=x, 1=y, 2=z)
+    int w_dir;  // the direction of constant angular velocity vector caused by quincke effect (body frame) (0=x, 1=y,
+                // 2=z)
+
+    double K;  // amplitude of the potential/torque decided from stokes resistance for rotating sphere
+    double n[DIM]       = {0.0, 0.0, 0.0};  // unit vector parallel to the (implied) external electric field E
+    double e_omega[DIM] = {0.0, 0.0, 0.0};  // body basis vector parallel to the constant angular velocity vector
+} QuinckeEffect;
+
 typedef struct Index_range {
     int istart;
     int iend;

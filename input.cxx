@@ -54,6 +54,13 @@ const char *OBL_INT_name[] = {"linear", "spline"};
 WALL        SW_WALL;
 const char *WALL_name[] = {"NONE", "FLAT"};
 
+//////
+QUINCKE     SW_QUINCKE;
+const char *QUINCKE_name[] = {"OFF", "ON"};
+//////
+MULTIPOLE SW_MULTIPOLE;
+
+//////
 OUTFORMAT       SW_OUTFORMAT;
 EXTFORMAT       SW_EXTFORMAT;
 Field_crop      print_field_crop;
@@ -186,6 +193,12 @@ double * janus_rotlet_dipole_C2;
 
 //// Wall
 FlatWall wall;
+
+//// Quincke
+QuinckeEffect quincke;
+//// Ewald Multipole
+double * multipole_q;   // per species charge
+double **multipole_mu;  // per species dipole (in body frame)
 
 ////
 int       Rigid_Number;
@@ -343,6 +356,68 @@ inline void Set_wall_parameters(const double MaxRadius) {
     }
 }
 //////
+inline void Set_quincke_parameters() {
+    if (SW_QUINCKE == QUINCKE_ON) {
+        {
+            const char axis[DIM] = {'X', 'Y', 'Z'};
+            fprintf(stderr, "#\n");
+            fprintf(stderr, "# Quincke Effect Enabled \n");
+            fprintf(stderr,
+                    "# Electric Field           : %c (%2.1f, %2.1f, %2.1f)\n",
+                    axis[quincke.e_dir],
+                    quincke.n[0],
+                    quincke.n[1],
+                    quincke.n[2]);
+            fprintf(stderr,
+                    "# Constant angular velocity: %c (%2.1f, %2.1f, %2.1f)\n",
+                    axis[quincke.w_dir],
+                    quincke.e_omega[0],
+                    quincke.e_omega[1],
+                    quincke.e_omega[2]);
+            fprintf(stderr, "# Amp. of constraint torque: %5.2f\n", quincke.K);
+            fprintf(stderr, "#\n");
+        }
+    }
+}
+
+inline void Set_multipole_parameters() {
+    if (SW_MULTIPOLE == MULTIPOLE_ON) {
+        {
+            fprintf(stderr, "#\n");
+            fprintf(stderr, "# Ewald Multipole Enabled \n");
+            if (ewald_param.charge) {
+                fprintf(stderr, "# Charges Enabled\n");
+                fprintf(stderr, "# \n");
+                for (int i = 0; i < Component_Number; i++)
+                    fprintf(stderr, "# \tSpecies = %2d, q = %5.2f\n", i, multipole_q[i]);
+            }
+            if (ewald_param.dipole) {
+                fprintf(stderr, "# Dipoles Enabled\n");
+                fprintf(stderr, "# \n");
+                if (compute_particle_dipole == compute_particle_dipole_standard) {
+                    fprintf(stderr, "# Type : Fixed Dipole\n");
+                    for (int i = 0; i < Component_Number; i++) {
+                        double *dmu = multipole_mu[i];
+                        fprintf(stderr,
+                                "# \tSpecies = %2d, |p| = %5.2f, p (body) = %5.2f %5.2f %5.2f\n",
+                                i,
+                                sqrt(SQ(dmu[0]) + SQ(dmu[1]) + SQ(dmu[2])),
+                                dmu[0],
+                                dmu[1],
+                                dmu[2]);
+                    }
+                } else if (compute_particle_dipole == compute_particle_dipole_quincke) {
+                    fprintf(stderr, "# Type : Quincke Dipole  p = p_0 e_omega x n\n");
+                    for (int i = 0; i < Component_Number; i++)
+                        fprintf(stderr, "# \tSpecies = %2d, p_0 = %5.2f\n", i, multipole_mu[i][0]);  // Quincke Hack
+                }
+            }
+            fprintf(stderr, "#\n");
+        }
+    }
+}
+
+//////
 inline void Set_global_parameters(void) {
     Particle_Number = 0;
     for (int i = 0; i < Component_Number; i++) {
@@ -382,7 +457,10 @@ inline void Set_global_parameters(void) {
             HL_particle[d] = L[d] * .5;
         }
     }
+
     Set_wall_parameters(RADIUS + HXI);
+    Set_quincke_parameters();
+    Set_multipole_parameters();
 
     WAVE_X = PI2 / LX;
     WAVE_Y = PI2 / LY;
@@ -1497,6 +1575,9 @@ void        Gourmet_file_io(const char *infile,
                     janus_slip_mode        = alloc_1d_double(Component_Number);
                     janus_rotlet_C1        = alloc_1d_double(Component_Number);
                     janus_rotlet_dipole_C2 = alloc_1d_double(Component_Number);
+
+                    multipole_q  = alloc_1d_double(Component_Number);
+                    multipole_mu = alloc_2d_double(Component_Number, DIM);
                 }
             }
         } else if (str == PT_name[chain]) {
@@ -1528,6 +1609,9 @@ void        Gourmet_file_io(const char *infile,
                 janus_slip_mode        = NULL;
                 janus_rotlet_C1        = NULL;
                 janus_rotlet_dipole_C2 = NULL;
+
+                multipole_q  = alloc_1d_double(Component_Number);
+                multipole_mu = alloc_2d_double(Component_Number, DIM);
             }
         } else if (str == PT_name[rigid]) {
             SW_PT            = rigid;
@@ -1563,6 +1647,9 @@ void        Gourmet_file_io(const char *infile,
                 janus_slip_mode        = NULL;
                 janus_rotlet_C1        = NULL;
                 janus_rotlet_dipole_C2 = NULL;
+
+                multipole_q  = alloc_1d_double(Component_Number);
+                multipole_mu = alloc_2d_double(Component_Number, DIM);
             }
         }
     }
@@ -2413,52 +2500,249 @@ void        Gourmet_file_io(const char *infile,
                 }
             }
         }
+    }
 
-        {
-            Location target("switch.wall");
-            string   str;
-            SW_WALL = NO_WALL;
+    {
+        Location target("switch.wall");
+        string   str;
+        SW_WALL = NO_WALL;
 
-            if (ufin->get(target.sub("type"), str)) {
-                ufout->put(target.sub("type"), str);
-                ufres->put(target.sub("type"), str);
-                if (str == WALL_name[NO_WALL]) {
-                    SW_WALL = NO_WALL;
-                } else if (str == WALL_name[FLAT_WALL]) {
-                    SW_WALL = FLAT_WALL;
-                    target.down("FLAT");
+        if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == WALL_name[NO_WALL]) {
+                SW_WALL = NO_WALL;
+            } else if (str == WALL_name[FLAT_WALL]) {
+                SW_WALL = FLAT_WALL;
+                target.down("FLAT");
+                {
                     {
-                        {
-                            string axis;
-                            ufin->get(target.sub("axis"), axis);
-                            ufout->put(target.sub("axis"), axis);
-                            ufres->put(target.sub("axis"), axis);
-                            if (axis == "X") {
-                                wall.axis = 0;
-                            } else if (axis == "Y") {
-                                wall.axis = 1;
-                            } else if (axis == "Z") {
-                                wall.axis = 2;
-                            } else {
-                                fprintf(stderr, "Unspecified Flat Wall axis\n");
-                                exit(-1);
-                            }
-                        }
-                        {
-                            ufin->get(target.sub("DH"), wall.dh);
-                            ufout->put(target.sub("DH"), wall.dh);
-                            ufres->put(target.sub("DH"), wall.dh);
-                            wall.dh *= DX;
+                        string axis;
+                        ufin->get(target.sub("axis"), axis);
+                        ufout->put(target.sub("axis"), axis);
+                        ufres->put(target.sub("axis"), axis);
+                        if (axis == "X") {
+                            wall.axis = 0;
+                        } else if (axis == "Y") {
+                            wall.axis = 1;
+                        } else if (axis == "Z") {
+                            wall.axis = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified Flat Wall axis\n");
+                            exit(-1);
                         }
                     }
-                    target.up();
-                } else {
-                    exit_job(EXIT_FAILURE);
+                    {
+                        ufin->get(target.sub("DH"), wall.dh);
+                        ufout->put(target.sub("DH"), wall.dh);
+                        ufres->put(target.sub("DH"), wall.dh);
+                        wall.dh *= DX;
+                    }
                 }
+                target.up();
+            } else {
+                exit_job(EXIT_FAILURE);
             }
-            if (SW_WALL != NO_WALL && SW_EQ != Navier_Stokes) {
-                fprintf(stderr, "# Error: walls only enabled for Navier_Stokes simulations so far\n");
-                exit(-1);
+        }
+        if (SW_WALL != NO_WALL && SW_EQ != Navier_Stokes) {
+            fprintf(stderr, "# Error: walls only enabled for Navier_Stokes simulations so far\n");
+            exit(-1);
+        }
+    }
+
+    {
+        Location target("switch.quincke");
+        string   str;
+        SW_QUINCKE = QUINCKE_OFF;
+        if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == QUINCKE_name[QUINCKE_OFF]) {
+                SW_QUINCKE = QUINCKE_OFF;
+            } else if (str == QUINCKE_name[QUINCKE_ON]) {
+                int Bead_Number = 0;
+                for (int rigid_i = 0; rigid_i < Component_Number; rigid_i++) Bead_Number += Particle_Numbers[rigid_i];
+
+                if (!(SW_PT == rigid && Bead_Number == Rigid_Number)) {
+                    fprintf(stderr,
+                            "Quincke mode only enabled for Rigid bodies with nbeads = 1 (%d, %d)!\n",
+                            Rigid_Number,
+                            Bead_Number);
+                    exit(-1);
+                }
+                SW_QUINCKE = QUINCKE_ON;
+                target.down("ON");
+                {
+                    {
+                        string axis;
+                        ufin->get(target.sub("e_dir"), axis);
+                        ufout->put(target.sub("e_dir"), axis);
+                        ufres->put(target.sub("e_dir"), axis);
+                        if (axis == "X") {
+                            quincke.e_dir = 0;
+                        } else if (axis == "Y") {
+                            quincke.e_dir = 1;
+                        } else if (axis == "Z") {
+                            quincke.e_dir = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified electric field axis\n");
+                            exit(-1);
+                        }
+                        for (int d = 0; d < DIM; d++) quincke.n[d] = 0.0;
+                        quincke.n[quincke.e_dir] = 1.0;
+
+                        ufin->get(target.sub("w_dir"), axis);
+                        ufout->put(target.sub("w_dir"), axis);
+                        ufres->put(target.sub("w_dir"), axis);
+                        if (axis == "X") {
+                            quincke.w_dir = 0;
+                        } else if (axis == "Y") {
+                            quincke.w_dir = 1;
+                        } else if (axis == "Z") {
+                            quincke.w_dir = 2;
+                        } else {
+                            fprintf(stderr, "Unspecified constant angular velocity vector axis\n");
+                            exit(-1);
+                        }
+                        for (int d = 0; d < DIM; d++) quincke.e_omega[d] = 0.0;
+                        quincke.e_omega[quincke.w_dir] = 1.0;
+                    }
+                    {
+                        ufin->get(target.sub("torque_amp"), quincke.K);
+                        ufout->put(target.sub("torque_amp"), quincke.K);
+                        ufres->put(target.sub("torque_amp"), quincke.K);
+                    }
+                }
+                target.up();
+            } else {
+                exit_job(EXIT_FAILURE);
+            }
+        }
+        if (SW_QUINCKE != QUINCKE_OFF && (SW_EQ != Navier_Stokes)) {
+            fprintf(stderr, "# Error: quincke effect only enabled for Navier_Stokes simulations so far\n");
+            exit(-1);
+        }
+    }
+    {
+        Location target("switch.multipole");
+        string   str;
+        SW_MULTIPOLE = MULTIPOLE_OFF;
+        bool charge, dipole;
+        charge = dipole = false;
+        if (ufin->get(target.sub("type"), str)) {
+            ufout->put(target.sub("type"), str);
+            ufres->put(target.sub("type"), str);
+            if (str == "OFF") {
+                SW_MULTIPOLE = MULTIPOLE_OFF;
+            } else if (str == "ON") {
+                SW_MULTIPOLE = MULTIPOLE_ON;
+
+                string str_multi;
+                target.down("ON");  // Multipole ON
+                {
+                    {
+                        target.down("Dipole");
+                        if (ufin->get(target.sub("type"), str_multi)) {
+                            ufout->put(target.sub("type"), str_multi);
+                            ufres->put(target.sub("type"), str_multi);
+
+                            double magnitude = 0.0;
+                            if (str_multi == "ON") {
+                                target.down("ON");  // Dipole ON
+                                dipole = true;
+
+                                // dipole magnitude
+                                ufin->get(target.sub("magnitude"), magnitude);
+                                ufout->put(target.sub("magnitude"), magnitude);
+                                ufres->put(target.sub("magnitude"), magnitude);
+
+                                // dipole type
+                                string dipole_type;
+                                ufin->get(target.sub("type"), dipole_type);
+                                ufout->put(target.sub("type"), dipole_type);
+                                ufres->put(target.sub("type"), dipole_type);
+
+                                double mu_vec[DIM] = {0.0, 0.0, 0.0};
+                                if (dipole_type == "FIXED") {
+                                    target.down("FIXED");
+                                    // dipole direction
+                                    string axis;
+                                    ufin->get(target.sub("dir"), axis);
+                                    ufout->put(target.sub("dir"), axis);
+                                    ufres->put(target.sub("dir"), axis);
+
+                                    if (axis == "X") {
+                                        mu_vec[0] = magnitude;
+                                    } else if (axis == "Y") {
+                                        mu_vec[1] = magnitude;
+                                    } else if (axis == "Z") {
+                                        mu_vec[2] = magnitude;
+                                    } else {
+                                        fprintf(stderr, "Unspecified dipolar axis\n");
+                                        exit(-1);
+                                    }
+                                    compute_particle_dipole = compute_particle_dipole_standard;
+                                    target.up();  // FIXED
+                                } else if (dipole_type == "QUINCKE") {
+                                    mu_vec[0] = magnitude;  // hack the dipole array to store the magnitude
+                                    compute_particle_dipole =
+                                        compute_particle_dipole_quincke;  // use quincke dipole definition
+                                    if (SW_QUINCKE == QUINCKE_OFF) {
+                                        fprintf(stderr,
+                                                "# Error : Quincke dipole specified but Quincke particles not "
+                                                "enabled...\n");
+                                        exit(-1);
+                                    }
+                                } else {
+                                    fprintf(stderr, "Error : unknown dipole type\n");
+                                    exit(-1);
+                                }
+
+                                // In the future this could be specified on a per/species basis...
+                                for (int i = 0; i < Component_Number; i++)
+                                    for (int d = 0; d < DIM; d++) multipole_mu[i][d] = mu_vec[d];
+
+                                target.up();  // Dipole ON
+                            }
+                        }
+                        target.up();  // Dipole
+                    }
+                    if (!(charge || dipole)) {
+                        fprintf(stderr, "Multipole Error: No charge | dipole enabled !\n");
+                        exit(-1);
+                    }
+
+                    {  // Ewald parameters
+                        double alpha, delta, conv, epsilon;
+
+                        {
+                            target.down("EwaldParams");
+
+                            ufin->get(target.sub("alpha"), alpha);
+                            ufout->put(target.sub("alpha"), alpha);
+                            ufres->put(target.sub("alpha"), alpha);
+
+                            ufin->get(target.sub("delta"), delta);
+                            ufout->put(target.sub("delta"), delta);
+                            ufres->put(target.sub("delta"), delta);
+
+                            ufin->get(target.sub("converge"), conv);
+                            ufout->put(target.sub("converge"), conv);
+                            ufres->put(target.sub("converge"), conv);
+
+                            ufin->get(target.sub("epsilon"), epsilon);
+                            ufout->put(target.sub("epsilon"), epsilon);
+                            ufres->put(target.sub("epsilon"), epsilon);
+
+                            target.up();
+                        }
+
+                        ewald_param.init(alpha, delta, conv, epsilon, charge, dipole);
+                    }
+                }
+                target.up();  // Multipole ON
+            } else {
+                exit_job(EXIT_FAILURE);
             }
         }
     }
@@ -2725,17 +3009,17 @@ void        Gourmet_file_io(const char *infile,
 
         // debug output
         /*
-    for(int n=0; n<Particle_Number; n++){
-    fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
-    }
-    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-    fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
-    }
-    for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
-    fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d (%d -> %d)\n",
+for(int n=0; n<Particle_Number; n++){
+fprintf(stderr, "# debug: Particle_RigidID[%d] = %d\n", n, Particle_RigidID[n]);
+}
+for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+fprintf(stderr, "# debug: RigidID_Components[%d] = %d\n", rigidID, RigidID_Components[rigidID]);
+}
+for(int rigidID=0; rigidID<Rigid_Number; rigidID++){
+fprintf(stderr, "# debug: Rigid_Particle_Numbers[%d] = %d (%d -> %d)\n",
                                         rigidID, Rigid_Particle_Numbers[rigidID],
                                         Rigid_Particle_Cumul[rigidID], Rigid_Particle_Cumul[rigidID+1] - 1);
-    }
+}
         */
 
         // initialize velocityGs and omegaGs and

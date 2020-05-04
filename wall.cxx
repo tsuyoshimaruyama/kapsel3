@@ -45,20 +45,48 @@ void Init_Wall(double* phi_wall) {
         }
     }
 }
+
+/*!
+    \brief Compute force coming from flat walls on one particle
+*/
+inline double Compute_f_wall_single(const double& x, const double& cutoff, const double& offset) {
+    double fx = 0.0;
+    double h  = x - wall.lo + offset;  // distance to lower mirror particle
+    if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+
+    h = wall.hi - x + offset;
+    if (h <= cutoff) fx -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+    return fx;
+}
+
+/*!
+    \brief  Add forces coming from the flat walls to all particles
+*/
 void Add_f_wall(Particle* p) {
     double cutoff = wall.A_R_cutoff * LJ_dia;
     double offset = 0.5 * LJ_dia;
     if (SW_WALL == FLAT_WALL) {
+        if (SW_PT == rigid) {
 #pragma omp parallel for
-        for (int n = 0; n < Particle_Number; n++) {
-            double x   = p[n].x[wall.axis];
-            double f_h = 0.0;
-            double h   = x - wall.lo + offset;  // distance to lower mirror particle
-            if (h <= cutoff) f_h += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+            for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+                double f_h = 0.0;
+                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                    double fi = Compute_f_wall_single(p[n].x[wall.axis], cutoff, offset);
+                    f_h += fi;
+                    p[n].fr[wall.axis] += fi;
+                }
+                double Fh[DIM] = {0.0, 0.0, 0.0};
+                Fh[wall.axis]  = f_h;
 
-            h = wall.hi - x + offset;
-            if (h <= cutoff) f_h -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
-            p[n].fr[wall.axis] += f_h;
+                forceGrs[rigidID][wall.axis] += f_h;
+                torqueGrs[rigidID][0] = GRvecs[rigidID][1] * Fh[2] - GRvecs[rigidID][2] * Fh[1];
+                torqueGrs[rigidID][1] = GRvecs[rigidID][2] * Fh[0] - GRvecs[rigidID][0] * Fh[2];
+                torqueGrs[rigidID][2] = GRvecs[rigidID][0] * Fh[1] - GRvecs[rigidID][1] * Fh[0];
+            }
+        } else {
+#pragma omp parallel for
+            for (int n = 0; n < Particle_Number; n++)
+                p[n].fr[wall.axis] += Compute_f_wall_single(p[n].x[wall.axis], cutoff, offset);
         }
     }
 }

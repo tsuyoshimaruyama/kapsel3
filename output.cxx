@@ -340,6 +340,7 @@ void Output_udf(UDFManager *ufout, double **zeta, double *uk_dc, const Particle 
             ufout->put(target.sub("v.x"), velocityGs[rigidID][0]);
             ufout->put(target.sub("v.y"), velocityGs[rigidID][1]);
             ufout->put(target.sub("v.z"), velocityGs[rigidID][2]);
+            // fprintf(stderr, "velocityGs[%d][2] = %.8f\n", rigidID, velocityGs[rigidID][2]);
 
             ufout->put(target.sub("q.q0"), qtn_q0(qGs));
             ufout->put(target.sub("q.q1"), qtn_q1(qGs));

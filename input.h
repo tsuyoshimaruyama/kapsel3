@@ -18,11 +18,11 @@
 #include <string>
 
 #include "alloc.h"
+#include "ewald_wrapper.h"
 #include "macro.h"
 #include "parameter_define.h"
 #include "udfmanager.h"
 #include "variable.h"
-
 /////////////////////
 /////////////////////
 extern int Fixed_particle;
@@ -48,7 +48,8 @@ enum PT { spherical_particle, chain, rigid };
 enum JAX { x_axis, y_axis, z_axis, no_axis };
 enum JP { motor, slip, obstacle, no_propulsion };
 enum WALL { NO_WALL, FLAT_WALL };
-
+enum QUINCKE { QUINCKE_OFF, QUINCKE_ON };
+enum MULTIPOLE { MULTIPOLE_OFF, MULTIPOLE_ON };
 enum OBL_INT { linear_int, spline_int };
 enum OBL_TRANSFORM { oblique2cartesian, cartesian2oblique };
 
@@ -110,6 +111,13 @@ extern const char *OBL_INT_name[];
 //////
 extern WALL        SW_WALL;
 extern const char *WALL_name[];
+
+//////
+extern QUINCKE     SW_QUINCKE;
+extern const char *QUINCKE_name[];
+
+//////
+extern MULTIPOLE SW_MULTIPOLE;
 
 //////
 extern OUTFORMAT    SW_OUTFORMAT;
@@ -175,7 +183,40 @@ extern double * janus_rotlet_dipole_C2;
 
 //////
 extern FlatWall wall;
+//////
+extern QuinckeEffect quincke;
+//////
+extern double * multipole_q;   // per species charge
+extern double **multipole_mu;  // per species dipole (in body frame)
+/*!
+    \brief Compute particle dipole in space frame
+*/
+extern void compute_particle_dipole_standard(double *mu_space, const double *mu_body, quaternion &q);
 
+/*!
+    \brief Compute particle dipole in space frame for the special case of a Quincke roller
+    \details Assume that the particle dipole is always perpendicular to the plane formed by the anqular velocity vector
+   \f$\vec{e}_{\omega}\f$ and the electric field direction \f$\vec{n}\f$
+
+   \f{align*}{
+     \vec{p} &=   p_0 \vec{n}\times\vec{e}_{\omega}
+   \f}
+
+   with \f$p_0\f$ the magnitude. It is thus parallel to the quincke torque \f$\tau_{\textrm{Quincke}}\f$.
+
+    \warning We are assuming that the magnitude of the dipole is passed in the first component of mu_body
+    \param[out] mu_space particle dipole in the lab frame
+    \param[in]  mu_body the magnitude of the dipole (p_0, 0, 0)
+    \param[in]  q orientation quaternion
+*/
+extern void compute_particle_dipole_quincke(double *mu_space, const double *mu_body, quaternion &q);
+
+/*!
+    \brief Generic funtion pointer used to compute particle dipole
+*/
+extern void (*compute_particle_dipole)(double *mu_space, const double *mu_body, quaternion &q);
+
+//////
 extern char Out_dir[];
 extern char Out_name[];
 //////

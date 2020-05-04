@@ -11,6 +11,7 @@
 
 #include <math.h>
 
+#include "ewald_wrapper.h"
 #include "input.h"
 #include "md_force.h"
 #include "particle_rotation_solver.h"
@@ -101,8 +102,17 @@ inline void Force(Particle *p) {
     if (SW_PT == chain) {
         Calc_anharmonic_force_chain(p, Distance0);
     }
+
     if (SW_WALL != NO_WALL) {
         Add_f_wall(p);
+    }
+
+    if (SW_QUINCKE == QUINCKE_ON) {
+        Calc_harmonic_torque_quincke(p);
+    }
+
+    if (SW_MULTIPOLE == MULTIPOLE_ON) {
+        Calc_multipole_interaction_force_torque(p);
     }
 }
 

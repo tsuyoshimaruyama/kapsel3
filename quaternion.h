@@ -605,4 +605,33 @@ inline void rm_rqtn(quaternion &q, const double R[DIM * DIM]) {
     qtn_init(q, qq);
 }
 
+/*!
+  \author S. Imamura
+  \date 2019/06/19
+  \brief Generate random initial rotation quaternion in xy|yz|zx planes
+  \Details For rotation of \theta round unit vector n, we have
+           q = (s,v)
+           s = cos(\theta /2)
+           v = (nx, ny, nz) sin(\theta / 2)
+
+          To get random rotation in one of the planes, e.g., xy, set v = (0,0,1),
+          choose \theta by generating random number from [0,2 \pi]
+
+          This is useful for the Quincke roller simulations
+
+  \Input  e_dir [0,1,2] axis around which to rotate
+  \Output q     rotation quaternion
+*/
+inline void get_quaternion_xy_random_Quincke(quaternion &q, int e_dir) {
+    double x;
+
+    x = RAx(PI2);
+
+    q.s        = cos(x / 2.0);
+    q.v[0]     = 0.0;
+    q.v[1]     = 0.0;
+    q.v[2]     = 0.0;
+    q.v[e_dir] = sin(x / 2.0);
+}
+
 #endif

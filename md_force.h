@@ -10,6 +10,7 @@
 
 #include <assert.h>
 
+#include "ewald_wrapper.h"
 #include "input.h"
 #include "interaction.h"
 #include "make_phi.h"
@@ -148,4 +149,35 @@ inline void rigid_chain_debug(Particle *p, const double &time, const int &rigidI
                 torqueGs[rigidID][2]);
     }
 }
+
+/*!
+        \author  S. Imamura
+        \date	 2019/06/28
+        \brief   Compute torque needed to fix one axis of the body frame on the plane (with unit normal vector n)
+        \details We assume a harmonic potential on the angle between the body axis and the plane normal.
+
+        Let \f$\vec{e}_i\f$ be the unit body-frame axis vectors and \f$\vec{n}\f$ the unit normal parallel to the
+        direction of the (implied) external electric field.
+
+        To mimick Quincke rollers, we have assumed an intrinsic rotation along one of the body axis
+        \f$\vec{e}_{\omega} \f$. We want this axis to always be perpendicular to the direction of the external field.
+        Thus, we add a potential of the form
+        \f{align*}{
+            U_{\textrm{Quincke}} &= \frac{1}{2} k (\vec{e}_{\omega}\cdot\vec{n})^2
+        \f}
+
+        The corresponding torque on the particle is then
+        \f{align*}{
+        \vec{\tau}_{\textrm{Quincke}} &= -\frac{\partial U_{\textrm{Quincke}}}{\partial\left(
+            \vec{e}_\omega\cdot\vec{n} \right)} \left(\vec{e}_\omega\times\vec{n} \right)\\
+                                      &= k  \left(\vec{e}_\omega\cdot\vec{n} \right)
+                                      \left(\vec{n}\times\vec{e}_\omega \right)
+        \f}
+
+        See M.P. Allen, G. Germano, Mol. Phys 104 (20-21), 3225-3235 (2006) for details
+*/
+void Calc_harmonic_torque_quincke(Particle *p);
+
+void Calc_multipole_interaction_force_torque(Particle *p);
+
 #endif

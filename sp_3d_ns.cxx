@@ -796,18 +796,17 @@ int main(int argc, char *argv[]) {
     Particle *particles = new Particle[Particle_Number];
     if (Particle_Number > 0) {
         Init_Particle(particles);
-        // if(SW_PT == chain){
         if ((SW_PT == chain) && !(DISTRIBUTION == user_specify)) {
             Init_Chain(particles);
-        } else if ((SW_PT == rigid) && !(DISTRIBUTION == user_specify)) {
+        } else if ((SW_PT == rigid && SW_QUINCKE == QUINCKE_OFF) && !(DISTRIBUTION == user_specify)) {
             Init_Rigid(particles);
         }
     }
+    if (SW_MULTIPOLE == MULTIPOLE_ON) init_ewald_sum(LX, LY, LZ, Particle_Number);
+
     Init_Wall(phi_wall);
     Init_output(particles);
-
     Init_zeta_k(zeta, uk_dc);
-
     {
         Reset_phi_u(phi, up);
         Reset_phi(phi_sum);
@@ -910,12 +909,12 @@ int main(int argc, char *argv[]) {
 
                     /* velocity u field*/
                     /*
-                    if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ
-                    == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) { if (SW_EQ ==
-                    Shear_Navier_Stokes_Lees_Edwards) { Cpy_v3(work_v3, u); U_k2u(work_v3);
-                    calc_shear_rate_field(work_v3, shear_rate_field); } else if (SW_EQ ==
-                    Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ ==
-                    Shear_NS_LE_CH_FDM) { calc_shear_rate_field(u, shear_rate_field);
+if (SW_EQ == Shear_Navier_Stokes_Lees_Edwards || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ
+== Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ == Shear_NS_LE_CH_FDM) { if (SW_EQ ==
+Shear_Navier_Stokes_Lees_Edwards) { Cpy_v3(work_v3, u); U_k2u(work_v3);
+calc_shear_rate_field(work_v3, shear_rate_field); } else if (SW_EQ ==
+Navier_Stokes_Cahn_Hilliard_FDM || SW_EQ == Shear_Navier_Stokes_Lees_Edwards_FDM || SW_EQ ==
+Shear_NS_LE_CH_FDM) { calc_shear_rate_field(u, shear_rate_field);
                             }
                             A_oblique2a_out(shear_rate_field, work_v1);
                             Output_hdf5_sca("shear_rate", "GAMMA", work_v1, jikan.ts / GTS);
@@ -1006,6 +1005,10 @@ int main(int argc, char *argv[]) {
                 xdmf_output(jikan);
             }
         }
+    }
+    if (SW_MULTIPOLE == MULTIPOLE_ON) {
+        free_ewald_sum();
+        delete ewald_sum;
     }
 
     if (SW_UDF) {

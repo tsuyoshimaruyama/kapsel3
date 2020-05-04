@@ -38,4 +38,5 @@ inline void Show_particle(Particle *p) {
     }
     fprintf(stderr, "\n\n");
 }
+
 #endif

@@ -20,6 +20,8 @@
 #include <cstring>
 
 #include "aux_field.h"
+#include "ewald_wrapper.h"
+#include "f_particle.h"
 #include "fdm.h"
 #include "fluid_solver.h"
 #include "init_fluid.h"

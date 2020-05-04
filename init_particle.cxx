@@ -342,8 +342,12 @@ void Init_Particle(Particle *p) {
     // set orientation
     if (ROTATION) {
         if (ORIENTATION == random_dir) {
+            if (SW_QUINCKE == QUINCKE_OFF) {
+                for (int i = 0; i < Particle_Number; i++) random_rqtn(p[i].q);
+            } else {
+                for (int i = 0; i < Particle_Number; i++) get_quaternion_xy_random_Quincke(p[i].q, quincke.e_dir);
+            }
             for (int i = 0; i < Particle_Number; i++) {
-                random_rqtn(p[i].q);
                 qtn_isnormal(p[i].q);
                 qtn_init(p[i].q_old, p[i].q);
             }
@@ -355,6 +359,7 @@ void Init_Particle(Particle *p) {
             }
         } else if (ORIENTATION == user_dir && DISTRIBUTION == user_specify) {
             // do nothing orientation already read
+
         } else {
             fprintf(stderr, "Error: wrong ORIENTATION\n");
             fprintf(stderr, "%d %d %d\n", ORIENTATION, space_dir, user_dir);
@@ -381,10 +386,20 @@ void Init_Particle(Particle *p) {
             for (int n = 0; n < Particle_Number; n++) p[n].x[wall.axis] += (wall.lo + WALL_EXCLUSION);
         }
         double overlap_distance = RADIUS - HXI;
-        for (int n = 0; n < Particle_Number; n++) {
-            double x = p[n].x[wall.axis];
-            if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
-                fprintf(stderr, "# INIT WARNING: particle %d overlaps with wall\n", n);
+        if (SW_PT == rigid) {
+            for (int rigidID = 0; rigidID < Rigid_Number; rigidID++) {
+                for (int n = Rigid_Particle_Cumul[rigidID]; n < Rigid_Particle_Cumul[rigidID + 1]; n++) {
+                    double x = p[n].x[wall.axis];
+                    if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+                        fprintf(stderr, "# INIT WARNING: rigid particle %d (bead %d) overlaps with wall\n", rigidID, n);
+                }
+            }
+        } else {
+            for (int n = 0; n < Particle_Number; n++) {
+                double x = p[n].x[wall.axis];
+                if (x < wall.lo + overlap_distance || x > wall.hi - overlap_distance)
+                    fprintf(stderr, "# INIT WARNING: particle %d overlaps with wall\n", n);
+            }
         }
     }
 
@@ -468,7 +483,9 @@ void Init_Particle(Particle *p) {
 
             Make_phi_rigid_inertia_OBL(phi_sum, p);
         }
+
         init_Rigid_Coordinates(p);
+
         init_set_vGs(p);
 
         double phi_vf = 0.0;
