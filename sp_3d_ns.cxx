@@ -802,7 +802,7 @@ int main(int argc, char *argv[]) {
             Init_Rigid(particles);
         }
     }
-    init_ewald_sum(LX, LY, LZ, Particle_Number);
+    if (SW_MULTIPOLE == MULTIPOLE_ON) init_ewald_sum(LX, LY, LZ, Particle_Number);
 
     Init_Wall(phi_wall);
     Init_output(particles);
@@ -1006,8 +1006,10 @@ Shear_NS_LE_CH_FDM) { calc_shear_rate_field(u, shear_rate_field);
             }
         }
     }
-    free_ewald_sum();
-    delete ewald_sum;
+    if (SW_MULTIPOLE == MULTIPOLE_ON) {
+        free_ewald_sum();
+        delete ewald_sum;
+    }
 
     if (SW_UDF) {
         ufout->write();
