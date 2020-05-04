@@ -10,7 +10,7 @@
 #ifndef INIT_PARTICLE_H
 #define INIT_PARTICLE_H
 
-#include <assert.h> 
+#include <assert.h>
 
 #include "avs_output.h"
 #include "fluct.h"
@@ -25,8 +25,8 @@ void Init_Chain(Particle *p);
 void Init_Rigid(Particle *p);
 void Show_parameter(Particle *p);
 
-inline void Show_particle(Particle *p){
-    for(int n=0;n<Particle_Number;n++){
+inline void Show_particle(Particle *p) {
+    for (int n = 0; n < Particle_Number; n++) {
         fprintf(stderr,
                 "%g %g %g %g %g %g\n",
                 p[n].v[0],
