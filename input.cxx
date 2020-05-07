@@ -602,12 +602,80 @@ inline void Set_global_parameters(void) {
 UDFManager *ufin;
 UDFManager *ufout;
 UDFManager *ufres;
-void        Gourmet_file_io(const char *infile,
-                            const char *outfile,
-                            const char *sumfile,
-                            const char *deffile,
-                            const char *ctrlfile,
-                            const char *resfile) {
+
+/*!
+    \brief Read input and write to output and restart
+    \param[in] location UDF location
+    \param[out] var variable to save parameter
+*/
+template <typename T>
+void io_parser(const Location &location, T &var) {
+    ufin->get(location, var);
+    ufout->put(location, var);
+    ufres->put(location, var);
+}
+/*!
+    \brief Read input and write to output and restart
+    \param[in] location UDF location
+    \param[out] var variable to save parameter
+ */
+template <typename T>
+void io_parser(const string &location, T &var) {
+    ufin->get(location, var);
+    ufout->put(location, var);
+    ufres->put(location, var);
+}
+/*!
+    \brief (Conditional) Read input and write to output and restart
+    \param[in] location UDF location
+    \param[out] var variable to save parameter
+    \param[in] read boolean flag to determine whether or not to read input
+    \param[in] zerovalue default value to write to output and restart and return in var
+ */
+template <typename T>
+void io_parser(const Location &location, T &var, const bool &read, const T &zerovalue) {
+    if (read) {
+        io_parser(location, var);
+    } else {
+        var = zerovalue;
+        ufout->put(location, zerovalue);
+        ufres->put(location, zerovalue);
+    }
+}
+/*!
+    \brief Write to output and restart, don't read from input
+    \param[in] location UDF location
+    \param[out] zerovalue default value to write to output and restart
+*/
+template <typename T>
+void io_parser_noread(const Location &location, const T &zerovalue) {
+    ufout->put(location, zerovalue);
+    ufres->put(location, zerovalue);
+}
+/*!
+    \brief (Conditional) Read input and write to output and restart
+    \details If read is sucessfull then write value to output/restart. This is usefull for optional sections, which may
+   be abset from the define/input files.
+
+    \param[in] location UDF location \param[out] var variable to save parameter
+    \return true/false if location exists in input file
+*/
+template <typename T>
+bool io_parser_check(const Location &location, T &var) {
+    bool in = ufin->get(location, var);
+    if (in) {
+        ufout->put(location, var);
+        ufres->put(location, var);
+    }
+    return in;
+}
+
+void Gourmet_file_io(const char *infile,
+                     const char *outfile,
+                     const char *sumfile,
+                     const char *deffile,
+                     const char *ctrlfile,
+                     const char *resfile) {
     if (file_check(infile)) ufin = new UDFManager(infile);
 
     // --------------------------------------------------------
@@ -669,36 +737,18 @@ void        Gourmet_file_io(const char *infile,
     {
         Location target("constitutive_eq");
         string   str;
-        ufin->get(target.sub("type"), str);
-        ufout->put(target.sub("type"), str);
-        ufres->put(target.sub("type"), str);
+        io_parser(target.sub("type"), str);
         if (str == EQ_name[Navier_Stokes]) {
             SW_EQ = Navier_Stokes;
             {
                 target.down(EQ_name[SW_EQ]);
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
             }
         } else if (str == EQ_name[Shear_Navier_Stokes]) {
@@ -706,54 +756,29 @@ void        Gourmet_file_io(const char *infile,
             {
                 target.down(EQ_name[SW_EQ]);
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
                 Shear_strain_realized = 0.0;
-                { Srate_depend_LJ_cap = DBL_MAX; }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
-                }
+                Srate_depend_LJ_cap   = DBL_MAX;
                 {
                     Location target("constitutive_eq.Shear_Navier_Stokes.External_field");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
+                    io_parser(target.sub("type"), str);
                     if (str == "DC") {
                         target.down("DC");
                         Shear_AC = 0;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
                         fprintf(stderr, "# DC steady shear: shear rate %f \n", Shear_rate);
                     }
                     if (str == "AC") {
                         target.down("AC");
                         Shear_AC = 1;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
-
-                        ufin->get(target.sub("Frequency"), Shear_frequency);
-                        ufout->put(target.sub("Frequency"), Shear_frequency);
-                        ufres->put(target.sub("Frequency"), Shear_frequency);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Frequency"), Shear_frequency);
 
                         fprintf(
                             stderr,
@@ -769,54 +794,30 @@ void        Gourmet_file_io(const char *infile,
             {
                 target.down(EQ_name[SW_EQ]);
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
                 Shear_strain_realized = 0.0;
-                { Srate_depend_LJ_cap = DBL_MAX; }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
-                }
+                Srate_depend_LJ_cap   = DBL_MAX;
                 {
                     Location target("constitutive_eq.Shear_Navier_Stokes_Lees_Edwards.External_field");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
+                    io_parser(target.sub("type"), str);
                     if (str == "DC") {
                         target.down("DC");
                         Shear_AC = 0;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
                         fprintf(stderr, "# DC steady shear: shear rate %f \n", Shear_rate);
                     }
                     if (str == "AC") {  // in near future, someone will extend this section.
                                         // AC by otomura
                         target.down("AC");
                         Shear_AC = 1;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
-                        ufin->get(target.sub("Frequency"), Shear_frequency);
-                        ufout->put(target.sub("Frequency"), Shear_frequency);
-                        ufres->put(target.sub("Frequency"), Shear_frequency);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Frequency"), Shear_frequency);
                         fprintf(
                             stderr,
                             "# AC oscillatory shear: (shear rate, frequency, the maximum amp of strain)= %f %f %f\n",
@@ -831,30 +832,13 @@ void        Gourmet_file_io(const char *infile,
             {
                 target.down(EQ_name[Electrolyte]);
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("Dielectric_cst"), Dielectric_cst);
-
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("Dielectric_cst"), Dielectric_cst);
                     {
-                        ufout->put(target.sub("DX"), DX);
-                        ufout->put(target.sub("RHO"), RHO);
-                        ufout->put(target.sub("ETA"), ETA);
-                        ufout->put(target.sub("kBT"), kBT);
-                        ufout->put(target.sub("Dielectric_cst"), Dielectric_cst);
-                    }
-                    {
-                        ufres->put(target.sub("DX"), DX);
-                        ufres->put(target.sub("RHO"), RHO);
-                        ufres->put(target.sub("ETA"), ETA);
-                        ufres->put(target.sub("kBT"), kBT);
-                        ufres->put(target.sub("Dielectric_cst"), Dielectric_cst);
-                    }
-                    {
-                        ufin->get(target.sub("INIT_profile"), str);
-                        ufout->put(target.sub("INIT_profile"), str);
-                        ufres->put(target.sub("INIT_profile"), str);
+                        io_parser(target.sub("INIT_profile"), str);
                         if (str == "Uniform") {
                             Poisson_Boltzmann = 0;
                         } else if (str == "Poisson_Boltzmann") {
@@ -866,44 +850,24 @@ void        Gourmet_file_io(const char *infile,
                     }
                     {
                         Location target("constitutive_eq.Electrolyte.Add_salt");
-                        ufin->get(target.sub("type"), str);
-                        ufout->put(target.sub("type"), str);
-                        ufres->put(target.sub("type"), str);
+                        io_parser(target.sub("type"), str);
                         if (str == "saltfree") {
                             N_spec = 1;
                             target.down("saltfree");
                             {
-                                ufin->get(target.sub("Valency_counterion"), Valency_counterion);
-                                ufout->put(target.sub("Valency_counterion"), Valency_counterion);
-                                ufres->put(target.sub("Valency_counterion"), Valency_counterion);
-                                ufin->get(target.sub("Onsager_coeff_counterion"), Onsager_coeff_counterion);
-                                ufout->put(target.sub("Onsager_coeff_counterion"), Onsager_coeff_counterion);
-                                ufres->put(target.sub("Onsager_coeff_counterion"), Onsager_coeff_counterion);
+                                io_parser(target.sub("Valency_counterion"), Valency_counterion);
+                                io_parser(target.sub("Onsager_coeff_counterion"), Onsager_coeff_counterion);
                             }
                         } else if (str == "salt") {
                             N_spec = 2;
                             target.down("salt");
                             {
                                 {
-                                    ufin->get(target.sub("Valency_positive_ion"), Valency_positive_ion);
-                                    ufin->get(target.sub("Valency_negative_ion"), Valency_negative_ion);
-                                    ufin->get(target.sub("Onsager_coeff_positive_ion"), Onsager_coeff_positive_ion);
-                                    ufin->get(target.sub("Onsager_coeff_negative_ion"), Onsager_coeff_negative_ion);
-                                    ufin->get(target.sub("Debye_length"), Debye_length);
-                                }
-                                {
-                                    ufout->put(target.sub("Valency_positive_ion"), Valency_positive_ion);
-                                    ufout->put(target.sub("Valency_negative_ion"), Valency_negative_ion);
-                                    ufout->put(target.sub("Onsager_coeff_positive_ion"), Onsager_coeff_positive_ion);
-                                    ufout->put(target.sub("Onsager_coeff_negative_ion"), Onsager_coeff_negative_ion);
-                                    ufout->put(target.sub("Debye_length"), Debye_length);
-                                }
-                                {
-                                    ufres->put(target.sub("Valency_positive_ion"), Valency_positive_ion);
-                                    ufres->put(target.sub("Valency_negative_ion"), Valency_negative_ion);
-                                    ufres->put(target.sub("Onsager_coeff_positive_ion"), Onsager_coeff_positive_ion);
-                                    ufres->put(target.sub("Onsager_coeff_negative_ion"), Onsager_coeff_negative_ion);
-                                    ufres->put(target.sub("Debye_length"), Debye_length);
+                                    io_parser(target.sub("Valency_positive_ion"), Valency_positive_ion);
+                                    io_parser(target.sub("Valency_negative_ion"), Valency_negative_ion);
+                                    io_parser(target.sub("Onsager_coeff_positive_ion"), Onsager_coeff_positive_ion);
+                                    io_parser(target.sub("Onsager_coeff_negative_ion"), Onsager_coeff_negative_ion);
+                                    io_parser(target.sub("Debye_length"), Debye_length);
                                 }
                             }
                             target.up();
@@ -914,9 +878,7 @@ void        Gourmet_file_io(const char *infile,
                     }
                     {
                         Location target("constitutive_eq.Electrolyte.Electric_field");
-                        ufin->get(target.sub("type"), str);
-                        ufout->put(target.sub("type"), str);
-                        ufres->put(target.sub("type"), str);
+                        io_parser(target.sub("type"), str);
                         if (str == "OFF") {
                             External_field = 0;
                             for (int d = 0; d < DIM; d++) {
@@ -926,49 +888,24 @@ void        Gourmet_file_io(const char *infile,
                             External_field = 1;
                             target.down("ON");
                             {
-                                ufin->get(target.sub("type"), str);
-                                ufout->put(target.sub("type"), str);
-                                ufres->put(target.sub("type"), str);
+                                io_parser(target.sub("type"), str);
                                 if (str == "DC") {
                                     target.down("DC");
                                     AC = 0;
                                     {
-                                        ufin->get(target.sub("Ex"), E_ext[0]);
-                                        ufin->get(target.sub("Ey"), E_ext[1]);
-                                        ufin->get(target.sub("Ez"), E_ext[2]);
-                                    }
-                                    {
-                                        ufout->put(target.sub("Ex"), E_ext[0]);
-                                        ufout->put(target.sub("Ey"), E_ext[1]);
-                                        ufout->put(target.sub("Ez"), E_ext[2]);
-                                    }
-                                    {
-                                        ufres->put(target.sub("Ex"), E_ext[0]);
-                                        ufres->put(target.sub("Ey"), E_ext[1]);
-                                        ufres->put(target.sub("Ez"), E_ext[2]);
+                                        io_parser(target.sub("Ex"), E_ext[0]);
+                                        io_parser(target.sub("Ey"), E_ext[1]);
+                                        io_parser(target.sub("Ez"), E_ext[2]);
                                     }
                                 } else if (str == "AC") {
                                     target.down("AC");
                                     AC = 1;
                                     {
-                                        ufin->get(target.sub("Ex"), E_ext[0]);
-                                        ufin->get(target.sub("Ey"), E_ext[1]);
-                                        ufin->get(target.sub("Ez"), E_ext[2]);
-                                        ufin->get(target.sub("Frequency"), Frequency);
+                                        io_parser(target.sub("Ex"), E_ext[0]);
+                                        io_parser(target.sub("Ey"), E_ext[1]);
+                                        io_parser(target.sub("Ez"), E_ext[2]);
+                                        io_parser(target.sub("Frequency"), Frequency);
                                     }
-                                    {
-                                        ufout->put(target.sub("Ex"), E_ext[0]);
-                                        ufout->put(target.sub("Ey"), E_ext[1]);
-                                        ufout->put(target.sub("Ez"), E_ext[2]);
-                                        ufout->put(target.sub("Frequency"), Frequency);
-                                    }
-                                    {
-                                        ufres->put(target.sub("Ex"), E_ext[0]);
-                                        ufres->put(target.sub("Ey"), E_ext[1]);
-                                        ufres->put(target.sub("Ez"), E_ext[2]);
-                                        ufres->put(target.sub("Frequency"), Frequency);
-                                    }
-
                                 } else {
                                     fprintf(stderr, "invalid switch for DC or AC\n");
                                     exit_job(EXIT_FAILURE);
@@ -987,23 +924,15 @@ void        Gourmet_file_io(const char *infile,
             PHASE_SEPARATION = 0;
             {
                 target.down(EQ_name[SW_EQ]);
-                ufin->get(target.sub("NS_solver.type"), str);
-                ufout->put(target.sub("NS_solver.type"), str);
-                ufres->put(target.sub("NS_solver.type"), str);
+                io_parser(target.sub("NS_solver.type"), str);
                 {
                     if (str == NS_SOLVERTYPE_name[explicit_scheme]) {
                         SW_NSST = explicit_scheme;
                     } else if (str == NS_SOLVERTYPE_name[implicit_scheme]) {
                         SW_NSST = implicit_scheme;
                         target.down("NS_solver.implicit_scheme");
-
-                        ufin->get(target.sub("tolerance"), eps_ns);
-                        ufout->put(target.sub("tolerance"), eps_ns);
-                        ufres->put(target.sub("tolerance"), eps_ns);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ns);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ns);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ns);
+                        io_parser(target.sub("tolerance"), eps_ns);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ns);
                         target.up();
                         target.up();
                     } else {
@@ -1012,28 +941,12 @@ void        Gourmet_file_io(const char *infile,
                     }
                 }
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
             }
         } else if (str == EQ_name[Navier_Stokes_Cahn_Hilliard_FDM]) {
@@ -1041,9 +954,7 @@ void        Gourmet_file_io(const char *infile,
             PHASE_SEPARATION = 1;
             {
                 target.down(EQ_name[SW_EQ]);
-                ufin->get(target.sub("NS_solver.type"), str);
-                ufout->put(target.sub("NS_solver.type"), str);
-                ufres->put(target.sub("NS_solver.type"), str);
+                io_parser(target.sub("NS_solver.type"), str);
                 {
                     if (str == NS_SOLVERTYPE_name[explicit_scheme]) {
                         SW_NSST = explicit_scheme;
@@ -1051,30 +962,17 @@ void        Gourmet_file_io(const char *infile,
                         SW_NSST = implicit_scheme;
                         target.down("NS_solver.implicit_scheme");
 
-                        ufin->get(target.sub("tolerance"), eps_ns);
-                        ufout->put(target.sub("tolerance"), eps_ns);
-                        ufres->put(target.sub("tolerance"), eps_ns);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ns);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ns);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ns);
-
-                        ufin->get(target.sub("viscosity_change"), str);
-                        ufout->put(target.sub("viscosity_change"), str);
-                        ufres->put(target.sub("viscosity_change"), str);
+                        io_parser(target.sub("tolerance"), eps_ns);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ns);
+                        io_parser(target.sub("viscosity_change"), str);
                         {
                             if (str == "OFF") {
                                 VISCOSITY_CHANGE = 0;
                             } else if (str == "ON") {
                                 VISCOSITY_CHANGE = 1;
                                 target.down("ON");
-                                ufin->get(target.sub("ETA_A"), ETA_A);
-                                ufout->put(target.sub("ETA_A"), ETA_A);
-                                ufres->put(target.sub("ETA_A"), ETA_A);
-
-                                ufin->get(target.sub("ETA_B"), ETA_B);
-                                ufout->put(target.sub("ETA_B"), ETA_B);
-                                ufres->put(target.sub("ETA_B"), ETA_B);
+                                io_parser(target.sub("ETA_A"), ETA_A);
+                                io_parser(target.sub("ETA_B"), ETA_B);
                                 target.up();
                             } else {
                                 fprintf(stderr, "invalid viscosity change slection \n");
@@ -1089,24 +987,15 @@ void        Gourmet_file_io(const char *infile,
                         exit_job(EXIT_FAILURE);
                     }
                 }
-                ufin->get(target.sub("CH_solver.type"), str);
-                ufout->put(target.sub("CH_solver.type"), str);
-                ufres->put(target.sub("CH_solver.type"), str);
+                io_parser(target.sub("CH_solver.type"), str);
                 {
                     if (str == CH_SOLVERTYPE_name[explicit_scheme]) {
                         SW_CHST = explicit_scheme;
                     } else if (str == CH_SOLVERTYPE_name[implicit_scheme]) {
                         SW_CHST = implicit_scheme;
                         target.down("CH_solver.implicit_scheme");
-
-                        ufin->get(target.sub("tolerance"), eps_ch);
-                        ufout->put(target.sub("tolerance"), eps_ch);
-                        ufres->put(target.sub("tolerance"), eps_ch);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ch);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ch);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ch);
-
+                        io_parser(target.sub("tolerance"), eps_ch);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ch);
                         target.up();
                         target.up();
                     } else {
@@ -1115,108 +1004,40 @@ void        Gourmet_file_io(const char *infile,
                     }
                 }
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
                 {
                     Location target("constitutive_eq.Navier_Stokes_Cahn_Hilliard_FDM.Potential");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
+                    io_parser(target.sub("type"), str);
 
                     if (str == "Landau") {
                         SW_POTENTIAL = Landau;
                         target.down("Landau");
-                        ufin->get(target.sub("composition_ratio"), ps.ratio);
-                        ufout->put(target.sub("composition_ratio"), ps.ratio);
-                        ufres->put(target.sub("composition_ratio"), ps.ratio);
-
-                        ufin->get(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufout->put(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufres->put(target.sub("initial_fluctuation"), ps.init_fluct);
-
-                        ufin->get(target.sub("a"), gl.a);
-                        ufout->put(target.sub("a"), gl.a);
-                        ufres->put(target.sub("a"), gl.a);
-
-                        ufin->get(target.sub("b"), gl.b);
-                        ufout->put(target.sub("b"), gl.b);
-                        ufres->put(target.sub("b"), gl.b);
-
-                        ufin->get(target.sub("d"), ps.d);
-                        ufout->put(target.sub("d"), ps.d);
-                        ufres->put(target.sub("d"), ps.d);
-
-                        ufin->get(target.sub("w"), ps.w);
-                        ufout->put(target.sub("w"), ps.w);
-                        ufres->put(target.sub("w"), ps.w);
-
-                        ufin->get(target.sub("alpha"), ps.alpha);
-                        ufout->put(target.sub("alpha"), ps.alpha);
-                        ufres->put(target.sub("alpha"), ps.alpha);
-
-                        ufin->get(target.sub("kappa"), ps.kappa);
-                        ufout->put(target.sub("kappa"), ps.kappa);
-                        ufres->put(target.sub("kappa"), ps.kappa);
-
+                        io_parser(target.sub("composition_ratio"), ps.ratio);
+                        io_parser(target.sub("initial_fluctuation"), ps.init_fluct);
+                        io_parser(target.sub("a"), gl.a);
+                        io_parser(target.sub("b"), gl.b);
+                        io_parser(target.sub("d"), ps.d);
+                        io_parser(target.sub("w"), ps.w);
+                        io_parser(target.sub("alpha"), ps.alpha);
+                        io_parser(target.sub("kappa"), ps.kappa);
                     } else if (str == "Flory_Huggins") {
                         SW_POTENTIAL = Flory_Huggins;
                         target.down("Flory_Huggins");
-                        ufin->get(target.sub("composition_ratio"), ps.ratio);
-                        ufout->put(target.sub("composition_ratio"), ps.ratio);
-                        ufres->put(target.sub("composition_ratio"), ps.ratio);
-
-                        ufin->get(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufout->put(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufres->put(target.sub("initial_fluctuation"), ps.init_fluct);
-
-                        ufin->get(target.sub("na"), fh.na);
-                        ufout->put(target.sub("na"), fh.na);
-                        ufres->put(target.sub("na"), fh.na);
-
-                        ufin->get(target.sub("nb"), fh.nb);
-                        ufout->put(target.sub("nb"), fh.nb);
-                        ufres->put(target.sub("nb"), fh.nb);
-
-                        ufin->get(target.sub("chi"), fh.chi);
-                        ufout->put(target.sub("chi"), fh.chi);
-                        ufres->put(target.sub("chi"), fh.chi);
-
-                        ufin->get(target.sub("d"), ps.d);
-                        ufout->put(target.sub("d"), ps.d);
-                        ufres->put(target.sub("d"), ps.d);
-
-                        ufin->get(target.sub("w"), ps.w);
-                        ufout->put(target.sub("w"), ps.w);
-                        ufres->put(target.sub("w"), ps.w);
-
-                        ufin->get(target.sub("alpha"), ps.alpha);
-                        ufout->put(target.sub("alpha"), ps.alpha);
-                        ufres->put(target.sub("alpha"), ps.alpha);
-
-                        ufin->get(target.sub("kappa"), ps.kappa);
-                        ufout->put(target.sub("kappa"), ps.kappa);
-                        ufres->put(target.sub("kappa"), ps.kappa);
+                        io_parser(target.sub("composition_ratio"), ps.ratio);
+                        io_parser(target.sub("initial_fluctuation"), ps.init_fluct);
+                        io_parser(target.sub("na"), fh.na);
+                        io_parser(target.sub("nb"), fh.nb);
+                        io_parser(target.sub("chi"), fh.chi);
+                        io_parser(target.sub("d"), ps.d);
+                        io_parser(target.sub("w"), ps.w);
+                        io_parser(target.sub("alpha"), ps.alpha);
+                        io_parser(target.sub("kappa"), ps.kappa);
                     } else {
                         fprintf(stderr, "invalid potential_type\n");
                         exit_job(EXIT_FAILURE);
@@ -1229,23 +1050,15 @@ void        Gourmet_file_io(const char *infile,
             PHASE_SEPARATION = 0;
             {
                 target.down(EQ_name[SW_EQ]);
-                ufin->get(target.sub("NS_solver.type"), str);
-                ufout->put(target.sub("NS_solver.type"), str);
-                ufres->put(target.sub("NS_solver.type"), str);
+                io_parser(target.sub("NS_solver.type"), str);
                 {
                     if (str == NS_SOLVERTYPE_name[explicit_scheme]) {
                         SW_NSST = explicit_scheme;
                     } else if (str == NS_SOLVERTYPE_name[implicit_scheme]) {
                         SW_NSST = implicit_scheme;
                         target.down("NS_solver.implicit_scheme");
-
-                        ufin->get(target.sub("tolerance"), eps_ns);
-                        ufout->put(target.sub("tolerance"), eps_ns);
-                        ufres->put(target.sub("tolerance"), eps_ns);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ns);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ns);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ns);
+                        io_parser(target.sub("tolerance"), eps_ns);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ns);
                         target.up();
                         target.up();
                     } else {
@@ -1254,54 +1067,30 @@ void        Gourmet_file_io(const char *infile,
                     }
                 }
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
                 Shear_strain_realized = 0.0;
-                { Srate_depend_LJ_cap = DBL_MAX; }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
-                }
+                Srate_depend_LJ_cap   = DBL_MAX;
                 {
                     Location target("constitutive_eq.Shear_Navier_Stokes_Lees_Edwards_FDM.External_field");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
+                    io_parser(target.sub("type"), str);
                     if (str == "DC") {
                         target.down("DC");
                         Shear_AC = 0;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
                         fprintf(stderr, "# DC steady shear: shear rate %f \n", Shear_rate);
                     }
                     if (str == "AC") {  // in near future, someone will extend this section.
                                         // AC by otomura
                         target.down("AC");
                         Shear_AC = 1;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
-                        ufin->get(target.sub("Frequency"), Shear_frequency);
-                        ufout->put(target.sub("Frequency"), Shear_frequency);
-                        ufres->put(target.sub("Frequency"), Shear_frequency);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Frequency"), Shear_frequency);
                         fprintf(
                             stderr,
                             "# AC oscillatory shear: (shear rate, frequency, the maximum amp of strain)= %f %f %f\n",
@@ -1316,40 +1105,24 @@ void        Gourmet_file_io(const char *infile,
             PHASE_SEPARATION = 1;
             {
                 target.down(EQ_name[SW_EQ]);
-                ufin->get(target.sub("NS_solver.type"), str);
-                ufout->put(target.sub("NS_solver.type"), str);
-                ufres->put(target.sub("NS_solver.type"), str);
+                io_parser(target.sub("NS_solver.type"), str);
                 {
                     if (str == NS_SOLVERTYPE_name[explicit_scheme]) {
                         SW_NSST = explicit_scheme;
                     } else if (str == NS_SOLVERTYPE_name[implicit_scheme]) {
                         SW_NSST = implicit_scheme;
                         target.down("NS_solver.implicit_scheme");
-
-                        ufin->get(target.sub("tolerance"), eps_ns);
-                        ufout->put(target.sub("tolerance"), eps_ns);
-                        ufres->put(target.sub("tolerance"), eps_ns);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ns);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ns);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ns);
-
-                        ufin->get(target.sub("viscosity_change"), str);
-                        ufout->put(target.sub("viscosity_change"), str);
-                        ufres->put(target.sub("viscosity_change"), str);
+                        io_parser(target.sub("tolerance"), eps_ns);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ns);
+                        io_parser(target.sub("viscosity_change"), str);
                         {
                             if (str == "OFF") {
                                 VISCOSITY_CHANGE = 0;
                             } else if (str == "ON") {
                                 VISCOSITY_CHANGE = 1;
                                 target.down("ON");
-                                ufin->get(target.sub("ETA_A"), ETA_A);
-                                ufout->put(target.sub("ETA_A"), ETA_A);
-                                ufres->put(target.sub("ETA_A"), ETA_A);
-
-                                ufin->get(target.sub("ETA_B"), ETA_B);
-                                ufout->put(target.sub("ETA_B"), ETA_B);
-                                ufres->put(target.sub("ETA_B"), ETA_B);
+                                io_parser(target.sub("ETA_A"), ETA_A);
+                                io_parser(target.sub("ETA_B"), ETA_B);
                                 target.up();
                             } else {
                                 fprintf(stderr, "invalid viscosity change slection \n");
@@ -1364,24 +1137,15 @@ void        Gourmet_file_io(const char *infile,
                         exit_job(EXIT_FAILURE);
                     }
                 }
-                ufin->get(target.sub("CH_solver.type"), str);
-                ufout->put(target.sub("CH_solver.type"), str);
-                ufres->put(target.sub("CH_solver.type"), str);
+                io_parser(target.sub("CH_solver.type"), str);
                 {
                     if (str == CH_SOLVERTYPE_name[explicit_scheme]) {
                         SW_CHST = explicit_scheme;
                     } else if (str == CH_SOLVERTYPE_name[implicit_scheme]) {
                         SW_CHST = implicit_scheme;
                         target.down("CH_solver.implicit_scheme");
-
-                        ufin->get(target.sub("tolerance"), eps_ch);
-                        ufout->put(target.sub("tolerance"), eps_ch);
-                        ufres->put(target.sub("tolerance"), eps_ch);
-
-                        ufin->get(target.sub("maximum_iteration"), maxiter_ch);
-                        ufout->put(target.sub("maximum_iteration"), maxiter_ch);
-                        ufres->put(target.sub("maximum_iteration"), maxiter_ch);
-
+                        io_parser(target.sub("tolerance"), eps_ch);
+                        io_parser(target.sub("maximum_iteration"), maxiter_ch);
                         target.up();
                         target.up();
                     } else {
@@ -1390,92 +1154,39 @@ void        Gourmet_file_io(const char *infile,
                     }
                 }
                 {
-                    ufin->get(target.sub("DX"), DX);
-                    ufin->get(target.sub("RHO"), RHO);
-                    ufin->get(target.sub("ETA"), ETA);
-                    ufin->get(target.sub("kBT"), kBT);
-                    ufin->get(target.sub("alpha_v"), alpha_v);
-                    ufin->get(target.sub("alpha_o"), alpha_o);
+                    io_parser(target.sub("DX"), DX);
+                    io_parser(target.sub("RHO"), RHO);
+                    io_parser(target.sub("ETA"), ETA);
+                    io_parser(target.sub("kBT"), kBT);
+                    io_parser(target.sub("alpha_v"), alpha_v);
+                    io_parser(target.sub("alpha_o"), alpha_o);
                 }
                 {
                     Location target("constitutive_eq.Shear_NS_LE_CH_FDM.Potential");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
-
+                    io_parser(target.sub("type"), str);
                     if (str == "Landau") {
                         SW_POTENTIAL = Landau;
                         target.down("Landau");
-                        ufin->get(target.sub("composition_ratio"), ps.ratio);
-                        ufout->put(target.sub("composition_ratio"), ps.ratio);
-                        ufres->put(target.sub("composition_ratio"), ps.ratio);
-
-                        ufin->get(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufout->put(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufres->put(target.sub("initial_fluctuation"), ps.init_fluct);
-
-                        ufin->get(target.sub("a"), gl.a);
-                        ufout->put(target.sub("a"), gl.a);
-                        ufres->put(target.sub("a"), gl.a);
-
-                        ufin->get(target.sub("b"), gl.b);
-                        ufout->put(target.sub("b"), gl.b);
-                        ufres->put(target.sub("b"), gl.b);
-
-                        ufin->get(target.sub("d"), ps.d);
-                        ufout->put(target.sub("d"), ps.d);
-                        ufres->put(target.sub("d"), ps.d);
-
-                        ufin->get(target.sub("w"), ps.w);
-                        ufout->put(target.sub("w"), ps.w);
-                        ufres->put(target.sub("w"), ps.w);
-
-                        ufin->get(target.sub("alpha"), ps.alpha);
-                        ufout->put(target.sub("alpha"), ps.alpha);
-                        ufres->put(target.sub("alpha"), ps.alpha);
-
-                        ufin->get(target.sub("kappa"), ps.kappa);
-                        ufout->put(target.sub("kappa"), ps.kappa);
-                        ufres->put(target.sub("kappa"), ps.kappa);
-
+                        io_parser(target.sub("composition_ratio"), ps.ratio);
+                        io_parser(target.sub("initial_fluctuation"), ps.init_fluct);
+                        io_parser(target.sub("a"), gl.a);
+                        io_parser(target.sub("b"), gl.b);
+                        io_parser(target.sub("d"), ps.d);
+                        io_parser(target.sub("w"), ps.w);
+                        io_parser(target.sub("alpha"), ps.alpha);
+                        io_parser(target.sub("kappa"), ps.kappa);
                     } else if (str == "Flory_Huggins") {
                         SW_POTENTIAL = Flory_Huggins;
                         target.down("Flory_Huggins");
-                        ufin->get(target.sub("composition_ratio"), ps.ratio);
-                        ufout->put(target.sub("composition_ratio"), ps.ratio);
-                        ufres->put(target.sub("composition_ratio"), ps.ratio);
-
-                        ufin->get(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufout->put(target.sub("initial_fluctuation"), ps.init_fluct);
-                        ufres->put(target.sub("initial_fluctuation"), ps.init_fluct);
-
-                        ufin->get(target.sub("na"), fh.na);
-                        ufout->put(target.sub("na"), fh.na);
-                        ufres->put(target.sub("na"), fh.na);
-
-                        ufin->get(target.sub("nb"), fh.nb);
-                        ufout->put(target.sub("nb"), fh.nb);
-                        ufres->put(target.sub("nb"), fh.nb);
-
-                        ufin->get(target.sub("chi"), fh.chi);
-                        ufout->put(target.sub("chi"), fh.chi);
-                        ufres->put(target.sub("chi"), fh.chi);
-
-                        ufin->get(target.sub("d"), ps.d);
-                        ufout->put(target.sub("d"), ps.d);
-                        ufres->put(target.sub("d"), ps.d);
-
-                        ufin->get(target.sub("w"), ps.w);
-                        ufout->put(target.sub("w"), ps.w);
-                        ufres->put(target.sub("w"), ps.w);
-
-                        ufin->get(target.sub("alpha"), ps.alpha);
-                        ufout->put(target.sub("alpha"), ps.alpha);
-                        ufres->put(target.sub("alpha"), ps.alpha);
-
-                        ufin->get(target.sub("kappa"), ps.kappa);
-                        ufout->put(target.sub("kappa"), ps.kappa);
-                        ufres->put(target.sub("kappa"), ps.kappa);
+                        io_parser(target.sub("composition_ratio"), ps.ratio);
+                        io_parser(target.sub("initial_fluctuation"), ps.init_fluct);
+                        io_parser(target.sub("na"), fh.na);
+                        io_parser(target.sub("nb"), fh.nb);
+                        io_parser(target.sub("chi"), fh.chi);
+                        io_parser(target.sub("d"), ps.d);
+                        io_parser(target.sub("w"), ps.w);
+                        io_parser(target.sub("alpha"), ps.alpha);
+                        io_parser(target.sub("kappa"), ps.kappa);
                     } else {
                         fprintf(stderr, "invalid potential_type\n");
                         exit_job(EXIT_FAILURE);
@@ -1483,46 +1194,22 @@ void        Gourmet_file_io(const char *infile,
                     target.up();
                 }
                 Shear_strain_realized = 0.0;
-                { Srate_depend_LJ_cap = DBL_MAX; }
-                {
-                    ufout->put(target.sub("DX"), DX);
-                    ufout->put(target.sub("RHO"), RHO);
-                    ufout->put(target.sub("ETA"), ETA);
-                    ufout->put(target.sub("kBT"), kBT);
-                    ufout->put(target.sub("alpha_v"), alpha_v);
-                    ufout->put(target.sub("alpha_o"), alpha_o);
-                }
-                {
-                    ufres->put(target.sub("DX"), DX);
-                    ufres->put(target.sub("RHO"), RHO);
-                    ufres->put(target.sub("ETA"), ETA);
-                    ufres->put(target.sub("kBT"), kBT);
-                    ufres->put(target.sub("alpha_v"), alpha_v);
-                    ufres->put(target.sub("alpha_o"), alpha_o);
-                }
+                Srate_depend_LJ_cap   = DBL_MAX;
                 {
                     Location target("constitutive_eq.Shear_NS_LE_CH_FDM.External_field");
-                    ufin->get(target.sub("type"), str);
-                    ufout->put(target.sub("type"), str);
-                    ufres->put(target.sub("type"), str);
+                    io_parser(target.sub("type"), str);
                     if (str == "DC") {
                         target.down("DC");
                         Shear_AC = 0;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
                         fprintf(stderr, "# DC steady shear: shear rate %f \n", Shear_rate);
                     }
                     if (str == "AC") {  // in near future, someone will extend this section.
                                         // AC by otomura
                         target.down("AC");
                         Shear_AC = 1;
-                        ufin->get(target.sub("Shear_rate"), Shear_rate);
-                        ufout->put(target.sub("Shear_rate"), Shear_rate);
-                        ufres->put(target.sub("Shear_rate"), Shear_rate);
-                        ufin->get(target.sub("Frequency"), Shear_frequency);
-                        ufout->put(target.sub("Frequency"), Shear_frequency);
-                        ufres->put(target.sub("Frequency"), Shear_frequency);
+                        io_parser(target.sub("Shear_rate"), Shear_rate);
+                        io_parser(target.sub("Frequency"), Shear_frequency);
                         fprintf(
                             stderr,
                             "# AC oscillatory shear: (shear rate, frequency, the maximum amp of strain)= %f %f %f\n",
@@ -1543,9 +1230,7 @@ void        Gourmet_file_io(const char *infile,
     {
         Location target("object_type");
         string   str;
-        ufin->get(target.sub("type"), str);
-        ufout->put(target.sub("type"), str);
-        ufres->put(target.sub("type"), str);
+        io_parser(target.sub("type"), str);
         if (str == PT_name[spherical_particle]) {
             SW_PT = spherical_particle;
             {
@@ -1715,11 +1400,10 @@ void        Gourmet_file_io(const char *infile,
                 Location target(str);
                 {
                     string str_in;
-                    ufin->get(target.sub("Particle_number"), Particle_Numbers[i]);
-                    ufin->get(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufin->get(target.sub("Surface_charge"), Surface_charge[i]);
-
-                    ufin->get(target.sub("janus_axis"), str_in);
+                    io_parser(target.sub("Particle_number"), Particle_Numbers[i]);
+                    io_parser(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
+                    io_parser(target.sub("Surface_charge"), Surface_charge[i]);
+                    io_parser(target.sub("janus_axis"), str_in);
                     if (str_in == JAX_name[no_axis]) {
                         janus_axis[i] = no_axis;
                     } else if (str_in == JAX_name[x_axis]) {
@@ -1736,7 +1420,7 @@ void        Gourmet_file_io(const char *infile,
                         exit_job(EXIT_FAILURE);
                     }
 
-                    ufin->get(target.sub("janus_propulsion"), str_in);
+                    io_parser(target.sub("janus_propulsion"), str_in);
                     if (str_in == JP_name[no_propulsion]) {
                         janus_propulsion[i] = no_propulsion;
                     } else if (str_in == JP_name[obstacle]) {
@@ -1753,69 +1437,28 @@ void        Gourmet_file_io(const char *infile,
                     }
 
                     // self-force/torque in body coordinates
-                    if (janus_propulsion[i] == motor) {
-                        ufin->get(target.sub("janus_force.x"), janus_force[i][0]);
-                        ufin->get(target.sub("janus_force.y"), janus_force[i][1]);
-                        ufin->get(target.sub("janus_force.z"), janus_force[i][2]);
-
-                        ufin->get(target.sub("janus_torque.x"), janus_torque[i][0]);
-                        ufin->get(target.sub("janus_torque.y"), janus_torque[i][1]);
-                        ufin->get(target.sub("janus_torque.z"), janus_torque[i][2]);
-                    } else {
-                        for (int d = 0; d < DIM; d++) {
-                            janus_force[i][d]  = 0.0;
-                            janus_torque[i][d] = 0.0;
-                        }
+                    {
+                        bool with_motor = (janus_propulsion[i] == motor);
+                        io_parser(target.sub("janus_force.x"), janus_force[i][0], with_motor, 0.0);
+                        io_parser(target.sub("janus_force.y"), janus_force[i][1], with_motor, 0.0);
+                        io_parser(target.sub("janus_force.z"), janus_force[i][2], with_motor, 0.0);
+                        io_parser(target.sub("janus_torque.x"), janus_torque[i][0], with_motor, 0.0);
+                        io_parser(target.sub("janus_torque.y"), janus_torque[i][1], with_motor, 0.0);
+                        io_parser(target.sub("janus_torque.z"), janus_torque[i][2], with_motor, 0.0);
                     }
 
                     // squirmer with surface slip velocity
-                    if (janus_propulsion[i] == slip) {
-                        ufin->get(target.sub("janus_slip_vel"), janus_slip_vel[i]);    // B1 coeff
-                        ufin->get(target.sub("janus_slip_mode"), janus_slip_mode[i]);  // alpha=B2/B1
-                        ufin->get(target.sub("janus_rotlet_C1"), janus_rotlet_C1[i]);  // C1 coeff
-                        ufin->get(target.sub("janus_rotlet_dipole_C2"), janus_rotlet_dipole_C2[i]);  // C2 coeff
-
+                    {
+                        bool with_squirm = (janus_propulsion[i] == slip);
+                        io_parser(target.sub("janus_slip_vel"), janus_slip_vel[i], with_squirm, 0.0);    // B1 coeff
+                        io_parser(target.sub("janus_slip_mode"), janus_slip_mode[i], with_squirm, 0.0);  // alpha=B2/B1
+                        io_parser(target.sub("janus_rotlet_C1"), janus_rotlet_C1[i], with_squirm, 0.0);  // C1 coeff
+                        io_parser(target.sub("janus_rotlet_dipole_C2"),
+                                  janus_rotlet_dipole_C2[i],
+                                  with_squirm,
+                                  0.0);  // C2 coeff
                         assert(janus_slip_vel[i] > 0);
-                    } else {
-                        janus_slip_vel[i]         = 0.0;
-                        janus_slip_mode[i]        = 0.0;
-                        janus_rotlet_C1[i]        = 0.0;
-                        janus_rotlet_dipole_C2[i] = 0.0;
                     }
-                }
-                {
-                    ufout->put(target.sub("Particle_number"), Particle_Numbers[i]);
-                    ufout->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufout->put(target.sub("Surface_charge"), Surface_charge[i]);
-                    ufout->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
-                    ufout->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
-                    ufout->put(target.sub("janus_force.x"), janus_force[i][0]);
-                    ufout->put(target.sub("janus_force.y"), janus_force[i][1]);
-                    ufout->put(target.sub("janus_force.z"), janus_force[i][2]);
-                    ufout->put(target.sub("janus_torque.x"), janus_torque[i][0]);
-                    ufout->put(target.sub("janus_torque.y"), janus_torque[i][1]);
-                    ufout->put(target.sub("janus_torque.z"), janus_torque[i][2]);
-                    ufout->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
-                    ufout->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
-                    ufout->put(target.sub("janus_rotlet_C1"), janus_rotlet_C1[i]);
-                    ufout->put(target.sub("janus_rotlet_dipole_C2"), janus_rotlet_dipole_C2[i]);
-                }
-                {
-                    ufres->put(target.sub("Particle_number"), Particle_Numbers[i]);
-                    ufres->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufres->put(target.sub("Surface_charge"), Surface_charge[i]);
-                    ufres->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
-                    ufres->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
-                    ufres->put(target.sub("janus_force.x"), janus_force[i][0]);
-                    ufres->put(target.sub("janus_force.y"), janus_force[i][1]);
-                    ufres->put(target.sub("janus_force.z"), janus_force[i][2]);
-                    ufres->put(target.sub("janus_torque.x"), janus_torque[i][0]);
-                    ufres->put(target.sub("janus_torque.y"), janus_torque[i][1]);
-                    ufres->put(target.sub("janus_torque.z"), janus_torque[i][2]);
-                    ufres->put(target.sub("janus_slip_vel"), janus_slip_vel[i]);
-                    ufres->put(target.sub("janus_slip_mode"), janus_slip_mode[i]);
-                    ufres->put(target.sub("janus_rotlet_C1"), janus_rotlet_C1[i]);
-                    ufres->put(target.sub("janus_rotlet_dipole_C2"), janus_rotlet_dipole_C2[i]);
                 }
                 if (SW_EQ == Electrolyte) {
                     fprintf(stderr,
@@ -1870,13 +1513,13 @@ void        Gourmet_file_io(const char *infile,
                 sprintf(str, "object_type.chain.Chain_spec[%d]", i);
                 Location target(str);
                 {
-                    ufin->get(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufin->get(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufin->get(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufin->get(target.sub("Surface_charge"), Surface_charge[i]);
+                    io_parser(target.sub("Beads_number"), Beads_Numbers[i]);
+                    io_parser(target.sub("Chain_number"), Chain_Numbers[i]);
+                    io_parser(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
+                    io_parser(target.sub("Surface_charge"), Surface_charge[i]);
 
                     string str_in;
-                    ufin->get(target.sub("janus_axis"), str_in);
+                    io_parser(target.sub("janus_axis"), str_in);
                     if (str_in == JAX_name[no_axis]) {
                         janus_axis[i] = no_axis;
                     } else if (str_in == JAX_name[x_axis]) {
@@ -1892,45 +1535,20 @@ void        Gourmet_file_io(const char *infile,
                         fprintf(stderr, "ERROR: Unknown axis specification\n");
                         exit_job(EXIT_FAILURE);
                     }
+
+                    io_parser(target.sub("janus_propulsion"), str_in, false, string(JP_name[no_propulsion]));
                     janus_propulsion[i] = no_propulsion;
-                }
-                {
-                    ufout->put(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufout->put(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufout->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufout->put(target.sub("Surface_charge"), Surface_charge[i]);
 
-                    ufout->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
-                    ufout->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
-                    ufout->put(target.sub("janus_force.x"), 0.0);
-                    ufout->put(target.sub("janus_force.y"), 0.0);
-                    ufout->put(target.sub("janus_force.z"), 0.0);
-                    ufout->put(target.sub("janus_torque.x"), 0.0);
-                    ufout->put(target.sub("janus_torque.y"), 0.0);
-                    ufout->put(target.sub("janus_torque.z"), 0.0);
-                    ufout->put(target.sub("janus_slip_vel"), 0.0);
-                    ufout->put(target.sub("janus_slip_mode"), 0.0);
-                    ufout->put(target.sub("janus_rotlet_C1"), 0.0);
-                    ufout->put(target.sub("janus_rotlet_dipole_C2"), 0.0);
-                }
-                {
-                    ufres->put(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufres->put(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufres->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufres->put(target.sub("Surface_charge"), Surface_charge[i]);
-
-                    ufres->put(target.sub("janus_axis"), JAX_name[janus_axis[i]]);
-                    ufres->put(target.sub("janus_propulsion"), JP_name[janus_propulsion[i]]);
-                    ufres->put(target.sub("janus_force.x"), 0.0);
-                    ufres->put(target.sub("janus_force.y"), 0.0);
-                    ufres->put(target.sub("janus_force.z"), 0.0);
-                    ufres->put(target.sub("janus_torque.x"), 0.0);
-                    ufres->put(target.sub("janus_torque.y"), 0.0);
-                    ufres->put(target.sub("janus_torque.z"), 0.0);
-                    ufres->put(target.sub("janus_slip_vel"), 0.0);
-                    ufres->put(target.sub("janus_slip_mode"), 0.0);
-                    ufres->put(target.sub("janus_rotlet_C1"), 0.0);
-                    ufres->put(target.sub("janus_rotlet_dipole_C2"), 0.0);
+                    io_parser_noread(target.sub("janus_force.x"), 0.0);
+                    io_parser_noread(target.sub("janus_force.y"), 0.0);
+                    io_parser_noread(target.sub("janus_force.z"), 0.0);
+                    io_parser_noread(target.sub("janus_torque.x"), 0.0);
+                    io_parser_noread(target.sub("janus_torque.y"), 0.0);
+                    io_parser_noread(target.sub("janus_torque.z"), 0.0);
+                    io_parser_noread(target.sub("janus_slip_vel"), 0.0);
+                    io_parser_noread(target.sub("janus_slip_mode"), 0.0);
+                    io_parser_noread(target.sub("janus_rotlet_C1"), 0.0);
+                    io_parser_noread(target.sub("janus_rotlet_dipole_C2"), 0.0);
                 }
 
                 Particle_Numbers[i] = Beads_Numbers[i] * Chain_Numbers[i];
@@ -1965,43 +1583,17 @@ void        Gourmet_file_io(const char *infile,
                 sprintf(str, "object_type.rigid.Rigid_spec[%d]", i);
                 Location target(str);
                 {
-                    ufin->get(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufin->get(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufin->get(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufin->get(target.sub("Surface_charge"), Surface_charge[i]);
-                    ufin->get(target.sub("Rigid_motion"), rigid_str);
-                    ufin->get(target.sub("Rigid_velocity.x"), Rigid_Velocities[i][0]);
-                    ufin->get(target.sub("Rigid_velocity.y"), Rigid_Velocities[i][1]);
-                    ufin->get(target.sub("Rigid_velocity.z"), Rigid_Velocities[i][2]);
-                    ufin->get(target.sub("Rigid_omega.x"), Rigid_Omegas[i][0]);
-                    ufin->get(target.sub("Rigid_omega.y"), Rigid_Omegas[i][1]);
-                    ufin->get(target.sub("Rigid_omega.z"), Rigid_Omegas[i][2]);
-                }
-                {
-                    ufout->put(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufout->put(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufout->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufout->put(target.sub("Surface_charge"), Surface_charge[i]);
-                    ufout->put(target.sub("Rigid_motion"), rigid_str);
-                    ufout->put(target.sub("Rigid_velocity.x"), Rigid_Velocities[i][0]);
-                    ufout->put(target.sub("Rigid_velocity.y"), Rigid_Velocities[i][1]);
-                    ufout->put(target.sub("Rigid_velocity.z"), Rigid_Velocities[i][2]);
-                    ufout->put(target.sub("Rigid_omega.x"), Rigid_Omegas[i][0]);
-                    ufout->put(target.sub("Rigid_omega.y"), Rigid_Omegas[i][1]);
-                    ufout->put(target.sub("Rigid_omega.z"), Rigid_Omegas[i][2]);
-                }
-                {
-                    ufres->put(target.sub("Beads_number"), Beads_Numbers[i]);
-                    ufres->put(target.sub("Chain_number"), Chain_Numbers[i]);
-                    ufres->put(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
-                    ufres->put(target.sub("Surface_charge"), Surface_charge[i]);
-                    ufres->put(target.sub("Rigid_motion"), rigid_str);
-                    ufres->put(target.sub("Rigid_velocity.x"), Rigid_Velocities[i][0]);
-                    ufres->put(target.sub("Rigid_velocity.y"), Rigid_Velocities[i][1]);
-                    ufres->put(target.sub("Rigid_velocity.z"), Rigid_Velocities[i][2]);
-                    ufres->put(target.sub("Rigid_omega.x"), Rigid_Omegas[i][0]);
-                    ufres->put(target.sub("Rigid_omega.y"), Rigid_Omegas[i][1]);
-                    ufres->put(target.sub("Rigid_omega.z"), Rigid_Omegas[i][2]);
+                    io_parser(target.sub("Beads_number"), Beads_Numbers[i]);
+                    io_parser(target.sub("Chain_number"), Chain_Numbers[i]);
+                    io_parser(target.sub("MASS_RATIO"), MASS_RATIOS[i]);
+                    io_parser(target.sub("Surface_charge"), Surface_charge[i]);
+                    io_parser(target.sub("Rigid_motion"), rigid_str);
+                    io_parser(target.sub("Rigid_velocity.x"), Rigid_Velocities[i][0]);
+                    io_parser(target.sub("Rigid_velocity.y"), Rigid_Velocities[i][1]);
+                    io_parser(target.sub("Rigid_velocity.z"), Rigid_Velocities[i][2]);
+                    io_parser(target.sub("Rigid_omega.x"), Rigid_Omegas[i][0]);
+                    io_parser(target.sub("Rigid_omega.y"), Rigid_Omegas[i][1]);
+                    io_parser(target.sub("Rigid_omega.z"), Rigid_Omegas[i][2]);
                 }
 
                 if (rigid_str == "fix") {
@@ -2103,22 +1695,18 @@ void        Gourmet_file_io(const char *infile,
     }
     fprintf(stderr, "#\n");
     {
-        ufin->get("A_XI", A_XI);
-        ufout->put("A_XI", A_XI);
-        ufres->put("A_XI", A_XI);
+        io_parser("A_XI", A_XI);
         XI = A_XI * DX;  // surface thickness
-        ufin->get("A", A);
-        ufout->put("A", A);
-        ufres->put("A", A);
+        io_parser("A", A);
         RADIUS = A * DX;
         SIGMA  = 2.0 * RADIUS;
     }
 
     {
         Location target("gravity");
-        ufin->get(target.sub("G"), G);
+        io_parser(target.sub("G"), G);
         string str;
-        ufin->get(target.sub("G_direction"), str);
+        io_parser(target.sub("G_direction"), str);
         if (str == "-X") {
             G_direction = 0;
         } else if (str == "-Y") {
@@ -2129,19 +1717,12 @@ void        Gourmet_file_io(const char *infile,
             fprintf(stderr, "invalid G_direction\n");
             exit_job(EXIT_FAILURE);
         }
-        ufout->put(target.sub("G"), G);
-        ufout->put(target.sub("G_direction"), str);
-
-        ufres->put(target.sub("G"), G);
-        ufres->put(target.sub("G_direction"), str);
     }
 
     {
-        ufin->get("EPSILON", EPSILON);
-        ufout->put("EPSILON", EPSILON);
-        ufres->put("EPSILON", EPSILON);
+        io_parser("EPSILON", EPSILON);
         string str;
-        ufin->get("LJ_powers", str);
+        io_parser("LJ_powers", str);
         if (str == "12:6") {
             LJ_powers = 0;
         } else if (str == "24:12") {
@@ -2154,25 +1735,15 @@ void        Gourmet_file_io(const char *infile,
             fprintf(stderr, "invalid LJ_powers\n");
             exit_job(EXIT_FAILURE);
         }
-        ufout->put("LJ_powers", str);
-        ufres->put("LJ_powers", str);
     }
 
     //  printf("%d\n",LJ_powers);
     {
         int      np[DIM];
         Location target("mesh");
-        ufin->get(target.sub("NPX"), np[0]);
-        ufin->get(target.sub("NPY"), np[1]);
-        ufin->get(target.sub("NPZ"), np[2]);
-
-        ufout->put(target.sub("NPX"), np[0]);
-        ufout->put(target.sub("NPY"), np[1]);
-        ufout->put(target.sub("NPZ"), np[2]);
-
-        ufres->put(target.sub("NPX"), np[0]);
-        ufres->put(target.sub("NPY"), np[1]);
-        ufres->put(target.sub("NPZ"), np[2]);
+        io_parser(target.sub("NPX"), np[0]);
+        io_parser(target.sub("NPY"), np[1]);
+        io_parser(target.sub("NPZ"), np[2]);
 
         NX          = 1 << np[0];
         Ns_shear[0] = NX;
@@ -2186,19 +1757,13 @@ void        Gourmet_file_io(const char *infile,
     {
         Location target("time_increment");
         string   str;
-        ufin->get(target.sub("type"), str);
-        ufout->put(target.sub("type"), str);
-        ufres->put(target.sub("type"), str);
+        io_parser(target.sub("type"), str);
         if (str == "auto") {
             SW_TIME = AUTO;
-            ufin->get(target.sub("auto.factor"), Axel);
-            ufout->put(target.sub("auto.factor"), Axel);
-            ufres->put(target.sub("auto.factor"), Axel);
+            io_parser(target.sub("auto.factor"), Axel);
         } else if (str == "manual") {
             SW_TIME = MANUAL;
-            ufin->get(target.sub("manual.delta_t"), DT);
-            ufout->put(target.sub("manual.delta_t"), DT);
-            ufres->put(target.sub("manual.delta_t"), DT);
+            io_parser(target.sub("manual.delta_t"), DT);
         } else {
             fprintf(stderr, "invalid time_increment\n");
             exit_job(EXIT_FAILURE);
@@ -2208,9 +1773,7 @@ void        Gourmet_file_io(const char *infile,
         Location target("switch");
         string   str;
 
-        ufin->get(target.sub("ROTATION"), str);
-        ufout->put(target.sub("ROTATION"), str);
-        ufres->put(target.sub("ROTATION"), str);
+        io_parser(target.sub("ROTATION"), str);
         {
             if (str == "OFF") {
                 ROTATION = 0;
@@ -2226,9 +1789,7 @@ void        Gourmet_file_io(const char *infile,
             }
         }
 
-        ufin->get(target.sub("LJ_truncate"), str);
-        ufout->put(target.sub("LJ_truncate"), str);
-        ufres->put(target.sub("LJ_truncate"), str);
+        io_parser(target.sub("LJ_truncate"), str);
         if (str == "ON") {
             LJ_truncate = 1;
         } else if (str == "OFF") {
@@ -2263,9 +1824,7 @@ void        Gourmet_file_io(const char *infile,
 
         {
             target.down("INIT_distribution");
-            ufin->get(target.sub("type"), str);
-            ufout->put(target.sub("type"), str);
-            ufres->put(target.sub("type"), str);
+            io_parser(target.sub("type"), str);
 
             if (str == "NONE") {
                 DISTRIBUTION = None;
@@ -2273,9 +1832,7 @@ void        Gourmet_file_io(const char *infile,
                 DISTRIBUTION = uniform_random;
             } else if (str == "random_walk") {
                 DISTRIBUTION = random_walk;
-                ufin->get(target.sub("random_walk.iteration"), N_iteration_init_distribution);
-                ufout->put(target.sub("random_walk.iteration"), N_iteration_init_distribution);
-                ufres->put(target.sub("random_walk.iteration"), N_iteration_init_distribution);
+                io_parser(target.sub("random_walk.iteration"), N_iteration_init_distribution);
             } else if (str == "FCC") {
                 DISTRIBUTION = FCC;
             } else if (str == "BCC") {
@@ -2291,9 +1848,7 @@ void        Gourmet_file_io(const char *infile,
         }
 
         {
-            ufin->get(target.sub("INIT_orientation"), str);
-            ufout->put(target.sub("INIT_orientation"), str);
-            ufres->put(target.sub("INIT_orientation"), str);
+            io_parser(target.sub("INIT_orientation"), str);
             if (str == "user_specify") {
                 ORIENTATION = user_dir;
             } else if (str == "random") {
@@ -2306,14 +1861,10 @@ void        Gourmet_file_io(const char *infile,
                 exit_job(EXIT_FAILURE);
             }
 
-            ufin->get(target.sub("SLIP_tol"), MAX_SLIP_TOL);
-            ufout->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
-            ufres->put(target.sub("SLIP_tol"), MAX_SLIP_TOL);
+            io_parser(target.sub("SLIP_tol"), MAX_SLIP_TOL);
             assert(MAX_SLIP_TOL >= 0.0);
 
-            ufin->get(target.sub("SLIP_iter"), MAX_SLIP_ITER);
-            ufout->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
-            ufres->put(target.sub("SLIP_iter"), MAX_SLIP_ITER);
+            io_parser(target.sub("SLIP_iter"), MAX_SLIP_ITER);
             assert(MAX_SLIP_ITER >= 1);
         }
         {
@@ -2321,9 +1872,7 @@ void        Gourmet_file_io(const char *infile,
             {
                 const char *xyz[DIM] = {"x", "y", "z"};
                 for (int d = 0; d < DIM; d++) {
-                    ufin->get(target.sub(xyz[d]), str);
-                    ufout->put(target.sub(xyz[d]), str);
-                    ufres->put(target.sub(xyz[d]), str);
+                    io_parser(target.sub(xyz[d]), str);
                     if (str == "OFF") {
                         FIX_CELLxyz[d] = 0;
                     } else if (str == "ON") {
@@ -2343,9 +1892,7 @@ void        Gourmet_file_io(const char *infile,
         }
         {
             Location target("switch.pin");
-            ufin->get(target.sub("type"), str);
-            ufout->put(target.sub("type"), str);
-            ufres->put(target.sub("type"), str);
+            io_parser(target.sub("type"), str);
 
             if (str == "YES") {
                 PINNING = 1;
@@ -2366,9 +1913,7 @@ void        Gourmet_file_io(const char *infile,
                         char str[256];
                         sprintf(str, "switch.pin.YES.pin[%d]", i);
                         Location target_pin(str);
-                        ufin->get(target_pin, pin_target);
-                        ufout->put(target_pin, pin_target);
-                        ufres->put(target_pin, pin_target);
+                        io_parser(target_pin, pin_target);
 
                         Pinning_Numbers[i] = pin_target;
                         fprintf(stderr, "#PINNING %d %d\n", i, pin_target);
@@ -2383,9 +1928,7 @@ void        Gourmet_file_io(const char *infile,
                         char str_rot[256];
                         sprintf(str_rot, "switch.pin.YES.pin_rot[%d]", i);
                         Location target_pin_rot(str_rot);
-                        ufin->get(target_pin_rot, pin_rot_target);
-                        ufout->put(target_pin_rot, pin_rot_target);
-                        ufres->put(target_pin_rot, pin_rot_target);
+                        io_parser(target_pin_rot, pin_rot_target);
 
                         Pinning_ROT_Numbers[i] = pin_rot_target;
                         fprintf(stderr, "#PINNING ROT %d %d\n", i, pin_rot_target);
@@ -2412,10 +1955,7 @@ void        Gourmet_file_io(const char *infile,
             }
 
             Location target("switch.free_rigid");
-            if (ufin->get(target.sub("type"), str)) {
-                ufout->put(target.sub("type"), str);
-                ufres->put(target.sub("type"), str);
-
+            if (io_parser_check(target.sub("type"), str)) {
                 if (str == "YES") {
                     if (SW_PT == rigid) fprintf(stderr, "# WARNING: Switching individual Rigid Body DOF !\n");
                     const char *vflag[DIM] = {"vel.x", "vel.y", "vel.z"};
@@ -2429,9 +1969,7 @@ void        Gourmet_file_io(const char *infile,
                     for (int i = 0; i < N_DOF; i++) {
                         sprintf(buffer, "switch.free_rigid.YES.DOF[%d]", i);
                         Location target_flag(buffer);
-                        ufin->get(target_flag.sub("spec_id"), target_spec);
-                        ufout->put(target_flag.sub("spec_id"), target_spec);
-                        ufres->put(target_flag.sub("spec_id"), target_spec);
+                        io_parser(target_flag.sub("spec_id"), target_spec);
                         if (target_spec < 0 || target_spec >= Component_Number) {
                             fprintf(stderr, "# Error: species id out of bounds in %s !\n", buffer);
                             exit_job(EXIT_FAILURE);
@@ -2439,18 +1977,14 @@ void        Gourmet_file_io(const char *infile,
 
                         // switch velocity components on/off
                         for (int d = 0; d < DIM; d++) {
-                            ufin->get(target_flag.sub(vflag[d]), flag);
-                            ufout->put(target_flag.sub(vflag[d]), flag);
-                            ufres->put(target_flag.sub(vflag[d]), flag);
+                            io_parser(target_flag.sub(vflag[d]), flag);
 
                             if (SW_PT == rigid) Rigid_Motions_vel[target_spec][d] = (flag == "YES" ? 1 : 0);
                         }
 
                         // switch omega components on/off
                         for (int d = 0; d < DIM; d++) {
-                            ufin->get(target_flag.sub(wflag[d]), flag);
-                            ufout->put(target_flag.sub(wflag[d]), flag);
-                            ufres->put(target_flag.sub(wflag[d]), flag);
+                            io_parser(target_flag.sub(wflag[d]), flag);
 
                             if (SW_PT == rigid) Rigid_Motions_omega[target_spec][d] = (flag == "YES" ? 1 : 0);
                         }
@@ -2478,9 +2012,7 @@ void        Gourmet_file_io(const char *infile,
             // default values
             SW_OBL_INT = linear_int;
 
-            if (ufin->get(target.sub("OBL_INT"), str)) {
-                ufout->put(target.sub("OBL_INT"), str);
-                ufres->put(target.sub("OBL_INT"), str);
+            if (io_parser_check(target.sub("OBL_INT"), str)) {
                 if (str == OBL_INT_name[linear_int]) {
                     SW_OBL_INT = linear_int;
                 } else if (str == OBL_INT_name[spline_int]) {
@@ -2507,9 +2039,7 @@ void        Gourmet_file_io(const char *infile,
         string   str;
         SW_WALL = NO_WALL;
 
-        if (ufin->get(target.sub("type"), str)) {
-            ufout->put(target.sub("type"), str);
-            ufres->put(target.sub("type"), str);
+        if (io_parser_check(target.sub("type"), str)) {
             if (str == WALL_name[NO_WALL]) {
                 SW_WALL = NO_WALL;
             } else if (str == WALL_name[FLAT_WALL]) {
@@ -2518,9 +2048,7 @@ void        Gourmet_file_io(const char *infile,
                 {
                     {
                         string axis;
-                        ufin->get(target.sub("axis"), axis);
-                        ufout->put(target.sub("axis"), axis);
-                        ufres->put(target.sub("axis"), axis);
+                        io_parser(target.sub("axis"), axis);
                         if (axis == "X") {
                             wall.axis = 0;
                         } else if (axis == "Y") {
@@ -2533,9 +2061,7 @@ void        Gourmet_file_io(const char *infile,
                         }
                     }
                     {
-                        ufin->get(target.sub("DH"), wall.dh);
-                        ufout->put(target.sub("DH"), wall.dh);
-                        ufres->put(target.sub("DH"), wall.dh);
+                        io_parser(target.sub("DH"), wall.dh);
                         wall.dh *= DX;
                     }
                 }
@@ -2554,9 +2080,7 @@ void        Gourmet_file_io(const char *infile,
         Location target("switch.quincke");
         string   str;
         SW_QUINCKE = QUINCKE_OFF;
-        if (ufin->get(target.sub("type"), str)) {
-            ufout->put(target.sub("type"), str);
-            ufres->put(target.sub("type"), str);
+        if (io_parser_check(target.sub("type"), str)) {
             if (str == QUINCKE_name[QUINCKE_OFF]) {
                 SW_QUINCKE = QUINCKE_OFF;
             } else if (str == QUINCKE_name[QUINCKE_ON]) {
@@ -2575,9 +2099,7 @@ void        Gourmet_file_io(const char *infile,
                 {
                     {
                         string axis;
-                        ufin->get(target.sub("e_dir"), axis);
-                        ufout->put(target.sub("e_dir"), axis);
-                        ufres->put(target.sub("e_dir"), axis);
+                        io_parser(target.sub("e_dir"), axis);
                         if (axis == "X") {
                             quincke.e_dir = 0;
                         } else if (axis == "Y") {
@@ -2591,9 +2113,7 @@ void        Gourmet_file_io(const char *infile,
                         for (int d = 0; d < DIM; d++) quincke.n[d] = 0.0;
                         quincke.n[quincke.e_dir] = 1.0;
 
-                        ufin->get(target.sub("w_dir"), axis);
-                        ufout->put(target.sub("w_dir"), axis);
-                        ufres->put(target.sub("w_dir"), axis);
+                        io_parser(target.sub("w_dir"), axis);
                         if (axis == "X") {
                             quincke.w_dir = 0;
                         } else if (axis == "Y") {
@@ -2607,11 +2127,7 @@ void        Gourmet_file_io(const char *infile,
                         for (int d = 0; d < DIM; d++) quincke.e_omega[d] = 0.0;
                         quincke.e_omega[quincke.w_dir] = 1.0;
                     }
-                    {
-                        ufin->get(target.sub("torque_amp"), quincke.K);
-                        ufout->put(target.sub("torque_amp"), quincke.K);
-                        ufres->put(target.sub("torque_amp"), quincke.K);
-                    }
+                    io_parser(target.sub("torque_amp"), quincke.K);
                 }
                 target.up();
             } else {
@@ -2629,9 +2145,7 @@ void        Gourmet_file_io(const char *infile,
         SW_MULTIPOLE = MULTIPOLE_OFF;
         bool charge, dipole;
         charge = dipole = false;
-        if (ufin->get(target.sub("type"), str)) {
-            ufout->put(target.sub("type"), str);
-            ufres->put(target.sub("type"), str);
+        if (io_parser_check(target.sub("type"), str)) {
             if (str == "OFF") {
                 SW_MULTIPOLE = MULTIPOLE_OFF;
             } else if (str == "ON") {
@@ -2642,34 +2156,25 @@ void        Gourmet_file_io(const char *infile,
                 {
                     {
                         target.down("Dipole");
-                        if (ufin->get(target.sub("type"), str_multi)) {
-                            ufout->put(target.sub("type"), str_multi);
-                            ufres->put(target.sub("type"), str_multi);
-
+                        if (io_parser_check(target.sub("type"), str_multi)) {
                             double magnitude = 0.0;
                             if (str_multi == "ON") {
                                 target.down("ON");  // Dipole ON
                                 dipole = true;
 
                                 // dipole magnitude
-                                ufin->get(target.sub("magnitude"), magnitude);
-                                ufout->put(target.sub("magnitude"), magnitude);
-                                ufres->put(target.sub("magnitude"), magnitude);
+                                io_parser(target.sub("magnitude"), magnitude);
 
                                 // dipole type
                                 string dipole_type;
-                                ufin->get(target.sub("type"), dipole_type);
-                                ufout->put(target.sub("type"), dipole_type);
-                                ufres->put(target.sub("type"), dipole_type);
+                                io_parser(target.sub("type"), dipole_type);
 
                                 double mu_vec[DIM] = {0.0, 0.0, 0.0};
                                 if (dipole_type == "FIXED") {
                                     target.down("FIXED");
                                     // dipole direction
                                     string axis;
-                                    ufin->get(target.sub("dir"), axis);
-                                    ufout->put(target.sub("dir"), axis);
-                                    ufres->put(target.sub("dir"), axis);
+                                    io_parser(target.sub("dir"), axis);
 
                                     if (axis == "X") {
                                         mu_vec[0] = magnitude;
@@ -2717,23 +2222,10 @@ void        Gourmet_file_io(const char *infile,
 
                         {
                             target.down("EwaldParams");
-
-                            ufin->get(target.sub("alpha"), alpha);
-                            ufout->put(target.sub("alpha"), alpha);
-                            ufres->put(target.sub("alpha"), alpha);
-
-                            ufin->get(target.sub("delta"), delta);
-                            ufout->put(target.sub("delta"), delta);
-                            ufres->put(target.sub("delta"), delta);
-
-                            ufin->get(target.sub("converge"), conv);
-                            ufout->put(target.sub("converge"), conv);
-                            ufres->put(target.sub("converge"), conv);
-
-                            ufin->get(target.sub("epsilon"), epsilon);
-                            ufout->put(target.sub("epsilon"), epsilon);
-                            ufres->put(target.sub("epsilon"), epsilon);
-
+                            io_parser(target.sub("alpha"), alpha);
+                            io_parser(target.sub("delta"), delta);
+                            io_parser(target.sub("converge"), conv);
+                            io_parser(target.sub("epsilon"), epsilon);
                             target.up();
                         }
 
@@ -2750,18 +2242,10 @@ void        Gourmet_file_io(const char *infile,
     {  // output;
         string   str;
         Location target("output");
-        ufin->get(target.sub("GTS"), GTS);
-        ufin->get(target.sub("Num_snap"), Num_snap);
-
-        ufout->put(target.sub("GTS"), GTS);
-        ufout->put(target.sub("Num_snap"), Num_snap);
-
-        ufres->put(target.sub("GTS"), GTS);
-        ufres->put(target.sub("Num_snap"), Num_snap);
+        io_parser(target.sub("GTS"), GTS);
+        io_parser(target.sub("Num_snap"), Num_snap);
         {  // AVS
-            ufin->get(target.sub("AVS"), str);
-            ufout->put(target.sub("AVS"), str);
-            ufres->put(target.sub("AVS"), str);
+            io_parser(target.sub("AVS"), str);
             SW_OUTFORMAT = OUT_NONE;
             SW_EXTFORMAT = EXT_OUT_HDF5;
 
@@ -2782,20 +2266,14 @@ void        Gourmet_file_io(const char *infile,
             if (str == "ON") {
                 target.down("ON");
                 {
-                    ufin->get(target.sub("Out_dir"), str);
-                    ufout->put(target.sub("Out_dir"), str);
-                    ufres->put(target.sub("Out_dir"), str);
+                    io_parser(target.sub("Out_dir"), str);
                     strcpy(Out_dir, str.c_str());
                     dircheckmake(Out_dir);
 
-                    ufin->get(target.sub("Out_name"), str);
-                    ufout->put(target.sub("Out_name"), str);
-                    ufres->put(target.sub("Out_name"), str);
+                    io_parser(target.sub("Out_name"), str);
                     strcpy(Out_name, str.c_str());
 
-                    ufin->get(target.sub("FileType"), str);
-                    ufout->put(target.sub("FileType"), str);
-                    ufres->put(target.sub("FileType"), str);
+                    io_parser(target.sub("FileType"), str);
                     if (str == OUTFORMAT_name[OUT_AVS_BINARY]) {
                         SW_OUTFORMAT = OUT_AVS_BINARY;
                     } else if (str == OUTFORMAT_name[OUT_AVS_ASCII]) {
@@ -2811,9 +2289,7 @@ void        Gourmet_file_io(const char *infile,
                             // extended output options
                             target.down("Driver");
                             {
-                                ufin->get(target.sub("Format"), str);
-                                ufout->put(target.sub("Format"), str);
-                                ufres->put(target.sub("Format"), str);
+                                io_parser(target.sub("Format"), str);
                                 if (str == EXTFORMAT_name[EXT_OUT_HDF5]) {
                                     SW_EXTFORMAT = EXT_OUT_HDF5;
                                 } else {
@@ -2825,9 +2301,7 @@ void        Gourmet_file_io(const char *infile,
 
                             target.down("Print_field");
                             {  // Print flags for field data
-                                ufin->get(target.sub("Crop"), str);
-                                ufout->put(target.sub("Crop"), str);
-                                ufres->put(target.sub("Crop"), str);
+                                io_parser(target.sub("Crop"), str);
                                 if (str == "YES") {
                                     target.down("YES");
 
@@ -2835,17 +2309,9 @@ void        Gourmet_file_io(const char *infile,
                                     for (int d = 0; d < DIM; d++) {
                                         target.down(slab_name[d]);
 
-                                        ufin->get(target.sub("start"), print_field_crop.start[d]);
-                                        ufin->get(target.sub("count"), print_field_crop.count[d]);
-                                        ufin->get(target.sub("stride"), print_field_crop.stride[d]);
-
-                                        ufout->put(target.sub("start"), print_field_crop.start[d]);
-                                        ufout->put(target.sub("count"), print_field_crop.count[d]);
-                                        ufout->put(target.sub("stride"), print_field_crop.stride[d]);
-
-                                        ufres->put(target.sub("start"), print_field_crop.start[d]);
-                                        ufres->put(target.sub("count"), print_field_crop.count[d]);
-                                        ufres->put(target.sub("stride"), print_field_crop.stride[d]);
+                                        io_parser(target.sub("start"), print_field_crop.start[d]);
+                                        io_parser(target.sub("count"), print_field_crop.count[d]);
+                                        io_parser(target.sub("stride"), print_field_crop.stride[d]);
 
                                         target.up();
                                     }
@@ -2888,29 +2354,19 @@ void        Gourmet_file_io(const char *infile,
                                     }
                                 }
 
-                                ufin->get(target.sub("Vel"), str);
-                                ufout->put(target.sub("Vel"), str);
-                                ufres->put(target.sub("Vel"), str);
+                                io_parser(target.sub("Vel"), str);
                                 print_field.vel = (str == "YES" ? true : false);
 
-                                ufin->get(target.sub("Phi"), str);
-                                ufout->put(target.sub("Phi"), str);
-                                ufres->put(target.sub("Phi"), str);
+                                io_parser(target.sub("Phi"), str);
                                 print_field.phi = (str == "YES" ? true : false);
 
-                                ufin->get(target.sub("Charge"), str);
-                                ufout->put(target.sub("Charge"), str);
-                                ufres->put(target.sub("Charge"), str);
+                                io_parser(target.sub("Charge"), str);
                                 print_field.charge = (str == "YES" ? true : false);
 
-                                ufin->get(target.sub("Pressure"), str);
-                                ufout->put(target.sub("Pressure"), str);
-                                ufres->put(target.sub("Pressure"), str);
+                                io_parser(target.sub("Pressure"), str);
                                 print_field.pressure = (str == "YES" ? true : false);
 
-                                ufin->get(target.sub("Tau"), str);
-                                ufout->put(target.sub("Tau"), str);
-                                ufres->put(target.sub("Tau"), str);
+                                io_parser(target.sub("Tau"), str);
                                 print_field.tau = (str == "YES" ? true : false);
                             }
                             target.up();
@@ -2930,9 +2386,7 @@ void        Gourmet_file_io(const char *infile,
             }
         }
         {  ////// UDF
-            ufin->get(target.sub("UDF"), str);
-            ufout->put(target.sub("UDF"), str);
-            ufres->put(target.sub("UDF"), str);
+            io_parser(target.sub("UDF"), str);
             if (str == "ON") {
                 SW_UDF = 1;
             } else if (str == "OFF") {
