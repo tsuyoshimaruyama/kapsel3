@@ -85,7 +85,10 @@ typedef struct FlatWall {
     double lo;          // lowest surface
     double hi;          // highest surface
     double volume;      // free volume
+    double LJ_truncate; // truncate ON:repulsive, OFF:attractive
     double A_R_cutoff;  // cutoff distance from surface (normalized by particle diameter)
+    double LJ_powers;   // type of LJ potential
+    double EPSILON;     // LJ parameter
 } FlatWall;
 
 typedef struct QuinckeEffect {

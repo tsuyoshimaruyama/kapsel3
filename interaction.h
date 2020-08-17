@@ -196,4 +196,42 @@ inline double Lennard_Jones_f(const double &x, const double sigma) {
     return answer;
 }
 
+inline double Lennard_Jones_f_wall(const double &x, const double sigma) {
+    //    printf("%d\n",LJ_powers);
+    // ! x== 0.0 の処理を省略
+    double answer = 0.0;
+    {
+        if (LJ_powers == 0) {  // 12:6
+            static const double LJ_coeff1 = 24. * wall.EPSILON;
+            double              dmy       = sigma / x;
+            dmy                           = SQ(dmy) * SQ(dmy) * SQ(dmy);
+            answer                        = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
+        }
+        if (LJ_powers == 1) {  // 24:12
+            static const double LJ_coeff1 = 48. * wall.EPSILON;
+            double              dmy       = sigma / x;
+            dmy                           = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
+            answer                        = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
+        }
+        if (LJ_powers == 2) {  // 36:18
+            static const double LJ_coeff1 = 72. * wall.EPSILON;
+            double              dmy       = sigma / x;
+            dmy    = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
+            answer = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
+        }
+        if (LJ_powers == 3) {                            // macroscopic vdw potential
+            static const double LJ_coeff_N      = 1.01;  // koko wo user ga shitei
+            static const double LJ_coeff_Nsigma = LJ_coeff_N * sigma;
+            if (x >= LJ_coeff_Nsigma) {  // van der Waals Attraction
+                answer = -1.0 * wall.EPSILON * sigma / (24.0 * x * SQ(x - sigma));
+            } else {
+                static const double LJ_coeff_I =
+                    wall.EPSILON / (24. * SQ(sigma) * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
+                static const double LJ_coeff_J = wall.EPSILON / (24. * sigma * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
+                answer                         = -LJ_coeff_I + LJ_coeff_J / x;
+            }
+        }
+    }
+    return answer;
+}
 #endif
