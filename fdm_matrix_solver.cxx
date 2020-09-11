@@ -2708,7 +2708,7 @@ void Mem_alloc_matrix_solver(void) {
 
         idx_ns_csr = calloc_1d_int(nnzval);
         val_ns_csr = calloc_1d_double(nnzval);
-        ptr_ns     = calloc_1d_int(nval_ns);
+        ptr_ns     = calloc_1d_int(nval_ns + 1);
         b_ns       = calloc_1d_double(nval_ns);
 
         wm_ns.p   = calloc_1d_double(nval_ns);
@@ -2732,7 +2732,7 @@ void Mem_alloc_matrix_solver(void) {
 
         idx_ch_csr = calloc_1d_int(nnzval);
         val_ch_csr = calloc_1d_double(nnzval);
-        ptr_ch     = calloc_1d_int(nval_ch);
+        ptr_ch     = calloc_1d_int(nval_ch + 1);
         b_ch       = calloc_1d_double(nval_ch);
 
         wm_ch.p   = calloc_1d_double(nval_ch);
