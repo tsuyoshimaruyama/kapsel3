@@ -224,9 +224,14 @@ switch: {
       type: select{'NONE', 'FLAT'}
       FLAT: {axis: select{'X', 'Y', 'Z'}"perpendicular axis to flat parallel walls"
       DH: int "wall thickness in number of grid points"
-      LJ_truncate: select{'ON', 'OFF', 'NONE'} "Truncate OFF: attractive force, ON: no attractive force"
-      LJ_powers: select{'12:6','24:12','36:18'} "type of LJ potential"
-      EPSILON: double "LJ parameter, default（Basically, a large value.）"}
+      LJ_Params: select{"AUTO", "MANUAL"}
+      MANUAL:{
+      truncate: select{'ON', 'OFF', 'NONE'} "Truncate OFF: attractive force, ON: no attractive force"
+      powers: select{'12:6','24:12','36:18'} "type of LJ potential"
+      EPSILON: double "LJ parameter, default（Basically, a large value.）"
+      }
+      }
+
    }
    quincke:{
       type: select{'ON','OFF'}
