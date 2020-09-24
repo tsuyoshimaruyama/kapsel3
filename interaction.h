@@ -157,7 +157,10 @@ inline double Distance_OBL(const double *x1, const double *x2) {
   \param[in] x distance between particles
   \param[in] sigma LJ diameter
  */
-inline double Lennard_Jones_f(const double &x, const double sigma, const double epsilon = EPSILON, const double lj_powers = LJ_powers) {
+inline double Lennard_Jones_f(const double &x,
+                              const double  sigma,
+                              const double  epsilon   = EPSILON,
+                              const double  lj_powers = LJ_powers) {
     // ! x== 0.0 の処理を省略
     double answer = 0.0;
     {

@@ -2061,22 +2061,22 @@ void Gourmet_file_io(const char *infile,
                         }
 
                         string params_type;
-                        if(io_parser_check(target.sub("LJ_Params"), params_type) && params_type == "MANUAL"){
+                        if (io_parser_check(target.sub("LJ_Params"), params_type) && params_type == "MANUAL") {
                             target.down("MANUAL");
-                            io_parser(target.sub("powers"),str);
-                            fprintf(stderr, "%s",str);
-                            if (str == "12:6"){
+                            io_parser(target.sub("powers"), str);
+                            fprintf(stderr, "%s", str);
+                            if (str == "12:6") {
                                 wall.LJ_powers = 0;
-                            } else if (str == "24:12"){
+                            } else if (str == "24:12") {
                                 wall.LJ_powers = 1;
-                            } else if (str == "36:18"){
+                            } else if (str == "36:18") {
                                 wall.LJ_powers = 2;
                             } else {
                                 fprintf(stderr, "Flat Wall LJ parameter error !!!!");
                             }
 
                             io_parser(target.sub("EPSILON"), wall.EPSILON);
-                            fprintf(stderr, "%e",wall.EPSILON);
+                            fprintf(stderr, "%e", wall.EPSILON);
                             io_parser(target.sub("truncate"), str);
                             fprintf(stderr, "%s", str);
                             if (str == "ON") {
@@ -2105,18 +2105,18 @@ void Gourmet_file_io(const char *infile,
                                 }
                             } else if (wall.LJ_truncate == 0) {
                                 const double max_A_R_cutoff = 2.5;
-                                wall.A_R_cutoff                  = MIN(Nmin * DX * .5 / SIGMA, max_A_R_cutoff);
+                                wall.A_R_cutoff             = MIN(Nmin * DX * .5 / SIGMA, max_A_R_cutoff);
                             } else {
                                 wall.A_R_cutoff = 0.;
                             }
                             target.up();
-                        } else { // auto lj params (consistent with old version of code. wall params ~ particle params)
-                            wall.EPSILON = EPSILON;
-                            wall.A_R_cutoff = A_R_cutoff;
+                        } else {  // auto lj params (consistent with old version of code. wall params ~ particle params)
+                            wall.EPSILON     = EPSILON;
+                            wall.A_R_cutoff  = A_R_cutoff;
                             wall.LJ_truncate = 1;
-			                wall.LJ_powers = LJ_powers;
+                            wall.LJ_powers   = LJ_powers;
                         }
-             
+
                         fprintf(stderr, "# Wall's A_R_cutoff %f\n", wall.A_R_cutoff);
                     }
                     {
