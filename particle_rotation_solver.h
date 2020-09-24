@@ -10,8 +10,16 @@
 
 #include "rigid_body.h"
 #include "variable.h"
-// Orientation solvers
-// First-order Euler
+/*!
+  \brief Update particle orientations using the Euler
+  forward method
+  \details \f{align*}{
+    \qtn{q}_i^{n+1} &= \qtn{q}_i^{n} + h \dot{\qtn{q}}^{n}\\
+    \dot{q} &= \frac{1}{2}(0,\vec{\omega})\circ\qtn{q} = \frac{1}{2}\qtn{q}\circ(0, \vec{\omega}^\prime)
+  \f}
+  \param[in,out] p particle data
+  \param[in] jikan time data
+ */
 inline void MD_solver_orientation_Euler(Particle &p, const double &dt) {
     quaternion dqdt;
     qtn_init(p.q_old, p.q);
@@ -20,8 +28,20 @@ inline void MD_solver_orientation_Euler(Particle &p, const double &dt) {
     qtn_normalize(p.q);
 }
 
-// Simo & Wong second-order scheme
-inline void MD_solver_orientation_AB2(Particle &p, const double &hdt) {
+/*!
+  \brief Update particle orientations using Simo & Wang's second order method
+  \details \f{align*}{
+  \qtn{q}_i^{n+1} &= \qtn{q}_i^n +
+  \frac{h}{4}\qtn{q}_i^{n}\circ(0,3\vec{\omega}_i^{\prime
+  n}-\vec{\omega}_i^{\prime n-1})
+  \f}
+  Note that addition of angular velocity vectors only makes sense in
+  body (primed) coordinates.
+  \param[in,out] p particle data
+  \param[in] jikan time data
+  */
+
+inline void MD_solver_orientation_SW2(Particle &p, const double &hdt) {
     double wb[DIM];
     double wb_old[DIM];
     // only add angular velocity vectors in body coordinates !
@@ -35,6 +55,28 @@ inline void MD_solver_orientation_AB2(Particle &p, const double &hdt) {
     qtn_init(p.q_old, p.q);
     qdot(dqdt, p.q, wb, BODY_FRAME);
     qtn_add(p.q, dqdt, hdt);
+    qtn_normalize(p.q);
+}
+/*!
+  \brief Update particle orientations using a
+  second-order Adams-Bashforth scheme
+  \details \f{align*}{
+  \qtn{q}_i^{n+1} &= \qtn{q}_i^n +
+  \frac{h}{2}\left[ 3\dot{\qtn{q}}^{n} - \dot{\qtn{q}}^{n-1}\right]\\
+  \dot{\qtn{q}} &= \frac{1}{2} \qtn{q}\circ (0, \vec{\omega}^\prime) = \frac{1}{2}(0,\omega)\circ\qtn{q}
+  \f}
+  where primes refer to the body coordinates.
+  \param[in,out] p particle data
+  \param[in] jikan time data
+  */
+inline void MD_solver_orientation_AB2(Particle &p, const double &hdt) {
+    quaternion dqdt, dqdt_old;
+    qdot(dqdt, p.q, p.omega, SPACE_FRAME);
+    qdot(dqdt_old, p.q_old, p.omega_old, SPACE_FRAME);
+    qtn_init(p.q_old, p.q);
+
+    qtn_add(p.q, dqdt, 3.0 * hdt);
+    qtn_add(p.q, dqdt_old, -hdt);
     qtn_normalize(p.q);
 }
 
@@ -55,6 +97,11 @@ inline void MD_solver_orientation_SB2(Particle &p, const double &dt) {
 
 /*!
   \brief Solve Euler equations in body frame
+  \f{align*}
+  \dot{\omega}^x &= \left[\tau^x + \omega^y\omega^z\left(I^{yy}- I^{zz}\right)\right]/I^{xx}\\
+  \dot{\omega}^y &= \left[\tau^y + \omega^z\omega^x\left(I^{zz}- I^{xx}\right)\right]/I^{yy}\\
+  \dot{\omega}^z &= \left[\tau^z + \omega^x\omega^y\left(I^{xx}- I^{yy}\right)\right]/I^{zz}
+  \f}
  */
 inline void MD_solver_omega_Euler(double            omega[DIM],
                                   const double      torque[DIM],
@@ -120,13 +167,16 @@ inline void MD_solver_omega_AB2(double            omega[DIM],
     // Warning: Fixed_omega flag now fixes angular velocity about rigid body frame
     //          Inconsistent with Fixed_vel flag which used lab frame
     if (free_omega[0])
-        new_omega_b[0] += (hdt / Ib[0]) * ((torque_b[0] + torque_b_old[0]) + (Ib[1] - Ib[2]) * omega_b[1] * omega_b[2]);
+        new_omega_b[0] +=
+            (hdt / Ib[0]) * ((torque_b[0] + torque_b_old[0]) + 2.0 * (Ib[1] - Ib[2]) * omega_b[1] * omega_b[2]);
 
     if (free_omega[1])
-        new_omega_b[1] += (hdt / Ib[1]) * ((torque_b[1] + torque_b_old[1]) + (Ib[2] - Ib[0]) * omega_b[2] * omega_b[0]);
+        new_omega_b[1] +=
+            (hdt / Ib[1]) * ((torque_b[1] + torque_b_old[1]) + 2.0 * (Ib[2] - Ib[0]) * omega_b[2] * omega_b[0]);
 
     if (free_omega[2])
-        new_omega_b[2] += (hdt / Ib[2]) * ((torque_b[2] + torque_b_old[2]) + (Ib[0] - Ib[1]) * omega_b[0] * omega_b[1]);
+        new_omega_b[2] +=
+            (hdt / Ib[2]) * ((torque_b[2] + torque_b_old[2]) + 2.0 * (Ib[0] - Ib[1]) * omega_b[0] * omega_b[1]);
 
     rigid_body_rotation(omega, new_omega_b, q, BODY2SPACE);
 }

@@ -24,11 +24,10 @@
 enum ITER { start_iter, new_iter, reset_iter, end_iter };
 
 /*!
-  \brief Update particle positions and orientations using the Euler
+  \brief Update particle positions using the Euler
   forward method
   \details \f{align*}{
-  \vec{R}_i^{n+1} &= \vec{R}_i^{n} + h \vec{V}_i^{n} \\
-  \qtn{q}_i^{n+1} &= \qtn{q}_i^{n} + \frac{h}{2}(0,\vec{\omega}_i^{n})\circ\qtn{q}_i^{n}
+  \vec{R}_i^{n+1} &= \vec{R}_i^{n} + h \vec{V}_i^{n}
   \f}
   \param[in,out] p particle data
   \param[in] jikan time data
@@ -36,18 +35,13 @@ enum ITER { start_iter, new_iter, reset_iter, end_iter };
 void MD_solver_position_Euler(Particle *p, const CTime &jikan);
 
 /*!
-  \brief Update particle positions and orientations using a
+  \brief Update particle positions using a
   second-order Adams-Bashforth scheme
   \details \f{align*}{
   \vec{R}_i^{n+1} &= \vec{R}_i^{n} + \frac{h}{2}\left(3\vec{V}_i^{n} -
-  \vec{V}_i^{n-1}\right) \\
-  \qtn{q}_i^{n+1} &= \qtn{q}_i^n +
-  \frac{h}{4}\qtn{q}_i^{n}\circ(0,3\vec{\omega}_i^{\prime
-  n}-\vec{\omega}_i^{\prime n-1})
-  \f}
-  Note that addition of angular velocity vectors only makes sense in
-  body (primed) coordinates.
-  \param[in,out] p particle data
+  \vec{V}_i^{n-1}\right)
+    \f}
+    \param[in,out] p particle data
   \param[in] jikan time data
  */
 void MD_solver_position_AB2(Particle *p, const CTime &jikan);
