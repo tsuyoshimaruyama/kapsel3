@@ -157,38 +157,40 @@ inline double Distance_OBL(const double *x1, const double *x2) {
   \param[in] x distance between particles
   \param[in] sigma LJ diameter
  */
-inline double Lennard_Jones_f(const double &x, const double sigma) {
-    //    printf("%d\n",LJ_powers);
+inline double Lennard_Jones_f(const double &x,
+                              const double  sigma,
+                              const double  epsilon   = EPSILON,
+                              const double  lj_powers = LJ_powers) {
     // ! x== 0.0 の処理を省略
     double answer = 0.0;
     {
-        if (LJ_powers == 0) {  // 12:6
-            static const double LJ_coeff1 = 24. * EPSILON;
+        if (lj_powers == 0) {  // 12:6
+            static const double LJ_coeff1 = 24. * epsilon;
             double              dmy       = sigma / x;
             dmy                           = SQ(dmy) * SQ(dmy) * SQ(dmy);
             answer                        = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
         }
-        if (LJ_powers == 1) {  // 24:12
-            static const double LJ_coeff1 = 48. * EPSILON;
+        if (lj_powers == 1) {  // 24:12
+            static const double LJ_coeff1 = 48. * epsilon;
             double              dmy       = sigma / x;
             dmy                           = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
             answer                        = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
         }
-        if (LJ_powers == 2) {  // 36:18
-            static const double LJ_coeff1 = 72. * EPSILON;
+        if (lj_powers == 2) {  // 36:18
+            static const double LJ_coeff1 = 72. * epsilon;
             double              dmy       = sigma / x;
             dmy    = SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy) * SQ(dmy);
             answer = LJ_coeff1 / SQ(x) * (2.0 * SQ(dmy) - dmy);
         }
-        if (LJ_powers == 3) {                            // macroscopic vdw potential
+        if (lj_powers == 3) {                            // macroscopic vdw potential
             static const double LJ_coeff_N      = 1.01;  // koko wo user ga shitei
             static const double LJ_coeff_Nsigma = LJ_coeff_N * sigma;
             if (x >= LJ_coeff_Nsigma) {  // van der Waals Attraction
-                answer = -1.0 * EPSILON * sigma / (24.0 * x * SQ(x - sigma));
+                answer = -1.0 * epsilon * sigma / (24.0 * x * SQ(x - sigma));
             } else {
                 static const double LJ_coeff_I =
-                    EPSILON / (24. * SQ(sigma) * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
-                static const double LJ_coeff_J = EPSILON / (24. * sigma * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
+                    epsilon / (24. * SQ(sigma) * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
+                static const double LJ_coeff_J = epsilon / (24. * sigma * SQ(LJ_coeff_N - 1.0) * (LJ_coeff_N - 1.0));
                 answer                         = -LJ_coeff_I + LJ_coeff_J / x;
             }
         }

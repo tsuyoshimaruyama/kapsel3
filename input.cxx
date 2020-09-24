@@ -327,20 +327,20 @@ inline void Set_wall_parameters(const double MaxRadius) {
         wall.hi       = (l + height) / 2.0;
         assert(wall.dh > XI && wall.dh < l - 2 * MaxRadius);
 
-        double cutoff = 0.0;
-        if (LJ_powers == 0) {
-            cutoff = pow(2., 1. / 6.);
-        } else if (LJ_powers == 1) {
-            cutoff = pow(2., 1. / 12.);
-        } else if (LJ_powers == 2) {
-            cutoff = pow(2., 1. / 18.);
-        } else if (LJ_powers == 3) {
-            cutoff = 1.0;
-        } else {
-            fprintf(stderr, "Uknown LJ_powers for wall-particle interactions\n");
-            exit(-1);
-        }
-        wall.A_R_cutoff = cutoff;  // Cutoff distance for mirror wall particles
+        // double cutoff = 0.0;
+        // if (LJ_powers == 0) {
+        //     cutoff = pow(2., 1. / 6.);
+        // } else if (LJ_powers == 1) {
+        //     cutoff = pow(2., 1. / 12.);
+        // } else if (LJ_powers == 2) {
+        //     cutoff = pow(2., 1. / 18.);
+        // } else if (LJ_powers == 3) {
+        //     cutoff = 1.0;
+        // } else {
+        //     fprintf(stderr, "Uknown LJ_powers for wall-particle interactions\n");
+        //     exit(-1);
+        // }
+        // wall.A_R_cutoff = cutoff;  // Cutoff distance for mirror wall particles
         {
             const char axis[DIM] = {'X', 'Y', 'Z'};
             fprintf(stderr, "#\n");
@@ -350,7 +350,11 @@ inline void Set_wall_parameters(const double MaxRadius) {
             fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
             fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
             fprintf(stderr, "# Thickness    : %5.2f\n", (l - (wall.hi - wall.lo)));
+            const char pows[3] = {"12:6", "24:12", "36:18"};
+            fprintf(stderr, "# LJ Powers    : %6s\n", pows[wall.LJ_powers]);
+            fprintf(stderr, "# Epsilon      : %5.2F \n", wall.EPSILON);
             fprintf(stderr, "# Cutoff       : %5.2f %5.2f\n", wall.A_R_cutoff * LJ_dia, wall.A_R_cutoff);
+            fprintf(stderr, "# Truncate (1=ON, 0=OFF, -1=NONE) : %2d\n", wall.LJ_truncate);
             fprintf(stderr, "#\n");
         }
     }
@@ -2058,6 +2062,63 @@ void Gourmet_file_io(const char *infile,
                         } else {
                             fprintf(stderr, "Unspecified Flat Wall axis\n");
                             exit(-1);
+                        }
+
+                        string params_type;
+                        if (io_parser_check(target.sub("LJ_Params"), params_type) && params_type == "MANUAL") {
+                            fprintf(stderr, "# Wall LJ Parameters : Manual\n");
+                            target.down("MANUAL");
+                            io_parser(target.sub("powers"), str);
+                            if (str == "12:6") {
+                                wall.LJ_powers = 0;
+                            } else if (str == "24:12") {
+                                wall.LJ_powers = 1;
+                            } else if (str == "36:18") {
+                                wall.LJ_powers = 2;
+                            } else {
+                                fprintf(stderr, "Flat Wall LJ parameter error !!!!");
+                            }
+
+                            io_parser(target.sub("EPSILON"), wall.EPSILON);
+                            io_parser(target.sub("truncate"), str);
+                            if (str == "ON") {
+                                wall.LJ_truncate = 1;
+                            } else if (str == "OFF") {
+                                wall.LJ_truncate = 0;
+                            } else if (str == "NONE") {
+                                wall.LJ_truncate = -1;
+                            } else {
+                                fprintf(stderr, "invalid LJ_truncate\n");
+                                exit_job(EXIT_FAILURE);
+                            }
+                            if (wall.LJ_truncate > 0) {
+                                // A_R_cutoff = pow(2.0,1./6.); //Lennard-Jones minimum;
+                                if (wall.LJ_powers == 0) {
+                                    wall.A_R_cutoff = pow(2., 1. / 6.);
+                                }
+                                if (wall.LJ_powers == 1) {
+                                    wall.A_R_cutoff = pow(2., 1. / 12.);
+                                }
+                                if (wall.LJ_powers == 2) {
+                                    wall.A_R_cutoff = pow(2., 1. / 18.);
+                                }
+                                if (wall.LJ_powers == 3) {
+                                    wall.A_R_cutoff = 1.0;
+                                }
+                            } else if (wall.LJ_truncate == 0) {
+                                const double max_A_R_cutoff = 2.5;
+                                wall.A_R_cutoff             = MIN(Nmin * DX * .5 / SIGMA, max_A_R_cutoff);
+                            } else {
+                                wall.A_R_cutoff = 0.;
+                            }
+                            target.up();
+                        } else {  // auto lj params (consistent with old version of code.
+                                  // wall params ~ particle params)
+                            fprintf(stderr, "# Wall LJ Parameters : AUTO\n");
+                            wall.EPSILON     = EPSILON;
+                            wall.A_R_cutoff  = A_R_cutoff;
+                            wall.LJ_truncate = 1;
+                            wall.LJ_powers   = LJ_powers;
                         }
                     }
                     {

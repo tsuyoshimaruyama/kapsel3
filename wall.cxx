@@ -52,10 +52,10 @@ void Init_Wall(double* phi_wall) {
 inline double Compute_f_wall_single(const double& x, const double& cutoff, const double& offset) {
     double fx = 0.0;
     double h  = x - wall.lo + offset;  // distance to lower mirror particle
-    if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+    if (h <= cutoff) fx += MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia, wall.EPSILON, wall.LJ_powers)) * h;
 
     h = wall.hi - x + offset;
-    if (h <= cutoff) fx -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia)) * h;
+    if (h <= cutoff) fx -= MIN(DBL_MAX / h, Lennard_Jones_f(h, LJ_dia, wall.EPSILON, wall.LJ_powers)) * h;
     return fx;
 }
 

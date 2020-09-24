@@ -113,7 +113,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive_lnk(
                                         if (r_ij < pair_cutoff) {
                                             double dmy_r = 0.0;
 
-                                            dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia));
+                                            dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia, EPSILON, LJ_powers));
 
                                             {
                                                 // spherical particle forces
@@ -229,7 +229,7 @@ void Calc_f_Lennard_Jones_shear_cap_primitive(
             distance0_func((*p_n).x, (*p_m).x, r_ij, r_ij_vec);
 
             if (r_ij < pair_cutoff && !rigid_chain(n, m) && !obstacle_chain((*p_n).spec, (*p_m).spec)) {
-                double dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia));
+                double dmy_r = MIN(cap / r_ij, Lennard_Jones_f(r_ij, LJ_dia, EPSILON, LJ_powers));
 
                 {
                     // forces
