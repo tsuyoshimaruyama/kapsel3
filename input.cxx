@@ -350,7 +350,7 @@ inline void Set_wall_parameters(const double MaxRadius) {
             fprintf(stderr, "# Upper Surface: %5.2f\n", wall.hi);
             fprintf(stderr, "# Height       : %5.2f\n", wall.hi - wall.lo);
             fprintf(stderr, "# Thickness    : %5.2f\n", (l - (wall.hi - wall.lo)));
-            const char pows[3] = {"12:6", "24:12", "36:18"};
+            const char *pows[3] = {"12:6", "24:12", "36:18"};
             fprintf(stderr, "# LJ Powers    : %6s\n", pows[wall.LJ_powers]);
             fprintf(stderr, "# Epsilon      : %5.2F \n", wall.EPSILON);
             fprintf(stderr, "# Cutoff       : %5.2f %5.2f\n", wall.A_R_cutoff * LJ_dia, wall.A_R_cutoff);
