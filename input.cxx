@@ -714,7 +714,7 @@ void Gourmet_file_io(const char *infile,
     // --------------------------------------------------------
 
     {  // check udf version
-        string code_version = "v3.3";
+        string code_version = "v4.1";
         fprintf(stderr, "# Kapsel: UDF %s\n", code_version.c_str());
         fprintf(stderr, "# Git Version  : %s\n", GIT_VERSION);
         fprintf(stderr, "# Git Reference: %s\n", GIT_REF);
@@ -1460,8 +1460,8 @@ void Gourmet_file_io(const char *infile,
                         io_parser(target.sub("janus_rotlet_dipole_C2"),
                                   janus_rotlet_dipole_C2[i],
                                   with_squirm,
-                                  0.0);  // C2 coeff
-                        assert(janus_slip_vel[i] > 0);
+                                  0.0);                                 // C2 coeff
+                        assert(!with_squirm || janus_slip_vel[i] > 0);  // with_squirm -> slip_vel>0
                     }
                 }
                 if (SW_EQ == Electrolyte) {
