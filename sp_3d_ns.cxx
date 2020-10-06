@@ -214,7 +214,11 @@ void Time_evolution_hydro_fdm(double **&u, double *Pressure, double **f, Particl
             }
         }
         Reset_phi(phi);
-        Reset_phi(phi_sum);
+        if (SW_WALL != NO_WALL) {
+            Copy_v1(phi_sum, phi_wall);
+        } else {
+            Reset_phi(phi_sum);
+        }
         Make_phi_particle_sum(phi, phi_sum, p);
 
         // Calculation of hydrodynamic force
@@ -809,7 +813,11 @@ int main(int argc, char *argv[]) {
     Init_zeta_k(zeta, uk_dc);
     {
         Reset_phi_u(phi, up);
-        Reset_phi(phi_sum);
+        if (SW_WALL != NO_WALL) {
+            Copy_v1(phi_sum, phi_wall);
+        } else {
+            Reset_phi(phi_sum);
+        }
         Make_phi_particle_sum(phi, phi_sum, particles);
         Make_u_particle_sum(up, phi_sum, particles);
         Zeta_k2u(zeta, uk_dc, u);

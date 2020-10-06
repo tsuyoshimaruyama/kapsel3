@@ -2133,8 +2133,9 @@ void Gourmet_file_io(const char *infile,
                 exit_job(EXIT_FAILURE);
             }
         }
-        if (SW_WALL != NO_WALL && SW_EQ != Navier_Stokes) {
-            fprintf(stderr, "# Error: walls only enabled for Navier_Stokes simulations so far\n");
+        if (SW_WALL != NO_WALL &&
+            !(SW_EQ == Navier_Stokes || SW_EQ == Navier_Stokes_FDM || SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM)) {
+            fprintf(stderr, "# Error: walls only enabled for Navier_Stokes [PS,FDM] simulations so far\n");
             exit(-1);
         }
     }
