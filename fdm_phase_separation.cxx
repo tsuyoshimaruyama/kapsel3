@@ -24,8 +24,8 @@ void        Calc_cp(double *phi, double *psi, double *cp) {
 
                 double grad_phi_norm = dphi_dx * dphi_dx + dphi_dy * dphi_dy + dphi_dz * dphi_dz;
 
-                cp[im] = potential_deriv(psi[im]) - ps.alpha * lap_psi + ps.w * A_XI * grad_phi_norm +
-                         2. * ps.d * (psi[im] - ps.neutral) * phi[im];
+                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
+                         ps.w * A_XI * grad_phi_norm + 2. * ps.d * (psi[im] - ps.neutral) * phi[im];
             }
         }
     }
@@ -52,8 +52,8 @@ void        Calc_cp_OBL(double *phi, double *psi, double *cp, const double degre
                 double grad_phi_norm =
                     dphi_dx_co * dphi_dx_contra + dphi_dy_co * dphi_dy_contra + dphi_dz_co * dphi_dz_contra;
 
-                cp[im] = potential_deriv(psi[im]) - ps.alpha * lap_psi + ps.w * A_XI * grad_phi_norm +
-                         2. * ps.d * (psi[im] - ps.neutral) * phi[im];
+                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
+                         ps.w * A_XI * grad_phi_norm + 2. * ps.d * (psi[im] - ps.neutral) * phi[im];
             }
         }
     }
@@ -321,6 +321,7 @@ void Init_phase_separation(double *phi, double *psi) {
     std::cout << "# w: " << ps.w << std::endl;
     std::cout << "# alpha: " << ps.alpha << std::endl;
     std::cout << "# kappa: " << ps.kappa << std::endl;
+    std::cout << "# z    : " << ps.z << std::endl;
     std::cout << "#################################" << std::endl;
 
     if (SW_POTENTIAL == Landau) {
