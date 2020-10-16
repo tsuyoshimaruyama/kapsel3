@@ -1314,21 +1314,82 @@ void CH_solver_implicit_euler(double *     psi,
         int km1 = adj(-1, k, NZ);
 
         double psi_im = psi[ijk2im(i, j, k)];
+        double bs;
 
-        double bs =
-            psi_im * INV_DT +
-            kiDX2 * (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
-                     potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
-                     potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
-                     6. * potential_deriv(psi_im)) +
-            ps.w * A_XI * kiDX2 *
-                (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
-                 calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
-                 calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
-                 6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
-            2. * ps.neutral * ps.d * kiDX2 *
-                (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
-                 phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        if (SW_WALL != NO_WALL){
+            bs =
+                psi_im * INV_DT +
+                kiDX2 * (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+                         potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+                         potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+                        6. * potential_deriv(psi_im)) +
+                ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_p, ijk2im(i, j, k))) +
+                ps.k * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k))) -
+                2. * ps.neutral * ps.d * kiDX2 *
+                    (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+                     phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        } else {
+            bs =
+                psi_im * INV_DT +
+                kiDX2 * (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+                         potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+                         potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+                         6. * potential_deriv(psi_im)) +
+                ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
+                2. * ps.neutral * ps.d * kiDX2 *
+                    (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+                     phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        }
+
+        // double bs =
+        //     psi_im * INV_DT +
+        //     kiDX2 * (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+        //              potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+        //              potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+        //              6. * potential_deriv(psi_im)) +
+        //     ps.w * A_XI * kiDX2 *
+        //         (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
+        //          calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
+        //          calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
+        //          6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
+        //     2. * ps.neutral * ps.d * kiDX2 *
+        //         (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+        //          phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        
+        // double w_term_euler = ps.w * A_XI * kiDX2 *
+        //                  (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+        //                   calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+        //                   calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+        //                   6. * calc_gradient_norm(phi_p, ijk2im(i, j, k)));
+        // double k_term_euler = ps.k * A_XI * kiDX2 *
+        //                  (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+        //                   calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+        //                   calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+        //                   6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k)));
+        // double wk_euler = ps.w * A_XI * kiDX2 *
+        //                  (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+        //                   calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+        //                   calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+        //                   6. * calc_gradient_norm(phi_p, ijk2im(i, j, k))) +
+        //                   ps.k * A_XI * kiDX2 *
+        //                  (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+        //                   calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+        //                   calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+        //                   6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k)));
+        // if(w_term_euler != 0){fprintf(stderr,"w_term_euler, k_term_euler=%1.4e, %1.4e\n", w_term_euler, k_term_euler);
+        // fprintf(stderr, "wk_euler = %1.4e\n", wk_euler);}
 #ifdef _LIS_SOLVER
         lis_vector_set_value(LIS_INS_VALUE, idx, bs, b_ch);
 #else
@@ -1592,26 +1653,103 @@ void CH_solver_implicit_bdfab(double *     psi,
 
         double psi_im   = psi[ijk2im(i, j, k)];
         double psi_o_im = psi_o[ijk2im(i, j, k)];
+        double bs;
+        double w_term = 0;
+        double k_term = 0;
+        if (SW_WALL != NO_WALL){
+            bs =
+                0.5 * (4. * psi_im - psi_o_im) * INV_DT +
+                2. * kiDX2 *
+                    (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+                     potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+                     potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+                     6. * potential_deriv(psi_im)) -
+                kiDX2 * (potential_deriv(psi_o[ijk2im(ip1, j, k)]) + potential_deriv(psi_o[ijk2im(im1, j, k)]) +
+                         potential_deriv(psi_o[ijk2im(i, jp1, k)]) + potential_deriv(psi_o[ijk2im(i, jm1, k)]) +
+                         potential_deriv(psi_o[ijk2im(i, j, kp1)]) + potential_deriv(psi_o[ijk2im(i, j, km1)]) -
+                         6. * potential_deriv(psi_o_im)) +
+                ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_p, ijk2im(i, j, k))) +
+                ps.k * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k))) -
+                2. * ps.neutral * ps.d * kiDX2 *
+                    (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+                     phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+            w_term = ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_p, ijk2im(i, j, k)));
+            k_term = ps.k * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k)));
+        } else {
+            bs =
+                0.5 * (4. * psi_im - psi_o_im) * INV_DT +
+                2. * kiDX2 *
+                    (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+                     potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+                     potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+                     6. * potential_deriv(psi_im)) -
+                kiDX2 * (potential_deriv(psi_o[ijk2im(ip1, j, k)]) + potential_deriv(psi_o[ijk2im(im1, j, k)]) +
+                         potential_deriv(psi_o[ijk2im(i, jp1, k)]) + potential_deriv(psi_o[ijk2im(i, jm1, k)]) +
+                         potential_deriv(psi_o[ijk2im(i, j, kp1)]) + potential_deriv(psi_o[ijk2im(i, j, km1)]) -
+                         6. * potential_deriv(psi_o_im)) +
+                ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
+                2. * ps.neutral * ps.d * kiDX2 *
+                    (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+                     phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+            w_term = ps.w * A_XI * kiDX2 *
+                    (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
+                     calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
+                     6. * calc_gradient_norm(phi, ijk2im(i, j, k)));
+        }
 
-        double bs =
-            0.5 * (4. * psi_im - psi_o_im) * INV_DT +
-            2. * kiDX2 *
-                (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
-                 potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
-                 potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
-                 6. * potential_deriv(psi_im)) -
-            kiDX2 * (potential_deriv(psi_o[ijk2im(ip1, j, k)]) + potential_deriv(psi_o[ijk2im(im1, j, k)]) +
-                     potential_deriv(psi_o[ijk2im(i, jp1, k)]) + potential_deriv(psi_o[ijk2im(i, jm1, k)]) +
-                     potential_deriv(psi_o[ijk2im(i, j, kp1)]) + potential_deriv(psi_o[ijk2im(i, j, km1)]) -
-                     6. * potential_deriv(psi_o_im)) +
-            ps.w * A_XI * kiDX2 *
-                (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
-                 calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
-                 calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
-                 6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
-            2. * ps.neutral * ps.d * kiDX2 *
-                (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
-                 phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        // double bs =
+        //     0.5 * (4. * psi_im - psi_o_im) * INV_DT +
+        //     2. * kiDX2 *
+        //         (potential_deriv(psi[ijk2im(ip1, j, k)]) + potential_deriv(psi[ijk2im(im1, j, k)]) +
+        //          potential_deriv(psi[ijk2im(i, jp1, k)]) + potential_deriv(psi[ijk2im(i, jm1, k)]) +
+        //          potential_deriv(psi[ijk2im(i, j, kp1)]) + potential_deriv(psi[ijk2im(i, j, km1)]) -
+        //          6. * potential_deriv(psi_im)) -
+        //     kiDX2 * (potential_deriv(psi_o[ijk2im(ip1, j, k)]) + potential_deriv(psi_o[ijk2im(im1, j, k)]) +
+        //              potential_deriv(psi_o[ijk2im(i, jp1, k)]) + potential_deriv(psi_o[ijk2im(i, jm1, k)]) +
+        //              potential_deriv(psi_o[ijk2im(i, j, kp1)]) + potential_deriv(psi_o[ijk2im(i, j, km1)]) -
+        //              6. * potential_deriv(psi_o_im)) +
+        //     ps.w * A_XI * kiDX2 *
+        //         (calc_gradient_norm(phi, ijk2im(ip1, j, k)) + calc_gradient_norm(phi, ijk2im(im1, j, k)) +
+        //          calc_gradient_norm(phi, ijk2im(i, jp1, k)) + calc_gradient_norm(phi, ijk2im(i, jm1, k)) +
+        //          calc_gradient_norm(phi, ijk2im(i, j, kp1)) + calc_gradient_norm(phi, ijk2im(i, j, km1)) -
+        //          6. * calc_gradient_norm(phi, ijk2im(i, j, k))) -
+        //     2. * ps.neutral * ps.d * kiDX2 *
+        //         (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)] + phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)] +
+        //          phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)] - 6. * phi[ijk2im(i, j, k)]);
+        
+        // double wk_bdfab = ps.w * A_XI * kiDX2 *
+        //             (calc_gradient_norm(phi_p, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_p, ijk2im(im1, j, k)) +
+        //              calc_gradient_norm(phi_p, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_p, ijk2im(i, jm1, k)) +
+        //              calc_gradient_norm(phi_p, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_p, ijk2im(i, j, km1)) -
+        //              6. * calc_gradient_norm(phi_p, ijk2im(i, j, k))) +
+        //             ps.k * A_XI * kiDX2 *
+        //             (calc_gradient_norm(phi_wall, ijk2im(ip1, j, k)) + calc_gradient_norm(phi_wall, ijk2im(im1, j, k)) +
+        //              calc_gradient_norm(phi_wall, ijk2im(i, jp1, k)) + calc_gradient_norm(phi_wall, ijk2im(i, jm1, k)) +
+        //              calc_gradient_norm(phi_wall, ijk2im(i, j, kp1)) + calc_gradient_norm(phi_wall, ijk2im(i, j, km1)) -
+        //              6. * calc_gradient_norm(phi_wall, ijk2im(i, j, k)));
+        visarray[ijk2im(i, j, k)] = bs;
+        // if (w_term != 0 or k_term != 0){fprintf(stderr, "w_term, k_term, w+k = %1.4e, %1.4e, %1.4e\n", w_term, k_term, wk_bdfab);}
 #ifdef _LIS_SOLVER
         lis_vector_set_value(LIS_INS_VALUE, idx, bs, b_ch);
 #else
