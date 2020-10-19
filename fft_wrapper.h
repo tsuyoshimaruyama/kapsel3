@@ -60,7 +60,6 @@ extern ooura_plan ooura_p;
 extern double **ucp;
 extern double * phi, *phi_p, *phi_sum, **up, **u, *rhop, *phi_wall;
 extern double **work_v3, **work_v2, *work_v1;
-extern double *visarray;
 
 extern int *   KX_int, *KY_int, *KZ_int;
 extern double *K2, *IK2;

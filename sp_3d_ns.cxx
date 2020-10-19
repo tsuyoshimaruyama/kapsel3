@@ -633,7 +633,6 @@ inline void Mem_alloc_var(double **zeta) {
     work_v1         = alloc_1d_double(NX * NY * NZ_);
     Hydro_force     = alloc_1d_double(NX * NY * NZ_);
     Hydro_force_new = alloc_1d_double(NX * NY * NZ_);
-    visarray        = alloc_1d_double(NX * NY * NZ_);
 
     shear_rate_field = alloc_1d_double(NX * NY * NZ_);
 
@@ -904,8 +903,6 @@ int main(int argc, char *argv[]) {
                 if (PHASE_SEPARATION) {
                     if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
                        Output_hdf5_sca("orderparam", "PSI", psi, jikan.ts / GTS);
-                    //    Output_hdf5_sca("orderparam", "PSI", visarray, jikan.ts / GTS);
-
                     } else if (SW_EQ == Shear_NS_LE_CH_FDM) {
                         A_oblique2a_out(psi, work_v1);
                         Output_hdf5_sca("orderparam", "PSI", work_v1, jikan.ts / GTS);

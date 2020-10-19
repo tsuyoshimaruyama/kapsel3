@@ -92,7 +92,7 @@ struct ps_param {
     double init_fluct;
     double d;
     double w;
-    double k;
+    double w_wall;
     double z;
     double alpha;
     double kappa;

@@ -20,7 +20,6 @@ ooura_plan ooura_p;
 double **ucp;
 double * phi, *phi_p, *phi_sum, **up, **u, *rhop, *phi_wall;
 double **work_v3, **work_v2, *work_v1;
-double * visarray;
 
 int *   KX_int, *KY_int, *KZ_int;
 double *K2, *IK2;

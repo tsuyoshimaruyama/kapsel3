@@ -30,7 +30,6 @@ void        Calc_cp(double *phi, double *psi, double *cp) {
         }
     }
 }
-// Koba
 void        Calc_cp_wall(double *phi, double *phi_p, double *phi_wall, double *psi, double *cp) {
 #pragma omp parallel for
     for (int i = 0; i < NX; i++) {
@@ -48,18 +47,9 @@ void        Calc_cp_wall(double *phi, double *phi_p, double *phi_wall, double *p
 
                 double grad_phi_norm = dphi_dx * dphi_dx + dphi_dy * dphi_dy + dphi_dz * dphi_dz;
                 double grad_phi_wall_norm=dphi_wall_dx * dphi_wall_dx + dphi_wall_dy * dphi_wall_dy + dphi_wall_dz * dphi_wall_dz;
-                // cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
-                        //  ps.w * A_XI * grad_phi_norm + 2. * ps.d * (psi[im] - ps.neutral) * phi[im];
                 cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
-                         ps.w * A_XI * grad_phi_norm + ps.k * A_XI * grad_phi_wall_norm + 
+                         ps.w * A_XI * grad_phi_norm + ps.w_wall * A_XI * grad_phi_wall_norm + 
                          2. * ps.d * (psi[im] - ps.neutral) * phi[im];
-                // double cp_wall = ps.k * A_XI * grad_phi_wall_norm;
-                // double cp_p = ps.w * A_XI * grad_phi_norm;
-                // double cp_koba = ps.d * (psi[im] - ps.neutral) * phi[im];
-                // if (cp_p!=0.){fprintf(stderr,"cp_p = %e\n", cp_p);}
-                // if(dphi_dx !=0){fprintf(stderr,"%1.4e, %1.4e, %1.4e\n", dphi_dx, dphi_dy, dphi_dz );}
-                // if (cp_wall!=0.){fprintf(stderr,"cp_wall = %1.4e, %1.4e, %1.4e\n", cp_wall,cp[im], psi[im]);}
-                // fprintf(stderr, "grad_phi_wall_norm=%1.4e, phi_wall=%1.4e\n", grad_phi_wall_norm, phi_wall)
             }
         }
     }
