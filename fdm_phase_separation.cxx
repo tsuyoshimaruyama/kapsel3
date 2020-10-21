@@ -22,9 +22,14 @@ void        Calc_cp(double *phi, double *psi, double *cp) {
                 double dphi_dy = calc_gradient_o1_to_o1(phi, im, 1);
                 double dphi_dz = calc_gradient_o1_to_o1(phi, im, 2);
 
+                double dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
+                double dpsi_dy = calc_gradient_o1_to_o1(psi, im, 1);
+                double dpsi_dz = calc_gradient_o1_to_o1(psi, im, 2);
+
                 double grad_phi_norm = dphi_dx * dphi_dx + dphi_dy * dphi_dy + dphi_dz * dphi_dz;
 
-                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
+                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi -
+                         2. * ps.z * (dphi_dx * dpsi_dx + dphi_dy * dpsi_dy + dphi_dz * dpsi_dz) +
                          ps.w * A_XI * grad_phi_norm + 2. * ps.d * (psi[im] - ps.neutral) * phi[im];
             }
         }
@@ -37,18 +42,23 @@ void        Calc_cp_wall(double *phi, double *phi_p, double *phi_wall, double *p
             for (int k = 0; k < NZ; k++) {
                 int im = (i * NY * NZ_) + (j * NZ_) + k;
 
-                double lap_psi = calc_laplacian(psi, im);
-                double dphi_dx = calc_gradient_o1_to_o1(phi_p, im, 0);
-                double dphi_dy = calc_gradient_o1_to_o1(phi_p, im, 1);
-                double dphi_dz = calc_gradient_o1_to_o1(phi_p, im, 2);
-                double dphi_wall_dx = calc_gradient_o1_to_o1(phi_wall,im,0);
-                double dphi_wall_dy = calc_gradient_o1_to_o1(phi_wall,im,1);
-                double dphi_wall_dz = calc_gradient_o1_to_o1(phi_wall,im,2);
+                double lap_psi      = calc_laplacian(psi, im);
+                double dphi_dx      = calc_gradient_o1_to_o1(phi_p, im, 0);
+                double dphi_dy      = calc_gradient_o1_to_o1(phi_p, im, 1);
+                double dphi_dz      = calc_gradient_o1_to_o1(phi_p, im, 2);
+                double dphi_wall_dx = calc_gradient_o1_to_o1(phi_wall, im, 0);
+                double dphi_wall_dy = calc_gradient_o1_to_o1(phi_wall, im, 1);
+                double dphi_wall_dz = calc_gradient_o1_to_o1(phi_wall, im, 2);
+                double dpsi_dx      = calc_gradient_o1_to_o1(psi, im, 0);
+                double dpsi_dy      = calc_gradient_o1_to_o1(psi, im, 1);
+                double dpsi_dz      = calc_gradient_o1_to_o1(psi, im, 2);
 
                 double grad_phi_norm = dphi_dx * dphi_dx + dphi_dy * dphi_dy + dphi_dz * dphi_dz;
-                double grad_phi_wall_norm=dphi_wall_dx * dphi_wall_dx + dphi_wall_dy * dphi_wall_dy + dphi_wall_dz * dphi_wall_dz;
-                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
-                         ps.w * A_XI * grad_phi_norm + ps.w_wall * A_XI * grad_phi_wall_norm + 
+                double grad_phi_wall_norm =
+                    dphi_wall_dx * dphi_wall_dx + dphi_wall_dy * dphi_wall_dy + dphi_wall_dz * dphi_wall_dz;
+                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi -
+                         2.0 * ps.z * (dphi_dx * dpsi_dx + dphi_dy * dpsi_dy + dphi_dz * dpsi_dz) +
+                         ps.w * A_XI * grad_phi_norm + ps.w_wall * A_XI * grad_phi_wall_norm +
                          2. * ps.d * (psi[im] - ps.neutral) * phi[im];
             }
         }
