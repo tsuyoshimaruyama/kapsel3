@@ -220,7 +220,7 @@ void Time_evolution_hydro_fdm(double **&u, double *Pressure, double **f, Particl
             Reset_phi(phi_sum);
         }
         Make_phi_particle_sum(phi, phi_sum, p);
-        Make_phi_p(phi_p,phi,phi_wall);
+        Make_phi_p(phi_p, phi, phi_wall);
         // Calculation of hydrodynamic force
 
         Reset_u(up);
@@ -902,7 +902,7 @@ int main(int argc, char *argv[]) {
 
                 if (PHASE_SEPARATION) {
                     if (SW_EQ == Navier_Stokes_Cahn_Hilliard_FDM) {
-                       Output_hdf5_sca("orderparam", "PSI", psi, jikan.ts / GTS);
+                        Output_hdf5_sca("orderparam", "PSI", psi, jikan.ts / GTS);
                     } else if (SW_EQ == Shear_NS_LE_CH_FDM) {
                         A_oblique2a_out(psi, work_v1);
                         Output_hdf5_sca("orderparam", "PSI", work_v1, jikan.ts / GTS);
@@ -998,11 +998,10 @@ Shear_NS_LE_CH_FDM) { calc_shear_rate_field(u, shear_rate_field);
                 Reset_phi(phi_sum);
                 Make_phi_particle_sum(phi, phi_sum, particles);
                 if (PHASE_SEPARATION) {
-                    if (SW_WALL != NO_WALL){
+                    if (SW_WALL != NO_WALL) {
                         Calc_cp_wall(phi, phi_p, phi_wall, psi, cp);
-                    }
-                    else{
-                        Calc_cp(phi,psi,cp);
+                    } else {
+                        Calc_cp(phi, psi, cp);
                     }
                     Cp2stress(cp, psi, stress);
                 }
