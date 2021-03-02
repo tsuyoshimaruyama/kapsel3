@@ -78,6 +78,14 @@ void        Calc_cp_OBL(double *phi, double *psi, double *cp, const double degre
                 double dphi_dy_co = calc_gradient_o1_to_o1(phi, im, 1);
                 double dphi_dz_co = calc_gradient_o1_to_o1(phi, im, 2);
 
+                double dphi_dx = calc_gradient_o1_to_o1(phi, im, 0);
+                double dphi_dy = calc_gradient_o1_to_o1(phi, im, 1);
+                double dphi_dz = calc_gradient_o1_to_o1(phi, im, 2);
+
+                double dpsi_dx = calc_gradient_o1_to_o1(psi, im, 0);
+                double dpsi_dy = calc_gradient_o1_to_o1(psi, im, 1);
+                double dpsi_dz = calc_gradient_o1_to_o1(psi, im, 2);
+
                 double dphi_dx_contra =
                     ((1. + degree_oblique * degree_oblique) * dphi_dx_co) - (degree_oblique * dphi_dy_co);
                 double dphi_dy_contra = -(degree_oblique * dphi_dx_co) + dphi_dy_co;
@@ -86,7 +94,8 @@ void        Calc_cp_OBL(double *phi, double *psi, double *cp, const double degre
                 double grad_phi_norm =
                     dphi_dx_co * dphi_dx_contra + dphi_dy_co * dphi_dy_contra + dphi_dz_co * dphi_dz_contra;
 
-                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi +
+                cp[im] = potential_deriv(psi[im]) - (ps.alpha + 2. * ps.z * phi[im]) * lap_psi -
+                         2. * ps.z * (dphi_dx * dpsi_dx + dphi_dy * dpsi_dy + dphi_dz * dpsi_dz) +
                          ps.w * A_XI * grad_phi_norm + 2. * ps.d * (psi[im] - ps.neutral) * phi[im];
             }
         }
@@ -362,6 +371,10 @@ void Init_phase_separation(double *phi, double *psi) {
         ps.neutral = 0.;
     } else if (SW_POTENTIAL == Flory_Huggins) {
         ps.neutral = 0.5;
+    }
+
+    if (ps.z != 0){
+        ps.xi = sqrt(0.5 * ps.alpha /gl.b);
     }
 
     const int seed = 12345;

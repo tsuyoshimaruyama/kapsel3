@@ -97,6 +97,7 @@ struct ps_param {
     double alpha;
     double kappa;
     double neutral;
+    double xi;
 };
 extern gl_param gl;
 extern fh_param fh;

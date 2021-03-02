@@ -1100,7 +1100,7 @@ void CH_solver_implicit_euler(double *     psi,
 
     const double aiDX2 = ps.alpha / DX2;
     const double kiDX2 = ps.kappa / DX2;
-    const double ziDX2 = ps.z / DX2;
+    const double ziDX2 = ps.z * ps.xi / DX2;
     const double ak    = aiDX2 * kiDX2;
     const double _2zk  = 2 * ziDX2 * kiDX2;
     const double _2ak  = 2. * ak;
@@ -1415,7 +1415,7 @@ void CH_solver_implicit_bdfab(double *     psi,
     const double INV_DT  = 1. / jikan.dt_fluid;
 
     const double aiDX2 = ps.alpha / DX2;
-    const double ziDX2 = ps.z / DX2;
+    const double ziDX2 = ps.z * ps.xi / DX2;
     const double kiDX2 = ps.kappa / DX2;
     const double ak    = aiDX2 * kiDX2;
     const double _2zk  = 2. * ziDX2 * kiDX2;
@@ -1743,8 +1743,10 @@ void CH_solver_implicit_euler_OBL(double *     psi,
 
     const double aiDX2 = ps.alpha / DX2;
     const double kiDX2 = ps.kappa / DX2;
+    const double ziDX2 = ps.z * ps.xi / DX2;
     const double ak    = aiDX2 * kiDX2;
     const double _2ak  = 2. * ak;
+    const double _2zk  = 2. * ziDX2 * kiDX2;
 
     const double gt  = degree_oblique;
     const double gt2 = gt * gt;
@@ -1754,381 +1756,276 @@ void CH_solver_implicit_euler_OBL(double *     psi,
     const int  nval = NX * NY * NZ;
     static int call = 0;
 
-    if (call == 0) {
-        call = 1;
+
 #pragma omp parallel for
-        for (int idx = is_ch; idx < ie_ch; idx++) {
-            int i, j, k;
-            idx2ijk(idx, &i, &j, &k);
+    for (int idx = is_ch; idx < ie_ch; idx++) {
+        int i, j, k;
+        idx2ijk(idx, &i, &j, &k);
+
+        int ip1, jp1, kp1, ip2, jp2, kp2;
+        int im1, jm1, km1, im2, jm2, km2;
+
+        ip1 = adj(1, i, NX);
+        jp1 = adj(1, j, NY);
+        kp1 = adj(1, k, NZ);
+
+        im1 = adj(-1, i, NX);
+        jm1 = adj(-1, j, NY);
+        km1 = adj(-1, k, NZ);
+
+        ip2 = adj(2, i, NX);
+        jp2 = adj(2, j, NY);
+        kp2 = adj(2, k, NZ);
+
+        im2 = adj(-2, i, NX);
+        jm2 = adj(-2, j, NY);
+        km2 = adj(-2, k, NZ);
+
+        int im = ijk2im(i, j, k);
+
+        int idx2 = 45 * (idx - is_ch);
+
+        double _2zkp = _2zk * phi[im];
+        double _4zkp = _2zkp * 2.;
+        double co1   =  0.25 * (phi[ijk2im(ip2, j, k)] - phi[ijk2im(im2, j, k)]) * (1. + 2. * gt2 + gt4) -
+                        0.25 * (phi[ijk2im(i, jp2, k)] - phi[ijk2im(i, jm2, k)]) * gt +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(im1, jm1, k)]) * (1. - 3. * gt + 3. * gt2 - 3. * gt3) +
+                        0.25 * (phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)]) * (1. + 3. * gt + 3. * gt2 + 3. * gt3) + 
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] - phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jm1, km1)]) * gt -
+                        0.5 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (3. + 6. * gt2 + gt4) +
+                        0.5 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (5. * gt + 3. * gt3);
+        double co11  =  3. * (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + 2. * gt2 + gt4) +
+                        (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) * (1. + 3. * gt2) +
+                        (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) * (1. + gt2) -
+                        1.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * (gt + gt3) -
+                        phi[im] * (10. + 20. * gt2 + 6. * gt4);
+        double co111 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1. + 2. * gt2 + gt4) -
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (gt + gt3);
+        double co2   = -0.25 * (phi[ijk2im(ip2, j, k)] - phi[ijk2im(im2, j, k)]) * (gt + gt3) +
+                        0.25 * (phi[ijk2im(i, jp2, k)] - phi[ijk2im(i, jm2, k)]) +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(im1, jm1, k)]) * (1. - 3. * gt + 3. * gt2) +
+                        0.25 * (phi[ijk2im(im1, jp1, k)] - phi[ijk2im(ip1, jm1, k)]) * (1. + 3. * gt + 3. * gt2) -
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] - phi[ijk2im(im1, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jm1, km1)]) +
+                        0.5 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (5. * gt + gt3) -
+                        1.5 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (1. + gt2);
+        double co22  =  (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + 3. * gt2) +
+                        3. * (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) +
+                        (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) -
+                        1.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * gt -
+                        phi[im] * (10. + 6. * gt2);
+        double co222 = -0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * gt +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]);
+        double co3   =  0.25 * (phi[ijk2im(i, j, kp2)] - phi[ijk2im(i, j, km2)]) +
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(im1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.125 * (phi[ijk2im(ip1, jp1, kp1)] + phi[ijk2im(im1, jm1, kp1)] + phi[ijk2im(im1, jp1, km1)] + phi[ijk2im(ip1, jm1, km1)] - 
+                        phi[ijk2im(im1, jp1, kp1)] - phi[ijk2im(ip1, jm1, kp1)] - phi[ijk2im(ip1, jp1, km1)] -phi[ijk2im(im1, jm1, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, km1)]) -
+                        0.5 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * (3. + gt2);
+        double co33  =  (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + gt2) +
+                        (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) +
+                        3. * (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) -
+                        0.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * gt -
+                        phi[im] * (10. + 2. * gt2);
+        double co333 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]);
+        double co12  = -1.5 * (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (gt + gt3) -
+                        1.5 * (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) * gt -
+                        0.5 * (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * (1. + 3. * gt2) +
+                        phi[im] * (7. * gt + 3. * gt3);
+        double co23  = -0.25 * (phi[ijk2im(ip1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] + phi[ijk2im(im1, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] + phi[ijk2im(i, jm1, km1)]); 
+        double co31  =  0.25 * (phi[ijk2im(ip1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] + phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] + phi[ijk2im(i, jm1, km1)]) * gt; 
+        double co112 = -2.25 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (gt + gt3) +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (1. + 3. * gt2);
+        double co113 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * (1. + gt2);
+        double co122 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1. + 3. * gt2) -
+                        2.25 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * gt;
+        double co133 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1 + gt2) -
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * gt;
+        double co223 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]);
+        double co233 = -0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * gt +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]);
+        double co123 = -0.375 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * gt;
+
+        //---------------------------------------
+
+        idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
+        val_ch_csr[idx2 + 0] =
+            INV_DT + (42. + 29. * gt2 + 6. * gt4) * (ak + _2zkp) + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im] - _2zk * (2. * co11 + 2. * co22 + 2. * co33);
+
+        //---------------------------------------
+
+        idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
+        val_ch_csr[idx2 + 1] = (ak + _2zkp) * (1. + 1.5 * gt2 + gt4) + _2zk * co111;
 
-            int ip1, jp1, kp1, ip2, jp2, kp2;
-            int im1, jm1, km1, im2, jm2, km2;
+        idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
+        val_ch_csr[idx2 + 2] = (ak + _2zkp) * (1. + 1.5 * gt2 + gt4) - _2zk * co111;
 
-            ip1 = adj(1, i, NX);
-            jp1 = adj(1, j, NY);
-            kp1 = adj(1, k, NZ);
+        idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
+        val_ch_csr[idx2 + 3] = (ak + _2zkp) * (1. - 0.5 * gt2) + _2zk * co222;
 
-            im1 = adj(-1, i, NX);
-            jm1 = adj(-1, j, NY);
-            km1 = adj(-1, k, NZ);
+        idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
+        val_ch_csr[idx2 + 4] = (ak + _2zkp) * (1. - 0.5 * gt2) - _2zk * co222;
 
-            ip2 = adj(2, i, NX);
-            jp2 = adj(2, j, NY);
-            kp2 = adj(2, k, NZ);
+        idx_ch_csr[idx2 + 5] = ijk2idx(i, j, kp2);
+        val_ch_csr[idx2 + 5] = (ak + _2zkp) + _2zk * co333;
 
-            im2 = adj(-2, i, NX);
-            jm2 = adj(-2, j, NY);
-            km2 = adj(-2, k, NZ);
+        idx_ch_csr[idx2 + 6] = ijk2idx(i, j, km2);
+        val_ch_csr[idx2 + 6] = (ak + _2zkp) - _2zk * co333;
 
-            int im = ijk2im(i, j, k);
+        //---------------------------------------
 
-            int idx2 = 45 * (idx - is_ch);
+        idx_ch_csr[idx2 + 7] = ijk2idx(i, jp1, kp1);
+        val_ch_csr[idx2 + 7] = (_2ak + _4zkp) + _2zk * (co23 + co223 + co233);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 8] = ijk2idx(i, jp1, km1);
+        val_ch_csr[idx2 + 8] = (_2ak + _4zkp) + _2zk * (-co23 - co223 + co233);
 
-            idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
-            val_ch_csr[idx2 + 0] =
-                INV_DT + (42. + 29. * gt2 + 6. * gt4) * ak + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im];
+        idx_ch_csr[idx2 + 9] = ijk2idx(i, jm1, kp1);
+        val_ch_csr[idx2 + 9] = (_2ak + _4zkp) + _2zk * (-co23 + co223 - co233);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 10] = ijk2idx(i, jm1, km1);
+        val_ch_csr[idx2 + 10] = (_2ak +_4zkp) + _2zk * (co23 - co223 - co233);
 
-            idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
-            val_ch_csr[idx2 + 1] = ak * (1. + 1.5 * gt2 + gt4);
+        //-----------------
 
-            idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
-            val_ch_csr[idx2 + 2] = ak * (1. + 1.5 * gt2 + gt4);
+        idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
+        val_ch_csr[idx2 + 11] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (co31 + co113 + co133);
 
-            idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
-            val_ch_csr[idx2 + 3] = ak * (1. - 0.5 * gt2);
+        idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
+        val_ch_csr[idx2 + 12] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (-co31 - co113 + co133);
 
-            idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
-            val_ch_csr[idx2 + 4] = ak * (1. - 0.5 * gt2);
+        idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
+        val_ch_csr[idx2 + 13] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (-co31 + co113 - co133);
 
-            idx_ch_csr[idx2 + 5] = ijk2idx(i, j, kp2);
-            val_ch_csr[idx2 + 5] = ak;
+        idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
+        val_ch_csr[idx2 + 14] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (co31 - co113 - co133);
 
-            idx_ch_csr[idx2 + 6] = ijk2idx(i, j, km2);
-            val_ch_csr[idx2 + 6] = ak;
+        //-----------------
+        idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
+        val_ch_csr[idx2 + 15] = (_2ak + _4zkp) * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)] + _2zk * (co12 + co112 + co122);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
+        val_ch_csr[idx2 + 16] = (_2ak + _4zkp) * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)] + _2zk * (-co12 - co112 + co122);
 
-            idx_ch_csr[idx2 + 7] = ijk2idx(i, jp1, kp1);
-            val_ch_csr[idx2 + 7] = _2ak;
+        idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
+        val_ch_csr[idx2 + 17] = (_2ak + _4zkp) * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)] + _2zk * (-co12 + co112 - co122);
 
-            idx_ch_csr[idx2 + 8] = ijk2idx(i, jp1, km1);
-            val_ch_csr[idx2 + 8] = _2ak;
+        idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
+        val_ch_csr[idx2 + 18] = (_2ak + _4zkp) * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)] + _2zk * (co12 - co112 - co122);
 
-            idx_ch_csr[idx2 + 9] = ijk2idx(i, jm1, kp1);
-            val_ch_csr[idx2 + 9] = _2ak;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 10] = ijk2idx(i, jm1, km1);
-            val_ch_csr[idx2 + 10] = _2ak;
+        idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
+        val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * (ak + _2zkp) -
+                                (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)] +
+                                _2zk * (co1 + co11 - 2. * co111 - 2. * co122 - 2. * co133);
 
-            //-----------------
+        idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
+        val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * (ak + _2zkp) -
+                                (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)] +
+                                _2zk * (-co1 + co11 + 2. * co111 + 2. * co122 + 2. * co133);
 
-            idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
-            val_ch_csr[idx2 + 11] = _2ak * (1. + gt2);
+        //-----------------
 
-            idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
-            val_ch_csr[idx2 + 12] = _2ak * (1. + gt2);
+        idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
+        val_ch_csr[idx2 + 21] =
+            u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)] +
+            _2zk * (co2 + co22 - 2. * co222 - 2. * co112 - 2. * co233);
 
-            idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
-            val_ch_csr[idx2 + 13] = _2ak * (1. + gt2);
+        idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
+        val_ch_csr[idx2 + 22] =
+            -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)] +
+            _2zk * (-co2 + co22 + 2. * co222 + 2. * co112 + 2. * co233);
 
-            idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
-            val_ch_csr[idx2 + 14] = _2ak * (1. + gt2);
+        //-----------------
 
-            //-----------------
-            idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
-            val_ch_csr[idx2 + 15] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)];
+        idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
+        val_ch_csr[idx2 + 23] =
+            u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)] +
+            _2zk * (co3 + co33 - 2. * co333 - 2. * co113 - 2. * co223);
 
-            idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
-            val_ch_csr[idx2 + 16] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)];
+        idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
+        val_ch_csr[idx2 + 24] =
+            -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)] +
+            _2zk * (-co3 + co33 + 2. * co333 + 2. * co113 + 2. * co223);
 
-            idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
-            val_ch_csr[idx2 + 17] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)];
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
-            val_ch_csr[idx2 + 18] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)];
+        idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
+        val_ch_csr[idx2 + 25] = -(ak + _2zkp) * gt + _2zk * co123;
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
+        val_ch_csr[idx2 + 26] = -(ak + _2zkp) * gt - _2zk * co123;
 
-            idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
-            val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)];
+        idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
+        val_ch_csr[idx2 + 27] = -(ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
-            val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)];
+        idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
+        val_ch_csr[idx2 + 28] = -(ak + _2zkp) * gt - _2zk * co123;
 
-            //-----------------
+        idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
+        val_ch_csr[idx2 + 29] = -(ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
-            val_ch_csr[idx2 + 21] =
-                u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)];
+        idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
+        val_ch_csr[idx2 + 30] = -(ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
-            val_ch_csr[idx2 + 22] =
-                -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)];
+        //---------------------------------------
 
-            //-----------------
+        idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
+        val_ch_csr[idx2 + 31] = (ak + _2zkp) * gt - _2zk * co123;
 
-            idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
-            val_ch_csr[idx2 + 23] =
-                u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)];
+        idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
+        val_ch_csr[idx2 + 32] = (ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
-            val_ch_csr[idx2 + 24] =
-                -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)];
+        idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
+        val_ch_csr[idx2 + 33] = (ak + _2zkp) * gt - _2zk * co123;
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
+        val_ch_csr[idx2 + 34] = (ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
-            val_ch_csr[idx2 + 25] = -ak * gt;
+        idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
+        val_ch_csr[idx2 + 35] = (ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
-            val_ch_csr[idx2 + 26] = -ak * gt;
+        idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
+        val_ch_csr[idx2 + 36] = (ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
-            val_ch_csr[idx2 + 27] = -ak * gt;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
-            val_ch_csr[idx2 + 28] = -ak * gt;
+        idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
+        val_ch_csr[idx2 + 37] = -(ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
-            val_ch_csr[idx2 + 29] = -ak * gt;
+        idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
+        val_ch_csr[idx2 + 38] = -(ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
-            val_ch_csr[idx2 + 30] = -ak * gt;
+        //-----------------
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
+        val_ch_csr[idx2 + 39] = (ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
-            val_ch_csr[idx2 + 31] = ak * gt;
+        idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
+        val_ch_csr[idx2 + 40] = (ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
-            val_ch_csr[idx2 + 32] = ak * gt;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
-            val_ch_csr[idx2 + 33] = ak * gt;
+        idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
+        val_ch_csr[idx2 + 41] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
-            val_ch_csr[idx2 + 34] = ak * gt;
+        idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
+        val_ch_csr[idx2 + 42] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
-            val_ch_csr[idx2 + 35] = ak * gt;
+        idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
+        val_ch_csr[idx2 + 43] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
-            val_ch_csr[idx2 + 36] = ak * gt;
+        idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
+        val_ch_csr[idx2 + 44] = (ak + _2zkp) * gt2 * 0.25;
 
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
-            val_ch_csr[idx2 + 37] = -ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
-            val_ch_csr[idx2 + 38] = -ak * gt * (1. + gt2);
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
-            val_ch_csr[idx2 + 39] = ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
-            val_ch_csr[idx2 + 40] = ak * gt * (1. + gt2);
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
-            val_ch_csr[idx2 + 41] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
-            val_ch_csr[idx2 + 42] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
-            val_ch_csr[idx2 + 43] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
-            val_ch_csr[idx2 + 44] = ak * gt2 * 0.25;
-
-            ptr_ch[idx - is_ch + 1] = idx2 + 45;
-        }
-        ptr_ch[0] = 0;
-    } else {
-#pragma omp parallel for
-        for (int idx = is_ch; idx < ie_ch; idx++) {
-            int i, j, k;
-            idx2ijk(idx, &i, &j, &k);
-
-            int ip1 = adj(1, i, NX);
-            int jp1 = adj(1, j, NY);
-            int kp1 = adj(1, k, NZ);
-
-            int im1 = adj(-1, i, NX);
-            int jm1 = adj(-1, j, NY);
-            int km1 = adj(-1, k, NZ);
-
-            int ip2 = adj(2, i, NX);
-            int jp2 = adj(2, j, NY);
-            int kp2 = adj(2, k, NZ);
-
-            int im2 = adj(-2, i, NX);
-            int jm2 = adj(-2, j, NY);
-            int km2 = adj(-2, k, NZ);
-
-            int im = ijk2im(i, j, k);
-
-            int idx2 = 45 * (idx - is_ch);
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
-            val_ch_csr[idx2 + 0] =
-                INV_DT + (42. + 29. * gt2 + 6. * gt4) * ak + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
-            val_ch_csr[idx2 + 1] = ak * (1. + 1.5 * gt2 + gt4);
-
-            idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
-            val_ch_csr[idx2 + 2] = ak * (1. + 1.5 * gt2 + gt4);
-
-            idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
-            val_ch_csr[idx2 + 3] = ak * (1. - 0.5 * gt2);
-
-            idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
-            val_ch_csr[idx2 + 4] = ak * (1. - 0.5 * gt2);
-
-            //---------------------------------------
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
-            val_ch_csr[idx2 + 11] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
-            val_ch_csr[idx2 + 12] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
-            val_ch_csr[idx2 + 13] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
-            val_ch_csr[idx2 + 14] = _2ak * (1. + gt2);
-
-            //-----------------
-            idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
-            val_ch_csr[idx2 + 15] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)];
-
-            idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
-            val_ch_csr[idx2 + 16] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)];
-
-            idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
-            val_ch_csr[idx2 + 17] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)];
-
-            idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
-            val_ch_csr[idx2 + 18] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
-            val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)];
-
-            idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
-            val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)];
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
-            val_ch_csr[idx2 + 21] =
-                u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)];
-
-            idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
-            val_ch_csr[idx2 + 22] =
-                -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)];
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
-            val_ch_csr[idx2 + 23] =
-                u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)];
-
-            idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
-            val_ch_csr[idx2 + 24] =
-                -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
-            val_ch_csr[idx2 + 25] = -ak * gt;
-
-            idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
-            val_ch_csr[idx2 + 26] = -ak * gt;
-
-            idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
-            val_ch_csr[idx2 + 27] = -ak * gt;
-
-            idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
-            val_ch_csr[idx2 + 28] = -ak * gt;
-
-            idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
-            val_ch_csr[idx2 + 29] = -ak * gt;
-
-            idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
-            val_ch_csr[idx2 + 30] = -ak * gt;
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
-            val_ch_csr[idx2 + 31] = ak * gt;
-
-            idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
-            val_ch_csr[idx2 + 32] = ak * gt;
-
-            idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
-            val_ch_csr[idx2 + 33] = ak * gt;
-
-            idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
-            val_ch_csr[idx2 + 34] = ak * gt;
-
-            idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
-            val_ch_csr[idx2 + 35] = ak * gt;
-
-            idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
-            val_ch_csr[idx2 + 36] = ak * gt;
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
-            val_ch_csr[idx2 + 37] = -ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
-            val_ch_csr[idx2 + 38] = -ak * gt * (1. + gt2);
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
-            val_ch_csr[idx2 + 39] = ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
-            val_ch_csr[idx2 + 40] = ak * gt * (1. + gt2);
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
-            val_ch_csr[idx2 + 41] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
-            val_ch_csr[idx2 + 42] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
-            val_ch_csr[idx2 + 43] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
-            val_ch_csr[idx2 + 44] = ak * gt2 * 0.25;
-        }
+        ptr_ch[idx - is_ch + 1] = idx2 + 45;
     }
+    ptr_ch[0] = 0;
 
     // const vector
 #pragma omp parallel for
@@ -2229,8 +2126,10 @@ void CH_solver_implicit_bdfab_OBL(double *     psi,
 
     const double aiDX2 = ps.alpha / DX2;
     const double kiDX2 = ps.kappa / DX2;
+    const double ziDX2 = ps.z * ps.xi / DX2;
     const double ak    = aiDX2 * kiDX2;
     const double _2ak  = 2. * ak;
+    const double _2zk  = 2. * ziDX2 * kiDX2;
 
     const double gt  = degree_oblique;
     const double gt2 = gt * gt;
@@ -2240,381 +2139,276 @@ void CH_solver_implicit_bdfab_OBL(double *     psi,
     const int  nval = NX * NY * NZ;
     static int call = 0;
 
-    if (call == 0) {
-        call = 1;
+
 #pragma omp parallel for
-        for (int idx = is_ch; idx < ie_ch; idx++) {
-            int i, j, k;
-            idx2ijk(idx, &i, &j, &k);
+    for (int idx = is_ch; idx < ie_ch; idx++) {
+        int i, j, k;
+        idx2ijk(idx, &i, &j, &k);
+
+        int ip1, jp1, kp1, ip2, jp2, kp2;
+        int im1, jm1, km1, im2, jm2, km2;
+
+        ip1 = adj(1, i, NX);
+        jp1 = adj(1, j, NY);
+        kp1 = adj(1, k, NZ);
+
+        im1 = adj(-1, i, NX);
+        jm1 = adj(-1, j, NY);
+        km1 = adj(-1, k, NZ);
+
+        ip2 = adj(2, i, NX);
+        jp2 = adj(2, j, NY);
+        kp2 = adj(2, k, NZ);
+
+        im2 = adj(-2, i, NX);
+        jm2 = adj(-2, j, NY);
+        km2 = adj(-2, k, NZ);
+
+        int im = ijk2im(i, j, k);
+
+        int idx2 = 45 * (idx - is_ch);
+
+        double _2zkp = _2zk * phi[im];
+        double _4zkp = _2zkp * 2.;
+        double co1   =  0.25 * (phi[ijk2im(ip2, j, k)] - phi[ijk2im(im2, j, k)]) * (1. + 2. * gt2 + gt4) -
+                        0.25 * (phi[ijk2im(i, jp2, k)] - phi[ijk2im(i, jm2, k)]) * gt +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(im1, jm1, k)]) * (1. - 3. * gt + 3. * gt2 - 3. * gt3) +
+                        0.25 * (phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)]) * (1. + 3. * gt + 3. * gt2 + 3. * gt3) + 
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] - phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jm1, km1)]) * gt -
+                        0.5 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (3. + 6. * gt2 + gt4) +
+                        0.5 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (5. * gt + 3. * gt3);
+        double co11  =  3. * (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + 2. * gt2 + gt4) +
+                        (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) * (1. + 3. * gt2) +
+                        (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) * (1. + gt2) -
+                        1.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * (gt + gt3) -
+                        phi[im] * (10. + 20. * gt2 + 6. * gt4);
+        double co111 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1. + 2. * gt2 + gt4) -
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (gt + gt3);
+        double co2   = - 0.25 * (phi[ijk2im(ip2, j, k)] - phi[ijk2im(im2, j, k)]) * (gt + gt3) +
+                        0.25 * (phi[ijk2im(i, jp2, k)] - phi[ijk2im(i, jm2, k)]) +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(im1, jm1, k)]) * (1. - 3. * gt + 3. * gt2) +
+                        0.25 * (phi[ijk2im(im1, jp1, k)] - phi[ijk2im(ip1, jm1, k)]) * (1. + 3. * gt + 3. * gt2) -
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] - phi[ijk2im(im1, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jm1, km1)]) +
+                        0.5 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (5. * gt + gt3) -
+                        1.5 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (1. + gt2);
+        double co22  =  (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + 3. * gt2) +
+                        3. * (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) +
+                        (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) -
+                        1.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * gt -
+                        phi[im] * (10. + 6. * gt2);
+        double co222 = -0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * gt +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]);
+        double co3   =  0.25 * (phi[ijk2im(i, j, kp2)] - phi[ijk2im(i, j, km2)]) +
+                        0.25 * (phi[ijk2im(ip1, j, kp1)] + phi[ijk2im(im1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.125 * (phi[ijk2im(ip1, jp1, kp1)] + phi[ijk2im(im1, jm1, kp1)] + phi[ijk2im(im1, jp1, km1)] + phi[ijk2im(ip1, jm1, km1)] - 
+                        phi[ijk2im(im1, jp1, kp1)] - phi[ijk2im(ip1, jm1, kp1)] - phi[ijk2im(ip1, jp1, km1)] -phi[ijk2im(im1, jm1, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] + phi[ijk2im(i, jm1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, km1)]) -
+                        0.5 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * (3. + gt2);
+        double co33  =  (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (1. + gt2) +
+                        (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) +
+                        3. * (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) -
+                        0.5 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * gt -
+                        phi[im] * (10. + 2. * gt2);
+        double co333 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]);
+        double co12  = -1.5 * (phi[ijk2im(ip1, j, k)] + phi[ijk2im(im1, j, k)]) * (gt + gt3) -
+                        1.5 * (phi[ijk2im(i, jp1, k)] + phi[ijk2im(i, jm1, k)]) * gt -
+                        0.5 * (phi[ijk2im(i, j, kp1)] + phi[ijk2im(i, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(ip1, jp1, k)] - phi[ijk2im(ip1, jm1, k)] - phi[ijk2im(im1, jp1, k)] + phi[ijk2im(im1, jm1, k)]) * (1. + 3. * gt2) +
+                        phi[im] * (7. * gt + 3. * gt3);
+        double co23  = -0.25 * (phi[ijk2im(ip1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] + phi[ijk2im(im1, j, km1)]) * gt +
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] + phi[ijk2im(i, jm1, km1)]); 
+        double co31  =  0.25 * (phi[ijk2im(ip1, j, kp1)] - phi[ijk2im(ip1, j, km1)] - phi[ijk2im(im1, j, kp1)] + phi[ijk2im(im1, j, km1)]) * (1. + gt2) -
+                        0.25 * (phi[ijk2im(i, jp1, kp1)] - phi[ijk2im(i, jp1, km1)] - phi[ijk2im(i, jm1, kp1)] + phi[ijk2im(i, jm1, km1)]) * gt; 
+        double co112 = -2.25 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (gt + gt3) +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * (1. + 3. * gt2);
+        double co113 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * (1. + gt2);
+        double co122 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1. + 3. * gt2) -
+                        2.25 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * gt;
+        double co133 =  0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * (1 + gt2) -
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]) * gt;
+        double co223 =  0.75 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]);
+        double co233 = -0.75 * (phi[ijk2im(ip1, j, k)] - phi[ijk2im(im1, j, k)]) * gt +
+                        0.75 * (phi[ijk2im(i, jp1, k)] - phi[ijk2im(i, jm1, k)]);
+        double co123 = -0.375 * (phi[ijk2im(i, j, kp1)] - phi[ijk2im(i, j, km1)]) * gt;
+
+        //---------------------------------------
+
+        idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
+        val_ch_csr[idx2 + 0] =
+            1.5 * INV_DT + (42. + 29. * gt2 + 6. * gt4) * (ak + _2zkp) + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im] - _2zk * (2. * co11 + 2. * co22 + 2. * co33);
+
+        //---------------------------------------
+
+        idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
+        val_ch_csr[idx2 + 1] = (ak + _2zkp) * (1. + 1.5 * gt2 + gt4) + _2zk * co111;
 
-            int ip1, jp1, kp1, ip2, jp2, kp2;
-            int im1, jm1, km1, im2, jm2, km2;
+        idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
+        val_ch_csr[idx2 + 2] = (ak + _2zkp) * (1. + 1.5 * gt2 + gt4) - _2zk * co111;
 
-            ip1 = adj(1, i, NX);
-            jp1 = adj(1, j, NY);
-            kp1 = adj(1, k, NZ);
+        idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
+        val_ch_csr[idx2 + 3] = (ak + _2zkp) * (1. - 0.5 * gt2) + _2zk * co222;
 
-            im1 = adj(-1, i, NX);
-            jm1 = adj(-1, j, NY);
-            km1 = adj(-1, k, NZ);
+        idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
+        val_ch_csr[idx2 + 4] = (ak + _2zkp) * (1. - 0.5 * gt2) - _2zk * co222;
 
-            ip2 = adj(2, i, NX);
-            jp2 = adj(2, j, NY);
-            kp2 = adj(2, k, NZ);
+        idx_ch_csr[idx2 + 5] = ijk2idx(i, j, kp2);
+        val_ch_csr[idx2 + 5] = (ak + _2zkp) + _2zk * co333;
 
-            im2 = adj(-2, i, NX);
-            jm2 = adj(-2, j, NY);
-            km2 = adj(-2, k, NZ);
+        idx_ch_csr[idx2 + 6] = ijk2idx(i, j, km2);
+        val_ch_csr[idx2 + 6] = (ak + _2zkp) - _2zk * co333;
 
-            int im = ijk2im(i, j, k);
+        //---------------------------------------
 
-            int idx2 = 45 * (idx - is_ch);
+        idx_ch_csr[idx2 + 7] = ijk2idx(i, jp1, kp1);
+        val_ch_csr[idx2 + 7] = (_2ak + _4zkp) + _2zk * (co23 + co223 + co233);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 8] = ijk2idx(i, jp1, km1);
+        val_ch_csr[idx2 + 8] = (_2ak + _4zkp) + _2zk * (-co23 - co223 + co233);
 
-            idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
-            val_ch_csr[idx2 + 0] =
-                1.5 * INV_DT + (42. + 29. * gt2 + 6. * gt4) * ak + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im];
+        idx_ch_csr[idx2 + 9] = ijk2idx(i, jm1, kp1);
+        val_ch_csr[idx2 + 9] = (_2ak + _4zkp) + _2zk * (-co23 + co223 - co233);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 10] = ijk2idx(i, jm1, km1);
+        val_ch_csr[idx2 + 10] = (_2ak +_4zkp) + _2zk * (co23 - co223 - co233);
 
-            idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
-            val_ch_csr[idx2 + 1] = ak * (1. + 1.5 * gt2 + gt4);
+        //-----------------
 
-            idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
-            val_ch_csr[idx2 + 2] = ak * (1. + 1.5 * gt2 + gt4);
+        idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
+        val_ch_csr[idx2 + 11] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (co31 + co113 + co133);
 
-            idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
-            val_ch_csr[idx2 + 3] = ak * (1. - 0.5 * gt2);
+        idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
+        val_ch_csr[idx2 + 12] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (-co31 - co113 + co133);
 
-            idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
-            val_ch_csr[idx2 + 4] = ak * (1. - 0.5 * gt2);
+        idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
+        val_ch_csr[idx2 + 13] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (-co31 + co113 - co133);
 
-            idx_ch_csr[idx2 + 5] = ijk2idx(i, j, kp2);
-            val_ch_csr[idx2 + 5] = ak;
+        idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
+        val_ch_csr[idx2 + 14] = (_2ak + _4zkp) * (1. + gt2) + _2zk * (co31 - co113 - co133);
 
-            idx_ch_csr[idx2 + 6] = ijk2idx(i, j, km2);
-            val_ch_csr[idx2 + 6] = ak;
+        //-----------------
+        idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
+        val_ch_csr[idx2 + 15] = (_2ak + _4zkp) * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)] + _2zk * (co12 + co112 + co122);
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
+        val_ch_csr[idx2 + 16] = (_2ak + _4zkp) * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)] + _2zk * (-co12 - co112 + co122);
 
-            idx_ch_csr[idx2 + 7] = ijk2idx(i, jp1, kp1);
-            val_ch_csr[idx2 + 7] = _2ak;
+        idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
+        val_ch_csr[idx2 + 17] = (_2ak + _4zkp) * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)] + _2zk * (-co12 + co112 - co122);
 
-            idx_ch_csr[idx2 + 8] = ijk2idx(i, jp1, km1);
-            val_ch_csr[idx2 + 8] = _2ak;
+        idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
+        val_ch_csr[idx2 + 18] = (_2ak + _4zkp) * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)] + _2zk * (co12 - co112 - co122);
 
-            idx_ch_csr[idx2 + 9] = ijk2idx(i, jm1, kp1);
-            val_ch_csr[idx2 + 9] = _2ak;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 10] = ijk2idx(i, jm1, km1);
-            val_ch_csr[idx2 + 10] = _2ak;
+        idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
+        val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * (ak + _2zkp) -
+                                (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)] +
+                                _2zk * (co1 + co11 - 2. * co111 - 2. * co122 - 2. * co133);
 
-            //-----------------
+        idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
+        val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * (ak + _2zkp) -
+                                (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)] +
+                                _2zk * (-co1 + co11 + 2. * co111 + 2. * co122 + 2. * co133);
 
-            idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
-            val_ch_csr[idx2 + 11] = _2ak * (1. + gt2);
+        //-----------------
 
-            idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
-            val_ch_csr[idx2 + 12] = _2ak * (1. + gt2);
+        idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
+        val_ch_csr[idx2 + 21] =
+            u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)] +
+            _2zk * (co2 + co22 - 2. * co222 - 2. * co112 - 2. * co233);
 
-            idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
-            val_ch_csr[idx2 + 13] = _2ak * (1. + gt2);
+        idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
+        val_ch_csr[idx2 + 22] =
+            -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)] +
+            _2zk * (-co2 + co22 + 2. * co222 + 2. * co112 + 2. * co233);
 
-            idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
-            val_ch_csr[idx2 + 14] = _2ak * (1. + gt2);
+        //-----------------
 
-            //-----------------
-            idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
-            val_ch_csr[idx2 + 15] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)];
+        idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
+        val_ch_csr[idx2 + 23] =
+            u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)] +
+            _2zk * (co3 + co33 - 2. * co333 - 2. * co113 - 2. * co223);
 
-            idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
-            val_ch_csr[idx2 + 16] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)];
+        idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
+        val_ch_csr[idx2 + 24] =
+            -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * (ak + _2zkp) - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)] +
+            _2zk * (-co3 + co33 + 2. * co333 + 2. * co113 + 2. * co223);
 
-            idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
-            val_ch_csr[idx2 + 17] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)];
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
-            val_ch_csr[idx2 + 18] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)];
+        idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
+        val_ch_csr[idx2 + 25] = -(ak + _2zkp) * gt + _2zk * co123;
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
+        val_ch_csr[idx2 + 26] = -(ak + _2zkp) * gt - _2zk * co123;
 
-            idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
-            val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)];
+        idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
+        val_ch_csr[idx2 + 27] = -(ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
-            val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)];
+        idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
+        val_ch_csr[idx2 + 28] = -(ak + _2zkp) * gt - _2zk * co123;
 
-            //-----------------
+        idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
+        val_ch_csr[idx2 + 29] = -(ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
-            val_ch_csr[idx2 + 21] =
-                u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)];
+        idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
+        val_ch_csr[idx2 + 30] = -(ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
-            val_ch_csr[idx2 + 22] =
-                -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)];
+        //---------------------------------------
 
-            //-----------------
+        idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
+        val_ch_csr[idx2 + 31] = (ak + _2zkp) * gt - _2zk * co123;
 
-            idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
-            val_ch_csr[idx2 + 23] =
-                u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)];
+        idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
+        val_ch_csr[idx2 + 32] = (ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
-            val_ch_csr[idx2 + 24] =
-                -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)];
+        idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
+        val_ch_csr[idx2 + 33] = (ak + _2zkp) * gt - _2zk * co123;
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
+        val_ch_csr[idx2 + 34] = (ak + _2zkp) * gt + _2zk * co123;
 
-            idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
-            val_ch_csr[idx2 + 25] = -ak * gt;
+        idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
+        val_ch_csr[idx2 + 35] = (ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
-            val_ch_csr[idx2 + 26] = -ak * gt;
+        idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
+        val_ch_csr[idx2 + 36] = (ak + _2zkp) * gt;
 
-            idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
-            val_ch_csr[idx2 + 27] = -ak * gt;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
-            val_ch_csr[idx2 + 28] = -ak * gt;
+        idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
+        val_ch_csr[idx2 + 37] = -(ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
-            val_ch_csr[idx2 + 29] = -ak * gt;
+        idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
+        val_ch_csr[idx2 + 38] = -(ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
-            val_ch_csr[idx2 + 30] = -ak * gt;
+        //-----------------
 
-            //---------------------------------------
+        idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
+        val_ch_csr[idx2 + 39] = (ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
-            val_ch_csr[idx2 + 31] = ak * gt;
+        idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
+        val_ch_csr[idx2 + 40] = (ak + _2zkp) * gt * (1. + gt2);
 
-            idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
-            val_ch_csr[idx2 + 32] = ak * gt;
+        //---------------------------------------
 
-            idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
-            val_ch_csr[idx2 + 33] = ak * gt;
+        idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
+        val_ch_csr[idx2 + 41] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
-            val_ch_csr[idx2 + 34] = ak * gt;
+        idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
+        val_ch_csr[idx2 + 42] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
-            val_ch_csr[idx2 + 35] = ak * gt;
+        idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
+        val_ch_csr[idx2 + 43] = (ak + _2zkp) * gt2 * 0.25;
 
-            idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
-            val_ch_csr[idx2 + 36] = ak * gt;
+        idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
+        val_ch_csr[idx2 + 44] = (ak + _2zkp) * gt2 * 0.25; 
 
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
-            val_ch_csr[idx2 + 37] = -ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
-            val_ch_csr[idx2 + 38] = -ak * gt * (1. + gt2);
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
-            val_ch_csr[idx2 + 39] = ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
-            val_ch_csr[idx2 + 40] = ak * gt * (1. + gt2);
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
-            val_ch_csr[idx2 + 41] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
-            val_ch_csr[idx2 + 42] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
-            val_ch_csr[idx2 + 43] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
-            val_ch_csr[idx2 + 44] = ak * gt2 * 0.25;
-
-            ptr_ch[idx - is_ch + 1] = idx2 + 45;
-        }
-        ptr_ch[0] = 0;
-    } else {
-#pragma omp parallel for
-        for (int idx = is_ch; idx < ie_ch; idx++) {
-            int i, j, k;
-            idx2ijk(idx, &i, &j, &k);
-
-            int ip1 = adj(1, i, NX);
-            int jp1 = adj(1, j, NY);
-            int kp1 = adj(1, k, NZ);
-
-            int im1 = adj(-1, i, NX);
-            int jm1 = adj(-1, j, NY);
-            int km1 = adj(-1, k, NZ);
-
-            int ip2 = adj(2, i, NX);
-            int jp2 = adj(2, j, NY);
-            int kp2 = adj(2, k, NZ);
-
-            int im2 = adj(-2, i, NX);
-            int jm2 = adj(-2, j, NY);
-            int km2 = adj(-2, k, NZ);
-
-            int im = ijk2im(i, j, k);
-
-            int idx2 = 45 * (idx - is_ch);
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 0] = ijk2idx(i, j, k);
-            val_ch_csr[idx2 + 0] =
-                1.5 * INV_DT + (42. + 29. * gt2 + 6. * gt4) * ak + 4. * (3. + gt2) * kiDX2 * ps.d * phi[im];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 1] = ijk2idx(ip2, j, k);
-            val_ch_csr[idx2 + 1] = ak * (1. + 1.5 * gt2 + gt4);
-
-            idx_ch_csr[idx2 + 2] = ijk2idx(im2, j, k);
-            val_ch_csr[idx2 + 2] = ak * (1. + 1.5 * gt2 + gt4);
-
-            idx_ch_csr[idx2 + 3] = ijk2idx(i, jp2, k);
-            val_ch_csr[idx2 + 3] = ak * (1. - 0.5 * gt2);
-
-            idx_ch_csr[idx2 + 4] = ijk2idx(i, jm2, k);
-            val_ch_csr[idx2 + 4] = ak * (1. - 0.5 * gt2);
-
-            //---------------------------------------
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 11] = ijk2idx(ip1, j, kp1);
-            val_ch_csr[idx2 + 11] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 12] = ijk2idx(ip1, j, km1);
-            val_ch_csr[idx2 + 12] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 13] = ijk2idx(im1, j, kp1);
-            val_ch_csr[idx2 + 13] = _2ak * (1. + gt2);
-
-            idx_ch_csr[idx2 + 14] = ijk2idx(im1, j, km1);
-            val_ch_csr[idx2 + 14] = _2ak * (1. + gt2);
-
-            //-----------------
-            idx_ch_csr[idx2 + 15] = ijk2idx(ip1, jp1, k);
-            val_ch_csr[idx2 + 15] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(ip1, jp1, k)];
-
-            idx_ch_csr[idx2 + 16] = ijk2idx(ip1, jm1, k);
-            val_ch_csr[idx2 + 16] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(ip1, jm1, k)];
-
-            idx_ch_csr[idx2 + 17] = ijk2idx(im1, jp1, k);
-            val_ch_csr[idx2 + 17] = _2ak * (1. - 3. * gt + gt2 - gt3) - ps.d * kiDX2 * gt * phi[ijk2im(im1, jp1, k)];
-
-            idx_ch_csr[idx2 + 18] = ijk2idx(im1, jm1, k);
-            val_ch_csr[idx2 + 18] = _2ak * (1. + 3. * gt + gt2 + gt3) + ps.d * kiDX2 * gt * phi[ijk2im(im1, jm1, k)];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 19] = ijk2idx(ip1, j, k);
-            val_ch_csr[idx2 + 19] = u[0][ijk2im(ip1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(ip1, j, k)];
-
-            idx_ch_csr[idx2 + 20] = ijk2idx(im1, j, k);
-            val_ch_csr[idx2 + 20] = -u[0][ijk2im(im1, j, k)] * INV_2DX - 4. * (3. + 4. * gt2 + gt4) * ak -
-                                    (1. + gt2) * 2. * kiDX2 * ps.d * phi[ijk2im(im1, j, k)];
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 21] = ijk2idx(i, jp1, k);
-            val_ch_csr[idx2 + 21] =
-                u[1][ijk2im(i, jp1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jp1, k)];
-
-            idx_ch_csr[idx2 + 22] = ijk2idx(i, jm1, k);
-            val_ch_csr[idx2 + 22] =
-                -u[1][ijk2im(i, jm1, k)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, jm1, k)];
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 23] = ijk2idx(i, j, kp1);
-            val_ch_csr[idx2 + 23] =
-                u[2][ijk2im(i, j, kp1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, kp1)];
-
-            idx_ch_csr[idx2 + 24] = ijk2idx(i, j, km1);
-            val_ch_csr[idx2 + 24] =
-                -u[2][ijk2im(i, j, km1)] * INV_2DX - 4. * (3. + gt2) * ak - 2. * kiDX2 * ps.d * phi[ijk2im(i, j, km1)];
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 25] = ijk2idx(ip1, jp1, kp1);
-            val_ch_csr[idx2 + 25] = -ak * gt;
-
-            idx_ch_csr[idx2 + 26] = ijk2idx(ip1, jp1, km1);
-            val_ch_csr[idx2 + 26] = -ak * gt;
-
-            idx_ch_csr[idx2 + 27] = ijk2idx(im1, jm1, kp1);
-            val_ch_csr[idx2 + 27] = -ak * gt;
-
-            idx_ch_csr[idx2 + 28] = ijk2idx(im1, jm1, km1);
-            val_ch_csr[idx2 + 28] = -ak * gt;
-
-            idx_ch_csr[idx2 + 29] = ijk2idx(ip1, jp2, k);
-            val_ch_csr[idx2 + 29] = -ak * gt;
-
-            idx_ch_csr[idx2 + 30] = ijk2idx(im1, jm2, k);
-            val_ch_csr[idx2 + 30] = -ak * gt;
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 31] = ijk2idx(ip1, jm1, kp1);
-            val_ch_csr[idx2 + 31] = ak * gt;
-
-            idx_ch_csr[idx2 + 32] = ijk2idx(ip1, jm1, km1);
-            val_ch_csr[idx2 + 32] = ak * gt;
-
-            idx_ch_csr[idx2 + 33] = ijk2idx(im1, jp1, kp1);
-            val_ch_csr[idx2 + 33] = ak * gt;
-
-            idx_ch_csr[idx2 + 34] = ijk2idx(im1, jp1, km1);
-            val_ch_csr[idx2 + 34] = ak * gt;
-
-            idx_ch_csr[idx2 + 35] = ijk2idx(ip1, jm2, k);
-            val_ch_csr[idx2 + 35] = ak * gt;
-
-            idx_ch_csr[idx2 + 36] = ijk2idx(im1, jp2, k);
-            val_ch_csr[idx2 + 36] = ak * gt;
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 37] = ijk2idx(ip2, jp1, k);
-            val_ch_csr[idx2 + 37] = -ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 38] = ijk2idx(im2, jm1, k);
-            val_ch_csr[idx2 + 38] = -ak * gt * (1. + gt2);
-
-            //-----------------
-
-            idx_ch_csr[idx2 + 39] = ijk2idx(ip2, jm1, k);
-            val_ch_csr[idx2 + 39] = ak * gt * (1. + gt2);
-
-            idx_ch_csr[idx2 + 40] = ijk2idx(im2, jp1, k);
-            val_ch_csr[idx2 + 40] = ak * gt * (1. + gt2);
-
-            //---------------------------------------
-
-            idx_ch_csr[idx2 + 41] = ijk2idx(ip2, jp2, k);
-            val_ch_csr[idx2 + 41] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 42] = ijk2idx(im2, jm2, k);
-            val_ch_csr[idx2 + 42] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 43] = ijk2idx(ip2, jm2, k);
-            val_ch_csr[idx2 + 43] = ak * gt2 * 0.25;
-
-            idx_ch_csr[idx2 + 44] = ijk2idx(im2, jp2, k);
-            val_ch_csr[idx2 + 44] = ak * gt2 * 0.25;
-        }
+        ptr_ch[idx - is_ch + 1] = idx2 + 45;
     }
+    ptr_ch[0] = 0;
 
     // const vector
 #pragma omp parallel for
